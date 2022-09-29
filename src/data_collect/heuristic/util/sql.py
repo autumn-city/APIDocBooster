@@ -81,6 +81,18 @@ def get_query_body(Id):
 
    return results
 
+def get_all_body():
+   cursor = sql_connection()
+   sql = '''
+   select Body from posts
+   where 
+   '''
+   cursor.execute(sql)
+   results = cursor.fetchall()
+
+   return results
+
+
 
 
 @set_timeout(3, after_timeout) 
