@@ -69,9 +69,24 @@ def call_API(query):
         r = requests.get('https://api.stackexchange.com/2.3/search/advanced', params=paras).json()
         answer_list.extend(r['items'])
 
+    # print(answer_list)
     print("total answer: ", len(answer_list))
+
+    # save the answer list to json
+    with open('/storage/chengran/APISummarization/data/so_api_sent/answer_list.json', 'w') as f:
+        json.dump(answer_list, f)
+
+# in the form of the list, each element is a dict of the answer info
+def read_data(data_path):
+    with open(data_path) as f:
+        answer_list = json.load(f)
+    return answer_list
 
 if __name__ == '__main__':
     storage_path = 'data/StackOverflow'
-    # test()
-    call_API('LSTMCell')
+
+    # call_API('LSTMCell')
+
+    # get the answer list for all apis
+    
+    # answer_list = read_data()
