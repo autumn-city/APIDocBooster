@@ -9,6 +9,7 @@ from pickletools import read_uint1
 import re
 import sql
 import sys
+import json
 sys.path.append('/storage/chengran/APISummarization/data')
 
 import API_Document.machine_learning.torch_read as source_api
@@ -146,8 +147,13 @@ def frequency_for_math_formulation_SOmention_v1(frequency_largerthan_0, API_doc_
     print('the num of all docs are:%d'%(num_doc))
     print('len of unique apis are: '+str(len(list(set(apis_short)))))
     print(result)
-
+    store_as_json(result, '/storage/chengran/APISummarization/data/torch_related_SO_posts/math_mentioned_api.json')
     return 
+
+def store_as_json(data, path):
+    with open(path, 'w') as f:
+        json.dump(data, f)
+
 
 if __name__ == '__main__':
     question_path = 'QueryResults.csv'
