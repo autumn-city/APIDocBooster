@@ -39,7 +39,70 @@ def split_data(test_unit):
         hyper_link = s.get('href')
         # s.string='['+s.get_text()+']('+hyper_link+')'
         s.string='['+s.get_text()+' (hyper-link)]'
+        try:
+            s.unwrap()
+        except:
+            print('error')
+
+    for s in soup('img'):
+        s.string = '[image]'
         s.unwrap()
+
+    for s in soup('li'):
+        s.string = s.get_text()
+        s.name = 'p'
+
+
+    # for p in soup('p'):
+    #     result.append(p.get_text()+"\n Paragraph end")
+
+    # for item in result:
+    #     output+=nltk.sent_tokenize(item)
+
+    for p in soup('p'):
+        output+=nltk.sent_tokenize(p.get_text())
+        output.append("Paragraph end")
+    return output
+
+def get_description(test_unit):
+
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(test_unit, 'html.parser')
+
+    result = ''
+    output= ''
+    for s in soup('table'):
+        s.string = '[table]'
+        s.name = 'p'
+
+    for s in soup('strong'):
+        s.unwrap()
+
+    for div in soup.find_all("div", {'class':'snippet'}): 
+        div.string='[code snippet]'
+        div.name = 'p'
+
+    for div in soup.find_all("div", {'class':'blockquote'}): 
+        div.string='[reference block]'
+        div.name = 'p'
+
+
+
+    for s in soup('pre'):
+        if s.code:
+            s.code.unwrap()
+        s.string = '[code snippet]'
+        s.name = 'p'
+
+
+    for s in soup('a'):
+        hyper_link = s.get('href')
+        # s.string='['+s.get_text()+']('+hyper_link+')'
+        s.string='['+s.get_text()+' (hyper-link)]'
+        try:
+            s.unwrap()
+        except:
+            print('error')
 
     for s in soup('img'):
         s.string = '[image]'
@@ -51,12 +114,9 @@ def split_data(test_unit):
 
 
     for p in soup('p'):
-        result.append(p.get_text())
+        result+=p.get_text()+'\n'
 
-    for item in result:
-        output+=nltk.sent_tokenize(item)
-
-    return output
+    return result
 
 def get_inline_code(html_unit):
 
@@ -68,6 +128,7 @@ def get_inline_code(html_unit):
 
     for div in soup.find_all("div", {'class':'snippet'}): 
         div.string=''
+
 
 
 

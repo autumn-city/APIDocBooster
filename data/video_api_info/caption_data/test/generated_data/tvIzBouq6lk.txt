@@ -1,0 +1,1920 @@
+in the last module we looked at how to
+use recurrent neural networks to process
+text as sequences and in the process
+capture more contextual information and
+the relationships between words this
+enabled us to accomplish new tasks
+including sequence labeling and language
+modeling in this video we'll look at a
+particular model architecture called
+sequence to sequence or seek to seek
+we'll learn what it is how it works and
+what it can help us accomplish the good
+news is that this model is conceptually
+simple and everything you learned about
+rnn's applies here we'll then consider
+the shortcomings of the standard seek to
+seek model and enhance it with a
+technique called attention
+to recap we finished the last module
+with different ways to combine rnn cells
+we use the many-to-many setup to create
+a part of speech tagger and a language
+model in particular we used a fixed
+many-to-many setup where each input had
+a corresponding output but there are
+lots of sequence-generating scenarios
+where the mapping between input and
+output isn't one to one this is where
+sequence to sequence or seek to seek
+models come into play
+a seek to seek model takes an input of
+indeterminate length and outputs another
+sequence of indeterminate length so the
+lengths of the input and output
+don't have to match
+a lot of tasks can be framed as seek to
+seek problems translation is a major
+example where the input is text in one
+language and the output is a translation
+in another language throughout this
+video we use language translation to
+illustrate the concepts
+summarization is another where the input
+is a document and the output is a
+summarization of the document perhaps
+less intuitive at first glance are
+dialog systems and question answering
+for dialogue the input could be a chat
+message from a human asking a bot to
+book a table at a restaurant and the
+output could be the bot asking how many
+people should book the table for
+in a similar vein a seek to seek model
+could take a question as input and
+output an answer and we can generalize
+this to really any sequence for example
+a human description of some
+functionality could be turned into code
+perhaps a seek to seek model could be
+trained to take a video input and output
+some musical score for it
+the point is that a seek to seek model
+can transform one sequence into another
+and since lots of nlp tasks can be
+framed this way seek to seek is often
+viewed as a general problem-solving
+approach
+let's look at how it works
+a seek to seek model consists of two sub
+models one of them is called the encoder
+and it's responsible for processing the
+input sequence the other is the decoder
+and it's responsible for generating the
+output sequence
+this is why you'll sometimes see seek to
+seek models referred to as encoder
+decoder models
+the sub models themselves can be
+implemented using any architecture such
+as lstms stacked gru's or as we'll learn
+about soon transformers in this video
+we'll assume both the encoder and
+decoder are some type of rnn
+let's walk through how a seek to seek
+model can be used for neural machine
+translation
+in this case english to hungarian if you
+went through the previous module on
+rnn's this will be straightforward
+say we want to translate the sentence
+the battery is dead each word is a token
+and is represented by a word embedding
+this is our input sequence
+this input sequence will be processed by
+the encoder assuming the encoder is some
+type of rnn we already know how it works
+the sequence is processed through
+recurrence one time step after another
+and in this case the output hidden state
+generated at each time step is discarded
+so far nothing new
+what we are interested in is the final
+hidden state of the encoder so the
+hidden states from the very last time
+step
+this vector can be thought of as
+embedding of the source sentence or a
+thought vector we'll call it an encoding
+here
+we now want the decoder to produce a
+hungarian translation of the source
+sentence again everything we learned
+about language models applies here
+at the first time step the decoder is
+fed the encoding of the source sentence
+as its first hidden state
+it's also fed a special start token as
+its first input
+it takes these two inputs and generates
+an output that goes through a soft max
+to create a probability distribution
+over the target language vocabulary
+from this distribution the most probable
+word is selected here the word is
+which means is dead so unlike the
+standalone language models we looked at
+in the previous video where the
+probability distribution was sampled
+here we're picking the most probable
+word
+and exactly as we learned in the
+previous module the current hidden state
+and the generated word become the inputs
+to the next time step
+and this will continue until a special
+end token is outputted hopefully when
+it's done the resulting translation is
+accurate and fluent
+both the encoder and decoder here should
+look familiar the major difference is
+that at the first time step the decoder
+is fed the encoding of the source
+sentence rather than a zero vector
+because the decoder generates a
+translation based on this initial
+encoding
+the decoder is considered a conditional
+language model
+training this translation model is also
+similar to what we learned the encoder
+processes the input and generates the
+encoding the decoder language model is
+trained through teacher forcing that is
+at each time step the actual output is
+compared against the target output and a
+loss is calculated that's done for the
+whole target sentence the total loss is
+then calculated and the encoder and
+decoder are trained as a single system
+end-to-end
+so the decoder is trained to produce the
+correct target sentence given in coding
+the encoder is trained to produce a
+better encoding to help the decoder and
+the word embeddings are trained as well
+if they're set up to do so
+and this system can be generalized to
+other seek to seek problems for example
+the encoder can encode a question and
+pass that off to a decoder the decoder's
+job then is to generate a target answer
+to that question
+but continuing on translation for now
+there are interesting challenges the
+seek to seek model has to solve to
+create effective translations
+one is the challenge of alignment which
+is the word toward correspondence
+between the source language and the
+target language here we see the words
+the and battery are each aligned to one
+word in hungarian but the two word
+phrase is dead is aligned to one word
+and it can go both ways in an english
+sentence such as he got away with
+cheating at the exam the phrase got away
+with maps to one word in hungarian in a
+many to one relationship
+conversely in the sentence she is fluent
+in english the word fluent maps to two
+words in a one-to-many relationship and
+of course there are also many to many
+relationships as well
+another challenge is that of structure
+english is a subject verb object or svo
+language so a typical english sentence
+example is he ate the pie whereas a
+language such as japanese is a subject
+object verb or sov language in that case
+the same sentence would be he the pi 8
+to make it even more challenging word
+order in hungarian is free to change
+depending on what the speaker's
+communicating and trying to emphasize in
+some cases multiple orders are
+acceptable
+in the example here the literal
+translation of the hungarian is is dead
+the battery but exchanging the positions
+of is dead and the battery is also
+perfectly acceptable
+in contrast doing stuff like this in
+english would make you sound like yoda
+and probably get you strange looks
+getting the structure right is part of
+adequacy and fluency
+adequacy is a rating of how much
+information from the source was
+translated to the target
+fluency is a rating of how good the
+target output is you can have an
+adequate translation that captures all
+the information but lacks fluency
+because maybe the translation has broken
+grammar and you can have a fluent
+sounding translation that fails to
+capture the information from the source
+here we have a couple of examples from
+google translate the first example we
+know in the second example google
+translate leads with translating the
+phrase the car so this time it placed
+emphasis on the car and the fact that
+it's the car's battery that's dead
+it also adds the right modifier to the
+translation of battery to attach the
+word to car so this is pretty good
+here's another example car battery in
+hungarian is accumulator which is fine
+but something like watch battery is lma
+google translate however at the time of
+this recording failed to capture that
+context and still translated battery to
+accumulator
+so adequate but not fluent
+finally there's also the ever-present
+problem of bias resulting from the
+training data and if the target language
+isn't widespread or doesn't have easily
+available data sets one would need more
+resources to get it working so
+seek to seek is conceptually simple but
+each task comes with its own nuanced
+challenges to overcome
+given the challenges we just saw it's
+understandable why dictionary-based
+word-to-word translation tends to
+perform poorly statistical translation
+models were better but required heavy
+feature engineering and lots of custom
+coding when neural machine translation
+arrived on the scene it was a huge leap
+forward not only in terms of performance
+but for the relative simplicity of
+training and maintenance
+there is one more important detail to
+cover here about the decoder at each
+time step the word with the highest
+probability is chosen as the output this
+is greedy decoding and doesn't
+necessarily lead to the best outcome
+consider this example the decoder
+receives an encoding of the source and a
+start token and the first outputted word
+is the
+and the second word is ship
+at the third time step the output
+probability distribution looks like this
+there are only two words to choose from
+here which isn't realistic but it's just
+for illustration
+here the word has is assigned a
+probability of 0.6 and the word sailed
+is assigned a probability of 0.4 so the
+word has is chosen and let's say the
+word doct comes after and the end
+sentence token is outputted after that
+let's take a look at greedy decoding as
+a search tree we have the start token
+which leads to the word the with a
+probability of one and let's say the
+following word ship also has a
+probability of one at the third time
+step the two words to choose from are
+has and sailed the probabilities of the
+other words are zero since the word has
+has the higher probability the decoder
+takes that path and then the top word at
+the last time step is docked
+the probability of a sentence is the
+product of the conditional probability
+of each word so here we get .33
+but going back to the path not taken
+let's say at the fourth time step the
+word home would have had a probability
+of 0.9
+the probability of the resulting
+sentence is 0.36 so the sentence the
+ship sailed home is more probable as a
+whole but because greedy decoding simply
+goes with whatever has the highest
+probability at a given time step it ends
+with the lower probability sentence by
+the end so what can be done well one
+idea is to simply sample all the
+possible sentences and pick the most
+probable one but given a 20 000 word
+vocabulary going through all possible
+combinations would be infeasible
+so one intuitive compromise is beam
+search where we track the top k most
+probable branches at each time step so
+rather than just following only the most
+probable branch at a time step we can
+follow the top three five ten hundred or
+even one thousand branches
+mathematically we can do this by
+calculating the cumulative log
+probability of all the candidate
+sentences so far pick the top k and
+continue only with those
+so using a modified example we can step
+through with the beam search k is
+referred to as the beam width and here
+we're setting it to two
+so the decoder begins with a start token
+and these are the two words available to
+choose from the and sunk since we're
+tracking the top two branches we'll
+accept both and the cumulative log
+probability is shown there in red
+at the next time step the search tree
+looks like this so we'll calculate the
+accumulative scores for each branch and
+pick the two highest scoring branches so
+far the other branches get dropped
+next time step same thing
+again after that
+let's say the two branches then output
+the end token with certainty so at this
+point we have our top two branches which
+are also known as hypotheses we can now
+either pass both to a downstream system
+for further evaluation or just pick the
+one with the highest probability and
+return that as a result
+okay so that's beam search pretty
+intuitive and simple
+now there are a few things to keep in
+mind beam search will bias in favor of
+shorter sentences if one of our two
+branches or hypotheses were longer than
+the other and we were picking only the
+single most probable branch in the end
+then the shorter one will be chosen
+despite the longer one maybe being more
+adequate or more fluent so to avoid
+penalizing longer sentences we can
+normalize the log probability by
+dividing it by the number of words
+beam search isn't guaranteed to find the
+most probable sentence because we're
+tracking only a subset of branches at
+any point in time to have a better
+chance of finding it we can widen the
+beam but of course that costs more time
+so it's a trade-off to be made
+so once we have a neural translation
+system the gold standard for evaluation
+is to get humans to look at the results
+but of course that can be expensive so
+when that's infeasible the most popular
+automatic method is called blue which
+stands for bilingual evaluation
+understudy
+the idea is this for a subset of source
+sentences there will be reference
+translations provided by humans so here
+we have two reference translations the
+plane took off from istanbul and the
+plane departed from istanbul and there's
+also a candidate translation supplied by
+our translation system here the system
+offers the plane flew in from istanbul
+and the intuition is to count the number
+of overlapping engrams between the
+candidate and reference translations
+so say we're looking at bi-grams these
+are the bigrams of the candidate
+sentence comparing it against the first
+reference sentence we see they share two
+out of five bi-grams so the score is two
+over five
+and in this case it's the same with the
+second sentence so a pretty
+straightforward measure of precision but
+the actual blue formula has a few
+modifications
+this is what it looks like it's composed
+of two components the brevity penalty
+and the engram overlap or precision
+the engram overlap is a product of
+multiple precision scores so a precision
+score for one gram two grams three grams
+and four grams are calculated and
+multiplied together
+let's look at the precision score first
+a precision score numerator for a
+particular engram i looks like this so
+for every candidate sentence and for
+every i gram in the sentence
+take the minimum of either the number of
+times diagram occurs in the candidate
+sentence if the diagram is a match
+or the number of times the same igram
+occurs in the reference and we'll go
+through an example to clear this up and
+to show why min is there
+that's then divided by the number of
+diagrams and the candidates
+regarding why there's a min in the
+formula numerator consider this example
+where we're looking at unigrams we have
+a reference translation my dog is dating
+the fire hydrants and we have a candid
+translation which is just the word dog
+repeated clearly a poor translation
+both the candidate and reference have
+the unigram dog in it so there's a match
+in the min part of the precision
+calculation the frequency of dog in the
+candid is 7 while the frequency of dog
+in the reference is 1. so the resulting
+precision for this unigram is 1 out of 7
+which reflects how bad it is
+in contrast if all we did was take the
+candid match count over the number of
+unigrams we would get perfect precision
+which is clearly not the case so using
+this modified precision counters any
+overconfidence in the candidate
+translation
+finally the brevity penalty is there to
+penalize candid translations which are
+short relative to the reference
+translations
+so that's blue now this metric has a few
+major shortcomings it doesn't consider
+the meaning of words a candid
+translation can be adequate and fluent
+but share no engrams with the reference
+translations because it uses different
+words in which case the blue score will
+be low it also doesn't take word order
+into account so it's possible to have a
+good blue score despite the engrams
+being out of order that being said it's
+probably the most popular automated way
+to measure translation system
+performance
+all right our journey so far in part two
+has taken us from word embeddings where
+we injected word meaning into vectors
+to processing text as sequences with
+rnn's to here where we learned how to
+transform one sequence into another
+along the way we've encountered issues
+such as network instability
+vanishing exploding gradients and
+challenges in dealing with long
+sequences and we've looked at how to
+deal with them using different
+regularization techniques and
+architectures such as lstms
+despite that a critical weakness remains
+in the rnn-based seek to seek model and
+that's in the transition from encoding
+to decoding
+what the encoder has to do is compress
+the entire source sequence into a single
+fixed length vector this vector has to
+somehow carry information about complex
+phrase structures and long distance
+relationships between words there's only
+so much the model can do when it's
+forced to cram all this information into
+a lower dimension
+this leads to an information bottleneck
+and while using architectures such as
+lstms can help when the sequences are
+still fairly short model performance
+drops dramatically as the sequences get
+longer because the vector carries more
+information about the later parts of the
+sequence than the earlier parts
+intuitively when we as humans transform
+a sequence into another this isn't how
+we do it a human translator often refers
+back to the source sequence while
+translating if we were to summarize a
+document we would certainly keep looking
+back at the source document to extract
+and paraphrase the key passages what we
+do is focus on certain parts of the
+input depending on where we are in
+generating the output
+this is where a powerful mechanism
+called attention comes in rather than
+throwing away the encoder's hidden
+states and forcing all available
+information into a single vector
+instead at each decoding time step
+give the decoder access to the encoder's
+hidden states
+in other words let the decoder look back
+at the source and learn at each time
+step which part of the input to focus on
+in a way neural networks have a bit of
+implicit attention built into them by a
+design through iterations neural
+networks learn what to give greater
+weight to and what to give less weight
+to
+in contrast the attention mechanism here
+is deliberate and explicit let's see how
+it works
+so here we have our encoder and it's
+processing our source sequence and as
+usual the encoder can be anything such
+as a stacked lstm bi-directional and gru
+etc we're still using something rnn
+based
+so just for variety we'll make our
+encoder bi-directional since we have
+access to the full source sequence
+upfront
+the encoder generates hidden states at
+each time step and at the end outputs an
+encoding of the whole source sentence
+which we'll call s sub zero
+so far everything should look familiar
+the difference begins here
+rather than being fed only to the
+decoder s sub 0 now goes into some
+scoring function f
+which takes s sub 0 and the first hidden
+state
+there are multiple options for the
+scoring function which we'll get into
+but for now just think of it as a
+function that outputs a scalar
+indicating how much attention the
+decoder should give to the first hidden
+output this scoring function is also
+known as an alignment model
+the same scoring function is then
+applied to s sub zero and each of the
+hidden states
+this will result in a collection of
+attention scores
+and reflects how much attention each
+encoder hidden state should be given at
+this decoder time step so for example at
+the first decoding time step perhaps the
+attention scores look like this where
+the first hidden state should be given
+the most attention and the last hidden
+state the least
+next these scores go through a soft max
+to transform them into a distribution
+that adds up to one this way attention
+becomes a proportion that gets assigned
+differently to each encoder hidden state
+which is why they're called attention
+weights
+so after going through the soft max
+perhaps the weights look like this with
+the first encoder hidden state getting
+70 percent attention the second weight
+10 percent and so on
+now we know how much attention each
+encoder hidden state should get
+just to note each weight has two
+subscripts here so the first subscript
+represents the hidden state it's
+weighting and the second subscript is
+the decoder time step so a sub 1 0 is
+the weight for the first encoder hidden
+state and the zero width decoder time
+step
+the next step is to calculate a context
+vector which combines the hidden states
+according to their weights and that's
+just the weighted sum of each attention
+weight with its corresponding encoder
+hidden state so it's the first attention
+weight multiplied by the first hidden
+state plus the second attention weight
+multiplied by the second hidden state
+and so on
+so now we have a single context vector
+carrying a mixed signal from all the
+encoder hidden states we can now execute
+the first decoder time step as before a
+start token serves as the first decoder
+input the context vector is then
+concatenated with the embedding of the
+start token
+this combine vector leads to the first
+hidden state of the decoder which then
+goes through a soft max and let's say
+the most probable word from that is oz
+the hungarian word for the
+that concludes one complete decoding
+time step using attention
+at the next decoding time step same
+thing the decoder hidden state s sub 1
+and each of the encoder hidden states go
+through a scoring function
+this results in attention scores
+attention scores go through a soft max
+to create attention weights
+these attention weights are used to
+calculate a context vector
+then at the next decoder time step the
+previous generated word serves as the
+input token
+and the context vector is concatenated
+with the embedding of the current input
+token
+that creates the decoder hidden state s
+sub 2 which goes into a soft max and
+perhaps the most probable word at this
+time step is accumulator the hungarian
+word for battery
+that's the second decoder time step and
+it keeps going from there until an end
+token is generated
+okay so that's the flow let's get into
+some math to get a feel for why this
+even works at all
+first the scoring function or alignment
+model there are multiple options for
+this
+the first one we'll look at is additive
+or bada now attention here the encoder
+hidden state and the current decoder
+state are each multiplied by a set of
+weights w and u
+then summed which is why it's called
+additive this is then run through a tan
+h non-linearity and multiplied by
+another vector v to turn it into a
+scalar
+so the scoring function here is a feed
+for a neural network that's trained via
+back propagation
+and the way the context vector is
+incorporated into the decoder is the way
+we've been doing it in the example that
+is the context vector is concatenated
+with the input token embedding before
+being fed to the rnn cell
+and finally just to detail the original
+paper by bodano and colleagues used gre
+units in a bi-directional encoder
+so in essence there are more learnable
+weights involved which allows the model
+to learn which encoder states are more
+important given the current decoder
+hidden state so for example if we're
+training a model to translate from
+english where the verb comes before the
+object to japanese where the verb comes
+after the object the model can now learn
+to place more attention on different
+parts of the source sentence to make
+that distinction
+this is why the scoring function is also
+known as an alignment model
+the collection of encoder hidden states
+becomes a type of memory for the decoder
+to access and we'll have more to say
+about that at the end of the video
+another type of attention is
+multiplicative or long attention here
+there are two options either a simple
+dot product between the decoder hidden
+state and each encoder hidden state or
+the addition of a set of trainable
+weights w for the encoder hidden state
+both are measures of similarity between
+the decoder state and a given encoder
+hidden state
+also the original paper by luang and
+colleagues used a stacked lstm for both
+the encoder and decoder
+there are key mechanical differences
+between additive and multiplicative
+attention first nothing is concatenated
+with the input token embedding the lstm
+cell takes the input embedding only and
+generates a decoder hidden state here
+that's s sub 1. in this approach to
+attention the current decoder hidden
+state is used for scoring
+from there the attention weights are
+generated in the same way and a context
+vector is calculated
+this context vector is then concatenated
+with the current decoder hidden state
+this concatenation is multiplied by
+another set of trainable weights w then
+run through a tan h to create s sub 1
+hat
+s sub 1 hat is then run through a soft
+max to generate the next word which
+serves as the input at the next time
+step
+optionally s sub 1 hat can also be
+combined with the input at the next time
+step
+okay so that's multiplicative attention
+and we'll implement this in the demo
+luang and colleagues also expanded on
+the concepts of global versus local
+attention
+what we've seen so far is global
+attention where all the hidden encoder
+states are used to create the attention
+weights this works fine most of the time
+but when we start working with longer
+sequences this can become
+computationally expensive
+so an alternative is local attention
+where the hidden encoder states only
+within a sliding window are considered
+this is a fixed sized window but where
+the center of the window can be
+different so the center of the window is
+a particular encoder time step and this
+time step can either match the decoder
+time step or it can be learned through
+weights i've included a link to read
+more about this
+okay so those are the details of the
+different attention mechanisms additive
+and multiplicative differ in terms of
+their scoring functions and how they
+incorporate the context factor into the
+decoder but the high level flow is the
+same the decoder hidden state and each
+encoder state are used to create
+attention weights
+these weights are used to create a
+context vector this context vector is
+used to help generate the decoder's next
+output and the intention mechanism has
+trainable weights which allows the model
+to learn which hidden states to pay more
+attention to based on the current
+decoder state
+we'll have more to say about attention
+before the end of this video but for now
+let's look at a demo alright so i've
+opened the nlp demystified seek to seek
+an attention colab notebook you'll find
+the link to this notebook on the module
+page alternatively you can get here from
+the nop demystified github repo
+before proceeding make sure to change
+the run time type to gpu for much better
+performance and you can do that by going
+to run time
+then change runtime type
+and we'll start by doing the imports
+okay so the first model we'll build is a
+seek to seek translation model that does
+not use attention so have an encoder
+that encodes a source language sentence
+in this case hungarian and a decoder
+that takes that encoding and generates a
+translation in the target language in
+this case english and along the way
+we'll explore different more flexible
+ways to build models with tensorflow and
+keras
+our data set comes from tatoba a
+collection of crowdsourced sentence
+pairs in different languages i
+downloaded the hungarian english pairs
+lightly processed them then shuffled and
+split the data set into train validation
+and test sets already so let's start by
+downloading the training set
+then load the pairs into a list
+this is what the sentence pairs look
+like before any pre-processing
+each pair is a hungarian sentence
+followed by its english translation
+and they're separated by this sep
+delimiter here
+this is a tiny data set for machine
+translation just over 88 000 pairs but
+we'll see what we can do with it
+okay so the first thing we'll do is
+separate the source and target sentences
+into separate lists
+so the source hungarian sentences will
+be in one list and the corresponding
+target english translations will be in
+another
+now when it comes to pre-processing
+there's something new we need to tackle
+here like a lot of languages in the
+region hungarian writing involves accent
+marks and this can be a source of
+trouble for our nlp models consider
+these two sets of unicode despite being
+different they yield the same visual
+result the first unicode is for an
+accented a
+the second unicode is for an a combined
+with an accent mark
+to us the outputs look the same but to
+our nlp model which will work off the
+internal representations they'll be
+treated differently and this can lead to
+problems to address this we need to do
+something called unicode normalization
+in short we need to convert these
+different representations into the same
+representation and there are a number of
+ways to do this
+here we're declaring a function which is
+going to take any unicode and decompose
+it to their individual parts which is
+what the nfd here refers to and this is
+a really good article on the importance
+of unicode normalization and the
+different ways to do it
+we'll also do a few additional
+pre-processing steps unlike our language
+model from the previous demo which was
+character based our translation model is
+going to be word based but we want to
+keep important punctuation such as
+question marks and periods
+so to make our tokenizer treat them as
+separate tokens we'll use some regex to
+locate these punctuation marks and add
+spaces to either side of them this way
+the tokenizer will pick them up as
+individual tokens so this function here
+given a sentence will perform unicode
+normalization and also insert spaces
+between words and punctuation marks
+okay so we'll run both the input and
+target sentences through that
+and if we take a look at the first few
+sentences from the input list
+we can see the punctuation marks are
+separated with spaces and the unicode
+has been normalized
+in the previous demo we used teacher
+forcing to train our language model and
+we're going to do the same here
+to do that this function is going to add
+a start of sentence token sos to the
+beginning of each sentence and an end of
+sentence token eos to the end of each
+sentence and the reason why will become
+clear in a moment
+okay so we'll run our target sentences
+through that
+and check out the results
+okay that looks good every target
+english sentence now has a start and end
+token we'll come back to this soon
+now we can start tokenizing and we'll
+start with our source language sentences
+using the trusty keras tokenizer a
+couple of things to note here we're
+initializing the source tokenizer with
+an out of vocabulary token called unk
+and we're going to fit the tokenizer on
+our training set only
+but when the tokenizer encounters the
+test set it may see tokens it hasn't
+seen before
+those will be replaced with unk
+second our filters list is the default
+filters list but with the important
+punctuation marks removed this way the
+tokenizer will keep things like question
+marks and periods
+okay so we'll fit the tokenizer on the
+input sentences and take a look
+okay so that's a fairly large looking
+vocabulary
+let's
+check the size of the vocabulary just
+over 38 000 tokens the plus one here is
+to account for the padding token
+and now we'll initialize another
+tokenizer for the target language and
+fit the tokenizer on the target
+sentences
+okay and we'll check the target
+vocabulary of that
+it's just over ten thousand it makes
+sense that the english language
+vocabulary is smaller because if you
+take a look at the data set there are
+many different hungarian words or
+phrases mapping to the same english
+words and phrases
+okay now that we've tokenized we next
+vectorize the same way we did for our
+language model from the previous demo
+here we're turning each source sentence
+into a sequence of integers where each
+integer maps to a particular hungarian
+word
+and we'll just do a quick sanity check
+to ensure the vectorized sequences can
+be turned back into the source sentences
+okay that looks good
+all right let's talk about teacher
+forcing teacher forcing with the decoder
+here works exactly like it did when we
+trained our language model we need to
+make two copies of the target language
+sentences with the sentences in one copy
+shifted over by one
+and that's what this function does so
+from the target sentences two
+collections will be created the first
+will be the inputs to the decoder for
+teacher forcing and that'll consist of
+every token except the last end of
+sentence token
+the second collection will be the
+decoder target sentences used for
+calculating the loss and that'll be all
+the tokens except the first startup
+token sentence
+we'll look at the results of this in a
+moment but if you're unfamiliar with
+this concept please look at the module
+on recurrent neural networks where we
+first learned about this we'll run this
+function over the target sentences and
+what we get back are two lists of
+vectorized sentences
+to make this clear we'll take a look at
+the first sentence from each list so as
+you can see the first decoder input
+sentence has the sos token and the
+corresponding decoder target sentence is
+shifted over by one and has the eos
+token
+okay so once the encoder is done
+encoding a source language sentence the
+decoder will come into play and at time
+step 1 the sos token will be fed to the
+decoder whatever the decoder outputs
+will be compared against the word i and
+the loss will be calculated at the next
+time step the word i will be fed to the
+decoder and the output will be compared
+against don't and so on until the whole
+sentence is processed at which point the
+weights will be adjusted via back
+propagation
+the last pre-processing step we'll take
+before building our model is to pad our
+sequences for convenience we'll pad each
+collection to the same length as the
+longest sequence in that collection so
+for the encoder inputs that's 37
+and for the decoder inputs and targets
+that's 34.
+all right so we'll pad all three
+and this is what the first vectorized
+sentence from each collection looks like
+so
+this will be the source sequence fed to
+the encoder
+this is the sequence fed to the decoder
+for a teacher forcing and this is the
+target sequence used for loss
+calculation
+just as a side note if we turn a padded
+vectorized sequence back into a sentence
+the padding now shows up as unk our
+outer vocabulary token
+okay so that's pre-processing done on
+the training set
+next we'll just do the exact same
+pre-processing steps for the validation
+set so we'll first download it
+load the pairs into a list
+this function here contains all the
+pre-processing steps we took with the
+training set
+and we'll just apply them to the
+validation set as well
+okay now we're ready to build our
+translation model we'll start off by
+setting a few parameters here for things
+like embedding dimension and batch size
+now up to this point we've been using
+this sequential api which is pretty
+simple and intuitive and it works well
+when your model has one input and a
+straight flow to one output but that's
+not the case here our translation model
+consists of two inputs one for the
+encoder and another for the decoder
+so rather than using the sequential api
+we're going to use the functional api
+fortunately i think it's pretty
+straightforward as long as we keep a few
+things in mind
+we'll first specify the encoder here at
+a high level the way we describe a model
+using the functional api is to first
+declare a layer which we can think of as
+a node in a graph
+then we declare a second layer which we
+can think of as another node
+when we pass the output of the first
+layer into the second layer that creates
+a link between the two layers or nodes
+and the data will flow through
+so looking at the code here we're
+starting off by declaring an input layer
+and this is straightforward it just
+takes our input sequences and passes
+them through i've set shape to none here
+but we could have specified it since we
+know the input shape ahead of time more
+on that later
+next we declare an embedding layer
+hopefully this looks familiar from the
+previous demos we have mask 0 set to
+true because we don't want any
+predictions on padding
+ok so now we have two layers here we're
+passing the data from the input layer to
+the embedding layer that creates a link
+between the two layers behind the scenes
+the embedding layer then outputs a
+sequence of embeddings
+next we're declaring an lstm remember
+that the lstm has two outputs at each
+time step the hidden state and the cell
+or context state
+we have return state set to true because
+we want to capture the final hidden
+output and final excel state from the
+encoder we're going to pass these to the
+decoder to generate the translation
+return sequences which we used when we
+created our language model is not set
+here and it defaults to false this is
+because we don't need every hidden
+output just the final one
+here we establish a link between the
+embedding layer and the lstm by passing
+the embedding layer output to the lstm
+okay something to note here for each
+call the lstm returns three values
+the second value is the final hidden
+states and the third value is the final
+cell state
+when returned sequences is false like we
+have here the first value is a duplicate
+of the final hidden state in other words
+these two will hold the same value if
+return sequences were true then encoder
+outputs would be all the hidden states
+generated from each time step which
+we'll encounter when we look at
+attention
+for now we don't need the first value
+and i would have normally just written
+this as an underscore finally we'll
+return the final hidden and cell states
+as a tuple and that'll be the output of
+our encoder
+okay so to summarize the input layer
+feeds the embedding layer which feeds
+the lstm from which we get the final
+hidden and cell state to feed the
+decoder
+the decoder looks familiar but there are
+a few differences the decoder also has
+an input and embedding layer the big
+difference is that the decoder is a
+conditional language model right so at
+each time step the decoder is going to
+predict the next word in the sequence so
+to do that the lstm has returned
+sequences set to true so there's going
+to be a hidden state output at each time
+step
+the second difference is that the
+decoders lstm will be initialized with
+the last encoder states
+so this was the output of the encoder
+and we are using it to set the initial
+states of the decoder
+and since we don't care about the
+decoders last hidden or cell state these
+values are dashes here we just care
+about the hidden state at each time step
+so this decoder outputs array here is
+going to hold an array of hidden states
+one for each time step
+and the third difference is an
+additional softmax layer for the output
+and if you've been following along the
+last few modules this hopefully looks
+familiar
+the decoder's output at each time step
+is a probability distribution over the
+target language vocabulary alright so
+we've specified the encoder and decoder
+creating the model now is
+straightforward we'll specify the
+two inputs to the model
+and its output in the compile call we'll
+specify an optimizer loss function and
+performance metric
+so this is our complete model end-to-end
+we can visualize this model using keras
+utility and this is what it looks like
+we'll talk more about the dimensions in
+a minute
+so the model starts with the encoder
+input going to the encoder embedding
+layer the second to last box is the
+input to the layer the last box is the
+output
+the embedding layer is outputting a
+batch of sequences with each element
+being a 128 dimension embedding
+the output of which then goes into the
+encoder lstm
+the last two entries representing the
+encoder states are used to initialize
+the decoder
+on the decoder side the decoder input
+goes into its respective embedding layer
+and the output from that goes into the
+decoder lstm that's represented by this
+entry here we care only about the
+decoder's hidden states at each time
+step so the first element of the output
+is taken and fed to the softmax which
+then outputs a probability distribution
+over the vocabulary
+when i was learning this stuff i found
+the matrix dimensions more challenging
+than the theory i think the concepts
+themselves aren't difficult but the
+details were tricky
+so to clarify further here are the
+dimensions of the inputs and outputs for
+every layer
+alright so the encoding input layer
+takes a batch of 32 where each element
+of that batch is a sequence 37 elements
+long and it just outputs the same thing
+the encoder embedding layer takes that
+batch of sequences and outputs a batch
+of sequences where each element is a 128
+dimension word embedding
+the encoder lstm takes that as its input
+and outputs its final hidden state and
+cell state remember that return
+sequences on the lstm here is set to
+false so this first entry is just a copy
+of the second
+these two are the outputs we take from
+the encoder
+alright on the decoder side each input
+is a batch of 32 where each entry is a
+sequence 34 elements long
+that goes into the embedding layer which
+then outputs a batch of sequences of
+embeddings
+all right now the decoder lstm takes
+those embedding sequences and the last
+hidden end cell states from the encoder
+as its input so this burst entry is from
+here
+and these two entries are from here
+return sequences is set to true on the
+decoder lstm so in addition to a final
+hidden and cell state which we don't
+care about it's also outputting a hidden
+state at every time step
+this collection of hidden states are fed
+to the soft max which then outputs a
+probability distribution over the
+vocabulary at each time step
+okay so those are the input and output
+dimensions and hopefully that helped
+ground what's happening
+okay we're ready to train our model just
+like the language model from the
+previous demo we'll set up checkpoints
+here in case something goes wrong
+and we'll use early stopping now i
+trained this model earlier to save time
+which is why the fit method is commented
+out as you can see we pass the encoder
+and decoder input sequences as inputs to
+the model
+and the decoder sequence targets are
+used for the loss calculation
+if you want to train this model yourself
+feel free to uncomment this and run it
+the model i previously trained early
+stopped at epoch 12 with these
+validation metrics we'll download and
+load the model in a moment
+further below i have these functions
+here to save the model and download it
+and also save the tokenizers for both
+the source language and target language
+it's important to save the tokenizer
+because a different tokenizer will of
+course yield different results
+so to load the previously trained model
+we'll start off by downloading the
+tokenizers from the nlp demystified
+github site
+and unzip it which should give us the
+last two saved tokenizers in json format
+we'll use the tokenizer from json method
+in keras to load the tokenizers
+okay so we have our tokenizers next
+we'll download the model it's just under
+100 megs
+okay then we'll unzip it
+and loading the model is straightforward
+lastly we'll try the model on the test
+set we'll start by downloading that
+load the test set into a list
+as you can see it's the same format as
+the other sets
+so we'll process it
+and then
+evaluate it
+and the accuracy metric is basically in
+line with the one from the validation
+set
+all right so we've loaded the previously
+trained model and tried it on the test
+set but for inference we can't use this
+model directly
+this is because the encoder and decoder
+are both coupled into one model which
+isn't a problem itself but the decoder
+uses teacher forcing which isn't used
+during inference so what we need to do
+is take the layer weights from the train
+model and create a separate standalone
+encoder and a separate standalone
+decoder fortunately it's pretty
+straightforward we can iterate through
+the layers of the train model what we
+get back is a list of layer names we
+assigned while we wrote out the model
+specifications
+creating the standalone encoder is just
+a matter of retrieving the layer weights
+the train models get layer method
+retrieves the weights and returns a
+layer instance so this is the input
+layer this is the embedding layer and
+just like before we create a link
+between the two by passing the input
+layer data to the embedding layer
+same idea here we get an instance of the
+trained lstm layer and pass it the
+embeddings the first return value is
+represented by a dash because we don't
+need it
+then finally the encoder states are
+captured in this tuple
+so far it's exactly how we describe the
+encoder in the training model the big
+difference is we're creating a model
+that starts with the encoder inputs and
+ends with outputting the encoder states
+so no decoder involvement here and by
+doing that we create a standalone
+encoder which has nothing to do with the
+decoder
+and we can visualize it as well so this
+is the standalone encoder now
+the decoder declaration is very similar
+input layer embedding layer pass inputs
+to embedding the big difference is that
+we still want to initialize the decoder
+initial state with the encoder output
+but because the encoder and decoder are
+now separate we declare two additional
+inputs for the decoder one for its
+initial hidden states and another for
+its initial cell state
+from there we get an instance of the
+trained lstm layer pass it the
+embeddings an initial state and retrieve
+hidden states from each time step and
+the hidden in cell states
+these two form the decoder output states
+which will then pass on to the next time
+step
+and here's the final layer where we
+output the probability distribution for
+the next word
+the standalone decoder here is declared
+here with the inputs being the decoder
+input plus the decoder state either from
+the encoder or from the decoder's last
+time step and by plus i mean we're going
+to put them in one array to be unpacked
+and the output's going to be the
+probability distribution for the next
+word and the new decoder states
+and we can visualize this as well
+now we're ready to do some translation
+this function takes a sentence in string
+format converts it into an integer
+sequence and runs it through the encoder
+this line here where we turn the
+integers back into a string sequence is
+just to see if we encountered any
+unknown tokens just for observation
+the encoder returns its final hidden and
+cell states
+our first input to the decoder is going
+to be the start of sentence token and
+this decoded sentence list will
+accumulate the tokens the decoder
+outputs
+we'll enter a loop here to start the
+translation at the top of the loop we
+declare an array it's 1 1 here because
+it's a batch of 1 containing a sequence
+of length 1 because we're doing only one
+word at a time and we'll populate that
+single slot with the index of the start
+of sentence token
+that along with the encoder states gets
+passed to the decoder which returns the
+values we want that is the probability
+distribution for the next word and the
+hidden and cell states for the next time
+step
+we retrieve and convert the most
+probable token from the results
+if the decoder outputs an end of
+sentence token we'll exit the loop if
+not we'll add the word to the list of
+words and the hidden and cell states
+from the current time step become the
+input states to the next time step
+when it's all done we return both the
+tokenized source sentence and the
+translation
+to test it out we'll randomly pick 15
+sentences from the test set i set the
+random seed to 1 here so that you and i
+get the same 15 sentences but feel free
+to remove it
+this function just translates every
+sentence for us so it does the splitting
+pre-processing and translating
+and what we'll do here is translate the
+sentences and load the results into a
+pandas data frame i'll fast forward to
+the
+end all right here are the results so a
+mixed bag here with a few which are off
+a few which exactly match the reference
+and a few where the translation is
+slightly different but conveys the same
+meaning which are my favorite so for
+example we have a reference translation
+of i got it whereas our model translated
+to i'm doing it which depending on the
+context convey the same idea same thing
+here let me know versus tell me
+i like this one i rarely go there versus
+i seldom go there which is a testament
+to the power of embeddings
+here we have almost the exact match but
+our translation doesn't have the
+contraction closest versus nearest
+this one here happiness doesn't last
+forever versus the website is not open
+is completely wrong unless you know
+you're really upset about a website
+being shut down
+and down here we have an unkward which
+means the test set contains a word we
+didn't encounter during training tom
+izmiri means tom knows and that was
+translated correctly but it had to guess
+the last word and even then it still
+gets something that conveys a similar
+idea
+so this is very cool despite the several
+limitations we're working with hungarian
+in particular is a difficult language
+and possibly falls into the low resource
+category it's highly flexible and
+expressive and it's common to find one
+hungarian word mapping to an entire
+phrase in english even using google
+translate there tends to be a high error
+rate for hungarian
+second we're working with a small and
+narrow data set and for greater general
+use one would certainly need more
+third we're using a pretty simple model
+with a single lstm for the encoder and a
+single lstm for the decoder in contrast
+when google translate was fully
+recurrence-based they used an 8-layer
+lstm for the encoder and an eight layer
+lstm for the decoder
+fourth translation in general is tricky
+and fraught with issues in the
+references section below there's a link
+to a video from raza about such issues
+but overall considering this is a simple
+purely deep learning model with no
+statistical or rules-based helpers that
+we can train for free in the cloud i
+think it's pretty cool let's move on to
+adding an attention layer we'll reuse
+the vectorized data and the tokenizers
+but this time around we'll create
+standalone encoder and decoder models
+from the beginning and to do that we'll
+use the third way one can declare models
+in keras and that's through subclassing
+beyond the syntax though the structure
+of the encoder and decoder remain mostly
+the same
+so here we have our encoder which
+subclasses the keras model class in the
+constructor we declare our embedding
+layer there's no need to declare an
+input layer because the input will be
+passed explicitly to the model as we'll
+see
+beyond that we have the lstm like before
+there are two big differences with the
+lstm here first there's no masking when
+we set masking to true the mask
+propagates forward to layers which
+support it and this worked in our
+previous model however this time around
+we're going to have a custom attention
+layer so instead we'll manually
+calculate a mask and incorporate it into
+a custom loss function we'll see that
+soon
+second return sequences is set to true
+because the encoder needs to output a
+hidden state at each time step for
+attention to work just like we covered
+in the slides the call function here is
+an overridden method that describes how
+the input should be turned into output
+in this case the input gets passed to
+the embedding layer the output of that
+is fed to the lstm and the model returns
+the lstm output hopefully this code is
+clear if you're unfamiliar with the
+style of model declaration check out
+this guide here and this link here for
+more information
+to get a sense of the inputs and outputs
+we'll declare a test encoder here during
+training the encoder is going to take a
+batch of inputs so for a batch of 3 the
+shape of the input will be 3 by 37 since
+37 is the max encoder input length we'll
+pass the batch to the encoder
+notice we're calling the encoder
+instance as if it were itself a function
+this is the way to do it because the
+call method we wrote shouldn't be called
+directly the dunder call method will be
+invoked instead which will then invoke
+the call method
+and we get back three collections the
+first is the collection of encoder
+hidden states from all time steps so
+it's a batch of three each of length 37
+and each element in that is a vector of
+256 since that's our hidden dimension
+and these two represent the encoder's
+last hidden and cell state respectively
+we'll create the attention layer now but
+before we do that let's walk through a
+simple example of the dot product
+detention we saw in the slides the
+attention mechanism we'll actually use
+will almost be identical
+pretend these are the encoder hidden
+states for just one sequence of length
+four so not a batch just a single
+sentence so this is the hidden state
+from time step one this is from time
+step two and so on
+so the encoder processed a sequence of
+length four and returned a matrix of
+four rows each row a hidden state
+dimension of three
+and suppose this is the hidden state
+from the decoder at a single time step
+while it's processing a single sentence
+so a batch of one of the same hidden
+dimension of three
+to get the attention scores we need to
+dot product the decoder hidden state
+with the encoder hidden states which
+requires a transpose here are the hidden
+encoder states transposed
+now the tensorflow matmul function can
+help us do the multiplication and
+transpose in one step so here we're
+transposing the encoder outputs with
+transpose b
+and then multiplying the decoder output
+against every encoder output and what we
+get are the attention scores
+so this is the attention score between
+the decoder output and the first encoder
+hidden state then against the second
+encoder hidden state and so on
+next to get the attention weights we
+apply a soft max to the scores there
+they are
+and finally we can create the context
+vector by multiplying the attention
+weights and the encoder hidden states
+once we have the context vector we can
+incorporate it into the decoder
+operations as we see fit
+we're going to code the luang attention
+layer we studied in the slides it does
+the same thing as dot product attention
+except it has an additional dense layer
+so the attention layer here receives the
+sequence of encoder hidden states and
+the decoder output from the current time
+step
+the encoder hidden states go through
+this dense layer by doing this the
+encoder hidden states don't have to be
+the same dimension as the decoder output
+from there everything is the same as the
+example the attention scores are
+calculated
+followed by the attention weights
+followed by the context vector
+and the layer returns the attention
+weights in the context vector because
+the attention weights can be useful for
+things like visualization the context
+vector will be concatenated with the
+decoder output just like we covered in
+the slides
+finally we'll code up the decoder with
+the attention layer incorporated into it
+okay so let's walk through the major
+differences with the decoder here first
+like the encoder there's no masking in
+the embedding layer because we'll be
+handling that manually
+second there's an attention layer which
+the decoder will call
+third there's a dense layer with a 10h
+which you may recall from the slides
+once the decoder output is concatenated
+with the context vector from the
+attention layer
+that will go through this dense layer
+fourth there's the output dense layer
+here but unlike the previous decoder
+there is no soft max because we'll
+calculate the loss directly from the
+logits
+finally the fifth difference is what the
+decoder receives as input all the
+encoder hidden states
+and its current lstm state
+in the call method once we have the lstm
+output we'll pass that along with the
+encoder hidden states to the attention
+layer to get the weights and context
+vector we'll then concatenate the
+context vector and decoder output and
+run it through the dense layer with 10h
+and finally run it through the output
+layer
+returning the logits to calculate the
+loss the hidden end cell states for the
+next time step and the attention weights
+for optional analysis
+we'll be coding our own training loop
+for this so to get a sense of the input
+and output dimensions we'll initiate a
+test decoder here
+let's say we're using batches of three
+so this is a batch of 3 by 34 where 34
+is the maximum target sentence length
+now during training and teacher forcing
+let's say we're at the second time step
+that means we're going to feed the
+decoder the second element from each
+example so that's 5 25 and 105
+but this array as it is is a single
+sequence of three when we really need to
+send in a batch of three single elements
+to do that we'll use expand dimms using
+that we get a batch of three with each
+example in that batch being a single
+element
+so pretending we're on the second time
+step we pass those decoder inputs to the
+test decoder along with the test encoder
+outputs from before and an lstm state
+and the decoder returns the raw logits
+from the last dense layer the hidden and
+cell states and the attention weights so
+this is the shape of the logits we have
+a batch of three where each element is a
+sequence as long as the target
+vocabulary remember these are the raw
+logits they didn't go through a soft max
+so these are not probability
+distributions and we also have the shape
+of the attention weights we could get
+rid of this middle dimension here if we
+want to make it a batch of 3 37 element
+vectors 37 because that's the maximum
+length of the source strings
+okay so that's the decoder next we'll
+write a custom loss function and it's
+actually straightforward the loss
+function is going to take the target
+tokens and our decoder predictions
+we're just writing a wrapper around the
+built-in sparse categorical
+cross-entropy i highly recommend
+visiting this link here to get an idea
+of what the inputs to the function look
+like
+so we're instantiating a cross entropy
+function here and setting logits to true
+the key element here is the mask it will
+have a mask that's as long as the
+targets and wherever a target token is
+zero which means it's padding the
+corresponding mask position will be set
+to zero otherwise it'll be set to one
+we'll then pass that mask to the cross
+entropy function along with the targets
+and logits and this way the target
+values of 0 ie padding won't contribute
+to the loss
+to make data management a bit easier
+we'll load the three sets into a
+tensorflow data set the same way we did
+in the previous demo and batch it
+okay so just to be clear there are three
+inputs to our model the hungarian
+sequences the english sequences which
+are going to be fed to the decoder for
+teacher forcing and the english target
+sequences
+and finally this is our custom training
+loop which we're encapsulating in a
+class which inherits from carousel model
+this way we can use methods such as
+model.fit as we'll see
+the constructor takes an encoder and
+decoder and overrides the train step
+method check out this link here to learn
+more about it but in short this method
+is going to be called by fit for each
+batch
+so the train step receives the usual
+inputs the source sequence for the
+encoder the decoder sequence for teacher
+forcing and the decoder target sequence
+for loss calculation
+if you're unfamiliar with gradient tape
+think of it as a way to record a forward
+pass so operations and variables within
+the gradient tape context are recorded
+then when we call tape.gradient the
+gradient of the loss with respect to the
+weights is calculated for us
+and you can check out these two links
+here for more information
+so inside the gradient tape context we
+run the encoder input sequence through
+the encoder and get the outputs at this
+point we start looping through the
+decoder input
+at each time step we get the next inputs
+from each sequence in the batch just
+like we did in the example a moment ago
+run that through the decoder
+pass the resulting logits and the target
+elements to the loss function which
+we'll supply when we compile the model
+note that we don't need to do an expand
+dimms here because the loss function
+expects targets to be a single array
+and we keep accumulating the loss for
+the batch once we're out of the gradient
+tape context we gather all the training
+variables from both the encoder and
+decoder
+get tensorflow to calculate the
+gradients then have the optimizer apply
+the gradients
+we'll pass in the optimizer when we
+compile the model and we exit the
+training step by returning the mean loss
+the last step before training is to
+instantiate an encoder decoder and
+optimizer
+instantiate a trainer then compile the
+model
+i didn't code up an accuracy function
+but if you want you can do it the same
+way we did the loss function
+i set the epochs to 12 here only because
+that's the number of epochs the
+previously trained model stopped at and
+as before i previously trained the model
+so that's why the fit method is
+commented out
+these are the functions to save the
+weights of both the encoder and decoder
+and download them
+let's get the weights of the trained
+encoder and decoder from the nlp to
+mystified github repo
+load the weights into the encoder and
+decoder and because the way we kept the
+encoder and decoders separate from the
+start and the way we train them we can
+use them immediately for inference as
+well
+this is a method to translate with
+attention it's basically the same as our
+previous translation function except it
+pads the sequences since there was no
+masking in the encoder nor decoder and
+the arg max is performed on the logits
+rather than a probability distribution
+but the main idea is the same
+so we'll translate the same sentences as
+we did previously but this time with
+attention
+and put that in the data frame this will
+take a few seconds
+and we'll compare it against the
+translations without attention all right
+so what we see are similar results so
+for the first two translations both
+models have the same output for the
+third one it's closer to the reference
+the fifth one is off
+the sixth one is exact
+10 11 and 12 are also closer to the
+reference so in general the model with
+attention did better but these are short
+sentences
+let's see how both models do with longer
+sequences so from the train set we'll
+select the 10 longest pairs
+translate them without attention first
+then
+with attention and put it all in a data
+frame
+so taking a look at the results so the
+first entry the reference translation is
+when you go to sleep last night etc in
+the translation without attention it's
+off whereas with attention it's closer
+even later in the sequence words like
+phone appear
+so the translations with attention are a
+bit more adequate in that they capture
+more of the information but it's not
+fluent same thing with the second one
+the attention model captures more
+information but struggles with fluency
+and that's the same pattern with the
+rest of the translations so on the
+positive side attention here is leading
+to greater adequacy but the sheer
+difficulty of hungarian combined with us
+having little data makes the model fall
+short we would need a lot more training
+data to make this work still i hope this
+demonstrates the power of attention and
+will be leveraging it again when we look
+at transformers
+alright so those were different ways to
+build seek to seek neural translation
+models using recurrence both without
+attention and with attention there's a
+lot more to explore if you want one
+thing to try is another language pair
+which you can download from totoba
+remember that seek to seek is a general
+problem-solving approach so you can try
+transforming one type of sequence into
+another for example the input sequence
+could be a simple arithmetic equation
+and the output could be the answer
+we used accuracy as a proxy for model
+performance but for translation the most
+popular metric is blue now that you know
+the math and have both translations and
+human provided references see if you can
+calculate the blue score
+lastly we used greedy search in our
+translation try implementing beam search
+to track the top k translations at each
+time step and select the best one at the
+end there are also references here to
+check out
+all right so attention was a big step
+forward for sequence to sequence
+modeling because the decoder can now
+refer back to the encoder states rather
+than rely on only a single encoding of
+the source sequence
+in a way we can look at attention as a
+form of information retrieval
+consider a typical python dictionary
+here the keys are color strings and the
+values are rgb tuples
+if we wanted to retrieve the rgb value
+for blue we would query the dictionary
+with the string blue the dictionary
+would check for a matching key and if
+there is one return the corresponding
+value
+and as we know in the case of a python
+dictionary the key must match the query
+and if there is a match a single value
+is returned
+now let's look at attention in the same
+light the encoder hidden states can be
+thought of as an information store
+and at each time step the decoder can be
+thought of as querying this information
+store
+in this case the current decoder state
+serves as the query
+and the encoder hidden states serve as
+both the keys and values that is key h1
+resolves to value h1
+okay so that's one major difference from
+our python dictionary example
+the attention mechanism compares the
+query against each key
+scores and weights are calculated from
+the comparison and a context vector is
+returned now a single vector is returned
+here but unlike our python dictionary
+example
+the vector is a blend of all the values
+in the information store
+so what we get back isn't based on an
+exact query key match instead the query
+results in a particular blend of all the
+encoder information sort of like mixing
+paint
+attention can be viewed as a fuzzy
+lookup dictionary that learns to boost
+certain encoder states and dampen others
+based on the query
+and i want you to keep this in mind
+because this idea is so powerful that it
+became a key component of the
+transformer a breakthrough model
+architecture that changed everything and
+we'll learn all about it next

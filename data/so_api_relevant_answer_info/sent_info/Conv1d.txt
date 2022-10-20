@@ -1,0 +1,270 @@
+The Conv1D layer expects these dimensions:
+For instance, the conv.cpp file you're linking [uses (hyper-link)] torch::conv1d, which is defined [here (hyper-link)] and uses [at::convolution (hyper-link)] which in turn uses [at::_convolution (hyper-link)], which dispatches to multiple variants, for instance [at::cudnn_convolution (hyper-link)].
+Minimal example: Here is the one possible solution with Conv1D:
+Conv1D can be seen as a time-window going over a sequence of vectors.
+I found that it works if you specify the input shape in your Conv1D layer and  expand x's dimensions.
+Conv1D was designed for a sequence analysis - to have convolutional filters which would be the same no matter in which part of sequence we are.
+To input a usual feature table data of shape (nrows, ncols) to Conv1d of Keras, following 2 steps are needed:
+This works well for Conv1d of Keras.
+The last layer should then be something like a Conv1D(1,...) instead of a Dense.
+Then you can define your conv1d with in/out channels of 768 and 100 respectively to get an output of [6, 100, 511].
+So, we define a PyTorch conv1D layer as follows,
+thus, convolution_layer = nn.conv1d(768, 100, 2)
+Calling tf.layers.conv1d actually results in a long stream of convolution-related classes/methods being called (ops using ops using ops...).
+layers.conv1d uses layers._Conv (base class for all conv layers).
+_NonAtrousConvoluton will (in the 1D case) use conv1d as its conv_op (to be precise it uses self._conv1d which calls conv1d).
+This is the tf.nn.conv1d which is of course very different from tf.layers.conv1d we called in the beginning.
+As noted, tf.nn.conv1d produces the deprecation warning.
+td; lr you need to reshape you data to have a spatial dimension for Conv1d to make sense:
+In the case of Conv1D, the kernel is passed of over the 'steps' dimension of every example.
+You will see Conv1D used in NLP where steps is number of words in the sentence (padded to some fixed maximum length).
+And we would set the Conv1D example as:
+To input a usual feature table data of shape (nrows, ncols) to Conv1d of Keras, following 2 steps are needed:
+This works well for Conv1d of Keras.
+For Conv1D layer, data_format='channels_first' is not supported even in the most recent release 2.1.6.
+The below example code should hopefully clarify how to use the Conv1D, and the meaning of the dimensions.
+Note that the input of Conv1D should be (B, N, M), where B is the batch size, N is the number of channels (e.g.
+The [nn.Conv1d (hyper-link)] layer takes an input of shape (b, c, w) (where b is the batch size, c the number of channels, and w the input width).
+Conv1d allows to extract features on the input regardless of where it's located in the input data: at the beginning or at the end of your w-width input.
+When using a nn.Linear - in scenarios where you should use a nn.Conv1d - your training would ideally result in having neurons of equal weights, if that makes sense... but you probably won't.
+ValueError: Input 0 of layer conv1d_1 is incompatible with the layer: expected ndim=3, found ndim=4.
+is telling you that you your input is the wrong size to work with a Conv1D layer.
+This is because the Conv1D layer requires a 3 dimensional input.
+Conv1D expects the inputs to have the shape (batch_size, steps, input_dim).
+It should be Conv1D and not Conv1d
+For the completion, here is the documentation of [tf.keras.layers.Conv1D (hyper-link)] that explain what each parameter is for.
+The output size can be calculated as shown in the documentation [nn.Conv1d - Shape (hyper-link)]:
+The default values specified are also the default values of nn.Conv1d, therefore you only need to specify what you also specify to create the convolution.
+1) Conv1d runs a convolution with a kernel of 1 dimension (vector).
+Since your input dimension is (6, 39), then after first Conv1D it has dimension (2, 64), and then after first MaxPooling1D it reduces to (1, 64).
+Thus after second Conv1D with kernel_size=5 and padding='valid' you would get (1-5, 64) dimensions what the error actually trying say to you.
+Instead of Conv1D and Maxpooling1D you may use Conv2D and Maxpooling2D respectively and set 1s at the time dimension.
+You defined an expected input on your Conv1D to be be 2D -> (41, 4)
+But you give to it an input of shape (41,), be consistant in your definitions !
+If you specify the input_shape in your Conv1D layer, you don't need to feed an Input layer to it.
+When you run conv1d on block1 with stride = 2 , input data is halved as conv1d effectively samples only alternate numbers and also you have changed number of channels.
+1) The tf.nn.conv1d default input format is [batch, in_width, in_channels], in your case it's [2,7,1] (for data2)
+I'd like to illustrate how the Conv1D works in two ways as bellow.
+[ (hyper-link)]
+Let's see how we can transfer Conv1D also a Conv2D problem.
+Since Conv1D is usually used in NLP scenarios we can illustrate that in the bellow NLP problem.
+Let's do that using Conv1D(also in TensorFlow):
+From [Conv1D (hyper-link)], the default stride length is 1.
+Well, I found the error: tf.layers.Conv1D != tf.layers.conv1d.
+When using Conv1D as the first layer in a model, provide an input_shape argument (tuple of integers or None, e.g.
+By creating a dataset of 1000 sample using your method i was able to get a pretty good autoencoder model using Conv1d :
+Conv1D takes a 2D input (I don't know why this is the case).
+I'm afraid that you will probably have to stick to other keras layer types, or alternatively reshape your data so that it is (4460, 20, 1), allowing you to pass a conv1D over it.
+It appears that the number of features has changed from the original 3 (of the input) to 32 (for the conv1d).
+Is it correct that the LSTM will now process then entire time steps (~81) on the 32 features of the conv1d instead of the 3 features of the input?
+If you do not want the length to change after the convolution consider specifying padding='same' in the constructor of Conv1d.
+Yes, since Dense layer is applied on the last dimension of its input (see [this answer (hyper-link)]), Dense(units=N) and Conv1D(filters=N, kernel_size=1) (or Dense(units=N) and Conv2D(filters=N, kernel_size=1)) are basically equivalent to each other both in terms of connections and number of trainable parameters.
+You are using Conv1D, but trying, by reshaping, represent your data in 2D - that make a problem.
+A conv1d layer accepts inputs of shape [B, C, L], where B is the batch size, C is the number of channels and L is the width/length of your input.
+Also, your conv1d layer expects 40 input channels:
+Of course the 1s aren't really important for conv1d and can be ignored, so tl;dr 800 x 6 -> 800 x 16 in this case.
+Since we're only sliding on one axis in your example (time), we only need Conv1D.
+You can do one-dimensional convolution using tf.nn.conv1d (you can refer the docs here [https://www.tensorflow.org/api_docs/python/tf/nn/conv1d (hyper-link)]).
+tf.nn.conv1d() takes input in the form of batches, so even if you're feeding a single value, it expects the batch dimension.
+And it supports the output of tf.layers.conv1d.
+Since a [Conv1D layer (hyper-link)] expects input as batch_shape + (steps, input_dim), you need to add a new dimension.
+You will want to use a two channel conv1d as the first convolution later.
+Note that if you don't define any zero padding during conv1d then the output for a size 3 kernel will be reduced by 2, i.e.
+I recommend taking a look at the documentation for nn.Conv1d and nn.MaxPool1d since it provides equations to compute the output shape.
+When Conv1D apply to each sequence, it needs 2 dimensions but found only one.
+In Keras Conv1D reference page [Keras Conv1D (hyper-link)], it's written:"When using this layer as the first layer in a model, provide an input_shape argument (tuple of integers or None, e.g.
+And endeed it works, but if conv1d is inserted in a sequential model the input_shape must be [0,1000,1].
+In the input shape for the Conv1D layer you should not write the number of sequences in your dataset, and you definitely should indicate 2 dimensions of your one-hot encoded DNAs.
+I don't understand why are you using as many layers of conv1d as classes you have?
+As a result the number of parameters for Conv1D (without biases) is : kernel_size * input_depth * number_filters = 3 * 128 * 32 = 12,288.
+Unfortunately, I didn't find any representation to well understand conv1D.
+This [one (hyper-link)], for Conv2D, explains the process which is the same for Conv1D.
+Basically Conv1d is just like Conv2d but instead of "sliding" the rectangle window across the image (say 3x3 for kernel_size=3) you "slide" across the vector (say of length 256) with kernel (say of size 3).
+Below you can see Conv1d sliding across 3 in_channels (x-axis, y-axis, z-axis) across seconds steps.
+I don't understand what in_channels, out_channels mean in pytorch
+  conv1d definition as in images I can easily understand what
+  in-channels/out-channels mean, but for sequence of 80-float values
+  frames I'm at loss.
+nn.Conv1d with a kernel size of 1 and nn.Linear give essentially the same results.
+I assume that you use the Pytorch API, and please read Pytorch's [Conv1d (hyper-link)].
+To be honest, if you take the operator as a matrix product, Conv1d with kernel size=1 does generate the same results as Linear layer.
+However, it should be pointed out the operator used in Conv1d is a 2D [cross-correlation operator (hyper-link)] which measures the similarity of two series.
+With the same input and parameters, nn.Conv1d and nn.Linear are expected to produce same forward results arithmetically, but experiments show that there are different.
+nn.Linear is a bit faster than nn.Conv1d
+If you try to explain why you want a Conv1D, what do you expect from it, then we could think of an alternative.
+Conv1D() is a convolution operation exactly similar to Conv2D() but it applies only to one dimension.
+Conv1D() is generally used on sequences or other 1D data, not as much on images.
+I do not think Conv1D would be of much use.
+Note that convolution is always performed on the spatial dimensions, which for Conv1D the second to last dimension in the shape array.
+I am confused that why it declared the input shape of conv1D after it had in the Input layer
+Conv1 (Conv1D)               (None, 16, 300)           270300
+conv-decode2 (Conv1D)        (None, 8, 300)            135300
+Because anything else, Conv1D cannot process.
+I debugged your issue, and the problem is not with the conv1D that is applied after the Dense layer for the issue you have posted but it is with your last layer.
+Conv1D (when used for time-series) expects data of the shape [batch_size, timesteps, features].
+A Conv2D is mostly a generalized version of Conv1D.
+Timedistributed is not applicable for Conv1D.
+Use mode='valid' to match PyTorch's conv1d:
+To modify the call of PyTorch's conv1d to give the same output as the default behavior of scipy.signal.convolve (i.e.
+to match mode='full') for this example, set padding=2 in the call to conv1d.
+select [valid] will match with torch.conv1d
+To use Conv1d you need your input to have 3 dimensions:
+tf.nn.conv1d just call the tf.nn.conv2d
+This is the description of tf.nn.conv1d:
+Conv1d is a convolution filter of 1 dimension (imagine it like a one dimension array).
+For example, a PyTorch implementation of the convolution operation using [nn.Conv1d (hyper-link)] looks like this:
+The Conv1D expects a 3D input.
+There are two cases where the operations for Conv1D and Dense have the same results:
+For 3D inputs with shape (batch, length, channels), these two are the same:
+
+Conv1D(filters=N, kernel_size =1)
+Dense(units=N)
+For Conv1D with inputs like (batch, length, features) and Dense with inputs like (batch, length * features), these two are the same:   
+
+Conv1D(filters=N, kernel_size=length, padding='valid') 
+Dense(units=N)
+This uses a Conv1D layer to simulate a fully connected layer.
+If you change the padding you will be performing much more multiplications in Conv1D, having a different output.
+About the speed, Dense and Conv1D are different algorithms, although their result will be the same in the two cases above.
+To achieve the same behaviour as a Dense layer using a Conv1d layer, you need to make sure that any output neuron from the Conv1d is connected to every input neuron.
+For an input of size [batch_size, L, K], your Conv1d needs to have a kernel of size L and as many filters as you want outputs neurons.
+The Conv1d layer’s parameters consist of a set of learnable filters.
+The different filters composing your Conv1d now behave the same as the units composing a Dense layer: they are fully connected to your input.
+Regarding speed, I suppose that one of the main reason the Conv1d was faster and took more VRAM was because of your reshape: you were virtually increasing your batch size, improving parallelization at the cost of memory.
+torch.nn.functional.conv1d() is 
+tf.nn.conv1d() and torch.nn.functional.pad() is tf.pad().
+Conv1D layer accepts 3D input.
+For Conv1D, the usual input and output shapes have the format (batch_dim, width, channels), so merging with axis=3 goes out of bounds, this would be the value that you use with Conv2D, which has 4-dimensional inputs and outputs.
+If you see the docs for [tf.keras.layers.Conv1D (hyper-link)], you'll notice that "valid" is the default padding, which means there is no padding.
+Moreover, the input shape that Conv1D expects is (time_steps, feature_size_per_time_step).
+You're formula for the number of weights can't be right because you're using a Conv1D, so the kernel size has only one dimension.
+Defining the input shape x_train.shape[1:] = (45,45) corresponds to 45 filters applied on an array with 45 elements (again because it's a Conv1D).
+You needs to reshape your input data according to Conv1D layer input format - (batch_size, steps, input_dim).
+Problem with the COnv1D line
+Conv1D over sequences expects 3dimension input.
+The out_dim of word embedding layer should match with conv1D input filter size.
+Conv1D expects 3-d data, not 2-d.
+expected ndim=3, found ndim=2), Conv1D takes a 3D array as input.
+However, Conv1D is usually used for processing sequences (like sequence of words in a sentence) or temporal data (like timeseries of weather temperature).
+texts or sentences) directly into an [Embedding (hyper-link)] layer and use Conv1D or LSTM layer(s) after it.
+tf.keras.layers.Conv1D does not support Ragged Tensors instead you can pad the sequences using tf.keras.preprocessing.sequence.pad_sequences and use it as an input to the Conv1D layer.
+One possible way to use conv1d would be to concatenate the embeddings in a tensor of shape e.g.
+This [example (hyper-link)] of Conv1d and Pool1d layers into an RNN resolved my issue.
+So, I need to consider the embedding dimension as the number of in-channels while using nn.Conv1d as follows.
+model.add(tf.keras.layers.Conv1D(8,kernel_size = 3, strides = 1,padding = 'valid', activation = 'relu',input_shape = (14999,7)))
+model.add(tf.keras.layers.Conv1D(8,kernel_size = 3, strides = 1,padding = 'valid', activation = 'relu',input_shape = (7)))
+"I want to know why conv1d works and what it mean by 2d kernel size in 1d convolution"
+TFLite supports Conv1D through wrappring the existing Conv2D op with a Reshape op already.
+Yes, the Conv1D layer will use the PReLu activation function.
+Some special activation functions like elu, LeakyReLU and PReLU are added as separate layers and we can't include them in the Conv1D layers using the activation= argument.
+Regarding the trainable parameters, the conv1d_18 layer has 15050 parameters which form the kernel in 1D convolution.
+So, the outputs ( unactivated ) of the Conv1D layer will pass through the PReLU activation which indeed uses the slope parameter to calculate the activated outputs.
+6 x (Conv1D, Batch, ReLU, MaxPooling)
+1 x (Conv1D, Batch, ReLU)
+You don't need to restructure anything at all to get the output of a Conv1D layer into an LSTM layer.
+These are the shapes used by Conv1D and LSTM:
+Conv1D: (batch, length, channels)
+Please note the Reshape layer which essentially adds a dummy third dimension of size 1 to address the concern from the Conv1D layer.
+Basically, Conv1d expects inputs of shape [batch, channels, features] (where features can be some timesteps and can vary, see example).
+For Conv1d:
+You can take the regular Conv1D layer as the base class.
+You can also simply use many parallel SkipConv1D with different parameters and then concatenate their results.
+TensorFlow's Conv1D doesn't have an "input_shape" attribute.
+Warning: I don't know if they made stft differentiable or not, the Conv1D part will only work if the gradients are defined.
+As given in the keras [doc (hyper-link)], for Conv1D, for example input_shape=(10, 128) for time series sequences of 10 time steps with 128 features per step.
+The other dimensions are free, but:
+
+
+Dense layers will work only on the last dimension, leaving the others untouched: output shape is (30,6,units) 
+Conv1D layers interpret 3D inputs as: (samples, length, input_channels), output shape is (samples, modified_length, filters).
+In case of Conv1D,
+For each conv1D:
+Conv1D requires two-dimensional inputs in the form (batch_size, a, b ) where a and b are non-zero dimensions.
+A Conv1D layer [expects input of the shape (hyper-link)] (batch, steps, channels).
+As I've investigated it's impossible to remove BatchToSpaceND and SpaceToBatchND from tf.layers.conv1d without changing and rebuilding tensorflow source code.
+One of the solutions is to replace layers to tf.nn.conv1d, which is low-level representation of convolutional layers (in fact tf.layers.conv1d is a wrapper around tf.nn.conv1d).
+The problem is that currently the output shape of LSTM layer is (None, 100), however, as the error suggests, Conv1D layer like LSTM layer expects a 3D input of shape (None, n_steps, n_features).
+Alternatively, you can put the Conv1D and MaxPooling1D layers before the LSTM layer (which may be even better than the current architecture, since one usage of Conv1D plus pooling layers is to reduce the dimension of LSTM layer's input and hence reduce the computational complexity):
+You can freeze the layer of the Conv1D layer using trainable=False ([https://keras.io/getting-started/faq/#how-can-i-freeze-keras-layers (hyper-link)]).
+Concatenate the trainable Conv1D and the non-trainable Conv1D using the Concatenate layer ([https://keras.io/layers/merge/ (hyper-link)]).
+First thing as i already mentioned in the comment that you have used layer_sizes instead of layer_size in Conv1D inside the loop
+If you want to use Conv1D you just need to add a channel dimension with size 1, that is X_train.reshape(-1, X.shape[1], 1).
+Conv1D expects a 2D data, for it can apply convolution for first dimension along the second dimension.
+But, Dense layer need 1D, so between Conv1D and Dense you need to add a Flatten layer to transform your data in 1D.
+x = Conv1D(filters=32, kernel_size=5, strides=1, padding="causal", activation="relu",input_shape=[None,series_input])
+Please refer sample code to add tf.nn.conv1d_transpose inside a keras Sequential model
+Therefore, you should be directly able to use Conv1D without any preprocessing.
+You are passing Embedding "layer" as input to Conv1D, in this case you have not provided any input to embedding layer.
+As Conv1D is expecting three dimensions.
+You can disable the bias(use_bias=False) and activation functions(activation=None) when defining the Conv1D operation.
+The thing to note is the error arise from the Conv1D and this is cause this layer expects the input in 3D including the batch_size but we never specify the batch_size while creating the model the parameter input_shape should have a value like this input_shape = (dim1, dim2) but in case we only have 4 features and hence only dim1 and not dim2.
+Conv1D layer expects sequence inputs of shape (sequence_length, num_features).
+Conv1D: (size1, channel_number), Conv2D: (size1, size2, channel_number) , Conv3D: (size1, size2, size3, channel_number)
+However, I am not sure if it useful to combine Conv1D with TimeDistributed, since in that case you apply the convolution only on the features and not on temporal contiguous values, where a 1d Convolution should be applied.
+Remove the Flatten() layer between the Conv1D layers, it is only required before the Dense layer.
+the Conv1DTranspose return a tensor with shape (None, 10, 10, 1), so before the 1D Convolutional layer try to add one Reshape layer to squeeze it back to 3D tensor with the appropriate shape
+As you can see, there are m-k+1 windows in the figure since we have assumed that the padding='valid' and stride=1 (default behavior of [Conv1D (hyper-link)] layer in Keras).
+conv1d_1 (Conv1D) (None, 1377, 32) | 12832 ------> Conv1d is of kernel size=4.
+Looks like problem with Conv1D layer.
+Models primarily used Conv1D and Dense - no RNNs, sparse data/targets, 4/5D inputs, & other configs
+Models only use Conv1D, Dense 'learnable' layers; RNNs avoided per TF-version implem.
+I ended up looking through tutorials for conv2D, and then converting stuff to conv1D (please edit as you feel appropriate)
+Then I converted it to conv1D by taking out a dimension from each of the necessary arguments (the bold 1s)
+We will need either a custom layer that implements a depthwise_conv1d (which Keras doesn't offer), or we create 128 individual conv1D layers with 1 filter (easier).
+[Conv1D (hyper-link)] takes as input a tensor with 3 dimensions (N, C, L) where N is the batchsize, C is the number of channels and L size of the 1D data.
+You should apply stride=2 with padding='same' before adding shortcut and y in any one of Conv1D layer (preferably the last one).
+So ignoring that, your input is of shape (64) to a Conv1D.
+Now, refer to the [Keras Conv1D documentation (hyper-link)], which states that the input should be a 3D tensor (batch_size, steps, input_dim).
+For example, if you are providing Natural Language input to the Conv1D in form of words, then there are 64 words in your sentence and supposing each word is encoded with a vector of length 50, your input should be (64, 50).
+1) Remove the MaxPooling1D layer, add the padding='same' argument to Conv1D layer and add return_sequence=True argument to LSTM so that the LSTM returns the output of each timestep:
+But even if you do the  Conv1D and MaxPooling before the LSTM will squeeze the input.
+Assuming that Conv1D and MaxPooling are relavent for the input data, you can try a seq to seq approach where you give the output of the first N/w to another network to get back 400 outputs.
+Also, Conv1D should have (120,1) input shape instead of (None,1)
+You are using a [nn.Conv1d (hyper-link)] which should receive a 3-dimensional input shaped (batch_size, n_channels, sequence_length).
+So, why Conv1D 1 convolution is maybe performing better?
+Conv1D layer does not support masking at this time.
+The Masking layer expects every downstream layer to support masking, which is not the case of the Conv1D layer.
+An LSTM can be directly compared to a Conv1D and the shapes used are exactly the same, and they mean virtually the same, as long as you're using channels_last.
+That said, the shape (samples, input_length, features_or_channels) is the correct shape for both LSTM and Conv1D.
+This explains the size of the model you are getting right now: Conv1D has 3 parameters (weight (2) and bias (1)), the dense layer has 2 parameters because the output of Conv1D is (?, 2, 1).
+Conv1D/MaxPool1D: The convolution will take the embedding and will convolve them around a filter which in this case is an n X n X 1.
+And then now you have the required 3D format for conv1d (batch, timesteps, channels)
+why is there a for-loop that seems to create the Conv1D layers and the
+  GlobalMaxPooling1D layers, but they don't seem to be added anywhere?
+Simply, Conv1D requires 3 dimensions:
+If your Y has 100 steps, then you need to make sure your Conv1D will output 100 steps.
+Now Keras in TensorFlow appears to implement Conv1D in terms of a Conv2D operator - basically forming an "image" with 1 row, W columns, and then your C "channels".
+"Can I add it before Conv1D"?
+Try both: BatchNormalization before an activation, and after - apply to both Conv1D and LSTM
+You need to add a coma at the end of the first conv1d call: input_shape = (416, 234,)
+BTW, using "dropouts" between conv layers is less efficient than BatchNormalisation to avoid overfitting.
+when checking input: expected conv1d_1_input to have 3 dimensions, but
+  got array with shape (1, 15)
+Looking at your autoencoder.summary(), it is easy to confirm that this is not the case: your input is of shape (64,1), while the output of your last convolutional layer conv1d_7 is (32,1) (we ignore the None in the first dimension, since they refer to the batch size).
+[Conv1D (hyper-link)] needs 3D tensor for its input with shape (batch_size,time_step,feature).
+[According to the docs (hyper-link)], by default Conv1d use valid padding which caused your dimension to reduce from 128 to 119.
+conv1d expects the input's size to be (batch_size, num_channels, length) and there is no way to change that, so you have two possible ways ahead of you, you can either [permute (hyper-link)] the output of embedding or you can use a conv1d instead of you embedding layer(in_channels = num_words, out_channels=word_embedding_size, and kernel_size=1) which is slower than embedding and not a good idea!
+Input to keras.layers.Conv1D should be 3-d with dimensions (nb_of_examples, timesteps, features).
+Technically, Conv1d uses Conv2d as you noticed, according to this API documentation:
+[conv1d api doc (hyper-link)]
+Really, conv1d only needs your input to be rank 3, but it transparently inserts a new dimension of length 1 so it's 2d (Imagine a monitor with resolution 1920x1.
+I chose that specific shape ordering from the conv1d api doc about the data_format parameter having a default of "NWC" or Nth_item Width Channels.
+Conv1D [takes a 3D shape as an input (hyper-link)], but the 1st dimension is the batch size, so you can ignore it for input_shape.
+Take a look at [this excellent answer (hyper-link)] and also [this article (hyper-link)] for a good visual intuition of how Conv1D works on numeric/text input.
+There's nothing like which is best out of Conv1D and Conv2D.
+Generally Conv1D is used on text data and Conv2D is used on image data.
+Considering that you'll be implementing character level CNN, it makes more sense to use Conv1D.
+I just wanted to come back here as I have tried both variants, using Conv2D and Conv1D with TimeDistributed.
+I guess the results really depend on the specific implementation, however I cannot support the statement that Conv1D layers are generally better suited for character level CNNs.
+Here, you didn't name your outputs, so they default to conv1d_4 in the name space.
+in this dummy example, I use a Conv1D with 2D features.
+The Conv1D accepts as input sequences in 3D format (n_samples, time_steps, features).
+As you may see the problem lies in the last Conv1D layer where there is not enough dimension to apply convolution with a valid border mode.
+The reason behind using Conv2D comes from the fact that in case of TensorFlow backend a Conv1D are implemented by a two dimensional convolutions with one dimension squeezed to have a size of 1.
+An alternative to using an Input layer is to simply pass the input_shape to the TimeDistributed wrapper, and not the Conv1D layer:
+Keras expects three-dimensional arrays when working with Conv1D: the expected shape is [batch_size, sequence_length, feature_dimension].
+Conv1D, Conv2D, and Conv3D
+For example in Conv1D a  1D kernel slides across one axis.
+You can see the same thing with Conv1D (pictured above).
+Conv1D outputs (batch, steps, filters).
+Conv1D layer expects input to be in the shape (batch_size, x, filters), in your case (500,400,1).

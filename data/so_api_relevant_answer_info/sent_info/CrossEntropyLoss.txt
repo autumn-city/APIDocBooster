@@ -1,0 +1,45 @@
+Applying the CrossEntropyLoss on LogSoftmax reduces the effective range of the output of the model and it can be argued adversely affects the rate at which the model learns.
+The [nn.CrossEntropyLoss (hyper-link)] module can take additional dimensions (batch_size, nb_classes, d1​, d2​, ..., dK​) as an input.
+nn.CrossEntropyLoss() combines nn.LogSoftmax() (log(softmax(x))) and nn.NLLLoss() in one single class.
+Therefore, the output from the network that is passed into nn.CrossEntropyLoss needs to be the raw output of the network (called logits), not the output of the softmax function.
+It looks like the loss in the call self.log_metrics(epoch, accuracy, loss, data_load_time, step_time) is the criterion itself (CrossEntropyLoss object), not the result of calling it.
+Note: As you haven't mentioned much in your question about what you're trying to do exactly, what type of data you're working with, so it's not obvious but I don't know why you're using ReLU() as your output layer's activation (It's something we almost never do unless you've some special reason) however seeing that you're using CrossEntropyLoss() loss, which indicates you're maybe trying to do multi-class classification, in that case, I would suggest you remove the ReLU() after the last layer, then your model will able to learn different classes using softmax() activation (which is inbuilt within CrossEntropyLoss() loss) so you'll get what you want from the model.
+Please note, [CrossEntropyLoss (hyper-link)] expects input to contain scores for each class.
+So I reproduced your problem and after some search and reading the API of CrossEntropyLoss(), I have found it's because you have a wrong label dimension.
+[Offical docs of CrossEntropyLoss (hyper-link)] here.
+[nn.CrossEntropyLoss (hyper-link)] allows you to provide additional axes, but you have to follow a specific shape layout:
+In your minimal example, you create an object "loss" of the class "CrossEntropyLoss".
+However, in your actual code, you try to create the object "Loss", while passing Pip and the labels to the "CrossEntropyLoss" class constructor.
+The second argument of the CrossEntropyLoss class constructor expects a boolean.
+You can not use the class CrossEntropyLoss directly.
+Looking at [torch.nn.CrossEntropyLoss (hyper-link)] and the underlying [torch.nn.functional.cross_entropy (hyper-link)] you'll see that the loss can handle 2D inputs (that is, 4D input prediction tensor).
+CrossEntropyLoss calculates LogSoftmax internally, so having Sigmoid at the end of the network means you have a Softmax layer right after Sigmoid layer, which is probably not what you want.
+nn.CrossEntropyLoss computes log softmax of the input scores and computes the negative log-likelihood loss.
+The documentation of [nn.CrossEntropyLoss (hyper-link)] says,
+I suggest you stick to the use of CrossEntropyLoss as the loss criterion.
+The [torch.nn.CrossEntropyLoss (hyper-link)] function doesn't take targets as one-hot-encodings!
+CrossEntropyLoss is commonly used for classification task.
+Yes, CrossEntropyLoss applies softmax implicitly.
+Then pass it to nn.CrossEntropyLoss's weight variable
+If you are using [nn.CrossEntropyLoss (hyper-link)] then your prediction should have two channels: one for predicting 0 and another for predicting 1.
+CrossEntropyLoss requires one channel per class.
+CrossEntropyLoss is used for classification problems generally wheread your problem is that of regression.
+[https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html (hyper-link)]
+For CrossEntropyLoss, shape of the Y must be (42, 32), each element must be a Long scalar in the interval [0, 129].
+I thought Tensorflow's CategoricalCrossEntropyLoss was equivalent to PyTorch's CrossEntropyLoss but it seems not.
+torch.nn.CrossEntropyLoss is  a combination of torch.nn.LogSoftmax and torch.nn.NLLLoss():
+[ (hyper-link)]
+tf.keras.losses.CategoricalCrossEntropyLoss is something like:
+[ (hyper-link)]
+If that's correct why not just use torch.nn.CrossEntropyLoss in the first place?
+nn.CrossEntropyLoss() expects target tensors of type Long, but what you're passing is of type Double.
+Double check what CrossEntropyLoss accepts as input and target and adjust (is it unnormalized class scores or probability distribution).
+If you're getting another error from this change then there's another issue with your code, but this is the correct tensor shape for CrossEntropyLoss.
+PyTorch states in its documentation for [CrossEntropyLoss (hyper-link)] that
+Look at the [description of nn.CrossEntropyLoss function (hyper-link)], the prediction out you provide to nn.CrossEntropyLoss are not treated as class probabilities, but rather as logits; The loss function derive the class probabilities from out using [soft max (hyper-link)] therefore nn.CrossEntropyLoss will never output exactly zero loss.
+Look at CrossEntropyLoss and you will see the default is
+reduction='mean'.
+Maybe you should try the torch.nn.CrossEntropyLoss function
+You are not supposed to softmax the model output before you pass it to CrossEntropyLoss.
+It is of shape 1, n_classes, a 2D tensor, but [CrossEntropyLoss (hyper-link)] expects a 1D tensor.
+Why are you using CrossEntropyLoss() for this task?

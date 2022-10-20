@@ -1,0 +1,348 @@
+hi and welcome to a new pie torch
+tutorial today i show you how we can
+implement a recurrent neural net using
+the built-in rnn module
+in the last tutorial we implemented the
+rnn from scratch and i highly recommend
+to watch this one first to understand
+the internal architecture of
+rnns and now today we focus on the
+implementation with pytorch's own module
+so we don't have to implement everything
+by ourselves
+i will show you how to use the rnn
+module and then at the end i also show
+you how easily we can switch our rnn
+model
+and use special kinds of rnn's like lstm
+and gru so let's start and we are going
+to use my tutorial about a simple neural
+net as
+starting point so this is tutorial
+number 13 from my pytorch beginner
+course
+you can find the link to the video and
+also to the code on github in the
+description below
+so as i said this is tutorial number 13
+so i already grabbed this code and
+copied it to my editor
+and in this example we are doing digit
+classification on the mnist data sets
+and i have to say that image
+classification is not the typical
+example for rnns
+but what i want to demonstrate here is
+how we must treat our
+input as a sequence and then set up the
+correct shapes
+and it also shows that our ends can
+indeed be used to get a high accuracy
+on this classification task so
+last time we learned that the special
+thing about
+rns is that we work on sequences of
+vectors here so we treat our input as
+a sequence and there can be different
+types of rns so in this example we use
+this many to one architecture
+so here we have a sequence as a input
+and then only one output at the end
+and this is our class label in this case
+so let's jump to the code and the first
+thing we must change is the hyper
+parameters
+so the mnist data set consists of images
+of size
+28 by 28 pixels and last time we
+squeezed that into one dimension
+so our input size was 28 times 28
+or 784 and this
+time as i said we treat the image as
+a sequence so what we do here now is
+we treat one image dimension as one
+sequence and the other image dimension
+as the
+input or feature size so you can see
+this as that we are looking at
+one row at a time so let's comment this
+out and let's create a new one so let's
+say
+our input size equals and now as i said
+we are looking at one
+row at the time so this is 28
+and then we also create the sequence
+length and this is also 28
+and then we change the hidden size to be
+128 so you can try out different sizes
+here
+and we add another parameter
+and this is the number of layers and
+here i
+set this to two so by default it is one
+and this means that we are stacking in
+this case
+two are n's together and the second rnn
+takes the output from the first rnn as
+an
+input so this can further improve our
+model
+and now we want to implement the
+rnn class so let's change
+the name to rnn and also in this super
+method and then our model down here also
+now is the rnn
+and now let's delete all of this to
+start with a new fresh
+implementation so
+now our rnn has still has the input size
+and the hidden size and the number of
+classes
+as parameters and it also gets the new
+parameter number of layers so
+let's put it in here so let's say the
+number
+of layers here and
+then of course we must also pass it to
+our model when we create it so this is
+our hyper
+hyper parameter and then what we want to
+do here first
+is we simply want to store the number of
+layers and the hidden size so let's say
+self
+num layers equals
+num layers
+and also self dot
+hidden size equals
+hidden size and then
+we create the rnn model and use
+the built-in pi torch rnn module
+so you can find this here on the
+official documentation
+so this is the rnn class that pi
+torch provides for us so we're going to
+use
+this so we create an rnn and say self
+r and n equals and now this is in the
+nn module so nn dot rnn
+and the rnn needs the input size
+it needs the hidden size and it needs
+the
+number of layers in this order and then
+we also use a
+parameter that is called batch first
+and set this to true so this just
+means that we must have the
+batch as a first dimension
+so our input needs to have the shape
+batch size batch size
+and then the sequence length
+and then the input or feature size
+so this is the shape that we need to
+have for
+our input and
+again you can find this in the
+documentation so if you set
+batch first to true then
+here you need this shape so
+now what we want to do is before we pass
+the
+images to our model so last time
+we reshaped it to be this
+size so originally our
+batch or our images have the size the
+batch size then a 1 and then 28
+and then 28 again so this time we only
+want to have
+our batch size and then 28 by
+28 so here we reshape it to be
+this size and then the 28 the first one
+is
+our sequence length and the second one
+is our
+input size so these are both 28
+and the same in our no so this is in our
+training loop and then later in our
+evaluation
+loop we do the same so here we also have
+to reshape it
+to this size so now we have our input in
+the correct
+shape and now we need one more
+layer so as i said we are using this
+many to one architecture so in the end
+we have a classification task
+so this means that we are using a linear
+layer
+and then later the softmax and the cross
+entropy loss
+so let's create one more linear layer
+so let's say self dot fc
+for fully connected equals nn
+dot linear and now here we want to be
+careful
+so for the input size we use the hidden
+size
+and the output size is the number of
+classes and i will explain this
+later again but basically as we can see
+in this image or also in
+this image we only use the
+last time step of our sequence to do the
+classification
+so we only need the last hidden size
+as the input size for the linear layer
+so this is basically the whole init
+function and now of course we also need
+to implement the
+forward pass so our rnn
+if we have a look at the documentation
+then it needs two inputs and the set
+the one is the the first one is the
+input and the second one
+is the initial hidden state
+so we need this in the correct shape and
+so let's create
+an a tensor with just zeros so we say
+h 0 equals and then let's say
+torch dot zeros and then here
+the first one is the number of
+layers the second one is the
+batch size so we get this by saying x
+dot size zero the next dimension
+is the hidden size so we say self dot
+hidden size and then we also want to
+push it to the device if you're using
+one
+so now this is our initial hidden state
+and now we can
+call our rnn model so we say
+out and then a underscore because we
+don't need this
+and then we say self dot
+rnn and this gets x and
+h0 so again let's have a look at the
+documentation
+so it delivers two outputs and the first
+tensor contains the output features
+or the hidden states from all the time
+steps
+and the other one is just the hidden
+state
+for the step n so we don't need this
+in this case so now we have the
+output and the output is of
+size this is batch
+batch size and then we have the
+sequence length and then we have the
+hidden size so this is the new shape of
+our
+output and now what we want to do is we
+want to
+decode the hidden state only of
+the last time step so
+what we have here again let's write this
+in numbers so this is
+n and then 28 and our hidden size is 128
+and now we only want the last
+time step so we want to have our out
+to be in n and then 128
+so we get this by saying out equals
+out and then we use this slicing here
+and take all the samples in
+our batch and then only the last time
+step so we can say
+-1 and then again a colon for
+all the features in the hidden size
+so now we have our out in this size
+and now that's why we need the hidden
+size
+as the input size for our linear layer
+so now we can call that so now we can
+say out
+equal self dot fully connected
+with our out and then we return
+the out so now this is the whole
+implementation that we need
+for our rnn so
+everything else stays the same in our
+training and evaluation loop
+and again what we have to be careful
+here is to
+treat our input as a sequence and then
+when we use the built in rnn that we
+use the correct shape and then we need
+the initial
+hidden state also in the correct shape
+and then
+we have to reshape it before we pass it
+to our fully connected layer
+so let's try it out so let's say python
+main
+dot pi all right so now training is done
+and as you can see we get the
+accuracy of 93 percent
+so our rnn works and you can see that it
+can be
+applied on this classification task
+and now at the end i also want to show
+you
+two more rnn modules so two special
+kinds
+the first one is the gru or
+gated recurrent unit and the second one
+is the lstm or long short term memory
+so both both are also very popular
+rnns and i will not explain the theory
+about them right now i will just show
+you how easily we can
+use them as well with this
+implementation so let's use the
+gru first so we can simply say n
+n dot g r u and let's also call this
+self dot
+g r u and down here self
+dot u and everything else stays exactly
+the same so it takes
+the same input parameters it also needs
+this hidden state and then the output is
+in the same shape
+so now let's run this with the cheer
+you and test this
+alright so now as you can see the gru
+works too so the accuracy was even
+higher here
+and now as last thing let's also
+try the lstm so
+as you might know for the lstm we need
+an
+initial cell state so
+let's use the lstm so let's first call
+this self.ls
+and then here we use nn.lstm
+the input parameters are still the same
+and then here um we need an
+initial tensor for the cell state so
+let's call this
+c0 and this has the same shape
+and then here we call the self.lstm
+and this needs the hidden state and the
+cell state as
+a in as a tuple here so
+now this is all we need to apply the
+lstm
+so let's clear this and run it one more
+time
+all right so this one worked too and you
+can see the accuracy
+is 97 percent so yeah
+so now you know how you can implement a
+rnn in pie tarts using the built-in rnn
+module and you also know how you can use
+the gru
+and the lstm and yeah i hope you enjoyed
+this tutorial if you liked it then
+please consider subscribing to the
+channel and hit the like button
+and see you next time bye

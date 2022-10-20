@@ -1,0 +1,1496 @@
+That can be a pain to write, though; why can't the compiler just do [what you consider to be] the right thing when you use pow(a,6)?
+On a platform with a good math library, pow(a,6) is significantly more accurate than either a*a*a*a*a*a or (a*a*a)*(a*a*a).
+Using pow instead of a multiplication tree reduces the error bound by a factor of 4.
+Note that GCC provides __builtin_powi(x,n) as an alternative to pow( ), which should generate an inline multiplication tree.
+Fortran (designed for scientific computing) has a built-in power operator, and as far as I know Fortran compilers will commonly optimize raising to integer powers in a similar fashion to what you describe.
+C/C++ unfortunately don't have a power operator, only the library function pow().
+This doesn't prevent smart compilers from treating pow specially and computing it in a faster way for special cases, but it seems they do it less commonly ...
+Some years ago I was trying to make it more convenient to calculate integer powers in an optimal way, and came up with the following.
+Clarification for the curious: this does not find the optimal way to compute powers, but since [finding the optimal solution is an NP-complete problem (hyper-link)] and this is only worth doing for small powers anyway (as opposed to using pow), there's no reason to fuss with the detail.
+Then just use it as power<6>(a).
+This makes it easy to type powers (no need to spell out 6 as with parens), and lets you have this kind of optimization without -ffast-math in case you have something precision dependent such as [compensated summation (hyper-link)] (an example where the order of operations is essential).
+For power<6>(a),
+For instance, a compiler may replace it by an internal power function that is both faster and more accurate.
+Library functions like "pow" are usually carefully crafted to yield the minimum possible error (in generic case).
+if optimizing pow(a,6) to a*a*a*a*a*a it may improve performance, but drastically reduce the accuracy for floating point numbers.
+if optimizing a*a*a*a*a*a  to pow(a,6) it may actually reduce the accuracy because "a" was some special value that allows multiplication without error (a power of 2 or some small integer number)
+if optimizing pow(a,6) to (a*a*a)*(a*a*a) or (a*a)*(a*a)*(a*a) there still can be a loss of accuracy compared to pow function.
+In general you know that for arbitrary floating point values "pow" has better accuracy than any function you could eventually write, but in some special cases multiple multiplications may have better accuracy and performance, it is up to the developer choosing what is more appropriate, eventually commenting the code so that noone else would "optimize" that code.
+The only thing that make sense (personal opinion, and apparently a choice in GCC wichout any particular optimization or compiler flag) to optimize should be replacing "pow(a,2)" with "a*a".
+For unsigned integers, it's even easier since they work mod powers of 2 and so can be reordered freely even in the face of overflow.
+Add -lm to your link options, since pow() and floor() are part of the math library:
+For example, man pow and man floor will both tell you:
+You can see that this was compiled without an error, but pow, floor, and printf functions have undefined references, now if I will try to link this to executable:
+To solve that, I need to tell linker where to look for references to pow, and floor, for this purpose I will use linker -l flag with m which comes from libm.so library.
+You can now see, functions pow, floor are linked to GLIBC_2.2.5.
+The error you are seeing: error: ld returned 1 exit status is from the linker ld (part of gcc that combines the object files) because it is unable to find where the function pow is defined.
+You need to link your program with this library so that the calls to functions like pow() are resolved.
+You can get more powers of 2 by using a double as the base type.
+That is, it is not sufficient to decompose the power into smaller powers, each of which is computed minimally, since the addition chains for the smaller powers may be related (to share computations).
+If you need to raise 2 to a power.
+The fastest way to do so is to bit shift by the power.
+If you want to get the value of an integer for 2 raised to the power of something it is always better to use the shift option:
+pow(2,5) can be replaced by 1<<5
+powjii(0, 0) --> 1 which is a [common result (hyper-link)] for this case.
+pow(0,negative), another undefined result, returns INTMAX_MAX
+[code snippet]
+I have implemented algorithm that memorizes all computed powers and then uses them when need.
+power() function to work for Integers Only
+power() function to work for negative exp and float base.
+My case is a little different, I'm trying to create a mask from a power, but I thought I'd share the solution I found anyway.
+Obviously, it only works for powers of 2.
+The function pow operates on two floating-point values, and can raise one to the other.
+To answer the actual question: Some compilers can replace calls to pow with other code, or eliminate it all together, when one or both arguments are known.
+It's simple: pow takes an optional 3rd argument for the modulus.
+pow(x, y[, z])
+Return x to the power y; if z is present, return x to the power y, modulo z (computed more efficiently than pow(x, y) % z).
+The
+  two-argument form pow(x, y) is equivalent to using the power operator:
+  x**y.
+Not only is pow(x, y, z) faster & more efficient than (x ** y) % z it can easily handle large values of y without using arbitrary precision arithmetic, assuming z is a simple machine integer.
+check the docs of [pow (hyper-link)]:
+pow will do the modulo operation in every step while ** will first do the exponentiation in the integers (which may result in a huge number) and take the modulus only at the end.
+For example print(pow(6,8) % 5) or print(6**8 % 5).
+In that case, pow(inv_base, -exp, mod) is returned, where inv_base is an inverse to base modulo mod.
+Starting in python 3.8, the pow function allows you to calculate a modular inverse.
+if mod is present, return base to the power exp, modulo mod (computed more efficiently than pow(base, exp) % mod)
+Unfortunately, it does not seem possible to do with pow.
+I was using the Powder gem and doing "powder restart", which only works for the local site.
+You might need to restart pow as described in the manual: [http://pow.cx/manual.html#section_3.3 (hyper-link)]
+pow(x, y[, z])
+math.pow(x, y)
+math.pow() handles its arguments very differently from the builtin ** or pow().
+Having a look at [the source (hyper-link)], we can see that the arguments to math.pow() are cast directly to doubles:
+The built-in pow() (same as the ** operator) on the other hand behaves very differently, it actually uses the Objects's own implementation of the ** operator, which can be overridden by the end user if need be by replacing a number's __pow__(), __rpow__() or __ipow__(),  method.
+For built-in types, it is instructive to study the difference between the power function implemented for two numeric types, for example, [floats (hyper-link)], [long (hyper-link)] and [complex (hyper-link)].
+essentially, if you are creating a new type for numbers with uncertainty, what you will have to do is provide the __pow__(), __rpow__() and possibly __ipow__() methods for your type.
+In order to override math.pow() you will have to monkey patch it to support your new type:
+Python's standard pow includes a simple hack that makes pow(2, 3, 2) faster than (2 ** 3) % 2 (of course, you'll only notice that with large numbers).
+However, I have no idea why anyone would prefer math.pow over pow.
+math.pow() implicitly converts its arguments to float:
+but the built-in pow does not:
+My goal is to provide an implementation of both the built-in pow() and of math.pow() for numbers with uncertainty
+You can overload pow and ** by defining __pow__ and __rpow__ methods for your class.
+However, you can't overload math.pow (without hacks like math.pow = pow).
+You can make a class usable with math.pow by defining a __float__ conversion, but then you'll lose the uncertainty attached to your numbers.
+Edit: Oh, why didn't you say that you wanted pow(b, e) % m instead of just pow(b, e)?
+Not only is x*x clearer it certainly will be at least as fast as pow(x,2).
+Code robustness - will be easier to change to pow(x, 6), maybe some floating point mechanism for a specific processor is implemented, etc.
+Performance - if there is a smarter and faster way to calculate this (using assembler or some kind of special trick), pow will do it.
+So as long as you're using a decent compiler, write whichever makes more sense to your application, but consider that pow(x, 2) can never be more optimal than the plain multiplication.
+std::pow is more expressive if you mean x², x*x is more expressive if you mean x*x, especially if you are just coding down e.g.
+g++ 4.x, std::pow(x,2) will be inlined, if it is not even a compiler-builtin, and strength-reduced to x*x.
+Also, if your compiler is not stone-old, it will increase your programs size only by what you are using (in the general case), and if your implementation of std::pow just inlines to corresponding x87 instructions, and a modern g++ will strength-reduce x² with x*x, then there is no relevant size-increase.
+A further advantage of cmath over math.h is that with cmath, you get a std::pow overload for each floating point type, whereas with math.h you get pow, powf, etc.
+The easiest way to implement pow is Type pow(Type x; Type y) {return exp(y*log(x));}
+Compared to x*x, the easy way out with pow(x,2) is extremely expensive computationally and loses precision.
+You don't write pow(x,y).
+Fortran (and other languages) are required to 'do the right thing' for all small integer powers, where small is any integer between -12 and 12.
+IMHO, one should never use pow(x,2) in C or C++.
+Programmers who do use pow(x,2) typically get reamed big time during code reviews.
+pow(x, 2) is likely to, but by no means guaranteed, to be optimised to the same.
+If it's not optimised, it's likely using a slow general raise-to-power math routine.
+I would probably choose std::pow(x, 2) because it could make my code refactoring easier.
+Like I said: it seems to me that std::pow(x, 2) more clearly conveys your intentions, but that is a matter of preference, not performance.
+In C++11 there is one case where there is an advantage to using x * x over std::pow(x,2) and that case is where you need to use it in a [constexpr (hyper-link)]:
+As we can see [std::pow (hyper-link)] is not marked constexpr and so it is unusable in a constexpr function.
+Worth noting that currently [gcc considers pow a constexpr (hyper-link)], also covered [here (hyper-link)] but this is a non-conforming extension and should not be relied on and will probably change in later releases of gcc.
+As a partial answer, there are instructions for exp, log or pow on some architectures yes.
+Yes, exp will be faster than pow in general.
+The pow function will generally be implemented as exp(log(a) * b) as you say, so it is obviously slower than exp alone.
+There are many special cases for pow such as negative exponents, integral exponents, exponents equal to 1/2 or 1/3, etc.
+These will slow down pow even further in the general case because these tests are expensive.
+See [this SO question on pow (hyper-link)].
+Regardless of the architecture details, Math.pow has to do more in terms of error checking (for example, what happens if the base is negative?).
+than Math.exp (and as such I'd expect pow to be slower).
+Returns an implementation-dependent approximation to the exponential
+  function of x (e raised to the power of x, where e is the base of the
+  natural logarithms).
+15.8.2.13 pow (x, y)
+Returns an implementation-dependent approximation to the result of
+  raising x to the power y.
+(long)pow(10,2) provides the expected result of 100.
+(long)std::pow(10,2) does not.
+Some difference in the path from 10,2 to 100 taken by pow and std::pow results in slightly different results.
+Up at the top of the file we have using namespace std; this means the compiler is not just considering double pow(double, double) when looking for pow overloads, it can also call std::pow and std::pow is a nifty little template making sure that when called with datatypes other than float and double the right conversions are taking place and everything is the same type.
+with an implied conversion from int to double on the call to pow is, I do not know.
+should be vulnerable because tempa should be exactly what std::pow returns
+So immediately casting the return of std::pow(10, 2) into a long is different from storing and then casting.
+auto tempa is not exactly what std::pow returns or there is something else going on that is too deep for me.
+These are the std::pow overloads:
+Your variables t1, t2 and t3 must be of type double because pow() returns double.
+However, for pow, there are a limited number of results that are exactly representable, such as 102.
+From other answers I understand there are situations when you can expect pow or other floating-point math to be precise.
+When it doesn't work, is because the pow function is included in the math library and the math library isn't linked with your binary by default.
+undefined reference to 'pow' sounds like a linker error.
+You are not linking in the math library, even if you introduce the function pow by including <math.h>.
+pow(3.2, 1) = 3.200000
+undefined reference to `pow'
+because power to any number must have an integer value as power
+pow in your function math is the variable passed as an argument, not a function.
+you are shadowing the built-in function pow with the local variable pow, you can see that you have as your function argument pow
+pow is simply a function nothing special about it.
+So yes, pow can be used in a recursive function.
+In your example, pow(x,n) will be called first (most likely), and the return value will be divided by n. Then, all relevant data is pushed onto the stack (including the answer of the computation we just did), and exponencial(x,n-1) is called.
+You'd use a similar "integer-first" algorithm for pow: pow(x,y)==pow(x, floor(y)) * pow(x, frac(y)).
+This works because pow(double, int) is trivial (divide and conquer).
+Not a surprise since we used 8 as the power.
+(The trick works equally well with power 2, 4 or 16.)
+pow(x, frac(y) is just pow(sqrt(x), 2 * frac(y)) and we have a decent 1/sqrt(x).
+It is ok to use the pow function in this case.
+You are receiving an error because your outer pow functions have three arguments each, when pow only accepts two arguments.
+So this needs to be fixed so that pow has a base and an exponent only.
+I assume you are trying to calculate powers to 3/2.
+I just commented this row in .powconfig:
+Note that this error can also be caused by your browser trying to access a pow .dev page through https (just change it to http).
+Expanding pow in the printer or before the printer has been [discussed (hyper-link)] some time, there is now a [create_expand_pow (hyper-link)] optimization which can help some:
+There are two different versions of pow in KotlinJS.
+The deprecated kotlin.js.math.pow which is defined as:
+and the standard library version kotlin.math.pow which is defined as an extension function.
+CUDA includes its own standard library, described in the programming guide, but you should use either pow or fpow (taken from the C standard library, no C++ or namespaces).
+Are you sure that you are passing either float or double arguments to pow?
+If you need an integer pow function, you will have to roll your own (or do casting, but pow is a rather expensive function and I am certain some cascaded integer multiplication will be faster).
+It will run your app using WEBrick (instead of pow) and you will almost certainly see errors that prevent your app from starting up (as console output).
+Reinstalling POW
+Adding the details to the .powrc file from POW's page
+Adding this path before the content of the .powrc file :
+That said, pow [seems to be documented very well (hyper-link)], so there's probably enough information there to port it to work on WIndows.
+Your pow type, convert it to CV_32FC1 and try again.
+pow() returns a double, i think that's what you've missed
+Without knowing the implementation of pow in your stdlib exactly, you cannot be absolutely sure that
+1.0/k introduces a small inaccuracy and that plus the inaccuracy of pow (unavoidable due to the representation of doubles) may just move the result of pow() past the integer threshold if n is a kth power or very close to one.
+An example using Haskell's (**), which does the same thing as pow() from math.h, but it might have a different implementation:
+where power(a,b) is an integer power function (could be round(pow(a,b)) for example, or exponentiation by repeated squaring).
+By raising r resp r+1 only to the k-1th power, overflow is avoided (except possibly if r is 1, you can deal with that special case easily if necessary by testing k < 64 && n < (1ull << k)).
+Of course the tests for the special cases and the fixup cost time and in almost all cases do nothing above floor(pow(n,1.0/k)), so it may not be worth it.
+There are both float pow(float base, float exponent) and double pow(double base, double exponent) and I'm not certain that C++ will understand which one you want to use unless you specify it.
+Create a symlink in your ~/.pow directory called default, and point it to the app you would like to test in VMWare.
+http://vmnet8.adapter.ip.address will now use that app instead of presenting the default pow screen, as will http://<myhostname>.local.
+This link explains how to execute POW server from other computer; in our case it will be the virtualized Windows image: [http://pow.cx/manual.html#section_2.1.5 (hyper-link)]
+You might give a look at: [Optimized Approximative pow() in C / C++ (hyper-link)]
+You should use pow(langd1,2).
+pow() takes two arguments.
+For more details, see [http://www.tutorialspoint.com/c_standard_library/c_function_pow.htm (hyper-link)]
+The answers you report "without pow function" are correct answers, and your code looks OK to me.
+The pow function operates on (double-precision) floating-point numbers, and is not guaranteed to give exact results even when both its inputs are small integers.
+What is happening to you is that at some point pow is returning a value that is just a tiny bit smaller than an integer, and then you cast it to long int and get a value 1 less than you "should", and after that everything is wrong.
+For instance, if you compute 3^6 mod 17 with your code, then at one point it gets 3^3 mod 17 = 10 (OK so far), then computes pow(10,2) ... and, at least on my machine with my compiler, this comes out to just a little bit less than 100.
+The sweet spots are exact powers of 2.
+The reason is due to pow taking two double values as arguments (and returning a double) and is typically implemented such that pow(x, y) is exp(y log x).
+Note that std::pow has overloads for integral types which can be helpful when working in integer arithmetic.
+In the cout statement, pow(100, 2) is indeed a double-precision value and slightly below 10000 (by a well-known effect of the pow function), but the default accuracy setting of cout causes rounding and output as an integer.
+pow won't automatically compute a [modular multiplicative inverse (hyper-link)] for you.
+Instead, we can compute it ourselves (say via the extended Eulidean algorithm) and then rewrite pow(a,-b,c) as pow((a^-1) mod c, b, c).
+std:pow(double(x), 1.0/3)
+and then some implicit conversions in the use of function pow().
+There isn't a overloaded pow() instance containing int and int as first and second parameter, and int as returning value.
+Now, pages load faster and Pow servers are working again.
+[Issue reported on Pow (hyper-link)]
+Python has a builtin pow function which works slightly differently to the math.pow one.
+POW currently does not support SSL ([https://github.com/37signals/pow/issues/5 (hyper-link)]).
+This will require modifying your hosts file and isn't as 'slick' as POW unfortunately, but on the plus side it avoids pesky environment specific conditionals.
+The latest update is that POW can be configured with SSL using Nginx as outlined by the following guide:
+There is currently a way to use SSL while still using POW by setting up an SSL proxy through nginx.
+Use stunnel to create a tunnel to the pow server.
+I've tested the PowSSL solution (the one using Stud), but it was missing the HTTP_X_FORWARDED_PROTO, which will cause you another set of headaches when your app needs to know if it has been requested through HTTP or HTTPS (well, it will never know it was HTTPS).
+But this later approach was great because it was generating a valid certificate for all the configured POW .dev domains!
+Invoker is a great replacement to Pow since it natively includes HTTPS support.
+You won't have to add another solution on top of Pow to get HTTPS!
+However, in comparison with Pow, I found it had 2 limitations:
+The outer call to pow() is trying to call it with only 1 input parameter, hence the compiler error since pow() takes 2 parameters.
+But, even if it did happen to compile (say, there was a 1-param overload in scope somewhere), then the result of that outer pow() would just be ignored, the result of the [comma operator (hyper-link)] would be assigned to ans instead - if that even compiled, which it won't since you would then have an erroneous closing parenthesis after the 0.5, and a missing semicolon at the end of the statement.
+ans = pow(pow(a, 2) + pow(b, 2), 0.5);
+ans = pow(pow(a, 2) + pow(b, 2), 0.5);
+Once pow is installed, this is what I do:
+Go to the pow dir: cd ~/.pow
+Got this running by first uninstalling Pow: curl get.pow.cx/uninstall.sh | sh
+Then reinstalling: curl get.pow.cx | sh
+Going to the Pow directory: cd ~/.pow
+There is a shell script if you need to switch between running Pow and Apache: [https://gist.github.com/919084 (hyper-link)]
+And another script in ruby that changes Pow's listening port, so you can still run Apache on port 80: [https://gist.github.com/911687 (hyper-link)]
+Also, I would suggest you to install [powder (hyper-link)] gem
+The downside is, you need to have MAMP Pro running to access your Pow apps.
+First, if you have Pow installed (which, in your case, you do), uninstall it with curl get.pow.cx/uninstall.sh | sh.
+Then, you have to add a line to Pow configuration file.
+Do echo 'export POW_DST_PORT=88' >> ~/.powconfig, and then install Pow again with curl get.pow.cx | sh.
+This is a solution derived from the [Running Pow with Apache article (hyper-link)] on 37signals' github wiki, and it works fine on the great MAMP Pro 1.9.X for Snow Leopard as well as the dreadful MAMP Pro 2.0.X on Lion.
+Just to add to the above if you find that your local ip is now forwarding to POW rather than apache, you need to add a blank virtualhost entry to catch all traffic.
+pow(67,1) should not compile as C++03, but as Tony observes in a comment, 1C++11's §26.8/11 makes it valid again in C++11.
+In C or in C++11 the arguments are converted to double and pow performs the exponentiation.
+If the pow result is less than 67 then you get a result like 200.9999999..., if it's exact than you get 201.0, and if it's slightly more then you get something like 201.0000001....
+Tentative explanation: the pow function, being performed in double precision, does not "understand" that a power of 1 means "return the exact number" and returns 66.9999.
+Use [Math.pow(double, double) (hyper-link)], or statically import pow as such:
+Sure, you just need to call Math.pow(...), as it's a static method in the [Math (hyper-link)] class:
+that would be because pow is a static method in the Math(java.lang.Math) class.
+You have to use Math.pow instead.
+You can solve this problem, as others have noted, with importing of Math.pow or explicitly calling it.
+However, seeing as you're always using integers as your powers, Math.pow() is a fairly expensive call compared to straight multiplication.
+pow is a native Python function, which doesn't release the GIL when called, efficiently blocking all executions while it's running and it's running quite a while.
+Note that this computation probably never ends or ends up with "out of memory error":  since it's power between integers with a big power value, so it doesn't overflow like floats would do but computes and computes, creating bigger and bigger integers each time
+You'll notice that the pow call happens at 62 as a single bytecode instruction.
+The GIL can only be handed off between bytecodes, so since pow(363,100000000000000) takes a long time to execute, the other thread doesn't get a chance to run during it.
+where is __builtin_powf defined?
+There no implementation of powf in gcc.
+The __builtin_powf exists so that gcc could detect pow usage and compute the result at compile time if it can.
+Well, the string "__builtin_powf" is ["defined" (hyper-link)] in [gcc/builtins.def#L541 (hyper-link)] (but really [only exists as function argument (hyper-link)])  and builtins seem to be handled at [gcc/builtins.c#L2100 (hyper-link)], but on the end [pow is handled by standard lirbary (hyper-link)].
+When [fold_const_call_sss() in fold-const-call.c#L1393 (hyper-link)] returned success, that means [pow was folded constantly (hyper-link)].
+For integers, the three-argument form of the pow() function now permits the exponent to be negative in the case where the base is relatively prime to the modulus.
+It then computes a modular inverse to the base when the exponent is -1, and a suitable power of that inverse for other negative exponents.
+If your array overflows, you would need to break down power to smaller elements so that it does not over flow.
+there are two types of zero's, +0 and -0. return value of Pow(-0,1) should be -0 not +0
+In your case the built-in function pow() was covered up the [pow() from the math module (hyper-link)].
+You must do a symlink of your app in ~/.pow
+You can also use the gem powify:
+Type 'gem install powify' in term
+Type 'powify' in console and look at powify's help.
+Hint: cd in your app dir the type "powify create myapp" and then go to [http://myapp.dev (hyper-link)]
+floatcopy = floatcopy*pow(10,-exponent);
+23 to the power of minus five gives the result you are getting....
+You are not using correctly the pow function.
+Note, this function will report true for 0, which is not a power of 2.
+We all know that true && true is simply true, and this shows that for our example, 4 is a power of 2.
+[http://graphics.stanford.edu/~seander/bithacks.html (hyper-link)]
+([http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2 (hyper-link)])
+[http://bits.stephan-brumme.com/ (hyper-link)]
+([http://bits.stephan-brumme.com/isPowerOfTwo.html (hyper-link)])
+As [Sean Anderson's page (hyper-link)] explains, the expression ((x & (x - 1)) == 0) incorrectly indicates that 0 is a power of 2.
+Find if the given number is a power of 2.
+A number is a power of 2 if it contains only 1 set bit.
+We can use this property and the generic function countSetBits to find if a number is power of 2 or not.
+We dont need to check explicitly for 0 being a Power of 2, as it returns False for 0 as well.
+If x is a power of two, its lone 1 bit is in position n. This means x – 1 has a 0 in position n. To see why, recall how a binary subtraction works.
+And here's a general algorithm for finding out if a number is a power of another number.
+A power of two, when expressed in binary, will always look like 1 followed by n zeroes where n is greater than or equal to 0.
+What happens when we do a bitwise AND of a number x, which is a
+power of 2, and x - 1?
+Another aspect of numbers that can be proved from the concept explained above is "Can every positive number be represented as the sum of powers of 2?
+Yes, every positive number can be represented as the sum of powers of 2.
+for any power of 2, the following also holds.
+NOTE: fails for n=0 , so need to check for it
+Reason why this works is:
+-n is the 2s complement of n. -n will have every bit to the left of rightmost set bit of n flipped compared to n. For powers of 2 there is only one set bit.
+This program in java returns "true" if number is a power of 2 and returns "false" if its not a power of 2
+My test program counted the # of integers between 0 and 2^31 that were a power of two.
+I will share another simple approach here since we know a power of two number have only one set bit so simply we will count number of set bit this will take O(log N) time.
+This one returns if the number is the power of two up to 64 value ( you can change it inside for loop condition ("6" is for 2^6 is 64);
+The result of the pow operation is 25.0000 plus or minus some bit of rounding error.
+Another possibility is that your compiler recognizes the constants passed to pow and does the calculation itself, substituting the result for the call to pow.
+I'm fairly sure this can be explained by "intermediate rounding" and the fact that pow is not simply looping around j times multiplying by i, but calculating using exp(log(i)*j) as a floating point calculation.
+And of course, in some cases, the compiler may even "know" what pow actually achieves, and replace the calculation with a constant result.
+The implementation of pow you are using is not high quality.
+Floating-point arithmetic is necessarily approximate in many cases, but good implementations take care to ensure that simple cases such as pow(5, 2) return exact results.
+The pow you are using is returning a result that is less than 25 by an amount greater than 0 but less than or equal to 2–49.
+As long as the number is kept in the 80-bit format, it retains the complete value that pow returned.
+What I know it's not possible in current version of MiniZinc to use pow/2 with decision variables.
+I'm not familiar with Pow, but it [looks like (hyper-link)] you could just symlink the output of your Jekyll-generated site into ~/.pow/public.
+Thanks to the [@mipadi answer (hyper-link)], I learned that [Pow automatically serves static files (hyper-link)] in the public directory of your application, so just [configure Jekyll (hyper-link)] to change the directory where Jekyll will write files to from _site (the default) to public.
+[Pow public directory trailing slash issue (hyper-link)]: Going to [http://myjekyllsite.dev/projects (hyper-link)] should automatically redirect to [http://myjekyllsite.dev/projects/ (hyper-link)] but didn't.
+And now symlink your project directory into ~/.pow as you normally would.
+Pow(x,y) is x raised to the yth power (in mathematical terms - xy)!!
+So you're trying to take iith power in a 5003 nested loop.
+Replace with pow(i,2) for your desired behavior.
+But I think you sort of figured that out if you're already using pow anyway.
+There are multiple overloads for pow defined in <cmath>.
+Are you sure that you can handle such a big pow?
+Pow(x,y) is xy.
+[http://www.cplusplus.com/reference/clibrary/cmath/pow/ (hyper-link)]
+double pow (      double base,      double exponent );
+long double pow ( long double base, long double exponent );
+float pow (       float base,       float exponent );
+double pow (      double base,         int exponent );
+long double pow ( long double base,         int exponent );
+pow requires both arguments to be the same.
+You could probably cast the variable before using pow:
+the extension is missing any goniometric,pow,exp,log functions.
+So you can not use 64bit pow nor encode it using [log,exp approach (hyper-link)].
+You still might be able to implement [Power by squaring (hyper-link)] or your own [log,exp functions (hyper-link)] for this.
+However I never used them I just found them while searching the doc for log/exp/pow functions.
+Also implementing pow in GLSL will be a hard work due to lack of breakpoints, stepping/tracing ...
+pow(x, y) is defined (although 8.2 on which the online man page is based does not explicitly say so) as exp2(x*log2(x)) in GLSL.
+It is not stated that pow(1, x) equals 1.
+(test e.g pow(2, 3))
+In your case the C++ compiler is unable to select an appropriate overloaded function pow.
+C++98 provides the following overloaded versions of pow:
+pow and root are essentially the same operation, expressed differently (similar to binary + and -).
+I.e., sqrt(a) is the same as pow(a, 0.5), just like a + b is the same as a - (-b).
+See for example the section for the power operator in [Python (hyper-link)] (section 5.4)
+pow and root mathematically have the same precedence, as you can see [here (hyper-link)]:
+The reason is that you made args to root reversed compared to pow which we tend to view as a "natural" order - left arg is subject to action by the right arg and yuour root is really just the pow to 1/y.
+So, you may need to experiment a bit with more complex expressions like A root B root C pow D root G etc.
+and OTOH it would seem much better if you kept args for root in the same order as pow.
+See this question for more details on how it could be implemented on x86: [How to: pow(real, real) in x86 (hyper-link)]
+Here is a short description of the method used to compute pow(x,y):
+However, if you're not looking for specifics and just want to browse the code of a freely available implementation See [http://www.netlib.org/fdlibm/ (hyper-link)], specifically [http://www.netlib.org/fdlibm/w_pow.c (hyper-link)]
+It's not a very good idea to use pow for integer math.
+But calculate and return 10-to-the-k-power, instead of k).
+The problem with pow is that it works with floating-point values, and gives results that are very close but not exact.
+You can work around that by adding 0.5 before casting... but there's no point, since multiplying in your loop is faster than calling pow anyway.
+pow(10,2) produces a slightly inaccurate result; if it's slightly high, you'll get 100 and if it is slightly low you'll get 99.
+The first line handles negative exponents, by computing the reciprocal, and reversing the sign of n.  not that it pulls x^1 out of the pow() function by subtracting one,
+Mathematically, pow(-1, 1.2) is simply not defined.
+There are no powers with fractional exponents of negative numbers, and I hope there is no library that will simply return some arbitray value for such an expression.
+Given this, what result would you expect now for pow(-1, 1.2)?
+If you want to raise negative numbers to powers -- especially fractional powers -- use the cpow() method.
+It seems like you're looking for pow(abs(x), y).
+Sounds like you want to perform a complex power (cpow()) and then take the magnitude (abs()) of that after.
+pow(a,b) is often thought of, defined as, and implemented as exp(log(a)*b) where log(a) is natural logarithm of a. log(a) is not defined for a<=0 in real numbers.
+Maybe for your domain pow(-a,b) should always be -pow(a,b)?
+Like duskwuff suggested, a much more robust and "mathematical" solution is to use complex functions log and exp, but it's much more "complex" (excuse my pun) than it seems on the surface (even though there's cpow function).
+And it'll be much slower if you have to compute a lot of pow()s.
+Now there's an important catch with complex numbers that may or may not be relevant to your problem domain: when done right, the result of pow(a,b) is not one, but often a few complex numbers, but in the cases you care about, one of them will be complex number with nearly-zero imaginary part (it'll be non-zero due to roundoff errors) which you can simply ignore and/or not compute in your code.
+To demonstrate it, consider what pow(-1,.5) is.
+Generally, pow(-1, 1/N) has exactly N solutions, although you're interested in only one of them.
+If the imaginary part of all results of pow(a,b) is significant, it means you are passing wrong values.
+The extreme "wrong values" would be pow(-1,0.5) which would return 0 + 1i (0 in real part, 1 in imaginary part).
+In any reasonable single-return-result implementation of cpow() , cpow(-1,0.3333) will probably return something like -1+0.000001i and ignore two other values with significant imaginary parts.
+Use %f for double numbers: printf("pi(%f) =",  pow(7,t));
+Pow (specifically) cannot be installed on anything except a Mac at this time.
+There is a [Linux fork of Pow (hyper-link)] that looks interesting.
+I haven't tried it for myself yet but I'm hoping that it will get pushed upstream into the [main Pow code (hyper-link)].
+Heavily inspired by pow, BAM!
+As the [reference (hyper-link)] says, the prototype of the pow method is:
+To get the value of b for which pow(2.0,b) == num, you should use [logarithms (hyper-link)] (which is related to the inverse of pow) to obtain:
+You're actually passing its value(which contains garbage) as a parameter, and storing the undefined result of pow() in num, overwriting whatever was that you read in there.
+You cannot bind two servers on Port 80 (default of XAMPP apache & default of pow).
+I've updated your code listing, and am able to get the same results using both of your proposed power calculation methods.
+For the inner loop, you need not calculate the power in each iteration if you consider that on the previous iteration you already calculated pow(x,k-1) and that pow(x,k) == pow(x,k-1)*x:
+The second use of pow in your code cannot be easily replaced, because of the floating point exponent.
+You would have to rewrite pow to get the same result.
+Use decimal for both parameters of pow function.
+Maybe the second argument of pow that you are providing is treated as Int instead of Decimal.
+You can use pow(Decimal, Int) like this:
+Or else, you can use pow(Double, Double) like this:
+But, if you only calculate an integer value's power to 2 or 3, both pow(Decimal, Int) and pow(Double, Double) are far from efficient.
+and use them instead of pow(..., 2) or pow(..., 3):
+If level is an Int you could cast it to Float and Use powf() instead of pow() :
+Your pow result almost never will be precise.
+The pow function operates on doubles.
+Although IEEE754 (ubiquitous on desktop systems) is required to return the best possible floating point value for certain operators such as addition, multiplication, division, and subtraction, and certain functions such as sqrt, this does not apply to pow.
+pow(x, y) can and often is implemented as exp(y * ln (x)).
+Hopefully you can see that this can cause result to "go off" spectacularly when pow is used with seemingly trivial integral arguments and the result truncated to int.
+There are C implementations out there that have more accurate implementations of pow than the one you have, particularly for integral arguments.
+Borrowing an implementation of pow from a respected mathematics library is also an option, else roll your own.
+Others have mentioned that pow does not yield exact results, and if you convert the result to an integer there's a high risk of loss of precision.
+The most convenient solution is to write your own integer variant of pow.
+pow works fine.
+OP [later added (hyper-link)] that the reference pow() function was long long int pow(long long int a, long long int b).
+pow_ll_version(2,63) would be expected to result in 9223372036854775808, which is 1 passed many LLONG_MAX - certainly undefined behavior.
+Because there's no way to represent all integer powers in an int anyways:
+The same is true for exp and double pow, I don't see anyone complaining."
+Let's leave aside exp, because that's beside the point (though it would actually make my case stronger), and focus on double pow(double x, double y).
+I'm actually going to focus only on a small portion of the input pairs for which pow makes sense, because that will be sufficient to prove my point: if x is positive and |y| <= 1, then pow does not overflow or underflow.
+Obviously, there are a lot of other input pairs for which pow produces useful results, but we've ascertained that it's at least one-quarter of all inputs.
+non-bignum) integer power function.
+So it was actually faster to cast to double, call pow with doubles, then test for overflow and cast back, than to implement it using integer arithmetic.
+(for one thing, logarithms reduce powers to multiplication, but logarithms of integers lose a lot of accuracy for most inputs)
+As of C++11, special cases were added to the suite of power functions (and others).
+First, there was already a perfectly good way of doing integer powers (with doubles and then simply converting back to an integer, checking for integer overflow and underflow before converting).
+BCPL, on which C was based, also had no use for powers (it didn't have floating point at all, from memory).
+As an aside, an integral power operator would probably have been a binary operator rather than a library call.
+Third, since the implementation of integral power is relatively trivial, it's almost certain that the developers of the language would better use their time providing more useful stuff (see below comments on opportunity cost).
+In other words, would you rather have a integral power operator (which, honestly, any half-decent coder could whip up in ten minutes) or multi-threading added to the standard?
+C++98 has functions like double pow(double, int), but these have been removed in C++11 with the argument that C99 didn't include them.
+Let's count the ways the hypthetical int pow_int(int, int) function could fail.
+Result undefined pow_int(0,0)
+Result can't be represented pow_int(2,-1)
+A specialisation of pow(x, n) to where n is a natural number is often useful for time performance.
+But the standard library's generic pow() still works pretty (surprisingly!)
+pow(x, n) can be made much faster in many cases by specialising n to a natural number.
+(I left x and the return value as doubles because the result of pow(double x, unsigned n) will fit in a double about as often as pow(double, double) will.)
+(Yes, pown is recursive, but breaking the stack is absolutely impossible since the maximum stack size will roughly equal log_2(n) and n is an integer.
+As for performance, you'll be surprised by what a garden variety pow(double, double) is capable of.
+In this scenario, pown_l won.
+glibc pow() took 12.0 user seconds, pown took 7.4 user seconds, and pown_l took only 6.5 user seconds.
+This time, quite unexpectedly, glibc pow won, and by a landslide!
+My pown took 9.6 seconds, and pown_l took 12.2 seconds.
+This time, pown won at 9.6s.
+pown_l took 12.2s and glibc pow took 16.3s.
+glibc pow performs better than the three when x is low, but worst when x is high.
+When x is high, pown_l performs best when n is low, and pown performs best when x is high.
+So, ultimately, which to use most likely depends on how you're planning on using pow, but using the right version is worth it, and having all of the versions is nice.
+As long as x_expected and n_expected are constants decided at compile time, along with possibly some other caveats, an optimising compiler worth its salt will automatically remove the entire pown_auto function call and replace it with the appropriate choice of the three algorithms.
+On the other hand, glibc pow does work and glibc is big enough already.
+Bonus round: A specialisation of pow(x, n) to all integers is instrumental if an exact integer output is required, which does happen.
+The pown functions, that takes a floating point number and an intmax_t exponent.
+The powr functions, that takes two floating points numbers (x and y) and compute x to the power y with the formula exp(y*log(x)).
+Since C++11 there is a templated implementation of pow(int, int) --- and even more general cases, see (7) in 
+[http://en.cppreference.com/w/cpp/numeric/math/pow (hyper-link)]
+Here's a really simple [O(log(n)) (hyper-link)] implementation of pow() that works for any numeric types, including integers:
+I ended up restarting the POW server, and it resolved the issue
+Seems like something is wrong with Pow.
+The latter value is just barely closer to the mathematically exact result, so the pow function has returned the best possible (or "correctly rounded") answer.
+In this case, this number is somewhat closer to 3.0 than it is to any other representable double, so again pow has returned the best possible result.
+So in these cases, the pow function is giving you the most accurate possible results to the computations you have prompted it with.
+Now, that said, there is no guarantee that pow does so for all possible inputs (and indeed, in general it doesn't).
+In general, you should not depend on last-bit rounding of the pow function, or of any function that is not explicitly defined to produce correctly-rounded results.
+You might consider using the cbrt function, which also does not guarantee correct rounding, but at least is computing the cube root and not the 0.3333333333333333148296...th power.
+Casting to integer truncates the fraction, possibly pow returned something like 120.99999998 or so...
+Don't cast to (int) and use %g format instead of %d to print double result of pow().
+As the power is constant why have the overhead.
+Wondering if theres a way to use pow with numbers that have negetive bases and non integer exponents.
+C 2018 7.12.7.4 specifies powf, pow, and powl:
+The pow functions compute x raised to the power y.
+This means you cannot expect to get a result unless the pow you are using specifically provides support for additional cases beyond what the C standard requires, even if .2 is exactly represented in double.
+This could be a NaN, a valid mathematical result, such as −2 for pow(-32, .2) if decimal-based floating-point is used, or something else.
+For the source code pow(-12.4112021858, .2), the numerals are first converted to double, and then pow is called with arguments -12.41120218580000056363132898695766925811767578125 and
+0.200000000000000011102230246251565404236316680908203125.
+If your C implementation used a decimal-based floating-point, .2 would be representable, and it would be reasonable for pow(-12.4112021858, .2) to return the fifth root of x, as the fifth root is a negative real number.
+(This would be an extension to the standard specification of pow, as described above.)
+If you know y is supposed to be one-fifth or a rational number p/q where q is odd, you can calculate the desired result as pow(fabs(x), y) if p is even and copysign(pow(fabs(x), y), x) if p is odd.
+One of the comments suggesting using cpow, but that will not produce the result you want.
+cpow(-12.4112021858, .2) will return approximately 1.3388 + .9727 i.
+(The complex power “function” is multi-valued, but cpow is defined to produce that result.)
+The problem is that the pow is using ln operation which is on complex domain multi-valued which means it has infinite number of valid result (as imaginary part of result is added with k*2*PI where k is any integer).
+When I rewrite my [complex math (hyper-link)] cpow to use this I got this C++ code:
+Which returns real part of complex domain pow and also select the correct multi-valued cln sub-result.
+Now if we have exponents in form a^(b0+1/b1) where b0,b1 are integers and a<0 we need to dissect the pow to 2 parts:
+POW means that you cannot just spin up a million lightweight nodes to get a higher quorum for yourself.
+You have to come up with a proportionate amount of computing power.
+This is a generic answer that doesn't take advantage of any specifics of how you might actually vectorize pow().
+Notice that imag_result is the last arg, so even in the Windows x64 ABI, this function can still forward its args in the same registers to pow_nonegative(base, exp);.
+Well, if you do some arithmetic with negative numbers, you can use the principal branch of log() function, that introduces an imaginary +i*b*pi number to the result, which translates then in a exp(+i*b*pi) factor..... that maps to real only in the cases your exponent b is an exact integer number..... this is not the general case you have, as the function pow(3) is declared for double type.... you can solve this issue, writing a wrapper function that checks for negative first parameter, and gives a negative also only in case the second parameter is an odd integer number.
+The implementation details are hidden as an exercise for you to complete... is quite easy to implement a double generalized_pow(double b, double e); that does this checking and gives the appropiate result.
+But if the exponent b parameter is going to be integer... then you have better to implement the [fast power algorithm (hyper-link)], that will give you the answer probably faster than going through the exp(3) and log(3) functions.
+If you call pow(2, 10), you may get 1023.999375, for example (which is then, depending on the context, may be truncated down to 1023).
+So, instead of using the floating-point pow() function from the standard library, you can go with your own, exact implementation for integers:
+Otherwise the problem you have is because pow returns a double or float while you compare it to an integer.
+I would suggest you implement your own integer power operation so that you avoid any rounding error.
+You need to include <math.h> to get the proper prototype of pow().
+Once you include <math.h> you will get compiler warning for using correct pow(..) prototype.
+You should include the C header which contains the declaration of the pow function.
+(First note that for an IEEE754 double precision floating point type, all integers up to the 53rd power of 2 can be represented exactly.
+Blaming floating point precision for integral pow inaccuracies is normally incorrect).
+pow(x, y) is normally implemented in C as exp(y * log(x)).
+Although a do-it-yourself solution using a for loop is tempting, there are effective optimisations that can be done for integral powers that such a solution might not exploit.
+Yes, but you might need to restart pow to force it to refresh the code.
+touch ~/.pow/restart.txt
+Install the powder gem.
+That allows you to run powder restart on your app directory.
+math.pow() always returns a floating-point number, so you are limited by the precision of float (almost always an IEEE 754 double precision number).
+The built-in pow() on the other hand will use Python's arbitrary precision integer arithmetic when called with integer arguments.
+[http://mines.mouldwarp.com/2012/04/pow-guard-and-rdebug-staying-in-web-app.html (hyper-link)]
+Restart Pow and visit yourapp.dev
+Additionally the exporting of the environment variable go in .powenv or .powrc.
+If you are using Pow, add the following to .powenv:
+Once you go to your pow site, the byebug server should be started.
+There are some issues with using pow and rbenv as chronicled here: [rbenv does not work well with pow (hyper-link)]
+The problem seems to center on some PATH issues with the powconfig file, hence the reason pow is trying to use your default ruby install (assuming 1.9.x) vs. what you designated via rbenv.
+If you are using OSX mavericks, add the following to your ~/.powconfig file, restart pow once the change is made, and you should be good to go.
+there is no overload of pow for integral types so the compiler will try to find the closest match amongst all the available overloads :
+pow(double, double)
+pow(float, float)
+you are using pow .in javascript its Math.pow()
+replace your code to this
+In the case at hand, the else term is equivalent to (pow x (y-1) x) * x, not pow x (y-1) (x*x).
+because power operator has higher precedence.
+Anything to the power of 0 will result to 1.
+For this rule to hold true all number elevated to the power of zero is 1.
+You should just pass by value to a pow anyway.
+Usually a basic exercise is to write addition, multiplication, and power predictates with the Peano number representation.
+You need to use the [multiprecision version of pow (hyper-link)] (search for pow on that page), and then use a random number generator that supports generic operations, such as [Boost.Random (hyper-link)] (or the [C++11 standard random library (hyper-link)] that was heavily based on Boost.Random):
+The second argument is the exponent (power) to raise the first argument to.
+it would simply be A = pow((1+R)/T , T) * P;
+Use man pow to see the usage
+depending on whether the power should include the multiplication by P or not.
+The C++ function std::pow can be used as follows: if you write
+With this grouping, you're only passing one argument to pow, which is why the compiler says no overloaded function takes 1 arguments.
+pow() is function designed for floating point numbers(not for long long).
+C provides just the double pow(double, double) overload (recall that C doesn't allow function overloading anyway).
+Hence, double pow(double, int) is an extension rather than a standard function.
+Hence, there should be a double pow(double, int) overload.
+However, this overload must (as he says in his answer) cast the int to a double and call double pow(double, double).
+So the implementation actually has to cast that integer argument into a double and I don't think there is a possibility for a conforming library to provide a faster std::pow for integer powers, apart from maybe checking the double argument for integrality (is that a word?)
+In order to provide a platform-independent faster way, the only thing that comes to my mind would be to write a custom wrapper that delegates to this non-standard power if it is present.
+Other than that I don't know how you could infuse that behaviour into std::pow again without writing your own implementation.
+EDIT: Yet when looking at [this answer (hyper-link)] it is indeed possible for an implementation to still provide an optimized overload for integer powers as long as it behaves exactly like std::pow(double(x), double(y)).
+pow does not round to 6 digits.
+Your call pow(10.0,log10(n)-log10(5.0)) has returned a result which is very slightly less than 2 (as show by the floor), but close enough that it rounds to 2 at 9 places.
+While this seems like interesting error in POW() function, you maybe can get around by encapsulating into another subquery:
+You may be exposing a bug in POW() by passing it an absurdly large, or non-numeric first argument.
+Does your .powrc look like the following?
+I corrected the error, deleted the symlink in ~/.pow and created it again, and all went back to normal.
+(if not, maybe you should update your question with the content of your .powrc file)
+Create an file called .powrc in your projects root directory.
+It worked for a hardcoded value because the compiler optimized the pow call away.
+[http://www.cplusplus.com/reference/clibrary/cmath/pow/ (hyper-link)]
+The code for pow is part of the math library.
+The reason is that GCC (and some other compilers) have a built-in pow() function for literal constants.
+So if you call pow() with 2.0 manually, the compiler will actually figure-out what the answer is and substitute that for you.
+There is powf specifically for floats, but you appear to be using doubles anyway which renders your current implementation correct.
+There is some documentation [here (hyper-link)] of both pow and powf
+I had originally set the POW_EXT_DOMAINS variable by simply typing export POW_EXT_DOMAINS=no-ip.org in terminal.
+Instead, you should create a pow config file at ~/.powconfig and put the command into that file:
+Then restart pow by manually killing the process in activity monitor.
+Pow then properly runs the myapp symlink when I access [http://myapp.no-ip.org (hyper-link)]
+and the 'negative power' case applies.
+I manage to install the gem powder, who allow me to stop and start pow.
+[https://github.com/Rodreegez/powder (hyper-link)]
+I had a similar problem recently, and although I was never successful accessing my pow url from the windows machine I followed the instructions here and was able to connect to the local app from  parallels:
+The pow(int, int) overload is no longer available.
+Also, to calculate basepower you just write
+The pow() function returns either a double or a float, so the first step would be to change answer to one of those.
+pow returns a double, whereas %d specifies an int.
+The reason it works when you assign the result of pow to c (which I assume is an int since it works with %d) is because in that case your compiler knows to implicitly cast the result, but doesn't when the only indication of the type of a variable is in a format string.
+Solution: either change %d to %f or explicitly cast the result of pow to int.
+You should add if(y<0) return 1.0/xpow(x, -y); to get rid of those.
+So if you wanna too have good function/method pow(BigDecimal x, BigDecimal y) you must download this class: [BigFunctions.java (hyper-link)] (I get this code from this book: [Java Number Cruncher: The Java ... (hyper-link)]) there is good method ln, and exp - we need them to our pow.
+I found one problem - when we enhances big value then his precision isn't good, so below you have final version of pow method.
+COMPLETE POW METHOD:
+You may also need to restart your Pow server using touch tmp/restart.txt.
+Pow 0.5.0
+You might get away with less code using float instead of double and powf():
+Your problem is somewhat simpler than writing a generalized pow() function, since
+the exponent is fixed.
+You may also be able to relax the precision requirement
+a bit from a full-featured pow().
+You can use [this rule on fractional exponents (hyper-link)] to break it into an integer root and integer power function applied one after the other.
+I have no idea what the original reason for introducing the pow definitions in this code were (especially since they are guarded by implementation macros), but in conformant standard C++ the definition
+The C++ standard library already offers an overload with signature pow(double, int) or potentially a template pow accepting these arguments and in the former case, the definition in user code will be an invalid redefinition if this overload/template is placed into the global namespace (including math.h always does that, including <cmath> may do that).
+You may also want to try compiling against -std=c++11 or -std=gnu++11, because since C++11 implementations are allowed to implement the pow overloads as template functions, in which case no redefinition error would occur.
+Don't use pow(2,i).
+It would appear that the shell script you are downloading with curl get.pow.cx is trying to remove a directory/link named Current, but lacks sufficient privileges or the directory/link does not exist.
+If pow is imprecise and too low, then truncation will exacerbate it.
+lround(pow(10,2)) might be more appropriate.
+It is this way because the [javadoc (hyper-link)] for Math.pow specifies it to be so.
+public static double pow​(double a, double b)
+Returns the value of the first argument raised to the power of the second argument.
+"[Clause 9] is new; it recommends fifty operations, including log, power, and trigonometric functions, that language standards should define.
+However, the Java designers had designed and implemented Java's Math.pow function at least 10 years earlier, and they had chosen to implement the NaN behavior as per their thinking.
+The Java designers therefore took the route that was minimally disruptive for existing Java developers, and decided not to change the pow semantics to match the 2008 standard.
+pow function returns a double which has precision issues  and when you will cast it to long then you are most certain to get the precision issue.
+As far as I know if you dont use a library then it is not possible to get the accurate result using the pow function alone.
+You can also look at [Exponentiation by squaring (hyper-link)] and also look at the barak manos [answer (hyper-link)] where you can try to implement your own pow function as
+pow is by definition inaccurate.
+If you want complete precision you either need to use an external library or make your own version of pow.
+Because pow() always return double type.
+You using integral division pow(mean,1/n); the result of 1/n  is zero if n > 1.
+Therefore, you could take that algorithm, and replace b with the constant 0.5, and now you have a sqrt() that is at least as fast as that pow().
+Please note that that pow() function is an approximation and has (relatively) large error, and therefore is not nearly as accurate as say, most library sqrt functions.
+With regard to C standard library sqrt and pow, the answer is no.
+First, if pow(x, .5f) were faster than an implementation of sqrt(x), the engineer assigned to maintain sqrt would replace the implementation with pow(x, .5f).
+The code you linked/question you asked is about attempting a crude approximation of sqrt using a crudely approximated pow.
+I converted the final version of the pow approximation routine referred to in the question to C and measured the run time of it when computing pow(3, .5).
+I also measured the run-time of the system (Mac OS X 10.8) pow and sqrt and of [the sqrt approximation here (hyper-link)] (with one iteration and multiplying by the argument at the end to get the square root, rather than its inverse).
+First, the computed results: The pow approximation returns 1.72101.
+The correct value, returned by the system pow and sqrt, is 1.73205.
+Running in 64-bit mode on a MacPro4,1, the pow approximation takes about 6 cycles, the system pow takes 29 cycles, the square root approximation takes 10 cycles, and the system sqrt takes 29 cycles.
+Pow() elapsed time was 18413.000000 milliseconds
+A solution with less complexity taken from [http://www.geeksforgeeks.org/write-a-c-program-to-calculate-powxn/ (hyper-link)]
+The operation pow(10, opponent_rating / 400); does not equal to 177827.941004.
+You should divide with a double to get a double result opponent_rating / 400.0 that is used in the [pow (hyper-link)] function.
+If [freely available C version of pow (hyper-link)] is any indication, it does not look like anything you would expect.
+It was written around the .NET 2.0 time frame, I've found the low-level implementations, like Math.Pow() to be still largely accurate for later versions of the CLR.
+The section that's relevant to Math.Pow() looks like this:
+It basically checks for corner cases, then calls the CRT's version of pow().
+Which is not the case for Pow(), there is no FPU instruction for it.
+You'll hit the wall on pow() though, Microsoft purchased that code from Intel.
+But not a true substitute because it accumulates error from 3 floating point operations and doesn't deal with the weirdo domain problems that Pow() has.
+Like 0^0 and -Infinity raised to any power.
+pow uses double  for its output, which has approximately 16 decimal digits of accuracy.
+std::pow works on doubles.
+[std::pow (hyper-link)] will return double for the integral case and this [answer here (hyper-link)] explains the first integral where double can not longer exactly represent every integral starts at 9007199254740993 after this we may have integers that can not be exactly repsented exactly as a double.
+Rather then using pow you could try a few replacements
+knowing that st.x goes from 0 to 1 it should be clear that pow(st.x, 1) will give you a straight line and pow(st.x, 2.0) will give you a curved line.
+[bcpow() (hyper-link)] is a function of the [BCMath Arbitrary Precision Mathematics (hyper-link)] library.
+
+On the other hand, [pow() (hyper-link)] is limited to [floats (hyper-link)], which have a limited size (quoting) :
+
+Generally, you'll work with pow() and other float-based functions (which are probably faster, and are always enabled) ; but, if you need to handle very big number, you'll have to work with bcpow().
+pow() is limited to the maximum supported numeric representation on the system it runs on.
+bcpow is used for arbitrary precision values.
+Raising a negative number to a non-integral power typically results in a number hat isn't expressible as a single float.
+In this specific case (-32 ** 0.2) it just so happens that the answer is -2 (-2 ** 5 is -32), but in the general case you would need to have a pow function that returns a complex number.
+We have pow(x,y) where x < 0 and y isn't integer.
+pow(x,y) = pow(x,n) * pow(x,f)
+pow(x, f) (x<0) is real if y is a rational number a/b (written on smallest form, where a and b have no common prime divisors) with an odd denominator (that is, if b is odd).
+pow(-x,y) if a is even and 
+-pow(-x,y) if a is odd
+You have not implemented "x to the power of y", you have implemented "x multiplied by x, when y > 0" instead.
+In the future, you may or may not also need to handle negative powers (b < 0), so think about that.
+x*x or x*x*x will be faster than pow, since pow must deal with the general case, whereas x*x is specific.
+(If you use Visual C++, std::pow(float,int) performs the optimization I allude to, whereby the sequence of operations is related to the bit pattern of the exponent.
+[edit] BTW pow has a (un)surprising tendency to crop up on the profiler results.
+(The alternative is to call pow and have the profiler tell you it's (unsurprisingly) wasting time -- you're cutting out this step by doing it intelligently.)
+With GCC 10 -O2 -ffast-math, std::pow is as fast as x*x*x... for odd exponents
+With GCC 10 -O3 -ffast-math, std::pow is as fast as x*x*x... for all test cases, and is around twice as fast as -O2.
+With GCC 10, C's pow(double, double) is always much slower
+With Clang 12, pow(double, double) is as fast as std::pow for integral exponents
+I tested the performance difference between x*x*... vs pow(x,i) for small i using this code:
+Note that I accumulate the result of every pow calculation to make sure the compiler doesn't optimize it away.
+If I use the std::pow(double, double) version, and loops = 1000000l, I get:
+So in C, yes x*x*x will be faster than pow(x, 3), because there is no pow(double, int) overload.
+Even if a using namespace std directive was issued, if the second parameter to pow is an int, then the std::pow(double, int) overload from <cmath> will be called instead of ::pow(double, double) from <math.h>.
+However, I was worried that the test code he showed would still allow the compiler to optimise away the std::pow() call, since the same values were used in the call every time, which would allow the compiler to store the results and re-use it in the loop - this would explain the almost identical run-times for all cases.
+Here's the code I used (test_pow.cpp):
+Basically, the difference is the argument to std::pow() is the loop counter.
+So it looks like the compiler does at least try to optimise the std::pow(x,2) case, but not the std::pow(x,3) case (it takes ~40 times longer than the std::pow(x,2) case).
+In all cases, manual expansion performed better - but particularly for the power 3 case (60 times quicker).
+This is definitely worth bearing in mind if running std::pow() with integer powers greater than 2 in a tight loop...
+I was calculating x⁻³/² for Newtonian gravitation  in an n-bodies situation (acceleration undergone from another body of mass M situated at a distance vector d) : a = M G d*(d²)⁻³/² (where d² is the dot (scalar) product of d by itself) , and I thought calculating M*G*pow(d2, -1.5) would be simpler than M*G/d2/sqrt(d2)
+It is as if there were possible optimizations as the system grow, but which are not possible with pow
+So, convert your negative power to a positive power, and then take the reciprocal.
+It seems like, pow with decimal don't consider any floating numbers except for 10 basis.
+The code for your powChooseMod function would be almost identical:
+I've just tested it with [BC Math (hyper-link)] and [GMP (hyper-link)] using the [bcpow() (hyper-link)]/[gmp_pow() (hyper-link)] functions and it works perfectly:
+[bcpow() (hyper-link)] (a function of the [BCMath Arbitrary Precision Mathematics (hyper-link)] library) can be used in this case.
+The reason why pow isn't work here is because pow() uses float, and there's a size limitation for float.
+Try this (pseudo-code): y = pow (x, 1.0 / 5);
+You have to find the 5th root of y, which is the 1/5th power:
+Use the [pow instruction (hyper-link)] (or the equivalent [intrinsic (hyper-link)] function in HLSL).
+(Additionally: if a lookup texture were a better choice, then the GPU could just implement the pow instruction like that itself.)
+The reason that it used to be common to use a texture is that the pow instruction did not exist for either [vertex (hyper-link)] or [pixel shaders (hyper-link)] in shader model 1.x.
+In python 2.6 the (float).__pow__()  function uses the C pow() function and the math.sqrt() functions uses the C sqrt() function.
+In glibc compiler the implementation of pow(x,y) is quite complex and it is well optimized for various exceptional cases.
+For example, calling C pow(x,0.5) simply calls the sqrt() function.
+Will you be raising to powers above MAXINT?
+Not to mention the power supply for it, because [powering that (hyper-link)] for one hour will cost take around 7 gigawatt hours, which is comparable to half the energy yield of Little Boy nuclear bomb.
+You may use boost::multiprecision::float and corresponding boost::multi precision::pow implementations.
+Section 4.12.7.4 of the C99 standard has nothing more to say about the pow functions than the following:
+The pow functions compute x raised to the power y.
+The pow functions return [x raised to the power y].
+On many platforms with an FP unit, base-e exponentiation, floating-point multiplication, and natural logarithms all take O(1) time, so pow should too.
+Without <math.h>, pow is not declared, and pow(4, 3) passes arguments as int.
+pow needs its arguments passed as double, the behavior when they are passed as int is not defined by the C standard.
+Further, the return type of pow will be assumed to be int, but the actual return type is double, and the behavior of the function call with this mismatch is also not defined.
+And by the way if you want to use float numbers try to use powf.
+Syntax: float powf(float___x,float___y);.
+Generally, in order to use math functions like sqrt(), pow() etc.
+In f2(), since the exponent to pow() is 1.0, there is no need to call the pow() function - the compiler detects this and removes the function call.
+std::pow(double, int) is the log-reducing for loop for log(n) runtime.
+std::pow(double x, double y) { exp(log(x) * y); }
+en.cppreference.com/w/cpp/numeric/math/pow (7) Since C++11, "If any argument has integral type, it is cast to double".
+Well, assuming you're keeping all your own stuff out of the std namespace (and, if you're not, you should be, since that was the entire raison d'être of namespaces), you can just use std::pow().
+Just use ::pow if you can't change the name of the locally defined function.
+pow(x, y[, z]) Return x to the power
+  y; if z is present, return x to the
+  power y, modulo z (computed more
+  efficiently than pow(x, y) % z).
+The
+  two-argument form pow(x, y) is
+  equivalent to using the power
+  operator: x**y.
+In Python 2.1 and before, floating 3-argument pow() returned
+  platform-dependent results depending
+  on floating-point rounding accidents.)
+Built-in pow takes two or three arguments.
+If you do from math import * then it is replaced by math's pow, which takes only two arguments.
+If you are using math functions a lot and the three parameter version of pow infrequently a way around this in python 2.7 is to import __builtin__ and call __builtin__.pow for the 3 paramete
+So -2 ** 2 raises 2 to the power of 2 and then makes the result 4 negative.
+I'm pretty certain what you're asking for can't be doen with Pow itself.
+In Pow, this value was nil (whereas in WEBrick, it was set to 'development', as the author presumably expected), and so it was trying to render link_to('text', nil).
+double pow(double x, double y);
+float powf(float x, float y);
+long double powl(long double x, long double y);
+This header gives you a function pow() which uses overloading.
+if you already use math.h, you don't need to declare function pow.
+So removing line int pow(int x,int y); should help.
+If you want to create your own simple pow function you don't need to add the library math.h, and define function pow as follows:
+p/s: as the pow function grow very quickly, I suggest you use long value instead of int
+The pow() function is defined in math.h as:
+The prototype your using for pow() makes confliction between arguments types as you changed them to int.
+Just remove the pow() prototype.
+Code unnecessarily provides a pow() prototype, which is inconsistent with the one in math.h.
+Eliminate int pow(int x, int y);.
+Be sure to link in the math library to avoid 'undefined reference to pow'.
+["undefined reference to `pow'" even with math.h and the library link -lm (hyper-link)]
+You can use the pown function
+let result = pown 42I 42
+pown works on any type that 'understands' multiplication and 'one'.
+If you look at F# from the perspective of being based on OCaml, then the [OCaml Num module (hyper-link)] has power_num.
+I guess you updated RVM and run into this known issue: [https://github.com/37signals/pow/issues/271 (hyper-link)]
+Change your .powrc file to be:
+I've been using this .powrc which nicely covers all bases:
+If you are using RVM you have to add a file named ".powenv" at the root of your project as described here :
+[http://rvm.io/integration/pow (hyper-link)]
+Have you tried this
+    sum+=((int)pow(i,4));
+instead of 
+    sum+=pow(i,4);
+It looks like numpy.power is behaving differently depending on the type of the input.
+I believe you have come across one of them using the builtin pow function thanks to different coercion rules using numba.
+pow() works with real floating-point numbers and uses under the hood the formula
+The int are converted to double before calling pow.
+x^2 using pow() is therefore slower than x*x.
+Using pow even with integer exponents may yield incorrect results (PaulMcKenzie)
+In addition to using a math function with double type, pow is a function call (while x*x isn't) (jtbandes)
+Many modern compilers will in fact optimize out pow with constant integer arguments, but this should not be relied upon.
+Even without pow(), you're still converting to double and taking a square root, which is terrible for throughput.
+pow(x, 2), by emitting code for x*x instead of a function call).
+warning: incompatible redeclaration of library function 'pow' [-Wincompatible-library-redeclaration]
+int pow (int,int);
+    ^
+test.c:3:5: note: 'pow' is a builtin with type 'double (double, double)'
+Use PowInt in stead of pow.
+For anyone having similar problems: Create a pointer to the pow function in the C++ code and use this pointer in the inline assembly code:
+It's not finding the symbol pow because the actual name of the library function is decorated in some way.
+I was having the same problem and I solved it by adding this line to my ~/.powconfig:
+This is a bug I encountered when I used pow.cx, .zsh, and rbenv
+Pow will alter your DNS resolution to have all domains that end in .dev or .test be routed to the local machine (to hit pow).
+If you want to use MAMP as well as POW you'll need to turn off pow temporarily for it to be useable (Or you could change the MAMP settings use another port besides 80).
+To turn off pow i'd recommend installing the powder gem:
+You could also use pow to serve up static sites, you'll just need a blank config.ru and a public folder to get going.
+More info in the pow manual here: [http://pow.cx/manual.html#section_2.4 (hyper-link)]
+You can use curl get.pow.cx/uninstall.sh | sh
+The pow function operates on floating-point types, not integers, and it returns a floating-point type.
+Consider computing integer powers via integer-based methods, or if you must use std::pow then round the result with std::round.
+Because you're not using standard include headers, I can't guarantee that you're using one of the overloads of std::pow from <cmath>, some of which take integral types for the exponent.
+(You could be using the C-style pow which has no overloads).
+In my opinion, any implementation of std::pow that does not recover the best floating point value with integral arguments ought to be considered defective.
+You could find that your implementation evaluations pow(x, y) as exp(y * log(x)) and that can cause the result to undershoot the true value for seemingly trivial values of x and y.
+If you are indeed cursed with a platform that has a defective std::pow implementation, then you can always roll your own for integral arguments.
+pow for floating point arguments is probably implemented as exp (y log x) (this is, by the way, remarkably clever since log and exp in particular can be evaluated very quickly on modern chipsets).
+The standard specifies that pow is only defined for a positive x if x and y are floating point.
+[http://en.cppreference.com/w/cpp/numeric/math/pow (hyper-link)] is a good reference.
+Powers of negative numbers with non-integer exponent are generally complex numbers.
+The pow function returns a double which is an approximation of a real number.
+You can calculate the left term using pow because -x is positive.
+By the way, the powfunction does not return an "infinity" value but a value that indicates a domain error.
+here : [http://martin.ankerl.com/2007/10/04/optimized-pow-approximation-for-java-and-c-c/ (hyper-link)]
+If your code involves some heavy number-crunching, I wouldn't be too surprised that std::pow is consuming 5% of the running time.
+Many numeric operations are very fast, so a slightly slower operation like std::pow will appear to take more time relative to the other already-fast operations.
+(That would also account for why you didn't see much improvement switching to std::powf.)
+One possibility is that if your other code is so memory-intense that it gobbles up all the allocated cache, then it wouldn't be completely surprising that std::pow is taking all the punches on the cache misses.
+If you replace std::pow(var) with another function, like std::max(var, var), does it still take up 5%?
+Calculating powers is slower than many other operations (which are you using?).
+Can you give more information on the 'x' as well as the environment where pow is evaluated?
+Depending on the profiler the allocation of the 'cost' of the different assembly instructions might be incorrect, it should be even more frequent on long latency instructions like the ones needed to evaluate pow.
+Assume you want the power y = x^b.
+You are looping by treating power as an int.
+As direct evaluation of Taylor's expansion for x^y is tedious, as Ignacio mentioned, base^power = exp( power*ln(base) ).
+std::pow(n, 1.0/m) is the m-th root of n. You can find an helpful [algorithm of how to implement it (hyper-link)] on wikipedia:
+Set x = 1.0/m * [ (n-1)*x + n/pow(x,m-1) ]1
+1) Obviously, you'll need to define pow(x,y) for integer y, which is trivial.
+About compiler optimization, your two programs happen to behave differently because in the first case (no param variable), the compiler replaces pow((double)3, (double)2) with (double) 9.0; therefore there is no call to pow(), and a math library is not necessary.
+In the second case, the compiler doesn't optimize the pow() call away, so a math library is still necessary.
+The built-in pow function takes three arguments as seen [here (hyper-link)].
+However the math.pow function takes in two arguments, as seen [here (hyper-link)]
+I would check if you're importing pow from math somewhere.
+You are using integers to hold decimal values, in this case with x and with the return type of the power function.
+In this case it's cwise_op_pow.cc:
+[https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/cwise_op_pow.cc (hyper-link)]
+I usually do a grep in tensorflow/core/kernels for '"Pow"' or whatever the op name is if I'm having trouble tracking down the right file.
+If i is the square of a prime number you are relying on high precision of the sqrt and pow to have the correct result.
+pow is very difficult to implement correctly --- that is, so that things like pow(x*x, 0.5) returns x for those x where that's the right answer.
+Very few implementations (CRlibm being a notable exception) implement pow correctly.
+sqrt, on the other hand, is guaranteed to be correctly rounded by the IEEE specification, and that's why your code works with sqrt and not with pow.
+First of all, sqrt(x) should be faster and more accurate than pow(x,0.5), why do you think it's in the library?
+Ok, seems like POW is moving away from RVM.
+-- --env > .powenv
+
+rvm env -- `rvm current` > .powenv
+You can also create a rvm hook ([as commented here (hyper-link)]) for switching the .powenv automatically when you change the current ruby env:
+
+chmod +x ~/.rvm/hooks/after_use_update_powrc
+i've sorted the problem by adding a .powrc at the root of the project with the following code
+[Edited to add: This is recommended in the [Pow documentation (hyper-link)]]
+I found one use for the pow function over the ** operator.
+First, ** is really raise to a power and apply an optional modulus, as in a**b % c. But if you include the %, its value can't be None.
+pow is really pow(x, y, z=None).
+So, if I want to raise a derived value to a power, I could use the operator
+pow function to the rescue
+Have you tried including math.h and simply using pow?
+You will find pow there.
+Finding the implementation of a standard library function such as pow() is quite another matter.
+[w_pow.c (hyper-link)]
+The actual implementation of pow may vary from compiler to compiler.
+Generally, math.h (or a vendor-specific file included by math.h) provides the prototype for pow (i.e., its declaration), but the implementation is buried in some library file such as libm.a.
+Depending on your compiler, the actual source code for pow or any other library function may not be available.
+: extern double pow ( double, double ); ) are not shipped with the installation (at least I couldn't find it).
+The extern keyword in the function declaration of pow means, that it's defined somewhere else.
+If you are seeking how the calculation is implemented, you can find it here:
+[http://fossies.org/dox/gcc-4.5.3/e__pow_8c_source.html (hyper-link)]
+The name of the function is __ieee754_pow
+which is called by pow function.
+Here's a C implementation for fdlibm:  [http://www.netlib.org/fdlibm/e_pow.c (hyper-link)]
+However, "pow" is not one of those, iirc (doesn't seem to have an chip-level function) and is implemented elsewhere.
+See also:  [How is Math.Pow() implemented in .NET Framework?
+pow(double,double) needs to handle raising to any power, not just an integer based power, or especially 2.
+Because the pow function must implement a more generic algorithm that has to work on all the cases (in particular, it must be able to elevate to any rational exponent representable by a double), while e*e is just a simple multiplication that will boil down to one or two assembly instructions.
+Still, if the compiler is smart enough, it may automatically replace your pow(e, 2.0) with e*e automatically anyway (well, actually in your case it will probably just perform the whole computation at compile time).
+with g++ -O3 -c pow.c (g++ 4.7.3) and disassembling the output with objdump -d -M intel pow.o I get:
+So, where the compiler already knew all the values involved it just performed the computation at compile-time; and for both pow2 and valuexvalue it emitted a single mulsd xmm0,xmm0 (i.e.
+[Here is one (simple, heed the comment) pow implementation (hyper-link)].
+I've just tried this with Padrino edge and Pow and it's working alright.
+To be honest, it shouldn't really make a difference whether it's Pow or Webrick - as long as it's rack complaint it should just work.
+This is known issue: [https://github.com/37signals/pow/issues/271 (hyper-link)]
+as detailed in the pow issue thread referenced above.
+Then restart Pow.
+Create a .powrc file in the root of your project and paste the following code:
+pow is defined in the math library (libm), which isn't linked in by default.
+By the way, pow is not the right way to compute an integral power of two.
+Change the variable name, like you do for the pow button.
+You are using (1/2) as exponent in your call to the function pow.
+Use 0.5 instead as exponent in the call to pow.
+[fdlibm (hyper-link)], the "freely distributable math library", has [sqrt (hyper-link)] and [pow (hyper-link)], along with many other math functions.
+Are you after source code to get it done, or are you really not so much looking for pow and sqrt, but actually looking for an education in floating-point algorithms programming?
+The fastest way I can think of doing a pow() would be along these lines (note, this is pretty complicated):
+I have no idea about how to implement a decimal power.
+power *= 2 instead of power++
+Note that if your instruction set has an instruction for square root or power, you'll be much better off using that.
+For power, however, things get somewhat murky.
+For implementing pow, using a big switch statement like the one at [upitasoft.com/link/powLUT.h (hyper-link)] should do.
+If you want to support floating point powers, is way harder... 
+You can try using the natural logarithm and exponential functions, such as:
+follow  this wiki [https://github.com/37signals/pow/wiki/Running-Pow-with-Apache (hyper-link)] (step 3 is the important one)
+then of course create/modify .powconfig to contain this line
+[code snippet]
+finally make pow "aware" of this new setup via de-  and reinstalling it
+[code snippet]
+and as a last step: restart apache
+[code snippet]
+pow(a,b) is the same as exp(b*ln(a)), maybe that substitution will work for you.
+Just write your own pow function, put the .o file in a static library archive libmypow.a somewhere in the linker's library path, and pass -lmypow when linking.
+I tested this myself, and indeed if I compile the test program from the page you link to it uses call pow in the assembly code.
+However, compiling with optimization -ffast-math there is no call to pow, but the result is slightly different.
+The library isn't calling __slowpow() just to toy with you; it's calling __slowpow() because it believes the extra precision is necessary to give an accurate result for the values you're giving it (in this case, base very near 1, exponent of order 1).
+It's the reverse of the pow function.
+I would like to add the pow in my evaluator (with an higher precedence than multiply and divide.
+Then add a powExpr rule in between multExpr and atom and let multExpr use this powExpr rule instead of the atom rule:
+(powExpr doesn't literally need to be in between these rules of course...)
+The return value of pow() is double as you can see here:
+[http://www.tutorialspoint.com/c_standard_library/c_function_pow.htm (hyper-link)]
+As you noted, pow returns a double.
+%d\n",pow(2,2));
+"The output of this code should be Hello world!
+1) int range is much smaller than double and for pow(2,100), that fails.
+2) Casting to int truncates the fractional portion on the result of double and the preciseness of pow() is not defined.
+This will given surprising result when the pow() is something like 7.99999999999999 and 7 is printed rather than the hoped for 8.000000.
+If code needs an integer power function, consider [unsigned long long int pow (hyper-link)] or [https://stackoverflow.com/a/213897/2410359 (hyper-link)] or search around.
+pow(2,2) will return a double always.
+pow (see [reference (hyper-link)]) is not defined for integers, but only for floating point numbers.
+If you call pow with int as an argument the result will be a double.
+You can in general not assume that the result of pow will be exactly the same as if you would use pure integer math as in the function pow_longlong.
+So you get inaccurate results with pow if the result would be bigger than 2^53.
+It makes use of the fact that, for example, while calculating x to the power 8, you can get away with 3 operations:
+The pow function is defined in the library named m (which is a shorthand for math), and this library must be linked (-l) to the executable so that the function is available at runtime.
+Try enabling wait_connection (and restart pow)
+This happens because Pow runs two worker processes as default, and rdebug only connects to one of them.
+The solution is to force Pow to run a single worker process, as follows:
+Edit ~/.powconfig to contain export POW_WORKERS=1
+Restart Pow itself by killing the Pow process
+If you don't then its something with the power function as you assert or out not then your distance vectors are funky.
+When you use the pow function you don't see any problems because pow uses floating point for calculations.
+Declaration of pow is as:
+But in second case function pow take every arguments as double so now "55201" and "2" will be implicitly cast as double and now calculation takes place on the double precision so after calculation result will not cross the limit for double type...And hence the compiler will not generate any overflow message in this case.
+The other expression x = pow(55201, 2) uses a [floating point function (hyper-link)].
+Thus the arguments are converted to double before pow is called.
+To link in the math library, which you need for the pow() function, compile with this switch added:
+Raising it to the power p:
+So, use cartToPolar to get the polar form, raise the magnitude(=r) to power p using pow as you no longer get negative values for the magnitude, multiply the angle by p, then use polarToCart to get your solution.
+You can check the HTTP requests that Pow receives by running tail -f on the log file of your choice in the ~/Library/Logs/Pow directory.
+Check out the Pow manual section on [Viewing Log Files (hyper-link)]
+You can also use a helper gem like [powder (hyper-link)].
+I order to show application log just type powder applog
+Also, you always can install Pow from source.
+C precompiler realizes that this expression is a constant and resolves it as a constant without using math.h (does not call pow() function).
+Generates this code (Notice the call to pow in there):
+Showing pretty clearly your call to pow was removed probably due to some dead code optimization.
+Now considering I actually use pow-s return value:
+Still no call to pow.
+The solution I use is to tail the pow logs.
+On a Mac, the pow logs live in:
+It's called kaput because it A) shows the things that are putsd and B) I have a [kapow (hyper-link)] command that restarts pow.
+Looking at the HLSL docs, pow(x, y) appears to be implemented directly as exp(y * log(x)).
+You might be accidentally comparing pow(0.0, 2.0) == 0.0 with pow(0.0, 0.0) == 1.0.
+[pow = exp(y * log(x)) reference (hyper-link)]
+The function pow operates on two floating-point values and returns a floating-point value.
+When working on integers, the result of pow(10,2) might be stored as 99.9999999, or 100.0000000001.
+Same goes for pow(10,3), with 999.9999999, or 1000.0000000001 - which will be truncated to 999 or 1000.
+You can read more about the pow function [here (hyper-link)].
+Reference: [See the pow function results here (hyper-link)]
+pow returns a Double.
+You are using the wrong version of pow.
+On the other hand, Decimal is able to represent all integers, so using the Decimal version of pow you get the correct result.
+However, for the specific case of [modular exponentiation (hyper-link)], what you should be using is the .modPow() method, since it's a lot more efficient (at least for the kinds of large numbers normally used for RSA encryption; maybe not for this toy example) than doing the full .pow() calculation and then applying .mod() to the result.
+Thus, for working with modular powers of large numbers, a wrapper such as BigInteger.js (which should automatically use the native BigInts internally if they're available) is still recommended.
+You can use round(pow(10,counter))
+pow() returns a double, and pow(10,4) must be returning a double close to 10000 but a bit or two off.
+Then in your print statement, when you print reversed + last_digit * pow( 10, counter ), this value is a double, close to 50000, but a bit off.
+And eventually, any power to 1 results in 1.
+My bad the pow() method is static from the Math class so needed the dot operator to access it statically.
+silly mistake:) eg Math.pow(d,d);
+If you are sure that always you calculate the power of 2.
+Its better if you use the left shift operator since it is very efficient compared to pow() function.
+pow() only works with floating point numbers, and when you output a large floating point number, the << operator automatically prints it in scientific notation.
+If you only need powers of 2, you can use bit shifting.
+a << b is equivalent to a times 2 to the bth power.
+Shifting something to the left multiplies it by a power of 2 in binary just like how moving the decimal point multiplies a number by powers of 10 in decimal.
+If you need powers with other bases, you can use something from [this post (hyper-link)].
+There is no pow operator in Objective-C, so use C or NSDecimalNumber (preferred).
+If you see the method declaration of pow() it is something like this :
+Pow is the name of the function, double x, int y are parameters described by their type (not very well named but we'll leave that for another day)
+So x is a number and y is the power of that number.
+It is 2 to the power of 5.
+First thing to note is that this is NOT how you would normally implement a power function.
+With that out the way, let's look at what happens when you call Pow(2, 5):
+That method basically computes "x raised to the power of y".
+First, it defines a base case: anything raised to the power of 0 is 1.
+Then, it defines what to do in all other cases: x * Pow(x, y - 1).
+Assuming y is big, what's x * Pow(x, y - 1)?
+It's x * x * Pow(x, y - 2), which in turn is x * x * x * Pow(x, y - 3).
+Let's see this in action for Pow(2, 5):
+Ian Stephenson wrote [this code (hyper-link)] which he claims outperforms pow().
+Pow is basically implemented using
+  log's: pow(a,b)=x(logx(a)*b).
+Your power, 1.0/2.4, is 5/12 or 1/3*(1+1/4).
+it is still twice as fast as using pow().
+The 2.4f and 1/2.4f make me very suspicious, because those are exactly the powers used to convert between sRGB and a linear RGB color space.
+Overview
+The above code defines two functions, double pow512norm (double x) and double pow512 (double x).
+The function pow512norm(x) uses Chebyshev polynomials to approximate x^(5/12), but only for x in the range [1,2].
+(Use pow512norm(x) for values of x outside that range and the result will be garbage.)
+The function pow512(x) splits the incoming x into a pair (double s, int n) such that x = s * 2^n and such that 1≤s<2.
+s^(5/12) is calculated via pow512norm(s).
+(2^r)^(5/12) is calculated by the lookup table pow2_512.
+Calculate pow512norm(s)*pow2_512[qr.rem] and we're almost there.
+pow512norm(x)
+This function uses Chebyshev approximation to find some polynomial p*(x) that approximates x^(5/12).
+pow512(x)
+pow512 is the function that user code should be calling.
+(Minor issue: I want s between 1 and 2 for use with pow512norm but frexp returns a value between 0.5 and 1.)
+To complete the pow computation, you can multiply by a constant factor and convert the logarithm back with the convert-to-integer instruction.
+Pre-multiply, convert from "integer" (to logarithm), power-multiply, convert to "integer" (from logarithm).
+The underestimate raises the error to a power of 0.6 vs 0.4, so we expect it to be 1.5x as erroneous.
+The final error is about .015%, or 2 orders of magnitude better than the initial fastpow result.
+You can use the fact that if you know x and pow(x, n), you can use the rate of change of the power to compute a reasonable approximation of pow(x + delta, n) for small delta, with a single multiply and add (more or less).
+If successive values you feed your power functions are close enough together, this would amortize the full cost of the accurate calculation over multiple function calls.
+Note that you don't need an extra pow calculation to get the derivative.
+So traditionally the powf(x, p) = x^p is solved by rewriting x as x=2^(log2(x)) making powf(x,p) = 2^(p*log2(x)), which transforms the problem into two approximations exp2() & log2().
+This has the advantage of working with larger powers p, however the downside is that this is not the optimal solution for a constant power p and over a specified input bound 0 ≤ x ≤ 1.
+When the power p > 1, the answer is a trivial minimax polynomial over the bound 0 ≤ x ≤ 1, which is the case for p = 12/5 = 2.4 as can be seen below:
+One option [not really] is to rewrite the problem y=x^p=x^(p+m)/x^m where m=1,2,3 is a positive integer, making the new power approximation p > 1 but this introduces division which is inherently slower.
+This works to access the pow app but also is allowed as a Google OAuth redirect url because it's a .io domain.
+But there are ways of computing a**d % n without having to compute a**d itself, and that is what pow does.
+A dedicated modular-exponentiation function like 3-argument pow() can leverage such tricks because it knows you're doing modular arithmetic.
+The way x = a**d % n is calculated is to raise a to the d power, then modulo that with n. Firstly, if a is large, this creates a huge number which is then truncated.
+However, x = pow(a, d, n) is most likely optimized so that only the last n digits are tracked, which are all that are required for calculating multiplication modulo a number.
+You're conclusion is correct, pow() is a double precision function, not a long double (extended) precision function.
+There should be a long double version for pow, usually it's powl() .
+This code will be returning result for negative powers as well.
+For the explanation I have used the variable int p= x for my calculation of negative powers.....
+Both Java and C# return a IEEE floating point number (specifically, a double) from Math.Pow.
+[http://www.wolframalpha.com/input/?i=Pow%280.392156862745098%2C+1.0+%2F+3.0%29 (hyper-link)]
+If a unit's difference in the 17th digit is causing later computations to go awry, then I think there's a problem with your math, not with Java's implementation of pow.
+It looks like this is an known issue as per: [https://github.com/37signals/pow/issues/363 (hyper-link)]
+Add a .powrc file in the root of your project and in that file add this:
+uninstalling Pow + Anvil seems to fix it.
+Your pow shouldn't be based on what is y.
+It is because uint64 can have at max can have largest number as 2 ^ (64) -1 (2 raise to the power 64 minux 1).
+So maximum number that can be generated for 2 power is 2 ^ 63.
+You would wind up with base to the power of (2 to the exponent power), not base to the power of exponent.
+LargeInteger, being descended from [Number (hyper-link)] does actually have a pow function.
+So in order for POW to work, you will need to create shortcut of your directory in .pow directory.
+That's where POW looks for directories.
+so we prefer to do pow first, then divide.
+This behavior is caused by inlining the pow function result in case of constant expressions in its call.
+Then I used another pow() function in the second line of the main() function and commented out the earlier pow() function which I was using to calculate the cube.
+pow is an intrinsic function.
+When you specify all its arguments as compile time constants, as in pow(2, 5), the compiler replaces the call with its value.
+Because when you pass floating point arguments the result of pow depends on the current [floating point rounding mode (hyper-link)], which is not known at compile time.
+Use the formula exp(y*log(x)) for pow(x, y) and [a library (hyper-link)] with SSE implementations of exp() and log().
+I doubt it would be useful for gcc and clang but it could serve as a reference point for benchmarking wherever pow implementation you come up with.
+In POSIXish systems pow() is in libm, whereas in win32ish systems it is part of the standard C library.
+The reason it may appear that the second parameter works as a constant but not as a variable is that gcc has a built-in implementation of pow().
+If the second parameter is a constant it might be using that where if it's a variable it's falling back on the glibc pow() function.
+If you pass -fno-builtin to gcc you should see consistent behavior--in this case error messages no matter what you pass to pow().
+F2XM1 requires an argument in [-1,1] range, so you'd have to add some code in between to extract the integer part and the remainder, exponentiate the remainder, use FSCALE to scale the result by an appropriate power of 2.
+OK, I implemented power(double a, double b, double * result); in x86 just as you recommended.
+Compatibility v. ANSI pow(x,y): Very good!
+Results: Our retro x87 FPU Math function "fs_Power(x,y)" is 50-60% faster than the MSCRT2005 pow(x,y) version which uses a pretty long SSE branch of code labeled '_pow_pentium4:' if it detects a 64-bit >Pentium4+ CPU.
+Notes: (1) The CRT pow() has a ~33 microsecond initialization branch it appears which shows us 46,000 in this test.
+(2) While CRT pow() lost every test, it DID win in ONE area: If you entered wild, huge, out-of-range/overflow values, it quickly returned an error.
+[https://i.postimg.cc/QNbB7ZVz/FPUv-SSEMath-Power-Proc-Test.png (hyper-link)]
+Pow(x,y) is used heavily to help encode/decode a CD's WAVE format to OGG and vice versa!
+As far as I know there is no circuit to calculate Exponentiation, which means that the pow() function must be an algorithm (can't be done by hardware at single clock cycle).
+My assumptions is not about your case, in worst case scenario the algorithm for pow() will be the same as doing it manually, but taking into account all CPUs, operating systems and compilers.
+Now compare to pow(x, n): A good library implementation will realise that n is an integer and calculate the result using multiplications, and it will use the same multiplications that my code above did, or it will do something more clever.
+Since you only calculate 100 powers, if you are really interested in keeping the rounding error as low as possible, I'd be tempted to use pow().
+code profiling gets bogged down in repeated calls to pow.
+* vs. pow() performance.
+pow() is a tricky library function to implement well.
+A good pow() will use extended math and other crafted code to minimize the error, potentially down to 1.0 ULP.
+For a quality answer, use pow() unless raising to a simplistic small integer power like 2,3,4.
+Some alternative code for double raise to an positive integer power.
+After this change, both abs(pow(1,2)) and pow(abs(1),2) can be parsed.
+Yyou can find the answer from [Pow's FAQ (hyper-link)]:
+Can I run my app in different rails environments through Pow?
+Pow is intended for development use only, but if you just want to test how your app behaves with the settings for your different environments (e.g.
+echo export RAILS_ENV=production > .powenv && touch tmp/restart.txt
+You can get more info about .powenv from [Pow's user manual (hyper-link)].
+I think the core answer is that this is done mainly within Rails, as opposed to within Pow.
+The only place that Pow steps in is the actual serving of different hostnames for the same Rails app (so, multiple symlinks in ~/.pow that all point to the same Rails app).
+You are going to do mod p anyway - so why don't you use [BigInteger.modPow() (hyper-link)]
+Here, a = g ^ u1 and b = y ^ u2, and these computations can be done efficiently using [modPow (hyper-link)].
+You can calculate the power of a number in logN time instead of linear time.
+Note that the sequence of powers with which the method gets invoked is
+Calculating the zeroth power always yields 1, with no multiplication, and there are 8 arrows.
+pow(x,n):
+[http://opensource.apple.com/source/Libm/Libm-2026/Source/Intel/expf_logf_powf.c (hyper-link)]
+[http://opensource.apple.com/source/Libm/Libm-315/Source/ARM/powf.c (hyper-link)]
+[self made pow() c++ (hyper-link)]
+Integer powers can be calculated with Exponentiation by squaring.
+Newton's method involves raising your current guess to the power of the root that you're trying to find.
+If that power is large, and the guess is even a little too high, this can result in overflow.
+This is my version of his NSDecimal power function:
+It does fall back on pow() for things that don't fit in these cases, though.
+the following method is fully annotated and works for any power function that has a real value.
+This method takes two arguments one for the base and one for the power, and both are NSDecimalNumbers.
+AFAIK, there's no simple way to authenticate a WebSocket connection using Pow because Phoenix does not expose the handshake phase of ws connections to the developer.
+Pow doesn't serve a language, it makes a connection to a rack-compatible web framework.
+So if you used a Lua web framework - like, say, [Kepler (hyper-link)] or [Orbit (hyper-link)], you could write a [Rack (hyper-link)]-compatible loader for it, and then it should Just Work with pow.
+(The pow devs are already working on figuring out how to do this in a more generic way; see [https://github.com/37signals/pow/issues/120 (hyper-link)] for more details.)
+pow(10, 2) yields a value slightly under 100 because it is a low-quality implementation of pow that does not return a good result.
+pow is a difficult function to implement, and all commercial implementations produce many results that are inaccurate to some degree.
+In pow(base, exp), if exp is known to be 2 at compile time, base*base should be used instead—it is fast and accurate and avoids the pow problem.
+If exp is not known to be two at compile time, the code must be designed to tolerate inaccuracies in pow or other adjustments must be made.
+If your input arguments are non-negative integers, then you can implement your own pow.
+pow works with double numbers.
+There is analogue of pow() in <math.h> which is intended for operating with long double numbers - powl().
+First let's distinguish between pow, ** and np.power.
+pow is the Python function, that according to docs is equivalent to ** when used with 2 arguments.
+It has certain special operators, such as *
+  (matrix multiplication) and ** (matrix power).
+matrix power:
+Matrix power:
+Attempting to do matrix_power on a non-square matrix:
+Note that the whole traceback lists matrix_power.
+Despite the subject line, you did not try to use pow.
+I tried to find a np.pow or a scipy version.
+I suggest you follow a pattern similar to [Kulupu (hyper-link)] for creating a PoW Substrate blockchain.
+So far I have been unable to get Pow to automatically pick up the xip.io addresses.
+I believe that cuts Pow out of the loop, but at least it's working now for testing on the other devices I need.
+I would love to have Pow working as described, so if there are any suggestions on that end I'd love to hear it.
+[http://m.onkey.org/using-ruby-debug-with-pow (hyper-link)] provides a great, easy to follow solution.
+edit: If you are using floats (looks like you are), then no it's not going to be possible to call the pow() function at compile time without actually writing code that runs in the make process and outputs the values to a file (such as a header file) which is then compiled.
+'pow' is one them.
+Actually, you have M4 which is a pre-processor way more powerful than the GCC’s.
+Actually, by exploiting the C preprocessor, you can get it to compute C pow(10, x) for any real C and integral x.
+If you just need to use the value at compile time, use the [scientific notation (hyper-link)] like 1e2 for pow(10, 2)
+If you want to populate the values at compile time and then use them later at runtime then simply use a lookup table because there are [only 23 different powers of 10 (hyper-link)] that are exactly representable in double precision
+You can get larger powers of 10 at runtime from the above lookup table to quickly get the result without needing to multiply by 10 again and again, but the result is just a value close to a power of 10 like when you use 10eX with X > 22
+For example by storing only even powers of 10 and multiply by 10 when the exponent is odd, the table size is now only a half.
+An integer power function (which doesn't involve floating-point conversions and computations) may very well be faster than pow():
+There are certainly ways to compute integral powers of 10 faster than using std::pow()!
+The first realization is that pow(x, n) can be implemented in O(log n) time.
+The next realization is that pow(x, 10) is the same as (x << 3) * (x << 1).
+A generic O(log n) version of power is discussed in [Elements of Programming (hyper-link)].
+(I did have an option for using pow as well, but it took 1m22.56s when I first tried it, so I removed it when I decided to have optimised loop variant)
+Code does not contain quick_pow10, integer_pow, opt_int_pow for better readability, but tests done with them in the code.
+This function will calculate x ^ y much faster then pow.
+The problem is that the output of pow is a floating point double.
+In your custom function you convert that output to long long, which will truncate if the value returned by pow is slightly low instead of slightly high.
+When you call pow directly the value is kept as a double even after the multiplication, and output rounding gives you a more accurate result.
+You expect the value returned by pow(100,2) to be 10000, but instead it might be 9999.99999999999 because of the way floating point works.
+Always write your own power function whenever needed.
+Calculate v0=pow(a/b, n) and v1=pow(b/a, -n) in float precision.
+And calculate ref=pow(a/b, n) in double precision, and round it to float.
+Furthermore, this answer supposes that the algorithm of float/double division/pow is the same kind, have the same characteristics.
+In general, the form with the positive power is slightly better, although by so little it will likely have no practical effect.
+For example, if either a or b is a power of two, it ought to be used as the denominator, as the division then has no rounding error.
+Given a, b, and x with values a, b, and x, and an implementation of pow that computes the representable value nearest the ideal mathematical value (actual implementations are generally not this good), pow(a/b, x) computes (a/b•(1+e0))x•(1+e1), where e0 is the rounding error that occurs in the division and e1 is the rounding error that occurs in the pow, and pow(b/a, -x) computes (b/a•(1+e2))−x•(1+e3), where e2 and e3 are the rounding errors in this division and this pow, respectively.
+... between pow(a/b,x) and pow(b/a,-x) ... does raising a number less than 1 to a positive power or a number greater than 1 to a negative power produce more accurate result?
+In OP's case, both pow(a/b,p) and pow(b/a,-p), in general, have the same  y * log2(x) and same z and similar errors in z.
+Yet with select values of a/b vs. b/a, one quotient will be more exact and it is that approach with the lower pow() error.
+pow(7777777/4,-p) can be expected to be more accurate than pow(4/7777777,p).
+The experience from implementors of functions like pow is that by the time you go to the trouble to ensure that your implementation taking an integral exponent gives the same answer as the implementation taking a floating point exponent, the "optimization" is often slower.
+As a demonstration the following program prints out pow(.1, 20) twice, once using std::pow, and the second time using an "optimized" algorithm taking advantage of the integral exponent:
+And yes, implementors of pow really do worry about all of those bits down at the low end.
+So while the freedom is there to shuffle pow(double, int) off to a separate algorithm, most implementors I'm aware of have given up on that strategy, with the possible exception of checking for very small integral exponents.
+and a number raised to the 0 power equals 1.
+Yes, pow is slower than multiplication, multiplication is slower than addition.
+Tradeoff is, for simple power like pow(x, 2), use x*x instead
+sp.ccode(a**3, user_functions={'Pow': [(lambda x, y: y.is_integer, lambda x, y: '*'.join(['('+x+')']*int(y))),(lambda x, y: not y.is_integer, 'pow')]})
+There is a function called create_expand_pow_optimization that creates a wrapper to optimise your expressions in this respect.
+It takes as an argument the highest power it will replace by explicit multiplications.
+and we know that any base raised to the 0 power is equals to 1
+And any number raised to the power of 0 is 1.
+Indeed pow() doesn't have good performance on integers (in the three argument form).
+There is no pow() function for such argument types.
+EDIT :
+I assume you use standard pow() definition from <cmath> or <math.h>
+The easiest (and fastest) way to get powers of two is shifting - the CPU is using binary anyway, so it can just add a few extra zeroes on the end for you.
+So instead of pow(2, i) you would write (1 << i).
+pow(2,n) times right?
+So, pow(2,n) is nothing but 2 power n, and hence the first complexity we have is O(2^n).
+Coming to the complexity of pow(a,b) function.
+Hence the time complexity of pow(a,b) is completely depended on 'b' and hence it is O(b).
+So, now we have a loop that runs for pow(2,n) times, and every time, it runs O(b) = O(n) times.
+The function pow has the complexity of O(n), as you stated.
+On the other hand, floating point hardware does not typically offer implementations of pow and so it does need to be implemented in a library.
+In the first case, I suspect the compiler has optimized the value to 10*10 without actually calling pow (compilers do actually do this).
+The pow function operates on double, not int.
+pow returns double and so if the result is not exactly 100 but slightly less than it will truncate when converting to an int and you will receive the 99 result you are seeing.
+The reason you won't see it when you use literals is because of [constant folding (hyper-link)] which will cause the call to pow to be optimized out and replaced with a constant.
+We can see the version that uses constants when we generate the assembly no call to pow is made it just moves the end result 100(see it [live (hyper-link)]):
+while the version the second version actually calls pow(see it [live (hyper-link)]):
+What's going on is that you have a C implementation whose standard library has a very low quality implementation of pow which is returning inexact results even when the exact result is representable in the type (double).
+The call to pow(10,2) seems to producing the value just below 100.0, which, when rounded to an integer, yields 99.
+If your intent is to do integer powers, don't use the pow function.
+Write a proper integer power function, or when the exponent is known, just write out the multiplication directly.
+The result of pow should be close to  0.8099789690729650165287354526069381795064774873497553965297999359066924950079080502973738475702702999114990234375, which then has to be placed in the return type, in your case should be long double (except that MSVC doesn’t distinguish them from double, as far as I recall and as your results show)
+I would consider that a QoI bug: gcc, clang, intel, and oracle all give the only one, correct, result (even though they don't have to: IEEE precision requirements for pow allow more than 0.5 ulp of error)
+incidentally, if your pow returned an Intel 80-bit long double, it would have to fit between 0.8099789690729650164951504420773886749884695746004581451416015625 and 0.809978969072965016549360550701663896688842214643955230712890625, with the latter being the nearest.
+Try 
+v=pow(w,0.5f);
+Math functions like pow(), sin() etc are templatized in more modern C++ implementations.
+Dastardly silly question, and setting aside the fact that the first loop is infinite and for (i = 0; i < n; i = pow(i, c)) is computing pow multiple times for the oddest of reasons and could well be infinite too, I hope the interviewer revealed the types for i, c, and n, because that matters a lot.
+pow(x, y) is normally implemented as exp(y log x).
+I don't believe the assertion that pow is O(log(N)) is correct.
+That doesn't tend to matter for very many scientific calculations however, and in my opinion at least, the way computers evaluate pow(x, y) is one of the marvels of computer science.
+pow on integer arguments when the result is exactly-representable should give you the right answer all the time.
+It's not too hard to find a bunch of SO questions where people give pow really nice inputs and it returns a horribly wrong answer.
+It is funny you should ask, because [someone else on StackOverflow (hyper-link)] had a question that was caused by the very fact that pow applied to small integers did not compute the obvious result on their platform (see also my [writeup (hyper-link)]).
+So yes, when applying pow to small integers, both arguments and ideal mathematical result are exactly representable.
+This does not force the implementation of exp to return the mathematical result, because no standard specifies that pow cannot be inaccurate by more than one [ULP (hyper-link)].
+And at least one very popular platform provides by default a pow function that does not compute pow(10, 2) as 100, but you are free to take you chances with pow(2, N) and perhaps it will happen to always return the integer you are entitled to expect.
+These results are more likely to be correct as the question [C: i got different results with pow(10,2) and pow(10,j), j=2; (hyper-link)] demonstrates.
+It looks like Pow isn't using the same Ruby as your shell session.
+You can [learn how to properly setup Pow with the same version of Ruby using your Ruby version manager in the Pow User Manual (hyper-link)].
+The declaration of pow() is: [double pow( double base, double exponent ); (hyper-link)]
+the value returned by pow() is converted to long long int when it is assigned power.
+the value returned by get_digit(number, place) is converted to double because it needs to be multiplied with a floating point number (returned by pow()).
+The solution for your code is to convert the value returned by pow(10, place) to long long int as soon as it returns:
+If you didn't know about pow, you might have written that loop differently:
+First we need an integer overload for pow
+Note that this is simply the [peasant algorithm (hyper-link)] applied to powers.
+and checking that 4116 doesn't have any factor that is a power of 4.
+all powers of 2 (and their sums) can be, like 0,675 = 0,5+0,125 = 2^-1 + 2^-3.
+Although you are passing in ints they are being implicitly converted to a floating point type since the [pow (hyper-link)] function is only defined for floating point parameters.
+pow() generates a floating point number, that in SOME cases may be just a hair less than 100 or 10000 (as we see here.)
+Be careful even there, as for large enough powers, the error may actually be large enough to still cause a failure, giving you something you don't expect.
+The function pow() returns a double.
+So pow() is returning something like 99.99999... for 10^2, and then you're just throwing away the .9999... part.
+Better to say a = round(pow(10, i)).
+Mathematically, the integer power of an integer is an integer.
+In a good quality pow() routine this specific calculation should NOT produce any round-off errors.
+No one spelt out how to actually do it correctly - instead of pow function, just have a variable that tracks the current power:
+This continuing multiplication by ten is guaranteed to give you the correct answer, and quite OK (and much better than pow, even if it were giving the correct results) for tasks like converting decimal strings into integers.
+I have to pow a bigInteger number with another BigInteger number.
+Alternatively, the spec is quite clear and says something like: C = (A^B) % M and you've broken that down in steps (... first, I must calculate A to the power of B. I'll worry about what the % M part is all about later).
+Since you anyway want to use it in a modulo operation with a prime number, like @Progman said in the comments, you can use modPow()
+Edit: I do agree with the commenters saying that using std::pow() in place of a literal constant is unnecessary - so for this particular problem, go with the 1.0E-10 constant; my explanation of the actual error you were getting and the way to solve it still stands.
+std::pow() is an overloaded function, and none of its overloads take (int, int) as arguments.
+Try using std::pow(10.0,-10.0) instead: std::pow has multiple [overloads (hyper-link)] matching your argument list; specifying 10.0,-10.0 forces the use of the specific overload:
+Note that this #define may be suboptimal depending on the use of TINY: every time you use it in your code, a call will be made to std::pow to calculate the same value.
+I think the best way is to define a constant variable and initialize it without using the pow function, like this
+Create a file at path when you want to launch pow server.
+Steps (assumes Lunchy and Pow already installed):
+Run lunchy stop -w pow: this will stop Pow, and mark the service as disabled in launchctl, so Pow will not load when the machine starts.
+=> alias pu='lunchy start -F pow'
+When you restart your machine, Pow should be stopped, and running pu (or your alias name) should start it up.
+I came across this issue recently and solved it by simply moving cx.pow.powd.plist to another folder, which successfully disables auto start of the Pow server.
+When I want to start it again I just move cx.pow.powd.plist back into ~/Library/LaunchAgents/cx.pow.powd and run powder up.
+std::pow() need two parameters, but you just give one
+The exponent should be a float, try using pow(M,1./N).
+pow function expects argument of type double.
+For calculating peakPowerForChannel, know that 10 will be an Int and peakPowerForChannel(_:) returns Float, not Double.
+Also, since pow(_: _:) returns Double, you can delete peakPowerForChannel's type specification:
+A Linux fork for pow is there which you can use [here (hyper-link)]
+Line 1426 of [this file (hyper-link)] shows the Python code that implements math.pow, but basically it boils down to it calling the standard C library which probably has a highly optimized version of that function.
+I don't know about python, but if you need fast powers, you can use exponentiation by squaring:
+This is what [the implementation of long_pow() (hyper-link)] does indeed.
+If b_i is 1, the factor is equal to a**2**i, and these powers can be computed for all i by repeatedly squaring a.
+As mentioned above, for pow(a, b, c) we can reduce modulo c in each step, both after squaring and after multiplying.
+Implement pow(x,n) in Python
+Implement pow(x,n,m) in Python
+Function pow is for floating-point numbers and may loose precision when casted back to integer type.
+Try replacing it with round(pow(number%10,3)).
+pow(,) is a function that's meant for floating point calculations, so what you get as the primary result is a float.
+No, there is no integer pow in the standard library.
+Note that your shown multiplication loop  may be slower than using std::pow to implement the function, especially since you also have a branch and division in the loop:
+That's a very important feature of integral powers.
+'pow' returns a double value, not an int.
+[http://www.cplusplus.com/reference/cmath/pow/ (hyper-link)]
+[http://www.cplusplus.com/reference/cmath/pow/ (hyper-link)]
+[std::pow() (hyper-link)] returns a floating point number.
+The [pow function (hyper-link)] works with float and double, not integers.
+The pow() function is typically implemented in the math library, possibly using special instructions in the target processor, for x86 see  [How to: pow(real, real) in x86 (hyper-link)].
+When the power N is an integer (as in your case) and small (as in your case) then it is faster to multiply N times than to call the library function.
+In order to detect cases where the power is an integer the math library provides overloaded functions, for example double pow(double,int).
+call the pow function in the library explicitly std::pow() to make sure that's the version you get, and not one from math.h
+You will then match the overloaded pow function in < cmath > which looks like this
+Notice that this function is implemented with __builtin_powi which knows the strength reduction of pow() to multiplication when the power is a small integer.
+From [man pow (hyper-link)]:
+The function pow() is defined in the math library.
+Your compiler by default is not linking your program with that library as a result of which the linker is unable the resolve the call to pow().
+Only thing I cannot do is to represent FLOAT and LONG using pow.
+In any case, pow is a C library function.
+So there are 2 separate issues here - how SSE handles NaN values, and how a pow function implementation handles NaN values.
+If the pow function implementation uses a different path for special values like +/-Inf, or NaN, you might expect a NaN value for the base, or exponent, to return a value quickly.
+Either find another math library which implements pow with NAN better or implement a fix like this:
+The pow(d,2) and pow(d,0.5) will be slower and possibly less accurate, unless your compiler optimizes them based on the constant second argument 2 and 0.5; note that such an optimization may not always be possible for pow(d,0.5) since it returns 0.0 if d is a negative zero, while sqrt(d) returns -0.0.
+With a complex function like pow() there are lots of ways that NaN could trigger slowness.
+It could be that the operations on NaNs are slow, or it could be that the pow() implementation checks for all sorts of special values that it can handle efficiently, and the NaN values fail all of those tests, leading to a more expensive path being taken.
+A more recent implementation of pow() might include additional checks to handle NaN more efficiently, but this is always a tradeoff -- it would be a shame to have pow() handle 'normal' cases more slowly in order to accelerate NaN handling.
+My blog post only applied to individual instructions, not complex functions like pow().
+a int-type, and ^ means power not XOR):
+As you said, it could be solved with a simple repeated multiplication.
+Real implementations of methods like Math.pow are highly specialized algorithms adapted for certain CPU types, so that the actual wrong-digit-error is kept as small as possible.
+To get an idea how it can look like:
+[http://opensource.apple.com/source/Libm/Libm-2026/Source/Intel/expf_logf_powf.c (hyper-link)]
+To understand how it works will require quite a bit mathematical and technical knowledge.
+So you have to calculate pow(10, 99999) % 210 without calculating pow(10, 99999).
+To do it, start with pow(10, 0) = 1 and multiply by 10 successively:
+After you calculate pow(10, 99999) % 210 in this manner (suppose it's xyz), adding 210 - xyz will make the number divisible by 210.
+Once you have done that then given c = pow (b, 65539, 928108726777524737) you can calculate back to b with pow(c, d, 928108726777524737)
+I had to see logs in ~/Library/Logs/Pow/app/ and found Ruby bug.
+[http://pow.cx/manual.html#section_2.6 (hyper-link)]
+[pow() (hyper-link)] returns a double type.
+You need to type cast the result to int as pow() returns double.
+note:pow(a,b) gives correct result when both a and b are integers as in your case.But you need to add 0.5 to the result when dealing with fractions so that the result gets rounded off to nearest integer.
+So starting your rails server with the option -b 0.0.0.0 should allow Pow to reach it.
+Too bad Pow does not seems to be maintain anymore.
+The emotional successor of pow(latest commit on the repo is from 6 November 2014) is [puma-dev (hyper-link)].
+According to their docs  pow is a no-go for Rails 5.
+As I understood you, you want to write your own implementation of pow, so this is just to illustrate how to use a pow that works for positive exponents also with negative ones.
+PS: If you do actually not want to write your own, you can use [std::pow (hyper-link)].
+All you have to do is cast a and b to Double and pass the values to pow.
+I personally like the ability to use a mathematical expression instead of a function like pow(a, b) for stylistic/readability reasons, but that's just me.
+Any operators that would cause pow() to throw an error will also cause these functions to throw an error, so the burden of error checking still lies with the code using the power function anyway.
+Using the native pow() function allows to eg take square roots (2 ** 0.5) or inverse (2 ** -3 = 1/8).
+Because of the possibility to use inverse or fractional exponents, I wrote all my code to return the default Double type of the pow() function, which should return the most precision (if I remember the documentation correctly).
+mklbtz is correct about exponentiation by squaring being the standard algorithm for computing integer powers, but the tail-recursive implementation of the algorithm seems a bit confusing.
+To calculate power(2, n), simply use:
+It turns out you can also use pow().
+Along with pow, powf() returns a float instead of a double.
+An Int-based pow function that computes the value directly via bit shift for base 2 in Swift 5:
+There must be some broken pow function in the global namespace.
+Then std::pow is "automatically" used instead in your second example because of ADL.
+Due to the representation of floating point values pow(10.0, 5) could be 9999.9999999 or something like this.
+EDIT: In case of cout << pow(10.0, 5); it looks like the output is rounded, but I don't have any supporting document right now confirming that.
+EDIT 2: The comment made by BoBTFish and [this question (hyper-link)] confirms that when pow(10.0, 5) is used directly in cout that is getting rounded.
+Whats happens is the pow function returns a double so 
+when you do this
+When used with fractional exponents, pow(x,y) is commonly evaluated as exp(log(x)*y); such a formula would mathematically correct if evaluated with infinite precision, but may in practice result in rounding errors.
+Looking up documentation for the pow function, it appears that it's supposed to work when x is negative and y has no fractional part (when x is negative and `y is even, the result should be pow(-x,y); when y is odd, the result should be -pow(-x,y).
+In any case, if you are trying to raise an integer to a power, it is almost certainly best to use integer maths for the computation or, if the integer to be raised is a constant or will always be small, simply use a lookup table (raising numbers from 0 to 15 by any power that would fit in a 64-bit integer would require only a 4,096-item table).
+Regardless of whether you're picking up std::pow or C's pow which takes doubles, even if the double version is chosen, 10 is exactly representable as a double.
+Now what I suspect is happening is that sections is not being assigned the literal 10 directly but instead is being read or computed internally such that its value is something like 9.9999999999999, which when raised to the fourth power generates a number like 9999.9999999.
+For example: int i = pow(sections, 5- t -1) + 0.5; // Add 0.5 and truncate to round to nearest.
+Looking at the pow() function: double pow (double base, double exponent); we know the parameters and return value are all double type.
+For example (maybe not rigorous), the floating point unit (FPU) calculate pow(10, 4)=9999.99999999, then int(9999.9999999)=9999 by type transform in C++.
+This is because pow is double.
+So, you can fix this by using i = ceil(pow()).
+compiling this gcc4.6.2 yields a pow function almost 4 times faster than the standard library's implementation (compiling with O2).
+Our instructor also had the same problem and he told us to seperate power to integer and floating parts.
+Assuming an x86 series processor, pow is the equivalent of
+In theory if you didn't have pow you could write:
+The second question (why does it return a domain error) is already covered in the comments, but adding for completeness: pow takes two real numbers and returns a real number.
+If you're curious how the pow function might be implemented in practice, you can look at the source code.
+We first look at the [math/w_pow.c (hyper-link)] file which has a promising name.
+It contains a function __pow which calls __ieee754_pow, which we can find in [sysdeps/ieee754/dbl-64/e_pow.c (hyper-link)] (remember that not all systems are IEEE-754, so it makes sense that the IEEE-754 math code is in its own directory).
+So you can see, for negative x and integer y, the glibc version of pow will compute pow(-x,y) and then make the result negative if y is odd.
+You can see that pow is full of special cases.
+The pow function is especially hard to read because it is heavily-optimized code which does bit-twiddling on floating-point numbers.
+The C standard (n1548 §7.12.7.4) has this to say about pow:
+There is also the matter of appendix F, which gives much tighter constraints on how pow works on IEEE-754 / IEC-60559 systems.
+pow does work for negative numbers.
+pow() does not work with complex numbers, so it will probably return NaN.
+[The Arduino pow() reference (hyper-link)] explicitly states that these values must be passed as floats and returned as doubles!
+Since the AVR doesn't have a FPU, pow() in avr-libc is implemented via calls to log() and exp().
+This doesn't happen on x86-class systems since those have hardware FPUs which are capable of giving the true integral value for non-negative powers of positive integers.
+My suggestion is that if all you need is non-negative integral powers of integers then you should perform a series of bitwise shifts and adds rather than having to link in the non-trivial, non-exact libm.
+Just as a complement to Ignacio Vazquez-Abrams' answer (which is the
+right answer), I wrote the following program to test for the accuracy of
+pow(2, i) for positive integer values of i:
+every power of two between FLT_MIN and FLT_MAX is exactly
+representable as a float
+the same standard does not require pow to be correctly rounded.
+You'll want to restart pow after changing files in /lib because Rails initializes objects here as it starts up and doesn't load them again after having started up (so changes while the server is up won't make a difference).
+You can restart Pow by touching the restart.txt file: touch ~/.pow/restart.txt
+The question is asking to (re)implement a recursive pow function on integers:
+pow returns a double, and with doubles you must always worry about precision.
+The product number * pow(...) may not return exactly 1.
+To get around this, you can always implement your own pow function with integers.
+See answers to [this SO question (hyper-link)] for more details on the pow issue.
+The inner pow is equivalent to Pin ** 2 (as you determined), with the outer call equivalent to (Pin ** 2 - term1) ** 0.5 or math.sqrt(Pin ** 2 - term1) (exponentiating to the 0.5 power is equivalent to taking the square root of a number).
+When function skip (or finish) for loop it ends its job with default value None
+so sometimes you have return x * None in place of return x * power(x,y)
+If your app works properly with the Rails server, but not on Pow, it's a server-side setup issue.
+Pow loads environment variables from checking two files in the application root
+.powrc
+.powenv
+I created the .powrc file using the touch command, then added my environment variables
+POWER is the synonym of POW.
+POWER(X,Y)
+  This is a synonym for POW().
+But you can also use the POWER function on MySQL since this is a synonym for POW:
+pow and power are synonyms in MySQL.
+I'd use power since it's part of the ANSI SQL standard and using it would make your code easier to port if you ever decide to use a different database.
+First create a .powenv file and add:
+
+export RUBY_DEBUG_PORT=1234
+export POW_WORKERS=1
+Now restart pow and attempt to connect.
+Actually, you can just use Pow to proxy yourapp.dev domain to your localhost:3000 by
+Raising a method to a power is nonsensical.
+Following the OP comment, this approach is indeed flawed, because in most cases 1/n does not have an exact floating-point representation and the floor of the 1/n-th power can be off by one.
+2) use the pow function to get an inferior estimate of the n-th root, let r.
+3) compute the n-th power of r+1 using integer arithmetic only (by repeated squaring).
+4) the solution is r+1 rather than r in case that the n-th power fits.
+If you then raise that answer to the n-th power, it will never be larger than your original X.
+As the MSDN docs state it's for financial/monetary calculations - where there isn't much call for POW unfortunately!
+The reason there is no decimal power function is because it would be pointless to use decimal for that calculation.
+According to this thread, the Math.Pow(double, double) is called directly from CLR.
+[How is Math.Pow() implemented in .NET Framework?
+what I believe this does is take the input of var1 and var2 and cast them to doubles to use as the argument for the math.pow method.
+After that have (decimal) in front of math.pow take the value back to a decimal and place the value in the output variable.
+If you don't want to mess around with casting and doing you own custom implementation you can install the NuGet DecimalMath.DecimalEx and use it like DecimalEx.Pow(number,power).
+After some consultation with the experts in Room #11, pow() won't work with the root of a negative number.
+Quirkily, using the ** (power) operator will work with the root of a negative number
+Given a a negative number, its powers to integer exponents are defined as follows:
+The [pow() (hyper-link)] function is correct.
+Couple of other endpoints you can hit to pull information out of Pow.
+[http://pow.cx/manual.html#section_3.2 (hyper-link)]
+ps aux | grep pow
+Should show you at least 2 entries if Pow is running.
+The one label simply "pow" is the powder process (the other should be from the grep command).
+This will reload the app into pow.
+I also recommend installing the [Powder gem (hyper-link)] for managing pow on your apps.
+For tmux users, "pow" never installed correctly under tmux.
+I read about this here:
+[https://github.com/basecamp/pow/wiki/Troubleshooting#doesnt-start-cant-connect-to-host (hyper-link)]
+I ended up uninstalling "pow", by running:
+Then in a new Terminal window without "tmux", I installed "pow" again.
+I later on ran into issues with not having a .rvmrc file (I was using .ruby-version and .ruby-gemset, but somehow "pow" wanted a .rvmrc file).
+Finally, after creating the .rvmrc file, I had to create a .powrc file in the project's directory.
+This was the contents of the ".powrc"
+I don't do Math.Pow(destB, 2) since it neither improves readability, neither shortens code.
+I believe you have the concept understood, you just forgot to multiply the pow(a,b) function using the asterisk.
+which can be solved via binomial series, i.e., direct power series arithmetics without solving linear systems of equations,
+With -O0 flag you should hopefully get undefined reference to 'pow' message.
+pow() function takes numbers only
+you cannot pass array on it
+For example: pow(a, b) a & b must be numbers
+And even though the result of pow(125, 1/3) might seem an integer, it's being stored internally as a floating point (there is an interesting [article (hyper-link)] by NikiC if you want to know more about the internals).
+Instead, you are not returning the result of pow:
+You never actuall call pow.
+For integers, you can use the 3-argument form of pow:
+How can I raise to very large non-integer powers and perform mod on them (e.g.
+This only works with an integer base however, if your base is a float as well you're going to have to implement a powmod algorithm yourself.
+The largest integral power of 2 less than or equal to this value is 229.
+Your second approach works because powers of two are exact and because you are using integer arithmetic in your subtraction.
+There was no reason for you to use pow.
+You have already computed pow(2,cnt).
+It works with pow and powl.
+It looks like Martin Ankerl has a few of articles on this, [Optimized Approximative pow() in C / C++ (hyper-link)] is one and it has two fast versions, one is as follows:
+He  also links to a second one [Optimized pow() approximation for Java, C / C++, and C# (hyper-link)].
+It's far better to compute x^2 as x*x as opposed to pow(x,2).
+Note: Almost all applications of pow() to an integer power involve raising some number to the second or third power (or the multiplicative inverse in the case of negative exponents).
+Using pow() is overkill in such cases.
+Use a template for these small integer powers, or just use x*x.
+If the integers are small, but not known at compile time, say between -12 and +12, multiplication will still beat pow() and won't lose accuracy.
+Accuracy against the universal CRT pow() function is very good.
+BTW, in Python usually the built-in a ** b is used for raising power, not math.pow(a, b).
+Don't use pow, and make the exponent complex (add 0j to it).
+From the title of this post indicating that the power is negative, is it possible that you actually wanted 1.3-1.07 rather than -1.071.3?
+Noninteger powers of complex (and negative) numbers involve an important subtlety.
+Since fractional powers of negatives are NEVER real, Python is appropriately throwing an exception.
+Powers of negative bases are complex numbers.
+(But I call this undefined behavior indeed, more than a bug in the C runtime's pow().)
+
+  int x1 = (int)(pow(10, 2)+.5);
+Built-in Function: double __builtin_powi (double, int)
+Returns the first argument raised to the power of the second.
+Unlike the pow function no guarantees about precision and rounding are made.
+Built-in Function: float __builtin_powif (float, int)
+Similar to __builtin_powi, except the argument and return types are float.
+As __builtin_powif has equivalent performances to a a mere product, it means that the additional time is used to the controls required by pow for its guarantees about precision and rounding.
+% Assuming your compiler chose to just call pow in the shared library like [https://godbolt.org/z/re3baK (hyper-link)] (without -ffast-math)
+I did not take a look at how pow(float, float) is implemented, but I see some points.
+x*x*x is inlined while pow can't be as it is in a shared library - function call overhead difference
+If compiler know something is constant, it is likely to generate more efficient code
+
+x*x*x : Just generates assembly for float value multiplication twice
+pow : This must have considered all the exponent values so probably it has general code(less efficient, may include loops)
+Ended up being about powify not removing the firewall exception and just stopped pow instance to free up some memory and processing power.
+Still need to uninstall pow for firewall rule to be removed.
+base raised to the power of exp.
+so you can trust pow function but you cant trust float comparsion
+The program must not use any pre-defined C++ functions (like pow function) for this task
+In IEEE-754, double (binary-64) can represent all integers exactly up to 9007199254740992 (that is 2 power 53).
+All values of b^l, where l is a power of two (l=2^t) are computed and stored in var bb and if the corresponding tth bit of e is set, this value of b^l is integrated in the result.
+Notice that value is declared as an int rather than a double, which means that if you try to compute power(1.5, 1), you'll get back 1 rather than 1.5.
+Try computing power(2, -1).
+You can fix this pretty easily (you could, for example, compute power(2, 1) and then take the reciprocal), but it's troublesome as currently written.
+Most exponentiation, when the power is an integer, is computed using an algorithm called [exponentiation by squaring (hyper-link)], which is considerably faster than your code.
+Try computing power(1.5, 1.5).
+Your function should be like this, it will run slower than pow() which runs in O(log Y):
+If you're comparing multiplication with the [pow() (hyper-link)] standard library function then yes, multiplication is definitely faster.
+C/C++ does not have a native "power" operator.
+Thus said, the pow function is probably what you are looking for.
+pow is a library function, not an operator.
+Unless the compiler is able to optimize out the call (which it legitimately do by taking advantage of its knowledge of the behavior of the standard library functions), calling pow() will impose the overhead of a function call and of all the extra stuff the pow() function has to do.
+The second argument to pow() doesn't have to be an integer; for example pow(x, 1.0/3.0) will give you an approximation of the cube root of x.
+If the number you want to square is an integer, pow will involve converting it to double, then converting the result back to an integer type, which is relatively expensive and could cause subtle rounding errors.
+Using x * x is very likely to be faster and more reliable than pow(x, 2), and it's simpler.
+The implementation of pow() typically involves logarithms, multiplication and expononentiaton, so it will DEFINITELY take longer than a simple multiplication.
+Hundreds of cycles in one floating point operation, or in some processors, even floating point calculations are a number of integer operations that perform the same steps as the float instructions on more advanced processors, so the time taken for pow() could be thousands of cycles, compared to a dozen or so for a multiplication.
+The pow() function is useful when the exponent is either large, or not an integer.
+Even for relatively large exponents, you can do the calculation by squaring or cubing multiple times, and it will be faster than pow().
+pow(x,2) will most likely be converted to xx.
+However, higher powers such as pow(x,4) may not be done as optimally as possible.
+For example pow(x,4) could be done in 3 multiplications xxxx or in two (xx)(x*x) depending on how strict you require the floating point definition to be (by default I think it will use 3 multiplications.
+It would be interesting to see what for example pow(x*x,2) produces with and without -ffast-math.
+you should look into boost.math's pow function template.
+it takes the exponent as template parameter and automatically calculate, for example, pow<4>(x) as (x*x)*(x*x).
+[http://www.boost.org/doc/libs/1_53_0/libs/math/doc/sf_and_dist/html/math_toolkit/special/powers/ct_pow.html (hyper-link)]
+As an interview question relating to pow() substitute, certainly a solution that takes log2 N steps (as below) is preferable to one that takes N steps (OP's approach) where N is the exponent.
+See [http://www.cplusplus.com/reference/clibrary/cmath/pow/ (hyper-link)]
+1277777777777 is not an even number, therefore -smt to the power of 12777777777 is a negative number, and 10...0th root from that is not a real number.
+The result of pow( dN,dD ); is only defined if either dN is positive or if dD is an integer.
+For example, pow(-1., 0.5) won't work either.
+The return type of pow is double/float no matter what is the type of input, and the return type of expo is size_t because compiler instantiates expo for size_t.
+There is a template base declaration for pow in gcc (I'm not sure it's standard or not), and it accept types:
+pow is running as a separate process and knows bother about you spec_helper/test_helper, where you set your RAILS_ENV to test.
+If you want pow to run in test environment you have to explicitly set it, for example echo export RAILS_ENV=production > .powenv
+Your factor is (int)1 / (int)9 which is (int)0; Almost anything raised to the zeroth power is one
+you could do something like this
+So you calculate the power of zero which is always 1.
+You can use this function instead of pow:
+The pow can be computed on integer math relatively easily see:
+
+[Power by squaring for negative exponents (hyper-link)]
+pow(x, y) is most likely implemented as exp(y * log(x)): modern CPUs can evaluate exp and log in a couple of flicks of the wrist.
+Your best bet is to roll your own version of pow for integer arguments; i.e.
+As a starting point, see [The most efficient way to implement an integer based power function pow(int, int) (hyper-link)]
+By changing my ~/.powconfig to add the Developer directories to my path, pow ran the app fine.
+Generally, you need a ~/.powconfig file with:
+See the [issue discussion (hyper-link)] and [the pow guide (hyper-link)].
+1) cat ~/.powconfig
+
+   touch ~/.pow/restart.txt
+I'm using rbenv, and had this problem, when as suggested by [this answer (hyper-link)], the version of Ruby was different in the app's ENV than it was for Pow.
+I had set the Ruby version using the [RBENV_VERSION (hyper-link)] environment variable, which for some reason was not picked up by Pow.
+I had this error using rbenv and simply uninstalling and re-installing pow fixed it:
+curl get.pow.cx/uninstall.sh | sh
+curl get.pow.cx | sh
+So if you need a consistent power function, treating 00 as NaN in the real case too would be the reasonable way to go, as setting  00 = 1 is somewhat dodgy in real arithmetic anyway; though less so than in the complex case.
+Note that I somewhat simplified the math here, but I'll repeat the key point to take away: no number exists that would be a meaningful result for 00 interpreted as the complex power function.
+Last, it is worth noting that the result of std::pow(std::complex(0.0, 0.0), 0) is implementation defined; the above is a justification for the reasonable choice your implementation made.
+You're actually asking for -3125 to the 0.200000000000000011102230246251565404236316680908203125th power, which has a very large family of solutions.
+Raising a negative number to a non-integral power produces a complex result.
+Your C implementation, including its math library, has a bad implementation of pow that returns inaccurate results.
+(A good pow implementation returns an exact result when the mathematical result is exactly representable in the floating-point format.)
+For example, for pow(7, 2), your pow may be returning a value slightly under 49.
+To work around this defect in your library, do not use pow for integer arithmetic.
+In some circumstances, using round(pow(N, n)) may suffice, but there are considerations of the range of values for which this will work (wide integers may be able to represent integers that double cannot) and sometimes performance.
+The problem is that there is no definition of pow that takes two longs as parameters.
+As far as I know, pow is not confirmed to support long, long as parameters by ANSI.
+Pow has only support for double and not long.
+i havent heard of extending suport to long in pow!
+The result of [pow (hyper-link)] is double.
+The function [pow (hyper-link)] returns a double.
+As others said, using the pow function for integers as well as casting from double to int is inefficient and can lead to errors.
+I would suggest (by agreeing with Tyler V's suggestion) you to implement this simple recursive integer pow:
+Let's take a look at the assembly code generated for the first version of 
+pow() without optimizations (-O0):
+We see a recursive call pow(double, unsigned int).
+pow(x, y) can be written as exp(y * log(x)).
+It looks like you're after element-wise power-raising?
+In that case, you have to use the [np.power (hyper-link)] function:
+The problem at hand is not any kind of overflow, but that the result of pow(-0.857487, 1.5) = -0.857487 ^ 3/2 = sqrt(-0.857487)^3 = -0.794038... i (simplified demonstration math) is not a real number.
+In general, pow(a,b) does not exist in the real numbers for negative a and non-integer b.
+For positive a however, pow(a,b) always exists and is real, so if you work with real numbers only, you probably want something like pow(abs(a),b).
+The problem is that you want to raise a negative number to the 1.5th power, that is 3/2, and the negative sign will be kept when raising to the 3rd power, and then you have a square root of a negative number which is not real.
+As I said, this is a dirty trick, and one of the reasons that this operation (non-integer power of a negative number) is not even defined.

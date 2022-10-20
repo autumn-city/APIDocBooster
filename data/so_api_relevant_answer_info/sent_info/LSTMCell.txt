@@ -1,0 +1,52 @@
+[LSTMCell (hyper-link)] is a cell that takes arguments:
+LSTMCell: in for loop (seq_len=5 times), each output of ith instance will be input of (i+1)th instance.
+If we set num_layers=1 in LSTM or add one more LSTMCell, the codes above will be the same.
+Origial Pytorch code: 
+self.att_lstm = nn.LSTMCell(1536, 512) 
+h_att, c_att = self.att_lstm(att_lstm_input, (state[0][0], state[1][0]))
+state[0][0], state[1][0] is the tensor(10,512) 
+What I am tried in keras:
+inputs = Input(shape=(10, 1536))
+lstm, h_att, c_att = LSTM(units=512, input_shape=(10,1536), name='core.att_lstm', return_state=True)(inputs) 
+so I am not sure if it is correct.
+LSTMCell is an object (which happens to be a layer too) used by the LSTM layer that contains the calculation logic for one step.
+Or they use RNN layers containing LSTMCell.
+An LSTM layer is a RNN layer using an LSTMCell, as you can check out in the [source code (hyper-link)].
+Alghout it seems, because of its name, that LSTMCell is a single cell, it is actually an object that manages all the units/cells as we may think.
+In the same code mentioned, you can see that the units argument is used when creating an instance of LSTMCell.
+My implementation of the LSTMCell (well, actually it's just slightly rewritten tensorflow's code):
+BasicLSTMCell – An LSTM cell based on Recurrent Neural Network    Regularization.
+LSTMCell – A more complex LSTM cell that allows for optional peephole connections and cell clipping.
+Given this, I would suggest you to switch from BasicRNNCell to BasicLSTMCell.
+To avoid this, one can use the built-in zero_state method for an LSTMCell to initialize the state in the correct way without worrying about size differences.
+As it seems, the LSTMCell implementation is more hands on and basic in relation to how a LSTM actually works.
+3) You may want to initialize the LSTMCell state too:
+Based on your tracing of the code, I believe that you are correct: an LSTMCell will be initialized with glorot_uniform_initializer, also known as the Xavier uniform initializer, whose implementation is found at:[https://github.com/tensorflow/tensorflow/blob/38e0922d1e2dcd572379af4496f878492e9f689a/tensorflow/python/ops/init_ops.py#L553 (hyper-link)]
+According to the [doc (hyper-link)] of LSTMCell, it requires a mandatory units parameters first, that is the dimensionality of the output space.
+I subclassed the LSTMCell class, and changed its init and build
+methods so that they accept given variables.
+LSTMCell is the basic building block of an LSTM network.
+You should use the LSTM module (which uses LSTMCell internally).
+Basically you want to use one LSTMCell for each layer, and you should be careful on how to go from input to output, layer by layer taking into account the hidden states.
+If you look into implementation of [LSTMCell (hyper-link)] you would notice, that hybrid_forward requires explicit states argument.
+LSTM class is more than LSTMCell.
+It actually uses LSTMCell internally, but it also adds extra functionality on top of it.
+For example, you can specify LSTM to be multilayered or bidirectional, where LSTMCell is essentially just a bunch of LSTM-related formulas for calculating gates, c and h.
+This is difficult to say without more context, but if it's just about running the TF1.x code in TF2 you can probably replace the line with 
+cell1 = tf.compat.v1.nn.rnn_cell.LSTMCell(...)
+Note that I'm using the "graduated" version of LSTMCell, from tf.nn.rnn_cell package, not tf.contrib.rnn.
+Note that while Keras has an implementation of LSTMCell, you might want to use [LSTM (hyper-link)] instead, which is not just a cell but a fully unrolled RNN operating on the whole sequence at once.
+Custom LSTMCells don't support GPU acceleration capabilities - this statement probably means GPU acceleration capabilities become limited if you use LSTMCells.
+See the runnable example in [my answer on a similar question (hyper-link)] (it uses BasicRNNCell, but you'll get the same result with LSTMCell).
+Look like RNNCell.LSTMCell and write your own with changes you want.
+In the end, both cell and hidden state for nn.LSTMCell have shape (batch_size, hidden_size) whereas you initialize those once in the constructor with shape (1, hidden_size).
+As a side note, you are using nn.LSTMCell which is just a single cell computation.
+As I understand from here [https://github.com/iwyoo/ConvLSTMCell-tensorflow/issues/2 (hyper-link)]
+Currently, tf.nn.dynamic_rnn doesn't support ConvLSTMCell.
+Therefore, as described here, [https://github.com/iwyoo/ConvLSTMCell-tensorflow/issues/1 (hyper-link)] you have to manually create the RNN.
+An example is provided in the documentation, [https://github.com/iwyoo/ConvLSTMCell-tensorflow/blob/master/README.md (hyper-link)]
+They use the Hadamard-product for weights connected to the cell outputs C. Printing the weights of my ConvLSTMCell in Tensorflow, it seems like they don't use the weights Wci, Wcf and Wco at all.
+So, can anybody tell me the exact implementation of the TF ConvLSTMCell?
+The shape of all RNN-like cells are determined by its state_size attribute, and for BasicLSTMCell, it is a tuple of two tensors of shape [num_units].
+In tensorflow 1.5, LSTM variables are defined in LSTMCell.build method.
+In your case, you are using keras.layers.RNN with stacked LSTMCell, which fails the criteria for tf.keras.layers.Bidirectional even if you use single LSTMCell, because it does not have  attribute go_backwards in it.

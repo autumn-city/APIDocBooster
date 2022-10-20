@@ -1,0 +1,62 @@
+RMsprop keeps the exponentialy decaying average of squared gradients.
+Usually batch sizes around 40 gives better results, as for my experience training with 40 batch size for 3 epocs using default RMsprop gives around 89% accuracy.
+Have you tried adjusting the learning rate of RMsprop optimizer ?
+go to keras folder in your computer and search rmsprop.
+Probably rmsprop is in another folder and it's not in optimizers folder.
+The list of available attiburte of the RMSProp optimizer are:
+[https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/training/rmsprop.py (hyper-link)]
+RMSprop (as seen in the documentation) instead of RMSProp.
+Example: [http://www.erogol.com/comparison-sgd-vs-momentum-vs-rmsprop-vs-momentumrmsprop/ (hyper-link)]
+(It is even partially inspired from RMSProp that you use)
+The documentation you refer to explicitly mentions:
+
+This implementation of RMSProp uses plain momentum, not Nesterov momentum.
+AFAIK there is no built-in implementation for Nesterov momentum in RMSProp.
+Vanilla adaptive gradients (RMSProp, Adagrad, Adam, etc) do not match well with L2 regularization.
+Although the expression "Adam is RMSProp with momentum" is widely used indeed, it is just a very rough shorthand description, and it should not be taken at face value; already in the original [Adam paper (hyper-link)], it was explicitly clarified (p. 6):
+There are a few important differences between RMSProp with momentum and Adam: RMSProp with momentum generates its parameter updates using a momentum on the rescaled gradient, whereas Adam updates are directly estimated using a running average of first and second moment of the gradient.
+Adam is a recently proposed update that looks a bit like RMSProp with momentum.
+The CPU version is in [training_ops.cc (hyper-link)] and the GPU (CUDA) version in [training_ops_gpu.cu.cc (hyper-link)] (look for the template struct ApplyRMSProp).
+The kernel for RMSProp starts on lines 500 and 408 respectively.
+Miyosuda's A3C implementation (found at [https://github.com/miyosuda/async_deep_reinforce (hyper-link)]) utilizes shared RMSProp stats over the training threads.
+So first of all, you don't have to use softmax in the "model" as it is done by the nn.CrossEntropyLoss, and I also think that the RMSprop doesn't work with momentum.
+RMSprop uses a momentum-like exponential decay to the gradient history.
+Since the reference to weights is shared between the two routines, every time Adam.minimize_trace and RMSprop.minimize_trace run, they modify the same array.
+You need to choose either rmsprop or adam as the main optimizer.
+In that file, you can see imports for, e.g., the [tf.train.RMSPropOptimizer (hyper-link)] class.
+The corresponding line for tf.train.RMSPropOptimizer is [here (hyper-link)].
+But once you have your model and want to train at scale, I guess ADAM, AdaGrad and rmsprop are the choices.
+Sometimes also replacing sgd with rmsprop would help.
+Use RMSProp with heavy regularization to prevent gradient explosion.
+You can change your optimizer to Adam, SGD, or RMSprop to find the suitable optimizer that helps your model coverage faster.
+Adam with beta1=1 is equivalent to RMSProp with momentum=0.
+The argument beta2 of Adam and the argument decay of RMSProp are the same.
+However, RMSProp does not keep a moving average of the gradient.
+Adam is a recently proposed update that looks a bit like RMSProp with
+  momentum
+I haven't tested this code, but the only thing you need to change is to tell updates to use adam(..) instead of the updates already provided here, so something like this should work (complete code looks like this (we need to get rid of rmsprop stuff)):
+EDIT2:
+I ran some tests locally with my implementation of neural nets on the MNIST dataset with different parameters and 1 hidden layer using RMSPROP.
+Actually - using RMSProp as a first choice for RNNs is a rule of thumb - not a general proved law.
+From browsing the internet it seems some optimizers like ADAM or RMSPROP have a problem with resetting weights after recompiling (can't find the link at the moment)
+Adaptive optimizers such as ADAM RMSPROP, ADAGRAD, ADADELTA, and any variation on these, rely on previous update steps to improve the direction and magnitude of any current adjustment to the weights of the model.
+I think you can include any arguments from mx.opt.rmsprop.
+use Adam Optimizer instead of RMSprop
+As I mentioned, I'm not especially familiar with RMSprop.
+As I've mentioned (repeatedly) I'm not very familiar with RMSprop.
+model.compile(lose='mse', optimizer='rmsprop')
+model.compile(loss='mse', optimizer='rmsprop')
+After that, I changed the loss function to binary_crossentropy and the optimizer to RMSprop as shown below:
+lr = 0.001 (the default learning rate for RMSprop)
+The default value of learning rate in RMSprop optimizer is set to 0.001, therefore the model takes a few hundred epochs to converge to a final solution (probably you have noticed this yourself that the loss value decreases slowly as shown in the training log).
+BUT the same model replacing the RMSprop optimizer with Adam was most accurate with loss=1.22e-11 in 2387 epochs.
+This RMSprop method is a symbolic method.
+It does not actually compute the RmsProp parameter updates, it only tells Theano how parameter updates should be computed when the eventual Theano function is executed.
+If you look further down [the tutorial code you linked to (hyper-link)] you'll see the symbolic execution graph for the parameter updates are constructed by RMSprop via a call on line 67.
+The Python function RMSprop will be called only once, irrespective of how many times the train function is called within the for loops on lines 72 and 73.
+Within RMSprop, we are telling Theano that, for each parameter p, we need a new Theano variable whose initial value has the same shape as p and is 0. throughout.
+The function executions on line 74 will not call the RMSprop Python function, they execute a compiled version of RMSprop.
+There will be no initialization inside the compiled version because that already happened in the Python version of RMSprop.
+Also learning rate for rmsprop usually ranges from 0.1 to 0.0001.
+I think that's because the MATLAB code uses the Adam optimizer for training, and you defined RMSprop instead in:
+(There are some new algorithms trying to reduce parameter-tuning with adaptive learning-rates like Adam, RMSprop and co.; but plain SGD is still the most common algorithm and was used for AlphaGo for example)

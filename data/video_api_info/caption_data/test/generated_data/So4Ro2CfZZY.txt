@@ -1,0 +1,915 @@
+hello everyone today we are going to
+look at
+the uh phased lstm implementation based
+on our previous implementation of
+the um a little bit jacked up lstm
+vanilla lstm with the peepholes so it's
+not like totally vanilla
+it's basically based on the equations
+from
+the paper so if we look
+at these equations so on this chart a
+that was what we implemented last time
+and now we're going to implement b so
+here in the b
+what we need to be aware of is that
+see here there are two places where
+as an input you also get t here so this
+is an index t
+of the time step so this is like just
+following from zero to some maximum
+sequence length
+yeah and also the comment is that some
+of the
+uh state-of-the-art lstms some other
+models
+they they actually um concatenate t
+to the x so that is a common strategy of
+uh like improving a little bit uh
+the performance of lstm so in this case
+it's not concatenated but it's
+directed to the gates uh k
+so those are these uh phase gates phase
+gates
+last time we implemented these equations
+from
+one to five for the uh very basic um
+peephole based lstm where the peak holes
+are
+these ones and the other parts are as a
+simple lstm
+and yeah okay hopefully
+so and then here we have the
+new gates so with the input
+comes the index that we pass
+for every sample so for every layer
+so every layer basically is an lstm cell
+and here we have some learnable
+parameters
+actually in some implementations that i
+have seen they also
+try to learn the r parameter i think
+also
+here in the paper somewhere mentioned
+that you can get
+reasonable results also if you learn
+everything so you have just like a
+struct
+like adaptable structure that you learn
+things
+uh so the gates itself they are k gates
+here
+and everything with regards to k gates
+are based on
+this um parameter that you have
+on this side v so this one
+v parameter so this is actually not a
+parameter just like
+just just like equation that you use
+and the parameters are actually the data
+but this tau and s and the
+s is uh shift basically phase shift
+those are the learnable parameters tau
+and s
+then r parameter is a hyperparameter but
+it can be also learnable of course
+then alpha again can be learnable or it
+can be
+a hyperparameter and also so it's a bit
+like a leaky
+like this so that the gradient doesn't
+disappear but there is also somewhere
+written
+i need to quickly find that
+the alpha alpha is actually set only in
+training
+time so in the test time it's set as
+zero you can
+later find the place where it's written
+like that
+and the cape gates are
+included like this so they are in the
+middle of
+the cell state and the hidden state so
+that's that's basically
+the last thing that's there so they are
+in the between
+all of those things and the problem here
+that is not
+mentioned in the paper at all that is
+kind of interesting
+is that mod is not uh
+the there is no derivative for the mod
+uh
+at least as far as i know so you could
+probably create some rules basically but
+uh
+uh in general there so there is another
+alternative
+the alternative that i found in the um
+pi torch uh layer forums
+so one guy posted these uh like
+functions that you can use as an
+alternative so if i
+like compare this so the simple mod
+function
+yeah like with the floating point looks
+like this so if i
+increase the the interval let's say for
+uh two so if i if i enter anything
+like here from this side till two so
+then i will get out the uh after
+after so it increases increases increase
+and if it matches the interval
+then i get out the zero so that is the
+proposed like
+effect of the mod so for example if i
+input 4 i will again get out 0 if i
+input 6
+i will get out 0 if i input 2.5
+i will not get out 0 but i will get the
+reminder till the next
+like this this place where it goes down
+and actually
+so this person and i'm not sure if he
+invented this himself probably not but
+uh there is like
+the alternative how you can write it
+with the
+tang and snark tangents and they
+basically have the
+exactly same uh same uh weight how it
+operates
+so yeah so we'll use that one for the
+mod
+and i also shared that code for you
+i think that's about it we can start
+right working on the code
+so if i go back to the if you have any
+questions at some point you can also ask
+of course
+so i'm also not like completely
+total expert on this but my at least
+run some experiments got it working so
+one thing that i also
+implemented is uh that
+i have uh the input features config like
+it can be configurable
+because so we have 28 by 28
+that is 784
+so the theoretically for this mnist
+thing we can have the 784
+time steps for for each sample
+but because it's 28 by 28 but we can
+also
+reduce the complexity of the task by for
+example
+entering the input features as 28 and
+that i
+actually would advise to do right now
+because uh
+of course later the all benefits of the
+phase dollar stem is
+with the large sequences but right now
+for the testing purposes it's not it's
+not not good idea to test something with
+input size of one because otherwise like
+some of the equations can work really
+good with one but really bad with
+something else than one so and 28 is is
+also easy
+because it's like just like rows from
+uh from the uh from the dd
+image and that's that's not too
+difficult to learn
+so we'll use that one we also use only
+two classes here
+if you want to include all 10 classes
+you can uncomment that line
+if you want to have even more classes
+you can use
+extended mnist evenness there
+so that's part and now we go to the code
+where we need to change some things
+so if we go inside the phase
+lstm so it's right now just a
+vanilla lstm cell it doesn't have yet
+all of the things that we need
+so one of a couple of things that we
+need to do is first to add some
+parameters
+so for lstm it's just a hidden size
+maybe you can add also dropouts i have
+seen
+like dropouts inside the lstm that's
+quite common
+so one thing is the alpha alpha will be
+that that
+leaky parameter that will allow the
+gradient
+to flow even if the gates are closed
+that's only for the training not for the
+test
+for the inference so alpha would be
+maybe even i don't i
+don't like to write it like that e minus
+3 yes
+yes e minus 3 so yeah in the paper it's
+written
+0.01 so anyway so then
+the um that in the paper they also have
+very interesting way how they
+uh select the initial tile values if you
+look at
+different tasks they use there is
+written
+maybe i can show you just a second
+so that alpha parameter we need and we
+need
+also the
+tau so tau if you look at these lines
+they say that
+uh i'm not sure if this one was the line
+but they they they are here right the
+period
+tau was drawn you know uniformly
+from exponential domain and they
+compared
+different kind of domains so it's like
+exponent function from uniform
+distribution
+drawn from zero to two or two from two
+to four and so on so on
+so they have quite an interesting way of
+initializing the tau values
+as you know like for the lstms the
+initialization part is quite important
+it kind of like makes it work good or
+bad
+i'm also i'm not sure like which which
+kind of initialization
+would work best for this particular task
+but we'll use one that
+was referenced in the paper from 0 to 3
+so tau max will be
+3.0 then
+the r factor
+are on as in the paper
+that was zero point
+so we can again write it five
+five e minus two
+okay so we have these
+let's see why it's okay yeah cool
+so we have these three then these three
+right
+uh that those those three parameters
+okay
+then the learnable things so we will
+of course you can learn more of those
+things you can learn all of them
+the including alpha and r but we'll
+learn only tau
+and s or shift so
+so tau
+tau parameter will be torch and then
+parameter
+parameter
+torch float
+tensor and
+here's the interesting thing one like it
+was
+i think is not specifically mentioned in
+paper but it should be the size
+of the hidden size because there was
+there were the hammond product probably
+that's
+if they would use just a scalar value
+they would not use the
+common product there or the paradise
+calculation that's why it's probably
+the size of hidden size so
+just the one thing is yeah hidden size
+let me check
+also i'm a little bit um
+yeah it should be like that that that
+should be fine hidden size
+and then the initialization
+from uniform from zero to
+uh tau max so in pythorg
+if there is a this underscore at the end
+that means that
+you execute the uh that kind of
+distribution sampling for the vector
+that you
+choose if you use without that sign it
+will
+i think return the distribution itself
+not actually the
+drawn samples so and then at the end
+also
+the x exponential
+function like that that's also
+interesting
+should i use the sign so yeah we can use
+it like that
+so self uh shift
+so so we call s as shift so it's a
+little bit clearer
+that the day is for the shift and the
+tau is like time interval
+so for i mean the frequency
+dodge and and
+[Music]
+phase so frequency and shift i think
+that was the
+those those two things parameter torch
+float tensor fluid tensor right
+again the hidden size and again
+uh in the paper they they write that the
+initialization for this
+is based on the tau so it's again from
+uniform from zero
+till the value of the tau
+one is one way would be that you could
+draw
+uniform for each of the dimensions of
+hidden size by the selection of the tau
+but the uniform function as i think
+works only with its colors
+so we could use we could try to use
+torch
+mean maybe
+maybe mean or max self
+tau so just the value of that and
+item will make it as a just a floating
+point number
+and so that would be approximately what
+they had in the paper
+hopefully so tell and shift like that
+what i could do so so if somebody is not
+following all of these things maybe i
+will
+add a couple of small screenshots in the
+chat
+meanwhile while i'm coding this so
+if somebody wants to follow this and
+i'm doing this tools fast just a second
+trying to make a screenshot link
+so i have the screenshot link
+i am copying that in the chat so
+this this part of the code and also
+the initial oscillation part of the code
+here
+so i will drop those in the chat
+and then we'll need to just implement
+the forward pass
+that is the most difficult part
+so yeah okay
+so i dropped in the chat those
+initialization parts
+so then here we can maybe in between
+uh the for loop and the sequence of
+permutation we can calculate the v
+values
+as fee is based on the
+dow and shift and down shift only
+changes when you learn them
+when you have the back probe and the uh
+weight change
+so we can calculate all of them directly
+for
+for all of the states before the for
+loop so we don't need to calculate
+on the every forward so to do that we
+can
+we first need the vector
+or matrices of the time steps so time
+step indexes so we can write times
+torch range so this particular task is
+very nice because all of the sequence
+lengths are the same
+for the language modeling text and some
+other tasks it will not be
+that fun so this is that will be really
+not fun so size zero
+that that's that is the batch size oh no
+not the batch size but the sequence size
+sorry so the maybe
+i can even write it out so it would be
+so more clear sequence length
+so this is that one
+like that so just for clarification
+and then we unsqueeze unsqueezed
+dimension
+of one because we want that
+these times vectors would be the shape
+of the hidden size
+so now we would we would have the
+sequence by one but we want
+this to be sequenced by hidden size so
+we can use
+some of the functions we already know
+how to use one is the
+either the repeat function or the expand
+function
+the expand function just copies the
+pointers and the repeat function
+actually copies the values
+so before we use the repeat i think we
+also could use the
+expand in those cases because it's not
+really
+important to copy them i think so in
+some cases you cannot copy them
+so i cannot copy pointers
+so here the this will be the sequence
+length
+comma self hidden
+size so just preparing the
+vector let's say matrices of those
+indexes
+then one thing that's necessary is to
+move
+this uh of matrices to
+device where we calculate all of our
+uh function graph that is probably later
+on gpu
+for the testing purposes this will be
+cpu for when moving that
+to the um google collab for the testing
+then
+then we'll use the gpu so
+that this line then we can calculate the
+fee
+so fee that was in the equation so let
+me show the equation
+that equation was the small the with the
+mod
+so where is it
+so here uh this part with
+with the with the feet with the mod
+so you calculate that one in one go for
+all of the
+sequence so we'll go back to the code
+so the fee here f mod so i provided with
+this nice function that a good people
+from
+um by torch forum provided us
+so we can use that one so if somebody
+knows how to do
+how how the tensorflow derivatives for
+f mod works then that would be great if
+somebody can
+explain me i didn't have time to explore
+but
+this is kind of interesting because how
+they how they
+derive the gradients for that so self
+tau so this is one is times minus shift
+and then the modulus of tau
+and then it's divided by self
+tau plus i would like to add some
+epsilon to avoid
+division by by zero
+so that is like that
+then the alpha
+alpha the alpha
+is self alpha
+alpha but in the case
+of if not uh self
+training so the one thing i will write
+it down is all trade
+but it's not here i mean it should be
+it is uh inherited from the torch and
+module alpha should be zero when it's
+in the inference phase and you can get
+model in the inference
+phase as you know it's down in the down
+in this code lower part it's written
+like this model
+model level so it just makes this flag
+training to
+uh false and this is mainly used because
+in models they have dropouts right
+drop oats if you don't make monte carlo
+some kind of what was it called uh this
+was uh
+some kind of base monte carlo networks
+or something like that
+the very where you leave dropouts on
+even
+even if it's in the inference mode then
+then of course you would not use it but
+in most cases you
+switch off the dropout so you can have
+consistent
+results you will not get unexpected
+results in production later when
+some something drops out in your model
+so we'll use this one
+then the k gates so the k gates is this
+uh
+three part equation this uh
+set of three conditions so you can use
+the
+k torch ver
+uh yes torchwear so the first
+part of the equation is fee
+is lower than 0.5
+actually i also did not investigate how
+often
+each part of these fire that could be
+really interesting to
+log the actual
+uh like how many times each of those
+gates
+uh open or on like the equation
+these uh conditions are true so that
+would indicate
+if the r value is correct or not because
+the r value
+controls how often all of these gates
+open
+so okay we'll write this one
+and in case if this is true then we get
+two
+times so that is the right side of the
+um in the publication they had in right
+side of that
+equation so two times five
+three divided by itself
+are on so r on will not be
+zero that's why we don't need to have
+their
+epsilon then the other part
+again torch there will split it
+again into two parts
+and here it's a little bit tricky
+because enough python
+of course you can write in a simple
+python you can write
+0.5 something x
+like 1.5 or whatever
+and this this would be the normal um
+like
+syntax for if statements of comparing
+scalar value in range in torch
+working with vectors it will not work
+like that so that's why
+we'll use the torch logical
+and logical
+interesting that the autocomplete thinks
+that there is no logical end but there
+is
+so one is 0.5
+one part one boundary will be 0.5
+are on so this will be one
+boundary so with the for fee
+and then the fee on the other side will
+be self
+r on
+like that right and then
+the
+then then then there will be this
+these two parts of the output so one
+will be two
+two minus two
+multiplied by fee divided by
+self r
+[Music]
+serve are on
+okay like that
+right and the other one will be this
+leaky leaky
+leaky output leaky gate basically so
+it's a little bit open
+gate so alpha v hopefully this part will
+be okay
+if not then we'll fix it later but i
+will again
+add the screenshot of this part of the
+code
+so you can catch up because probably
+this was too fast
+so or maybe also leave this open for a
+moment
+hopefully there is not some there is no
+errors
+okay the the next screenshot link is
+also
+in the chat
+okay i don't think look at this there's
+a little bit
+think about it actually we have very
+very little to change to
+make it workable
+it's a little bit wait for you to catch
+up
+so yeah maybe i will write in chat so uh
+are you ready to move
+move on so plus
+minus working
+working on it so at least one person
+says plus let's see about about others
+um
+down okay two pluses
+just a second i will
+make sure i think i i run in google
+co-op some experiment that i wanted to
+compare the results but
+fortunately seems like i run
+the oh no
+there is a phase the last time well
+that's that's cool
+so this is a phased
+hopefully i will have something to show
+you by the end of this tutorial
+hopefully some good results not bad ones
+now it's just training very very slowly
+even in the google call up that's why
+i'm just checking so okay i have two
+pluses
+not sure about others should i wait
+should i wait or move on
+let's see
+okay another plus so i assume that
+i can slowly move on because there is
+not that much actually left
+so one is then the sequence
+of course so here we need somehow to
+select
+from the k the correct time step
+that is very easy because in the pi
+torch all of the
+tensors can be an enumeratable
+so you can get the indexes here
+uh just like it would be simple python
+list so the pytorch is very pytonic
+basically like the tensorflow a little
+bit different
+so here we can enumerate that one
+get the t here that's that will be this
+part
+and then only we need to change these
+two lines at the end
+by introducing new gates inside our
+system
+so we can introduce new gates in our
+system
+i will also later check what type of
+parameters did i choose
+so anyway these uh these will be um
+so the c c what we had seen before
+it's actually will not be c anymore so
+this is gonna be the c
+prime now so c prime
+with with that tilde sign on the i'm not
+sure like if somebody knows how to
+how it's spelled correctly in
+mathematician language then please tell
+me
+so c prime here it's not actually c hat
+as well because there's like till the
+side
+so c prime there and also c prime here
+and this is also
+h prime so these two lines will look
+like that
+and also so maybe i will let's let's
+look at the equations
+once more and then we'll implement them
+so the equation where are you
+here the seven eight nine ten
+uh the seven and nine is the same as in
+vanilla
+and then eight and ten are new ones
+sim looks a little bit similar like
+binary cross entropy type of thing
+but basically this is like the gates of
+the one one side the when you open gate
+the other side closes and and the
+opposite is also true
+so kind of interesting equation
+so if i go back to the code
+so this line will be then
+this c
+so it's nice that this code is basically
+what we wrote last time so we can you
+can imagine that
+all the stuff you wrote from scratch
+basically
+so k t here
+and then the c
+prime this is a first
+gate part and then the second
+part of the gate is k
+t by c
+multiplied by c so these are the
+pairways multiplications or common
+products
+and here i think we can just copy
+the same line from c and just change
+this to h i
+think it was like that if i mistaken
+then correct me
+like that so the h prime
+yeah h so cool
+that's about it so i think we're kind of
+ready to launch
+i will add these
+these equations also to the screenshot
+copying
+adding to the chart
+just copied adding to the chat cool
+so
+this i have
+okay i added the screenshot to the chat
+i
+don't want to scroll it immediately away
+that's why i'm trying to look up
+in some other way just to see what kind
+of hyper parameters i gave you because
+okay now okay now in the very beginning
+we'll have 28
+input features okay so that's that's a
+good point to test
+so if i run this code let's see if it
+works maybe
+we have some bug maybe we need to change
+it a little bit
+usually i have bugs to be very
+surprising it will
+it will be without bugs so it works
+seems like okay yes it has bugs as
+always
+so the
+bug with an alpha so far yeah so
+i i was i was thinking that i added
+dissolve alpha
+and self are on to the
+ins constructor but i did not do this so
+if i go back here in the constructor i
+gave these parameters
+in but as you see they are gray and they
+are not stored anywhere
+so let's store them by the hidden size
+so here the alpha
+and self are on
+because we need them in a forward pass
+not in the construction part
+so i also will give you a screenshot of
+these
+small changes just those two lines
+and we'll see if it works now
+now we are testing with 28 dimension
+length the input size dimension
+so this will be 28 input features with
+28
+sequences sequence time steps that will
+be very easy task the vanilla can also
+learn this but
+the the more difficult task will be
+if we make it with
+let's say one or two uh input features
+that immediately will increase the
+so it works for me so for 200 samples
+just to remind you that i also give you
+the the the images right now for
+don't forget that in chat that you need
+to change these lines
+but if you go up here you see that if
+the cuda is not available then we cut
+our data set only to 200 samples
+that's why it works for me on the cpu
+but
+here the actual
+complexity comes in so let me let us
+think so
+if it's seven eight four
+so if we would add if we would set the
+input features input features to one
+then the sequence would be seven eight
+four
+and it will take a long time to run but
+we can also try two and that would
+create then
+uh 350 392
+392 hopefully
+that i calculated that correctly
+uh yes so and then so that would be
+like i saw the sequence like the
+basically this would be
+and also i think uh we should increase
+a little bit the so let's say we can add
+this to either one or two so i will use
+one in this case and here we can add
+more classes two three
+four also you could add even all of them
+but that will be very long
+to train so and then you can copy all of
+this this code and go
+and put it in the google code
+and we'll see what we have there so in
+google collab
+my face lstm is already running for some
+time
+i resized even even started running it
+before we started this session
+and it's still only in the second epoch
+so it takes a lot of time to run but of
+course
+we are not after the speed but we are
+after the accuracy
+and the the abilities of these phased
+lstm
+uh models that are able to cover very
+long
+sequences so here i have with the run
+with these nice cats and dogs running
+around
+the uh google collab and this google
+collab i have run
+i'm running here the faced lstm where is
+the phased
+so okay hopefully i did not stop it
+accidentally so faced lstm here i have
+phase the lstm
+except this is uh not phased lstm
+so fail i think this will be a fail for
+me now
+because i thought i run the phase the
+lstm so anyways
+here i have after the uh only
+so this is i think this is like the
+simple lstm
+so after the second epoch i get
+83 percent of accuracy
+on the test set and the expectation is
+if i run the same model with phased lstm
+i would get
+better results faster and
+i actually did these kind of experiments
+before
+maybe i can find some of the
+results you can try this running
+yourself of course
+you can try to applying these things to
+some some
+more serious tasks
+but so before i try to run
+this thing with with
+with very very very very simple tasks
+so where is it
+okay it's not opening
+so now now this is very long sequence
+but before i think i run it with the
+uh with just with the with the input
+size of
+two or four or something like that and
+then i got
+that in um in the second
+epoch i already would face the lstm i
+got 100
+accuracy so and then with the
+uh simple lstm in the second one i got
+97
+accuracy so it is faster and better
+but especially it should be faster and
+better if you have very long sequences
+and of course you need a little bit to
+fine-tune the
+hyperparameters of the r r
+and also the alpha but
+r is the most important one and also you
+can make our learnable
+learnable so that that is also another
+problem
+okay so yeah
+so i think that's about it for today i
+hope that you got your code running
+i hope that it's it's interesting and uh
+valuable for you so if you have so many
+questions or something
+you can write me
+thank you yes very interesting cool
+happy to help so and next time we'll
+meet with
+again with the small template and i will
+try to show you
+the some of the very interesting hacks
+that you can use for
+improving lstms so i found one blog site
+where they listed all of those hacks and
+when we tried that on our models
+we definitely see a huge improvement so
+and actually if you
+read in the in the uh pytorch uh
+forum they they they are debating
+of implementing some of them as default
+ones for example
+the layer norm lstm so that is uh
+definitely helping and this should be
+basically your default lstm
+that's about it today so we'll meet next
+week
+oh so thank you thank you

@@ -1,0 +1,2073 @@
+Hi,
+everyone.
+I'm Zico Kolter.
+I'm with Carnegie Mellon and the Bosch Center for A.I.   And I'm David Duvenaud.
+ I'm at the University of Toronto and the Vector Institute.
+And I'm Matt Johnson from Google Brain.
+All right,
+and we're going to talk today about deep
+implicit layers,
+neural ODEs,
+equilibrium models and beyond.
+So to start off,
+we're gonna ask the question,
+what we want to do with deep learning?
+So if using deep learning,
+you're probably thinking about some of
+the classical applications of deep learning: things like image classification,
+semantic segmentation,
+language modeling,
+generative models.
+These are domains where there have been major breakthroughs that have happened due to deep learning.
+And we all are very aware of some of the impressive progress these fields have made.
+But there also are a lot of emerging applications,
+things like continuous modeling,
+continuous time systems,
+smooth density estimation, or solving constrained optimization problems.
+These are problems that
+a lot of existing methods and deep learning are not
+that good at.
+And so what we're gonna talk about today is a framework which actually 
+enables you to solve basically all these problems and do so very well and 
+that's the framework of implicit layers.
+So to start off with what is a layer? For the purposes of this tutorial,
+a layer is going to be a differentiable parametric function.
+And the way that we typically construct deep learning architectures is we hook a bunch of these 
+things together and these layers can be things, of course,
+simple things like linear layers or convolutions, relus, or more complex things like LSTM cells.
+We hook these altogether and then train the whole system end to end 
+via backpropagation.
+However,
+there actually are different types of layers here,
+and there's a distinction that we're going to make a lot in this tutorial,
+and that is between explicit and implicit layers.
+So almost all the layers you typically use in deep learning are actually what are called explicit layers.
+And what that means is they provide a concrete computation graph for 
+how we compute the output from the input.
+And in fact,
+this is so kind of common that almost you can't really imagine anything but this for a 
+layer in many cases.
+But what we're going to show you today is there's actually a very different type of layer you can use,
+which enables a lot of really cool things.
+And these are called implicit layers.
+And the big idea here is that instead of specifying directly a 
+computation graph and then back propping through it, to give you the output from the input,
+implicit layers define some condition that the output and input should jointly satisfy.
+So, for example,
+the output and input could jointly satisfy some nonlinear equation.
+And there are many examples of this,
+including things like differential equations,
+fixed point iteration, optimization, etcetera, and we'll talk about a lot of these.
+So why would you want to use implicit layers, though?
+Well, what it comes down to are a few that,
+actually many reasons,
+but the first one is that they have very powerful representations,
+so you can compactly represent very powerful functions that are hard to represent,
+with a single explicit computation graph in a single layer,
+at least with a simple single layer.
+The next one, though, is about memory efficiency.
+So as we'll see, actually pretty extensively in tutorial,
+a nice benefit of implicit layers is you can actually analytically differentiate through the 
+fixed point without needing to unroll them.
+They're also, in some sense, very simple,
+and that often the element to specify for very complex operations winds up being 
+a relatively simple cell, a relatively simple parameterization of the layer.
+And finally, these layers have a nice abstraction property.
+In other words, they separate out what a layer should do,
+what task is trying to accomplish, from, in some sense,
+how you compute that. This is an abstraction that's worked well in many other settings:
+things like convex optimization, differential equation solving, etcetera,
+and it's very nice to bring this to the setting of deep learning.
+So coming back to what we want to do with deep learning,
+what we'll actually show is you can basically do all these things with implicit layers as well.
+So, for example,
+a lot of classic machine learning tasks and deep learning tasks can be accomplished using a method 
+called deep equilibrium models.
+Things like flexible generative models,
+smooth density estimation, and continuous-time
+modeling fit very well into the framework of neural ODEs and flow-based models,
+and similarly,
+things like solving constrained optimization fit very well into the framework of differentiable optimization.
+So in this tutorial,
+the goal is to provide you with an understanding of the techniques,
+motivations and applications for implicit layers in modern deep learning.
+There's gonna be a heavy focus on the mathematical foundations off these implicit layers,
+as well as how you do automatic differentiation through them.
+We'll even see some code on how to do that.
+We'll highlight of a lot of examples,
+including neural ODEs,
+deep equilibrium models and differentiable optimization.
+And as I said,
+we'll have some starter code and highlights for future directions.
+One point I want to make is that there is a detailed set of both notes and 
+code available at our companion website that you should definitely check out; it's going to be 
+implicit-layers-tutorial.org.
+So with that being said,
+let's jump in and talk about implicit layers.
+The basic outline here is that we're gonna first give a bit of background and talk about some of the 
+applications of implicit layers.
+Then we'll talk about the mathematics of implicit layers.
+We'll talk about deep equilibrium models,
+neural ODEs and differentiable optimization as three applications or instantiations
+of implicit layers, and finally we'll end with some future directions.
+All right,
+so let's jump right in first to some background.
+I'm going to start with this background,
+and then David will take over to discuss additional background and additional 
+applications of implicit layers.
+Alright, so to start off with,
+the first thing we wanna highlight here is clarifying maybe a myth that some people might have,
+which is that implicit layers,
+the myth that is is that implicit layers are new to neural networks.
+In reality, actually,
+implicit layers go back very far in deep learning to the late eighties,
+highlighted by the papers of Pineda and Almeida,
+which go in the name of recurrent back propagation.
+Actually, these are copies from these two papers here,
+and one very cool thing to note is that this is again in 1987.
+And what you had,
+for example,
+was you had layers that we use differential equations or you had layers that were 
+fixed point equations.
+These did largely fall out of favor,
+in favor of explicit network structure.
+But really a lot of the current efforts we're gonna talk about today are efforts at revisiting these ideas,
+but using importantly,
+the tools and techniques of modern architectures as well as modern automatic 
+differentiation tools.
+I should highlight, though,
+that the work did not disappear entirely.
+There was some work in the nineties and two thousands on these layers.
+So I want to highlight a few of these examples here.
+There was some work in the nineties on using implicit models as essentially 
+unrolling Runge-Kutta integration for differential equations,
+including some applications to very interesting things like carbon monoxide crystallization.
+However,
+for the most part,
+as mentioned before these layers kind of did fall out of favor 
+until sort of more recent times.
+So I want to highlight some of the things that came about
+that sort of spawned re interest in these implicit layers.
+One of these areas was the topic of differentiable optimization.
+So starting in the late two thousands,
+a lot of groups started working with differentiable variants of optimization problems.
+So, for example, Stephen Gould in 2016 as well as his collaborators,
+and then later followed on
+by their work in deep declarative networks,
+formulated layers as often non convex optimization problems.
+Matt Johnson, actually here who I'm speaking for now,
+did some work on the structured variational autoencoder which differentiated through graphical 
+model inference formulated as an optimization problem.
+Some of my own work in this field, really done mainly by my students,
+my former student Brandon Amos,
+looked at differentiating quadratic programming problems as 
+layers in deep networks.
+And then finally,
+more recently,
+Brandon, as well as some collaborators, worked on integrating this with
+the cvxpy framework, and Akshay Agarwal as well as Stephen Diamond at
+Stanford led the effort on getting a very,
+tightly integrated package that wraps the cvxpy tool,
+which is also developed by Stephen Diamond and Stephen Boyd, into these automatic 
+differentiation frameworks like PyTorch and TensorFlow.
+There's also been work on alternative optimization techniques.
+So there was some work on a framework called SAT Net,
+which differentiated through a smooth version of the Max SAT problem,
+using a differentiable variant of semi definite programming.
+There's also been work on sub modular optimization, differentiable sub module optimization,
+which is used for many things but amongst them for optimizing graph cuts.
+Then finally the last topic I'm gonna mention here but which is one that we'll come back 
+to later is the framework of deep equilibrium models,
+which tries to essentially use a fixed point iteration to fold an 
+entire deep network up into a single implicit layer.
+Or, I guess,
+a single implicit layer that works more like a traditional cell in a deep learning network.
+And this often gets state of the art performance or matches state of the art performance with 
+equivalent parameter counts and training methods on a variety of domains,
+including NLP domains,
+vision tasks,
+etcetera.
+Now I'll hand it over to David to talk about some of the background and applications in Neural ODEs.
+All right,
+thank you very much Zico.
+And now I'm going to tell you a little bit about ordinary differential equations and how solving them could be seen as an implicit layer.
+To be precise,
+if we take a vector zed and you say it follows dynamics f, and we know
+its initial position.
+Then we can define the solution of an ODE to be the path that follows 
+this gradient to some final time t1.
+If we define the output of a layer as the output
+at this future time,
+we can say this is a function where we defined what we want to compute,
+but not exactly how to compute this intractable integral.
+Neural ODEs can be used pretty much anywhere you could use a ResNet in a larger deep learning framework.
+So, specifically, if you were using a neural ODE as a classifier,
+then we would hope that the data at the end of the time evolution of the ODE would be 
+more easily separable than at the beginning.
+You can see an animation of this where a neural ODE has learned a vector field that separates 
+two concentric circles of data into linearly separable clusters.
+Continuous time models are one of the most natural applications 
+afforded by ordinary differential equations.
+Specifically,
+often we're modeling systems where we know something about the dynamics that they follow,
+perhaps that they follow,
+that they're constrained by a Hamiltonian or Lagrangian,
+and if we enforce this structure into either the dynamics of a molecular 
+simulation or into a freeform dynamics model that we're learning,
+we can do things like enforce conservation of energy while we're training our models.
+Another area where continuous time models help us build more 
+flexible models is in continuous normalizing flows.
+So this is a family of Parametric density models that works by starting with a simple 
+base density like a Gaussian and then defining a continuous transformation into 
+some more complex parametric density.
+And it turns out that the change of variables formula is easier to compute in continuous time than in discrete time.
+Just in the last few months,
+this approach has been scaled up to 1024 by 1024
+images using an alternate training method.
+And unlike GANs,
+these approaches provide a well-defined density that could be computed,
+which does us do things like inpainting,
+given a certain part of an image we can sample from the distribution over the rest of pixels.
+A special case of this is image colorization.
+And the point is, unlike other large image models,
+once we've trained our density,
+we can answer all of these different queries without retraining at all.
+Another place where we can use continuous normalizing flows is in parameterizing homeomorphisms,
+which might sound exotic,
+but it actually just means, well, its most natural use is to define a 
+non-self-intersecting shape,
+such as when we're building a 3D model.
+It also turns out to be easier
+to define destiny models on exotic surfaces such as manifolds 
+by converting them into continuous time flows.
+So, for example,
+a recent paper by Mathieu and Nickel
+shows how we can build continuous normalizing flows on spheres and other 
+exotic manifolds.
+There's also applications to biology where we might want to interpolate between the density of,
+say, cellular cellular dynamics or in,
+colonoscopy where we want to build a convolutional neural network
+but we're not sure how many layers of convolution we need.
+The adaptive computation of ODE solutions allows us to automatically adapt the effective number 
+of layers in our convolutions.
+Probably the most natural application of continuous time models is in 
+modeling irregularly sampled data of the kind that you would find when you're modeling,
+say,
+health outcomes or business data where the data comes in
+measured at regular intervals.
+And finally there are other uses of the implicit gradients that we're going to be using to train all these models.
+In particular,
+we can use them for gradient-based hyperparameter optimization,
+which lets us optimize millions of hyperparameters.
+It's also has been applied in meta-learning.
+All right,
+so now I'm gonna hand this over to Matt
+who's gonna tell us about the mathematics of implicit layers.
+All right.
+Hi again, everyone.
+So actually, before Matt that takes the reins here,
+I'm actually going to talk a little bit about the motivation of a simple model that we might want to use,
+for implicit differentiation and as an implicit layer.
+So the way they were gonna motivate this is thinking about kind of traditional deep networks.
+So typically a deep network is some transformation of the input where you keep 
+applying, you know, a weight matrix.
+Maybe you add a bias and then you apply a nonlinearity, right?
+So the next layer is always this nonlinearity applied to a linear function of the previous 
+layer. And to motivate the use of implicit layers were actually gonna make a little 
+modification to this network.
+We're gonna make two modifications, in fact.
+We're going to, first, at every step,
+rather than just adding a bias we're going to re inject the input,
+and actually you could add a bias too, you can always add an extra bias to the input,
+but for now, we'll think about just always adding the input again.
+In addition,
+we're also going to use the same weight at each layer of the network.
+In other words, this is called a weight-tied network.
+Now, this might seem like a very big special case or a very big imposition
+we're putting on our network here,
+but it turns out, actually weight tying across depth is very common in deep learning.
+A lot of architectures are doing this now anyway,
+as a means of regularization.
+And in practice,
+you can even actually show theoretically,
+which we'll get to it a little bit later that this is not that big a restriction.
+It's a very simple proof,
+of course,
+but it isn't actually that big a restriction.
+So when we do this now,
+something very interesting happens.
+So in particular because we are repeatedly applying the 
+exact same function repeatedly, to the hidden units,
+right with the same weight,
+the same input injection.
+We can view this system as a dynamical system, where the 
+hidden vector Z is acting kind of like a state of the system and it's 
+evolving with repeated applications.
+And in fact,
+in many such situations we can design the network in a way 
+such that the network will converge.
+The hidden state Z will converge to some fixed point or equilibrium point,
+which we call z star.
+In other words,
+this is a point where if you apply the function again,
+it remains unchanged.
+This is precisely actually a recurrent back propagation network or a very simple and 
+minimal deep equilibrium model.
+And it's set up just with a fixed point iteration.
+And this is how we actually go about computing this layer.
+The question, of course,
+is how do we get into the details and actually do things like compute the fixed point and 
+differentiate through it.
+So to answer that we're going to consider a very simple example.
+We're actually think about this being a specific nonlinearity,
+like the tanh function.
+And so the question is,
+how do we compute this fixed point to begin with?
+Do we have to reiterate,
+or are there other ways of doing it?
+And then how do we integrate —
+if we do compute this fixed point,
+how could we integrate a layer like this within backprop, within automatic differentiation.
+Does the derivative of this fixed point even exist with respect to the weights or the input 
+X. And to the answer this we're gonna start with a quick demo,
+and I'm gonna hand it over to Matt to both show us some cool code and then 
+take us through the math about why this point, in fact, exists.
+Thanks, Zico!
+Great.
+So now that we've seen a simple example of what a deep equilibrium model could look 
+like in math,
+let's take a look at how we might implement this in code.
+So we're gonna be using JAX for this demo.
+But, you know,
+the same ideas can be instantiated in PyTorch or TensorFlow as well.
+Great!
+So let's start by just,
+importing JAX and then let's write a little fixed point layer.
+So this this will just be a function,
+and it takes four arguments.
+It's gonna take a fixed point solver.
+So we're gonna parameterize how we compute the fixed point.
+It's gonna take a function f,
+which is the function that we want to find the fixed point for.
+It's gonna take some parameters,
+so this is where the weights will come in and it will take an input x.
+So given our fixed point layer,
+the way it proceeds is it calls the solver to compute fixed point of this 
+parameterized function, f,
+and we'll just initialize always at zero.
+And then we'll return that fixed point.
+Great. So let's run that.
+Now that we have are sort of fixed point layer,
+let's just write a couple solvers that we might be able to use to find this fixed point.
+So maybe the most straightforward solve is what's known as a
+naive forward iteration.
+The idea is just we're going to keep applying the function f until we,
+find that it's not changing anymore.
+And then we'll say, we found a numerical fixed point at least up to some tolerance.
+So that's, you know, a decent way to find fixed points.
+Maybe another slightly more sophisticated method would be to use a Newton iteration to find a 
+fixed point.
+This uses some derivative information of f,
+to take a more intelligent step, to try to find the fixed point more quickly with a bit more computation.
+So with that we'll just have those two different solving routines.
+And this is just showing how implicit layers separate out what gets computed,
+which is a fixed point, from how we compute it,
+which is some solving algorithm.
+And here we have two! Great.
+So we've got our layer.
+We've got a couple of solving routines.
+Let's try running this thing on a simple example.
+So we'll generate some random data and a random input just to 
+study the layer in isolation.
+They will define a
+layer like Zico told us about with a tanh non linearity and a matrix vector multiply 
+and then we'll just try applying our fixed point layer to see what we get.
+Indeed, this is the fixed point that we've found by running the layer.
+Great. So that was using the forward solver.
+We could also try running the layer with our newton solver and up to,
+you know, numerical tolerances,
+we're getting the same fixed point out.
+So this is showing how we've decoupled what gets computed from exactly what fixed point
+solver we're using.
+Great.
+So maybe one high-level take-away is that we can already differentiate through this oricess.
+So using automatic differentiation tools like JAX,
+we could just differentiate through all these iterations of our layer.
+So here we're gonna use jax.grad to compute a gradient
+with respect to our weight matrix of just this layer on its own,
+just the sum of the outputs of the layer.
+If we do that, we can see we get a gradient value out.
+This is in general will be the shape of the weight matrix W,
+and so I'm just printing the first row instead of a 10 by 10 matrix.
+We're just looking at the first row.
+So that was looking at the gradient for the fixed point layer using our forward iteration solver.
+If we use the Newton solver,
+things work as well, and again up to numerical tolerances, it doesn't matter
+what solver we use, we're computing the same function.
+And so we're also getting the same gradients.
+Just to show you that this isn't too restricted,
+we could even do things like second order automatic differentiation.
+So here we can compute the Hessian of our layer as a function of its input, X.
+This will be a big matrix, so
+we'll just print out a chunk of it.
+But we're able to differentiate through this this,
+this layer that we've defined, just fine.
+So you might wonder why,
+you know, where where is the room for improvement?
+We can already differentiate through these layers!
+What's more to say?
+So the issue is that if we just differentiate through the iterations of our solvers,
+they're going to be inefficient,
+and we're not gonna be able to get the benefits
+that Zico and David have talked about.
+To give some kind of a visualization of why that happens,
+we added some simple demo utility functions to help us visualize what's going on.
+So in particular,
+we have this grad_graph function that's gonna sort of show us the
+graph that JAX is building to do reverse mode, automatic differentiation of this function.
+If we run this, we'll see that,
+we get some graph out.
+It's actually quite long, right?
+So this is a big graph, and the reason it's big is that,
+we've differentiated through all the iterations of our solver.
+So there's a lot of operations happening for this one tiny layer.
+So in particular, the small blue nodes here are operations, and the yellow nodes are —
+they represent stored memory,
+so saved values that we need from the forward pass.
+We're saving them so we can consume them on the backward pass.
+And really, that's the main inefficiency.
+That's gonna be really painful here.
+So with all these yellow nodes in this graph,
+that's telling us that we're saving a lot of memory or storing a lot of memory.
+And that means that this layer is gonna be very expensive to differentiate through.
+It's gonna take a lot of memory.
+So we're not realizing one of those big benefits of implicit layers yet.
+So that was the graph for the just naive forward iteration.
+We can also produce the graph if we use a Newton solver. Again,
+this is just differentiating naively through the iterations of the solver,
+and we can see that the graph is different because we're running a different solver.
+We're running different operations.
+But still, you know, this is a large unrolled graph,
+even on this small toy example.
+And all these yellow nodes are indicating that we're saving a ton of values to be 
+consumed on the backward pass of autodiff.
+That's gonna be very expensive.
+So just one more illustration, one more utility to
+emphasize the point of how wasteful we're being with memory
+when we differentiate through these iterations naively.
+This is a little function that computes the memory ratio of how expensive it is just to
+evaluate the layer,
+just the forward evaluation inference in the layer.
+And we're saying, compare that to how much
+memory is needed to do reverse mode differentiation through it.
+And what this is telling us is that it's estimating it's about 70 times more expensive in memory to do
+reverse mode differentiation and therefore to train this layer.
+So this is gonna be really expensive, even on this toy example.
+It's already expensive, but for realistic examples, this would just be untenable.
+So we need to do something smarter than differentiate through these things naively.
+So I focused on memory usage,
+but there's some other disadvantages here as well,
+if we just naively differentiate through the iterations of a solver.
+It could be that things are numerically unstable.
+Or we could even be doing more floating point operations than than would be optimal.
+So, you know, memory is the really big loss,
+but really, we're sort of losing on all fronts when we differentiate naively.
+So we need to do something smarter, and to work out something smarter to do,
+we need to turn to math!
+So let's switch over and take a look at the math we can do
+to sort this out and get some benefits from our implicit layer.
+So to start off with,
+I'm going to just review some basic derivative notation that we'll be using in this section,
+starting with just what kind of functions we'll be thinking about.
+So we'll be thinking about functions on real domains and real codomains.
+So in general, we have a function from R^n to R^m.
+Here's a simple illustration on the right of the graph of such a function, where n equals m equals one.
+How do we write derivatives?
+So in this section of the talk, we're going to write derivatives in this way.
+We're going to write this partial f for the derivative of f at a point x, that itself we can
+think of as a linear function from a copy of the input space to a 
+copy of the output space.
+So from R^n to R^m.
+So, if you like, this function,
+the derivative f evaluated at x is telling us how to map from small
+perturbations of the input X to small 
+perturbations on the output value of F.
+So, in general, though, we can also think about this as a matrix.
+For the purpose of this tutorial,
+we're gonna be focusing on thinking of this thing as a matrix.
+So, in general, this Jacobian matrix will be an M by N matrix.
+And it's basically just representing that linear map.
+So this is the notation we'll be using for differentiation.
+One other thing to underscore about our derivative notation:
+When we have functions of multiple arguments,
+we'll just use subscripts to indicate if we only want to differentiate with respect to one of those arguments,
+so in particular we'll use this partial sub zero of f to indicate 
+we're differentiating f with respect to the first positional argument,
+the one that index zero, holding the other arguments constant. And similarly 
+we'll use partial sub one to indicate we're differentiating with respect to f's second argument.
+Great.
+So that's it for differentiation notation.
+Now, the way we're going to solve our differentiation efficiency problem is based on the Implicit Function Theorem.
+So this theorem has a long history,
+and this is the version of it that that we're looking at,
+but it's really actually quite a deep idea in mathematics.
+So to start off with let's just look at what the assumptions of the theorem are.
+So we say we're gonna look at a function f that 
+takes in two arguments, one in R^p and one in R^n, and gives us a value in R^n.
+So I like to think of this as representing a parameterized system of nonlinear equations.
+So we think of the first argument, the one in R^p, as some parameter.
+And then we think of having n scalar variables in our system of equations.
+Great. So let's look at an example of that.
+Here is a very simple example where we just have p equals n equals one as the dimensions.
+And we're plotting — so f is a function on z and a, on this 2D plane here, and now we're just
+plotting where this function is equal to zero in blue here.
+We're gonna be focused on things like this.
+Great. So the hypotheses of the theorem are that —
+consider a point at which this function attains a zero.
+So we've got an a_0 and a z_0
+and that's a particular solution point,
+so we'll draw it here on the on the circle.
+Great. And then we're also going to assume that f is somehow nice, right?
+That it's continuously differentiable and has a non singular
+Jacobian with respect with respect to its second argument,
+at least at this point that we're focused on. Great.
+So that's the set up.
+Doesn't seem too bad so far.
+What does this theorem tell us?
+If we have this set up,
+so to start reading this,
+this first part is saying there exist open sets that are around our operating point, a_0 z_0.
+So in the figure, we're just zooming in on this
+rectangular region here. These open sets are basically saying there's some open interval,
+for the values of a, and some open interval for the values of z that
+we're going to zoom in on and focus on, that contain our operating point.
+Great.
+So that's our — that's a region we're gonna zoom in on.
+And then the theorem tells us that there exists a function they were calling z star,
+that is essentially a solution mapping.
+So as a function of the value of a, as a function of the parameters 
+the solution mapping is gonna be able to spit out,
+variables z that solve our equation, that
+set things up so that f(a, z^*(a)) is always equal to
+zero for all values of a in the small region that we're focused on.
+So on the figure,
+we can see that this is basically saying that, at least in this small region that were zoomed in on,
+we have this purple function that's giving us the value of z as a function of z and it's 
+gonna be tracing out a solution locus of f for us. Great.
+And then, moreover,
+it's also telling us that this function z star is differentiable
+in this little zoomed in region.
+So at least very locally around a_0 it's a differentiable function.
+And that's really the main content of the implicit function theorem.
+It's saying that so long as f is is somewhat nice,
+it's telling us that we can think of not just having one particular solution for a 
+given parameter a_0,
+but actually, we can have a solution mapping function, at least locally around this solution.
+Great.
+So just to understand a little bit about when this might be violated, when this might not hold,
+here's another point that we could have chosen as our a_0 z_0 pair.
+You might ask yourself,
+does does this satisfy the theorem?
+Do we know that there is such a Z star function here?
+And in fact, it doesn't apply here.
+And if you check,
+it's because of this other condition that demands that we have a non singular Jacobian.
+In this case, if you work out the Jacobian of the formula on the top right of the slide,
+it's just a scalar, and it'll be zero at this point.
+And that's basically just telling us that we can't have such a local function z star,
+because it wouldn't pass the vertical line test, right?
+There wouldn't be a unique value,
+unique solution value for every different input a that we give it because
+of this vertical tangent line to the circle at this point,
+So as long as we avoid that kind of a pathology and we,
+satisfy the continuity and differentiability hypotheses,
+the implicit function theorem is telling us something really powerful,
+and we're gonna be able to use that to do efficient automatic differentiation.
+So just a sort of quick aside here,
+I mentioned that the implicit function theorem is quite deep and powerful.
+It turns out there's this wonderful book,
+all about the implicit function theorem.
+It talks about some connections that it has to different areas of mathematics.
+And you may notice that for this section, we're focused on things that look like solving nonlinear equations or fixed points,
+this kind of thing.
+We're not talking, at least overtly, about neural ODEs and ordinary differential equations.
+But it turns out that actually,
+the implicit function theorem
+is quite strongly related to ordinary differential equations.
+In particular, you can use it to prove the existence and uniqueness of
+certain ODE solutions, and even vice versa.
+You can prove the implicit function theorem using theorems about ODE solution existence.
+So it's really a fantastic thing to dive into.
+Okay, so back to,
+nonlinear equation solving and the implicit function theorem.
+So all we've worked out so far,
+this thing is telling us that there exists a solution mapping function,
+z star, that's gonna be able to give us a solution
+for any parameters that we plug in that are close to our nominal parameters, a_0.
+However,
+we haven't worked out any formulas for differentiation.
+I turns out that once we know that this function exists,
+it's sort of easy to derive what
+the derivatives z star must be, what the Jaobian of this z star solution mapping must be.
+So let's walk through that.
+So again, what's powerful about this first line here is that,
+this is true for all values of a. So this is basically saying,
+on both sides of this equation,
+we have functions of a, for all values of a, the left side is equal to the right side.
+So that means we can differentiate both sides of this equation as functions of a.
+Let's do that.
+We just apply the chain rule.
+We have here on this line two terms from differentiating f with respect to a:
+the first term is the direct effect that nudging a has on the value
+of f because it's an argument to f.
+The second term is this indirect effect,
+because if we nudge a that nudges the value of z star, our solution,
+And then that, in turn,
+changes the value of F.
+So that's just the chain rule. We still have that
+this holds true for all values of a in our zoomed in region,
+but we can if we want to just focus on,
+this particular solution point we can just plug in the particular value of a_0
+Then we have this simpler equation here.
+that just deals with sort of concrete matrices,
+the derivatives of f evaluated at our solution point a_0 z_0.
+So now we see that we actually have this,
+Jacobian of z star.
+So this is telling us,
+how does the —
+how do we differentiate through this solution mapping function?
+We've got it right here.
+We've sort of got our hands on it.
+And if we just rearrange this expression,
+this equation, using the fact that these are just matrices,
+we can in fact isolate
+this Jacobian for z star that we're after.  So we can
+see again how we're we're relying on that,
+partial one of f, that Jacobian at the point a_0 z_0, being non singular because we're inverting it here.
+But otherwise,
+this is just giving us an expression for the Jacobian of the solution mapping.
+So just to zoom out about what this math is telling us,
+it's telling us that we can express —
+we can differentiate the solution of this system nonlinear equations,
+the solution mapping function.
+We can differentiate with respect to the parameters
+just by evaluating derivatives of F at our solution point, our solution pair a_0 z_0.
+So that's really that's really powerful.
+All right,
+that was all about nonlinear systems of equations.
+Let's look at,
+the fixed point case that we were looking at in the code.
+So if we want to differentiate fixed point solution mappings rather than
+aystems of nonlinear equations,
+things are very simple.
+Three only difference is that instead of saying,
+f at a_0 z_0 is zero,
+we're just going to say that that is giving us back the value of z.
+We can do something very similar,
+so we can also say implicit function theorem here
+again is telling us that there exists a z star function that for all values of a near a_0,
+will be able to spit out a solution,
+a fixed point solution.
+So similarly, we can 
+apply the chain rule here.
+and just as before,
+we can see that the Jacobian of z star that we're after is now in this equation with
+these matrices.
+And so if we rearrange things,
+we get a very similar expression to before, we just sort of have an identity matrix thrown in.
+Great.
+So this is now the mathematics underlying how we're going to
+differentiate fixed point solution mappings more efficiently.
+However, we've been in math world.
+We need to connect this to automatic differentiation tools.
+So let's just briefly review how you do that,
+what fundamental ideas are automatic differentiation tools built on.
+So there's really two main,
+capabilities of an automatic differentiation tool. Two dual ideas.
+The first thing that an automatic differentiation tool gives you is the ability to compute Jacobian-vector products.
+So this just means the ability to, given a vector representing a perturbation
+of some input, be able to compute
+what the Jacobian of a function
+applied to that vector is. That tells you what the corresponding perturbation on the
+output would look like.
+So this is basically saying,
+instead of being able to compute,
+Jacobians directly, automatic differentiation
+tools give us ways to evaluate these Jacobian-vector products.
+And that means that they they're free not to have to instantiate
+the entire Jacobian of F If they don't want to; they can be matrix-free.
+So we affectionately abbreviate these things JVPs, for Jacobian-vector product.
+It's related to the idea of a pushforward mapping in mathematics, in differential geometry.
+This is also basically the idea that is instantiated in forward-mode automatic differentiation.
+The way I like to think about,
+Jacobian-vector products is: if you did want to build a Jacobian, a full Jacobian, for your function,
+you could do it one column at a time,
+If I gave you, or your software system gave you, a way of evaluating Jacobian-vector products,
+you could feed in one-hot vectors for v
+and for each one,
+you'd reveal a column of the Jacobian matrix.
+Great.
+So that's one of the two fundamental pieces of automatic differentiation.
+The other,
+is the vector-Jacobian product,
+which computes something very similar.
+Except instead of taking the Jacobian and hitting it with a vector on the right,
+we hit it with a vector on the left.
+So we abbreviate these, VJPs.
+It's related to the idea of
+pullback mapping in mathematics.
+This is really what's instantiated in reverse-mode automatic differentiation.
+The way I like to think about these is that if you had a way of evaluating
+the vector-Jacobian product for any
+Python function
+that would let you build the Jacobian for the mathematical function that 
+that python evaluates one row a time.
+By again feeding in one-hot vectors,
+we can reveal one row of the Jacobian at a time.
+Now it turns out that for machine learning,
+and gradient-based optimization, this sort of thing, vector-Jacobian products are the most important
+tool in this toolbox.
+The reason is that if you think you want to optimize a loss function of a neural network,
+you can think of that loss function as taking a billion inputs for your billion neural network parameters 
+and outputting a single scalar value, which is the loss value.
+And so,
+if you like, the Jacobian of that loss function as a function of parameters is gonna be a matrix.
+that's gonna be one by a billion.
+And so, if I tell you,
+I'll either give you a tool to evaluate Jacobian-vector products, that lets you evaluate the
+Jacobian one column at a time,
+so you have to call it a billion times, or I'll give you VJPs, vector-Jacobian
+products that let you reveal this Jacobian one row at a time,
+you's much rather have vector-Jacobian products because you can do it in a single call.
+You can see this entire Jacobian of the loss function,
+so that gives you your gradient
+and you can optimize more effectively.
+So this is really the focus and this is what we'll focus on,
+in the section of the talk, on vector-Jacobian products.
+But in our notes online, we have a bit more about both forward mode
+JVPs and reverse mode VJPs.
+Let's go back to our —
+the equation that we worked out telling us about the Jacobian of our solution mapping z star
+for fixed points.
+How do we
+tie this into automatic differentiation systems?
+We need to work out how to compute a vector-Jacobian product for z star.
+That'll let us plug into automatic differentiation systems.
+So let's take a look at how to do that.
+We basically just have to take this,
+equation that we worked out and say,
+okay,
+what if I hit it with a vector on the left?
+If I want to be able to compute w transpose
+times the Jacobian of z star.
+We can apply that on the right as well.
+And here's an expression for what the vector-Jacobian product must be.
+We can simplify that
+a little bit and say,
+let u be the vector that's the result of that first term there.
+So w transposed times this inverse matrix,
+let's just call that result u.
+And then what's interesting, if you massage this a little bit, is you can say that 
+if I take that definition of u and rearrange some terms we can actually write,
+the value of u itself in this way.
+We can say that u has to satisfy this equation.
+And what's really nice with u satisfying this equation is that this is actually a fixed point equation of its own.
+And so, in fact, what we've worked out here is that we can write VJP of our fixed
+point solution mapping in terms of VJPs of f, right?
+So we have these two VJPs of f and moreover,
+we can think of the computation
+we have to do as itself a linear fixed point.
+function,
+in terms of these VJPs.
+So the details here aren't terribly important.
+But the high level structure I want you to remember is,
+we should see VJPs of our function f
+and we can compose those together, together with solving.
+a fixed point
+in the backward pass to be able to get our VJP for our solution mapping z star.
+Great.
+So that's the math.
+Let's see how we can use this to power up our code and do 
+differentiation more efficiently.
+Great.
+So here we are, back in our notebook.
+Let's just review what we had before. We had this fixed point layer.
+It was great, it could could solve for fixed points for any solver we give it.
+And we could differentiate through it to get gradients.
+But as we saw before,
+that was gonna be very memory inefficient.
+And what we want to do now is use the mathematics we just worked out to say we don't need to 
+differentiate through the iterations of our solver.
+We don't need to store all that memory and spend all that time.
+Instead, all we need to do is have the solver find that fixed point for us,
+that z_0 a_0 if you like,
+and as long as we find that fixed point, at that fixed point
+we can just do differentiation there,
+basically by linearizing our fixed point function at that point and then solving those linear equations.
+Great.
+So let's do that.
+So this is just how we would set up a custom. VJP in JAX: we're using this custom_vjp decorator.
+Now, the details here aren't
+important for the purpose of the talk.
+Please take a look at the code afterwards if you want to see the details.
+But let's just notice the high level structure that we're seeing,
+from the math.
+So just like before we said that we won't need to save anything but our
+solution point, our fixed point solution and the parameters that went into this layer.
+And then we'll be able to do our backward pass,
+our VJP computation,
+just by using VJPs of f.
+So we had two VJPs:
+we had a VJP of f
+with respect to the parameters,
+that we were calling a in the mathematics.
+We see that on this line and then on this line,
+we see a VJP of f with respect to the variables z.
+So we've got our VJPs. And then we see that we're also call calling our fixed point solver.
+So you don't have to do this,
+but the way we've set up this particular code is we're gonna use the same solver to solve
+our linear fixed point, for the for the VJP computation,
+the same one that we use to find the nonlinear fixed point in the sort of forward pass computation.
+Great.
+So let's run that.
+That's going to define a custom VJP here, and now we can just differentiate our
+fixed point layer like before and get some answers out.
+You might say,
+what have we accomplished?
+It seems like we're getting the same numbers.
+So if we memorize a couple,
+this is double-0 7 and negative .812, we're getting about the same answers as we did before.
+What have we accomplished here?
+Well, let's take a look at
+this grad_graph again, and we can see that instead of differentiating through
+all the iterations, all the unrolled iterations, of our fixed point solver
+now, with this custom VJP,
+basically we just have one step in the in the backward pass graph.
+Now, the details aren't important,
+but remember, all those yellow nodes were representing stored memory.
+That was gonna be really costly.
+This is basically saying now,
+when we differentiate through this layer,
+we're not gonna be storing a ton of memory through these unrolled iterations.
+We're just gonna be storing,
+a few small values,
+so it's not gonna be terribly expensive.
+Great.
+So that graph is a little boring.
+Let's see a slightly more realistic toy version of this.
+So let's imagine the simplest way of embedding this in a kind of neural network architecture.
+So here we have a very simple prediction function for a neural network.
+We just have three layers.
+The first one, it's a fully connected layer with a tanh
+non linearity, and the second one is gonna be our fixed point layer.
+so sort of in the middle of our network.
+And then finally, we'll have a linear layer.
+And just to complete this toy example we'll write a simple loss function where we are
+using squared error error loss,
+comparing the predictions to the target.
+Great.
+So let's do that.
+And let's just initialize some random data,
+some random inputs and and targets and parameters.
+Let's just look at what the grad graph would look like in this slightly more realistic example.
+And again we can see when we differentiate through this thing, our
+implicit layer is actually just this little bit in the middle here.
+We have differentiation for the last — for the first layer, rather,
+then this is for the last layer.
+Just some matrix vector multiplies.
+And instead of getting that big enrolled computation graph,
+we can just plug this fixed point layer into our network.
+And still not have memory blow up.
+Great.
+And just to, you know,
+emphasize that we could do some fancy autodiff here,
+we don't need to, you know, hold ourselves back.
+Here's a simple function using grad to compute Hessian-vector products.
+And so we can compute some Hessian vector products
+using this custom differentiation rule.
+And again, this is just gonna be using a small amount of memory because we're using the implicit function theorem
+to do our differentiation rather than,
+differentiating through all the iterations. So we can even do higher order reverse mode autodiff here.
+Great.
+So just to review the high level takeaways,
+The first thing was just that we can always differentiate, with modern autodiff tools,
+through a computation like a fixed point solver.
+You can always do that if you want, but it's gonna be very memory inefficient.
+And it might be FLOP-inefficient and numerically unstable as well.
+So when you do implicit layers,
+you probably don't want to just differentiate through your solver.
+Instead, we could do something much better,
+which is to use implicit differentiation.
+And that basically means use the implicit function theorem and derive an
+expression for our our derivatives, or our VJP computation.
+And the most important fact that we worked out there is that we only need to know about the final 
+solution point, the final fixed point.
+It doesn't matter how our iterative solver
+got there, what path it took when it was Iterating to find that fixed point.
+We only need to be able to evaluate derivatives at that fixed point.
+And therefore we're gonna be able to save a lot of memory because we don't have to remember the details.
+And maybe just a high level feeling: when we're doing things like solving nonlinear equations or
+nonlinear fixed point systems,
+if we have a nonlinear solve on the forward pass that we're trying to differentiate, when we do 
+implicit differentiation,
+we end up with something that looks like we'll just linearize at the solution point and then
+instead of solving nonlinear equations,
+we just have to solve linear equations to compute the gradient.
+So that's the sort of high level feeling.
+Great.
+And with that,
+I think we can hand it back over,
+to Zico.
+Thanks, Matt.
+So next up we're gonna talk briefly actually,
+about having a bit more detail about the models that we saw previously.
+These kind of fixed point iteration models that in,
+a generic setting,
+we're calling deep equilibrium models.
+And so the motive a kind of the formulation of a deep equilibrium model.
+I do want to sort of admit that the very simple recurrent back prop cell previously 
+was was actually pretty limited.
+Right?
+So, just using a single tanh layer,
+a single linearity,
+it's somewhat limited.
+And the idea of a DEQ model,
+a deep equilibrium model, is that we're actually going to replace the entire network, an entire deep 
+network, with one of these single equilibrium layers.
+And so to do that,
+we actually do in practice,
+need to use a
+more complex function than just a single non linearity applied to a linearity.
+It's something more like a cell, right?
+So this f in a DEQ is more like a residual block,
+a transformer block, an LSTM cell, etcetera.
+And here I'm running it as a function of both the fixed point,
+which you're trying to find, the input X, and the
+parameters theta, because we're gonna want to differentiate with respect to all those things.
+And additionally,
+the other big important point about deep equilibrium models or DEQ models 
+is that we don't actually care how we solve for this fixed point.
+That's sort of the key point here is that, as Matt demonstrated, it doesn't actually matter how you find the fixed 
+point, and so we're free to use actually any nonlinear root finding algorithm we want 
+which sometimes will even converge even if,
+for example,
+naive forward iteration is not stable.
+And that's really the key idea here.
+We need a stable algorithm to kind of solve this fixed point, and 
+then,
+uh,
+use the same or a similar algorithm to compute the backward pass using 
+implicit differentiation.
+And this is work that was published last year,
+actually at NeurIPS.
+So the way this works is actually exactly like Matt just discussed.
+But I'll sort of formulate it here in the context of a DEQ model because it typically is 
+just sort of one layer here.
+There's one layer and the forward pass you first.
+Given your input,
+X,
+you compute the equilibrium point Z star,
+which is a function of X and the parameters of the layer.
+And then you compute some loss function as a function of this equilibrium point right,
+and that typically involves a single in your layer,
+to give you logit outputs, something like a cross entropy loss.
+Now,
+in the backward past,
+we need to compute gradients of that layer.
+And we're doing this exactly with the same implicit function theorem
+that Matt just discussed.
+In particular, this is exactly the form of the gradient that Matt
+gave previously.
+And we compute this inverse,
+also using an indirect method based upon some 
+iterative procedure.
+And so there are a few more details here that I want to highlight just because the details are,
+of course,
+a little bit important here.
+I'm not going to go into it into it too much.
+But in practice,
+how we compute the fixed point really does matter to the practicality of these layers 
+because the layer now this function f 
+being,
+you know,
+a recurrent cell or an LSTM cell or a transformer.
+This is,
+of course,
+going to be the main computational block of the whole function,
+right,
+running that function f really running it a number of times in order for this thing to 
+converge.
+And so we want to in some sense,
+try to find a fixed point using as few calls to the function F 
+as possible, and just running forward iteration is typically a very inefficient way of doing this.
+But so is Newton's method,
+because Newton's method requires forming
+an enormous Jacobian which you can't really do in practice.
+So in practice,
+what we do is use something kind of in between,
+which is an accelerated fixed point method, and one that we've been using a lot recently 
+is called Anderson.
+Acceleration, which is a generic method for accelerating fixed point 
+iterations.
+And we actually use this for the forward pass and the backward pass because it turns out that in the backward pass we're solving a linear 
+system.
+Anderson acceleration is actually equivalent to the GMRES indirect method.
+Now,
+all the details of this,
+are actually going to be in that companion website.
+We have code and,
+uh,
+notes that describe all of this,
+and they're written in pytorch too,
+as I was telling Matt,
+I'm not I'm not yet cool enough to use JAX,
+So I still am stuck in the days of using pytorch the semi cool days of pytorch.
+Right.
+Um,
+but it's all there,
+and you can look how this actually works.
+It's about it's less than 100 lines of code to create a convolutional
+ResNet-based DEQ model,
+which will get without data augmentation with a small number of parameters,
+will get 82%.
+Accuracy, something like that, on CIFAR.
+which is of course not.
+Not great accuracy,
+but for a very small model with no augmentation,
+it's fairly good for that size of parameters.
+And that's all in the other documents.
+Okay,
+let's see if this looks like in practice in a second.
+But first,
+let's talk about some of the theory.
+So the nice thing about DEQ models, is
+we actually have some very nice theory about how they work and how expressive they 
+are.
+So you may still be thinking that,
+you know,
+we've gone from a deep network to literally trying to compute everything with a 
+single layer,
+and this seems like,
+yes,
+it kind of,
+you know,
+yes,
+a fixed point is maybe more expressive than a normal 
+linear and nonlinear layer combined.
+But is it really that expressive?
+Maybe we're losing a lot of something.
+Maybe this won't work very well in practice if we literally just take the whole network as 
+this one layer.
+And so these proofs here.
+These theorems here at least highlight a little bit about why that's not the case.
+So the first theorems that we have about DEQs is that a single layer DEQ,
+so a single layer fixed point iteration essentially can represent any feedforward
+deep network.
+And it's actually a very simple statement here.
+The proof intuition is that you just stack all the hidden layers together -  so you can imagine if you have a 
+whole unrolled network,
+you take every element in the compute graph and put that in our vector Z 
+and have the function f just be kind of a shifted application of every layer in the compute 
+graph.
+Now,
+of course,
+that's not a very good thing to do in practice because you're still storing the whole hidden unit.
+Therefore,
+you're storing all the memory of the compute graph anyway,
+and by the way,
+you're applying every single operation at every single iteration of F.
+So it's not a good idea to in practice.
+But at least in theory,
+this captures why one layer is sufficient,
+theoretically,
+to express a deep feed forward network,
+and that's actually with no increase in parameters.
+This is not about This is not about universal function approximation.
+This is about the same number parameters you can.
+You can do the same thing with a fixed point iteration as you can,
+finding a fixed point as you can with any deep network 
+So,
+That's very nice,
+Of course.
+In practice,
+you know,
+we have a smaller we don't do that we have.
+It's a small sort of normal cell that we maybe make a little bit bigger to match parameter counts.
+But this is a nice theory,
+to have.
+The second theorem
+um,
+that we have is that a single layer DEQ can also represent any multi layer DEQ.
+So,
+you know,
+as as deep learning people,
+the first thing we hear about when we hear about a powerful layer is,
+Oh,
+maybe we can stack those together.
+and have a better architecture,
+too,
+And they're.
+The truth,
+though,
+is that this doesn't actually help here,
+so any multi layer DEQ can actually be represented by a single layer 
+DEQ,
+and the proof is very similar.
+You just take - if you have two equilibrium models where the output of one is an input into the 
+next one,
+You just stack those two together and have your function f be a simultaneous equilibrium over both of 
+them.
+So you could always solve equilibrium kind of in a simultaneous fashion.
+And therefore,
+this is why we have the catchy slogan which is,
+you know,
+great for everything these days in deep learning,
+where one implicit layer for a DEQ is actually all you need.
+But look,
+we even have proofs here that prove it.
+Unlike those other papers that claim similar things now,
+I should highlight there are some still some missing points of these theories.
+For example,
+they don't say anything about the guaranteed existence of an equilibrium point or the 
+uniqueness of it,
+or whether in fact,
+a method will be stable.
+Like Anderson acceleration is gonna be stable for finding it.
+Those are all really issues that we actually have addressed in more 
+recent work,
+but which were not going to talk about,
+uh,
+here today.
+What I do want to highlight briefly,
+though in the rest of this section is the results that we can get because the nice thing about 
+DEQs is they actually are competitive with the state of the art in deep 
+learning for similar size and similarly trained architectures.
+So,
+for example,
+using,
+uh,
+for the language modeling task,
+we trained a DEQ variant of a transformer model as well as a 
+DEQ variant of a different model called Trellis Net Model to Model a language 
+modeling task on wiki text 103 which is a standard data set - standard,
+reasonably large scale data set for language modeling.
+And what we find is that for the same number of parameters,
+And so a transformer XL is sort of a reasonably nice,
+um,
+transformer model.
+And what we find is for the same number of parameters -
+So this is a really too small model.
+The GEQ model typically gets better performance here,
+measuring perplexity,
+which is, lower is better,
+and it uses much less memory.
+So better performance because,
+well,
+it works as well.
+It's a deeper model too, in some sense,
+it has more nonlinearities,
+I guess,
+because it's an infinite number in some sense,
+and less memory.
+Because of the implicit function theorem and implicit differentiation,
+this holds pretty steadily over a variety of model sizes and a 
+variety of different model architectures.
+I should mention,
+of course,
+that these are not state of the art results.
+on Wikitext-103,
+you can do much better just with even bigger models.
+But for every time where we compare similarly sized models,
+we are in fact typically a little bit better and definitely lower memory 
+consumption.
+Yeah,
+now it is true,
+however,
+that there is something kind of fundamentally,
+um,
+something about the DEQ model so far that seems to have a 
+hard time applying itself to things like vision tasks because 
+in vision tasks.
+Actually,
+that sort of plays two roles and though in one sense depth 
+increases the capacity of the network but depth in a vision model,
+it typically also involves sub sampling data or strided convolutions,
+which down sample data and you really want to have this 
+representation of images at multiple different feature resolutions.
+So to address this problem,
+actually,
+this year in NeurIPS, and I want to highlight this result very briefly,
+we presented an idea that actually extends these DEQ models to a multi scale setting where the 
+idea is you actually represent in your hidden unit multiple 
+spatial scales of features.
+Simultaneously,
+you feed each of these through a residual block,
+you mix them all together by up sampling and down sampling,
+and you treat this whole thing as the joint F that you want to solve.  So, 
+This whole thing is driven to an equilibrium point.
+And then the cool thing about this is you can actually you have kind of converged feature 
+maps for both high resolution and low resolution inputs,
+which lets you actually use the exact same model for a class like 
+for a task like image classification.
+As for a task like semantic segmentation,
+So without any notion of backbones or more complex architectures,
+you could use the same architecture for one.
+The big point that I want to highlight here,
+though,
+is that by incorporating structure within this single layer 
+within a single kind of cell,
+you actually can create models that are very powerful,
+that have a lot of structure within them, and which can solve very hard tasks.
+So in particular,
+this model again on something like Image net for similar sized models 
+again with similar training techniques.
+Nothing too fancy here.
+We're not quite the state of the art.
+Certainly there are better models,
+but we're pretty competitive with good architectures like resnets,
+etcetera.  And  as you scale the model bigger.
+You see similar effects.
+Of course.
+The sort of more interesting thing - and again,
+as I said,
+is that you can take this same model and apply it to a domain like semantic segmentation.
+So for the cityscapes,
+which is a semantic segmentation task,
+um,
+again,
+we are for the similar model size we are the the multi scale DEQ is 
+competitive with the existing state of the art while 
+using the exact same models for classification.
+And in fact,
+in this case,
+actually that the 81 MIOU actually is the state of the art.
+So we're pretty close to state of the art here while being an implicit layer 
+and previously implicit layers,
+While they've been thought of as powerful,
+they haven't that much been applied to sort of these large scale,
+very kind of state of the art computer vision tasks.
+And so the point of all this we want to highlight is that this really is possible here,
+and we can get these extremely strong results in practice 
+using implicit layers and so to end here,
+I just want to show the requisite video of we don't have quite as many cool 
+videos as for DEQs as David is about to show you for neural ODEs.
+But we do have a cool video showing pretty good semantic segmentation on a 
+task like cityscapes.
+And so,
+You know,
+there's certainly some some,
+you know,
+flipping out around the corners where it can't quite tell between,
+you know,
+a sidewalk in a building and stuff like that.
+But for the most part,
+this is pretty good.
+Um,
+you sort of see,
+you sort of see that it's working pretty well.
+So with that,
+I'm going to turn over to Dave to talk about neural ODEs.
+Okay,
+Thank you,
+Zico!
+So now I'm going to go into a little bit more detail about neural ordinary differential equations 
+So, to refresh -
+The idea is that there's some vector-valued state Z,
+which follows a dynamics function F.  And F could be defined using a neural network 
+or like a resnet block or any any sort of architecture you want, with a few constraints.
+Again,
+we're going to define,
+an implicit layer as the solution of the ODE at some
+finite integration time,
+starting at our input X um,
+the solution.
+The solution is actually unique and it's continuously differentiable with 
+respect to the input X as long as the the solution exists,
+which requires F to be Lipshitz and continuously differentiable everywhere.
+So in particular,
+this means we can't actually use relu units when we define the network that defines F.
+But there's lots of nonlinearities that do work.
+For instance, tanh.
+Okay,
+so just like with Dex,
+we have total freedom about how we solve this integral to get the final state of the ODE.
+The simplest way is called Euler's method,
+and it basically just says,
+Let's take finite steps in the direction of F,
+and this looks a lot like a residual network.
+So just to show this visually,
+the ideas that were starting - the exact solution is some curve that's impossible to compute exactly -
+We can only approximate it.
+So Euler says "Okay,
+starting at this point,
+we're going to take a small step in the direction of F, where these little arrows show the 
+the direction of the gradient field.
+And at this new point,
+we're gonna again,
+evaluate f,
+ask which direction to go in, and then take a finite-size step in that direction.
+We keep doing this,
+and this will give us an approximation to the true solution,
+However it's not.
+It's not a great
+strategy in terms of the computational costs for the approximation that we get.
+And just like for Dex,
+we can use any solver that's been developed.
+And in fact,
+the field of differential equation solving is a very mature one.
+It's more like 120 years old.
+So we have a scope to use all sorts of fancy adaptive solvers,
+which will makes local extrapolations and 
+only take many steps when the dynamics are complicated.
+Okay,
+so just to make the connection really explicit and to show you in pseudo code 
+how you might code up a neural ODE or an ODE-Net,
+First,
+I'm gonna show pseudo code for a residual neural network.
+So on the right here,
+I'm showing,
+uh,
+just what a one dimensional residual neural network looks like where we start at the input at the 
+bottom and every layer is an update to the state.
+depending on a little neural network F,
+which takes the current state.
+This is like the hidden units of our neural network.
+The layer number which will call t and the parameters of that layer.
+So all we need to do is get the current layer's
+weights and the current state and pass that to our little neural network,
+whatever it is,
+maybe a few layers of convnet, or who knows what, putting these 
+together into a residual network just looks like an iteration over every layer where we 
+add dynamics function to the current state.
+Okay,
+So as Zico mentioned,
+we don't actually have to have different parameters at every layer of the network.
+In fact,
+we can,
+without loss of generality,
+make the neural network take one set of parameters and then also just have its,
+uh,
+inputs know what depth it's at.
+So this is like a sort of almost cosmetic change that we're making to the architecture.
+The network architecture,
+but it means that in principle we could evaluate this neural network at any layer or any depth, 
+even in between these discrete layers.
+So if we did that,
+we could say,
+Oh,
+this residual network is really just using Oilers method to solve a 
+this differential equation F.
+So we are actually free, if we want to, to replace that 
+particular silver with any fancy ODE solver that's been developed by the numerics community.
+Then solving uh,
+differential equations using this way, er, using an adaptive solver will require evaluating this dynamics
+function at a bunch of different locations and depths that are determined on the fly by the ODE solver.
+Okay,
+so I'm going to say that you can replace a residual network with a neural ODE
+anywhere and the types will match, right - it's a neural network that has 
+its output dimension being the same as the input dimension.
+However,
+the class of functions that you can learn with an ODE-Net is not quite the same as 
+that of a residual network.
+So and just to use a simple example:
+Imagine we're learning a one dimensional function.
+y is x squared.
+So here is what the activations of a
+residual neural network learning this function looks like.
+So for five, we map,
+we get larger until we go to 25.  Zero goes to zero, negative five jumps over and 
+then also goes to 25.
+So this is a non-bijective transformation because we're mapping two inputs to the same output.
+However,
+if I try to learn this function with the neural ODE,
+I end up not being able to.
+Um,
+and the fundamental difficulty is that O D E solutions or the trajectories 
+internally can't cross over each other, and that's just by construction.
+So the best that this neural network could do is map all the positive reals to the corresponding squares,
+and all the negative reals get matched close to zero.
+But there's no way for us to cross these trajectories to actually learn a non-bijective function.  So 
+sometimes that's good,
+sometimes it's bad.  In high dimensions.
+It's not usually a problem,
+but there are situations where we have to augment the number of states in our hidden units to achieve the 
+same expressivity.
+So one of the main benefits for moving to this implicit formula,
+just like in deep equilibrium models,
+is that again we're free to compute the answer however we want.
+so without getting into the exact algorithms used by these methods,
+usually what they do is as they're solving these ODEs,
+They fit a local polynomial to these dynamics and then try to
+estimate the extrapolation error that they would make if they went a finite distance along the trajectory.
+And so they're going to take steps such that that extrapolation error stays small enough,
+And then when it gets too large,
+they're going to stop and start again.
+So the upshot is that when the dynamics are complex,
+we might need a lot of evaluations of the dynamics function.
+But when they're simple,
+we might need fewer evaluations.
+So this is a form of adaptive computation.
+The other big benefit that neural ODEs share with deep equilibrium models is that we can 
+adjust the tolerance or the precision of the solver at any time.
+So in particular,
+these adoptive solvers have a parameter or maybe two for, like,
+absolute and relative tolerance,
+um,
+that we can loosen if we want to have a less precise answer 
+ at the cost of fewer function evaluations.
+Okay,
+so I mean,
+the downside of this is that we can't actually explicitly control the number of function evaluations that it takes 
+to evaluate these models.
+And we see during training - 
+Typically that the number of function evaluations this this f this little neural network,
+um,
+it requires more evaluations to get a given precision as 
+the training proceeds and the idea being that at initialization.
+Usually we have a relatively simple function that we have to integrate,
+and that function will become more complicated as it fits the data.
+So all right,
+so I want to talk a little bit about how to train ODE-nets.
+And again,
+all this math can be derived using the implicit function theorem.
+I'm going to use a simpler derivation based on residual networks.
+But the problem that we have to solve if you want to scalably train any parametric differentiable model is how to 
+compute gradients of some scalar loss with respect to a million or a billion parameters.
+So particular, we'll say that we'll have some ODE solution as part of our model that 
+eventually gets turned into a scalar loss.
+How do we compute the gradient of the scalar loss with respect to parameters?
+Um,
+well,
+it turns out that we can just derive the answer by taking the infinitesimal limit of the 
+standard backprop rules for a residual network.
+So in a residual network,
+we start with the loss of the final layer,
+so the scalar loss with respect to the output layer z_t.
+And there's a recurrence that says,
+How do I get the gradient with respect to the next layer or the previous layer?
+And it just involves a vector times a Jacobian,
+which as Matt explained,
+is cheap.
+And it's what reverse mode automatic differentiation gives you - also known as backprop.
+and then computing the gradient of the loss with respect to all the parameters ends up just being a sum over all the 
+layers of the local gradient
+With respect to the state times
+This Jacobian of: how does the update depend on the parameters?
+So these are all operations that are readily available in any automatic differentiation package and are cheap to compute.
+They have the same asymptotic time cost as the forward pass.
+So,
+uh,
+this is actually,
+you know,
+the continuous version has actually been worked out in the sixties and is used in 
+many different situations in the numerics community.
+Um,
+but if we take the continuous-time limit of these residual equations as we 
+have more and more steps,
+each of which makes a smaller and smaller update,
+we end up getting another differential equation that says that the 
+gradient of the loss with respect to 
+the parameters is just the integral of, again, vector-Jacobian products - the 
+same vector-Jacobian products that we computed when we were
+evaluating gradient of the residual network.
+So, when we want to code up the gradient of an ODE,
+or loss with respect to the initial state or the parameters of an ODE,
+we can actually just express that as another call to our ODE solver,
+where we're asking it to run some augmented dynamics that 
+contain both the original forward neural network and these augmented dynamics,
+witch require vector-Jacobian products.
+and we'll go into this in more detail in the tutorial document.
+But this is everything we need to explain how we can compute gradients with constant memory.
+So the usual bottleneck for memory in computing backprop for big neural networks 
+is that we have to store the activations of every layer as we go through our model.
+We - when we're solving okay,
+There is actually an alternate way to reconstruct all the activations of the hidden units 
+backwards in time in the order that we need them.  So specifically,
+ODE solvers let us start with an initial state and then,
+compute a trajectory to get to the final state.
+If we know that final state,
+we can just run the same dynamics backwards in time using the same sort of ODE solver,
+and reconstruct this state arbitrarily accurately.
+So I want to mention that there are a few different works that do the same thing in neural 
+networks where they compute, where they structure
+the network layers in such a way that you can reverse them analytically.
+However, this requires you to restrict the network architecture.
+The nice thing here is that as long as we are continuously differentiable and Lipschitz,
+we can use any neural network architecture and still do this reversal.
+Of course,
+this is another source of numerical error - we're already gonna be accumulating numerical error on the reverse pass.
+And sometimes we won't be able to feasibly reconstruct this trajectory.
+Exactly.
+However,
+um,
+if the reverse system is stiff,
+we can detect that usually,
+and then stop and do check pointing and,
+for instance,
+like just maybe store a few different intermediate states and work backwards from there.
+Okay,
+so you know,
+we've described these two families of models:
+deep equilibrium models and neural ODEs.
+And we said that said they have very similar properties.
+So when would you like to use which one?
+So in particular,
+they both have constant memory training costs.
+They both that you adjust the compute versus precision at test time.
+By adjusting those tolerances,
+they both have this sort of,
+like,
+infinite or automatically adjusting depth.
+I would say,
+um,
+you should probably use neural ODEs when you care about the trajectory for some reason.
+For instance,
+if you're modeling continuous time series or doing something with physics,
+or as I'm going to talk about next building normalizing flows.
+And the reason for that is that the change of variable is sort of is easier to compute in most instances.
+Okay,
+so I'm gonna talk about one of the major things that's been allowed by moving to continuous time,
+which is more advanced normalizing flow models.
+So when I say normalizing flows,
+I mean a set of tractable probabilistic models based on the change of variables formula,
+and it requires that we parameterize an invertible transformation,
+which will then tell us how to convert some
+tractable density into a complicated parametric density that still has the 
+normalization constant available,
+which means we can compute the density under this transformed model,
+which lets us train by maximum likelihood.
+So compared to GANs these are trainable by standard stochastic gradient descent,
+which makes them very appealing.
+And so the first instances of models that 
+really took off, like the first main one was called, or the first scalable one was called
+real NVP
+which require this restricted architecture,
+but it operated in discrete time.
+The way those were trained is that they use the change of variables formula,
+which says that if I start with some variable x zero,
+put it through some function f that's invertible, then
+The density of the resulting variable will be the original density times the determinant of the 
+Jacobian of the function that transformed X.
+So this determinant is scary - it has a cubic cost to compute.
+And again, to invert,
+so a way around this that people have been doing is to 
+restrict the architecture of their dynamics function such that it has a structured Jacobian
+so you can use tricks from linear algebra to efficiently compute this determinant in
+something more like O(D^2) or O(D) time,
+so the standard approaches are either make it low rank or somehow sparse or lower triangular.
+So this is fine if you have enough layers,
+but you have to have a lot of layers to make up for this.
+restricted architecture in some domains.
+If we talk about the instantaneous change of variables, you can ask,
+You know,
+if I say that the rate of change of X is given by some function F,
+then the rate of change of density of F is also given by a differential equation,
+which depends only on the trace of the Jacobian of this dynamics function. 
+And the trace is always O(D) cost.
+This Jacobian of course,
+costs O(D^2)
+but we're gonna talk a little bit about how to get around that D^2in a second.
+And the nice thing is that this is,
+uh,
+this allows us to use any architecture for this F so we'll need fewer layers.
+Of course,
+we will still need to compute an integral,
+which has infinitely many layers,
+but the hope is that approximating that integral will still require fewer evaluations 
+that the number of layers we need if we use a restricted architecture.
+Okay!
+So what this looks like in practice is again we have some,
+uh,
+normalized density that's simple, we let it follow some differential equation that's been defined by a neural network here,
+And then we end up with another normalized density that has some complicated parametric shape.
+So there's one more trick that we need to be able to scale these models to high dimensions,
+and that is Hutchinson's trace trick.
+So again,
+I'm saying that for continuous normalizing flows, the change in density can be computed as 
+the integral of the divergence of F,
+which again can be written as the trace of the Jacobian of F,
+that's the same thing.
+And this Jacobian again is D squared,
+which is unacceptable for large models.
+So Hutchinson's trace trick says that you could get an unbiased estimate, 
+an unbiased stochastic estimate of the trace of a matrix by just hitting it with a random
+vector from the left and the right.
+As long as that random vector has zero mean and unit variance.  So in particular, when we're training
+we can sample a unit vector at every iteration, integrate the Jacobian times this vector,
+and that will give us a linear time operation that lets us estimate the change in density.
+So again, now moving to even higher dimensions.
+What generating images looks like in that setting is every dimension here is drawn from a Gaussian,
+initially and then it follows this differential equation that shows how to turn this Gaussian density 
+into the manifold of natural images.
+Of course,
+we could do interpretation in this setting,
+just like with all other latent variable models. Okay,
+So one thing I've been sweeping under the rug a little bit here is this absolute and 
+relative tolerance that says how accurately we want to solve our differential equation.
+This might concern us,
+especially when we're training normalized density models because the way we compare them is we ask: What is 
+their likelihood on held-out test data.  You might say,
+Well, if your solver has some systematic error in it, then
+probably during training 
+you're going to learn to take advantage of that error in your favor and overestimate the likelihood of your model 
+on held-out data.
+So that's a reasonable worry,
+and to answer that,
+We ran an experiment in one dimension where we asked Okay,
+as we adjust the solver tolerance on a trained model,
+how does the actual,
+uh,
+normalization constant of that model change?
+So it should, if it's a truly normalized model,
+We should estimate that its integral is one.
+And we can ask,
+How does our estimated normalization differ from one?
+As a function of this tolerance,
+we ask the solver to give us.  So this is a really,
+really reassuring graph,
+at least in one dimension.
+The amount of error in the normalization of our model tracks
+pretty closely the error that we asked the solver to give us on our estimates.
+The next thing about this is that if you really care about accurate evaluation,
+you could,
+you know,
+make the tolerance tighter and then spend more time evaluating and get a better answer.
+If you're having you running on low power mode on the phone,
+you can loosen the tolerances and everything work faster
+at a worse precision without ever having to retrain the model. So one of the 
+other places where continuous normalizing flows
+help us is that - I mentioned earlier that neural ODEs are restricted to learning homeomorphisms.
+I think for regression we might think that's a bad thing,
+but it's useful when we wanting to model 3D shapes, for instance,
+which we don't want to self intersect ever.  And again,
+as I mentioned earlier, if you want to do change of variables in exotic spaces such as on manifolds again,
+it turns out that the math is simpler in continuous time.
+So again,
+once we've trained this model,
+we have a density that starts off with something simple, close to uniform,
+And then it's gradually following a differential equation on a manifold to produce some 
+complicated parametric density that you can evaluate.
+Very recently, from Stanford, led by Yang Song, came up
+with an alternate method of training these, besides maximum lkelihood.
+I don't have time to go into it in detail,
+But the basic idea is to ask,
+What if we had a stochastic differential equation that was mapping our simple density into 
+our parametric density,
+and again this looks like turning noise into an image.
+or rather learning how to reverse the process of starting with an image and adding noise.
+It turns out that although you need to use this SDE formulation to train them, to evaluate these models,
+you can convert the SDE into an ODE that says how the density changes 
+and lets us evaluate these using adaptive ODE solvers just like standard continuous normalizing flows.
+And due to the particular construction that they use of the noising process, they can train these much more scalably
+in fact,
+getting large high resolution images.  And again,
+The advantage of this approach to modeling images over something like a GAN is that we now 
+define a density that we can evaluate in principle.
+We have the stochastic evaluation of it,
+but we can evaluate that as many times as we need to, to get an arbitrarily accurate estimate.
+And because we've explicitly defined a joint density over all the pixels in the image,
+we can answer all sorts of queries about those images.
+For instance, can we take a sample of the rest of the image conditioning on only a part of it.
+We can see that we have a diverse set of possible in-paintings of the rest of image.
+Another example of this is if we condition on the on the sum of the colors of every 
+pixel can you sample the hue and saturation. And 
+this a form of in painting as well that this model could do without having been trained specifically to do it.
+Okay, now, another area that I'm gonna talk about neural ODEs for is time series.
+And this is a situation.
+This is a setting where it's not clear how you would use a deep equilibrium model.
+In fact it's not really clear how you would use any discrete-time model, in order to do 
+all the things that we want to do in continuous-time.  So again 
+as I mentioned previously,
+There's been a lot of work in the last couple of years of building complicated physical models,
+and having them obey the constraints 
+that we know that natural models have to obey. So in particular, we know that real physical
+systems can be seen as obeying different Hamiltonians or Lagrangians depending on which coordinate system you use
+and without specifying the entire set of 
+dynamics that they're following, we can still say that they're following some Lagrangian that they're going to learn.  And this lets us
+realistic physical models with less data, and which extrapolate much better than
+ones that have to learn everything from scratch.
+The other thing we could do with these tools is if we happen to know the entire dynamics of the system, if we're just working from the known laws of physics,
+being able to differentiate through these systems lets us
+do things like tune the initial conditions of some protein folding or rather the
+ongoing conditions of some protein folding to encourage it to form a particular shape.
+The most important application of neural ODEs that we might see in the next few years is irregularly-sampled
+time series or data sets.
+So whenever I've talked to industry practitioners or medical practitioners,
+who are excited about deep learning.
+They've said, well, the main problem is that my data doesn't look like a giant pile of images or matrices.
+It rather looks like a whole bunch of measurements that were made of different individual patients or customers at different times.
+And they don't really fit into standard deep architectures.
+So most of the large parametric models that we have operating discrete time,
+such as recurrent networks or deep Kalman filters or hidden Markov models.
+The standard approach to fitting these into a large deep model is to bin the data,
+and average the data over, let's say, every hour or every day.
+But this isn't meeting the data where it lives.
+And it's starting our data analysis by throwing away a lot of information.
+So one thing that me and others have been working on is building,
+actually continuous-time time series models.
+And once you're into continuous time, you pretty much I have to use differential equations
+to describe the dynamics of your models.
+There are ways that you can adapt,
+recurrent neural networks or transformers to take in irregularly sampled data,
+and we'll talk about that a little bit in the document.
+But I would say a natural and interpretable model is to say that there is some hidden 
+state of the system that we're uncertain about and we can learn the dynamics 
+of how the system evolved through time.
+So the idea here is that if we're modeling patients
+this zed might represent the state of health of a patient, the f that we
+learn would represent human physiology that's shared amongst all people.
+And then these,
+observations would be all the different sorts of, like, doctor's notes or temperature or blood pressure,
+anything that's measured about the patient at any time,
+as long as we can write down a differentiable likelihood with respect to the latent state,
+you can jointly train these models end-to-end,
+using stochastic gradient descent.
+So here's a toy example of what that looks like,
+where we have some one dimensional data,
+three different trajectories with all sorts of missing times,
+and we're going to jointly learn the dynamics function and infer the latent state of all these 
+different trajectories.
+So here is us using stochastic gradient descent,
+optimizing a variational objective to both learn the dynamics,
+the latent dynamics, as well as fit the states of the different trajectories to data.
+That model is a little bit funny because it assumed deterministic dynamics,
+and we want to be able to model the fact that there might be all sorts of little unseen interventions on our states that we don't get to
+observe, in which case we'll naturally be describing a stochastic differential equation.
+Another series of work has recently generalized the algorithms for fitting.
+latent ODEs to time series data to latent stochastic differential equations.
+These are still constant memory and can use adaptive stochastic differential equation solvers.
+And they end up looking like a Bayesian model, where there's a prior
+stochastic official equation,
+and then variational inference gives us an approximate posterior stochastic differential equation that goes through the 
+data and is certain where the data is and is less certain where the data isn't.
+The thing that's new about this — I mean,
+stochastic differential equations are, of course, very old.
+The new part is scalability.
+And the fact that now every operation in this new training pipeline,
+like all the ones that we're used to,
+it scales roughly linearly with the number of parameters,
+the dimension of the state, and the amount of data.
+Okay, so now I'm gonna hand it over back to Zico to talk a little bit more about differentiable optimization.
+All right. Thanks, David.
+So I'm gonna finish off the main sections of this talking about, briefly, differentiable optimization.
+This won't go into quite as much depth as DEQs or neural ODEs,
+but I at least want to highlight some of these ideas here because actually,
+differentiable optimization in some sense was actually one of the fields that actually
+brought implicit models to the forefront of modern deep learning.
+And they are still widely used and still widely being explored from many different directions.
+So the basic idea here is that DEQs and neural ODEs,
+they both impose substantial structure on the nature of the layer,
+and by doing so, they actually gain a lot of representational power.
+But there are many other things we can do
+to also impose very valuable structure on the layer.
+And one very prominent idea here, which has paid off,
+in a lot of different domains is that of differentiable optimization.
+And what I mean by that is the layer is of the form z star,
+so the output of the layer here is some minimization, the arg min,
+so in other words, it's the solution of an optimization problem that is some function
+of optimizing over some variables z here,
+where these variables z are constrained to be in some set,
+which can depend on the input to the layer,
+and the objective function also jointly depends on the variables z were optimizing over 
+as well as the input to the layer.
+And so you can think of this as sort of the input to the layer sets up some 
+feasible set in the optimization landscape and then 
+also sets up an objective function in that landscape.
+And then the job of a layer is to find the point that minimizes that 
+objective subject to being in those constraints.
+And it's a very generic kind of optimization formulation,
+though of course,
+you could specialize it to a lot of particular problems because a lot of particular problems actually 
+look like optimization problems.
+So I want to give a quick sense of how this actually works in practice.
+The idea with differentiation here is, as you imagine, the same thing.
+You apply the implicit function theorem,
+and turn the crank and things kind of work.
+So I'm actually gonna show this in two different ways.
+The first way, I think the way that a lot of people derived these things initially, is by thinking 
+of solving optimization problem as equivalent to finding a 
+solution to a nonlinear set of equations. So in particular, for any optimization problem,
+there are a set of sufficient and necessary conditions that least imply local optimality
+of a solution, and for convex problems, they actually imply global optimality.
+These are known as the Karush Kuhn Tucker or KKT conditions.
+So in particular, for a problem like this here on the left,
+this is a quadratic program, a quadratic program that is parameterized by x.
+So there's a quadratic objective and linear constraints,
+but the objective itself and all the constraints can depend on some 
+input X. This solution actually is equivalent to 
+finding some set of points here,
+so actually, z star are the primal solution, doesn't really matter the details here,
+but nu and lambda end up being the optimal dual solution.
+And if you can find a set of points or some values here that solve these equations,
+that actually is a solution to the optimization problem.
+I won't get into it too much, but basically the first two say that it's feasible,
+the second two say that the dual variables on inequality constraints are positive,
+the fourth is known as the complementarity condition,
+and the fifth is a gradient condition.
+And so we can take these equations,
+solve them any way we want to,
+which is exactly how optimization solvers work, and then differentiate them 
+using the implicit function theorem to find gradients.
+It turns out we don't even need to differentiate the inequalities here because the equality constraints
+are sufficient, locally, to actually give a valid gradient here.
+Now that's one way of doing it, but the other,
+maybe even simpler way is to realize that many optimization 
+problems, or optimization algorithms actually, can be written as a fixed point iteration.
+So, for example, we all know (or hopefully know) that projected gradient descent
+is one way to solve optimization problems.
+And so one thing we can do is just iterate projected descent, that just takes
+the current iterate, subtracts off a small multiple of the gradient, and then projects it back onto the constraint set.
+It's not always easy to form that projection
+but in many cases you can do this immediately.
+And then, more generally speaking,
+there are actually a much more sophisticated approaches that can solve arbitrary things, like
+arbitrary cone problems.
+And in fact, a lot of solvers work exactly this way.
+They set up some fixed point iteration and solve the actual 
+resulting fixed point.
+Sometimes this fixed point actually gives us exactly a primal dual solution, like we have for the KKT conditions.
+But sometimes it operates in some other way,
+and the beauty, again, of our notion of
+differentiating fixed point iterations is that it doesn't matter how we find the solution.
+We can use whatever solver we want, whatever sophisticated solvers,
+Just like with whatever sophisticated differential equation solvers,
+whatever sophisticated root funding solvers, we can use whatever optimization procedure we want,
+find a solution and then differentiate through that fixed point
+in order to find gradients.
+This works very generically.
+So I just want to give a few examples of what's being done here.
+As well as a pointer to some frameworks that you could test this out with.
+So some cool examples of this, and and this is just a very small selection,
+there have been many many more,
+but some of our original work on QP solving use
+an example of fitting convex polytopes to data.
+So given a bunch of sample points,
+some of which are inside and outside the body, you actually fit convex shapes to these regions.
+Another fun example that we did,
+but it's slightly more involved, involves
+an optimization procedure which is actually a differentiable SDP solver,
+where we use it to solve sudoku problems.
+Sudoku problems are actually constrained optimization problems
+that are sort of hard for normal deep learning because there's a lot of constraints,
+global constraints you need to satisfy at the end of the network.
+And because these things are all trained end to end,
+we actually even trained it on an MNIST version of Sudoku,
+where we put in MNIST digits instead of just giving it the actual the actual numbers. We gave
+it the MNIST digit zero in this case of a blank.
+(It was nice that sudoku goes with numbers 1 to 9 and zero that we can use a blank.)
+And then, in fact,
+just so you don't think that maybe we're only using us to do things like solve sudoku and other fun toy tasks,
+this has also been using a lot of real applications,
+like controlling HVAC in building systems, using differentiable variants of MPC controllers.
+So MPC is model-predictive control,
+it's a very common control technique,
+and because it's optimization based,
+you can also differentiate through it to learnably control complex systems .
+The last point I want to make here is that,
+perhaps unlike DEQs, though we do have some simple examples of this in the notes,
+unlike DEQs and neural ODEs, it's also true that for real
+large scale optimization problems,
+It's actually a little bit more challenging to write a really good optimizer,
+especially when you have semi definite constraints, and inequality constraints, and equality constraints.
+Writing a good solver takes certainly a bit of time.
+It's the same is true for ODEs
+though there at least simple ones work for a lot of problems, too.
+And so if you want to use an industrial strength convex
+optimizer to solve your problem, and use this in a differentiable fashion,
+I would actually not recommend trying to code your own iterative fixed point solver
+to solve the problem.
+I would recommend you actually try out this library,
+which was a collaboration between my group and Stephen Boyd's group at Stanford,
+to extend the cvxpy modeling framework,
+again that's also out of Stephen Boyd's group at Stanford,
+to allow you to embed very easily modeled convex problems into automatic
+differentiation toolkits like PyTorch and TensorFlow.
+And I actually believe they're even working on a JAX version now!
+If it's not already there, it probably will be there soon.
+So coming soon.
+But the idea here of these modeling frameworks, like cvxpy,
+is that you can write Python code that looks a lot like the actual
+mathematical description of the optimization problem.
+So here we have actually an ell-one norm 
+minimization problem with an inequality constraint,
+and that sort of looks very natural in this setting here.
+And cvxpy layers lets you take this optimization problem 
+and directly embed it as a layer into either PyTorch or TensorFlow.
+That's a very powerful  tool to let you easily experiment with these things,
+and easily figure out what you might want to do with architectures like this.
+And then maybe if it works well,
+then maybe you write the the GPU version that's fully parallelized,
+it's a little bit faster,
+but really, this first step here,
+with cvxpy layers, gives you a very, very good first step.
+All right, so with that,
+we are approaching the end of this tutorial,
+and I'm going to hand it over one more time to David
+(though actually, the first bit we're gonna talk about jointly)
+to conclude with some future directions.
+All right. Thank you, Zico.
+So one thing I want to mention before the end of this tutorial is to talk a little bit more frankly about when we should use
+deep equilibrium models or neural ODEs.
+So I think I would say that you should use deep equilibrium models as a drop-in replacement 
+for any deep models used standard circumstances, where you would maybe use a residual network or a 
+very deep transformer or something like that.
+In general, when you're doing standard supervised learning with conv nets and resnets or transformers, or building a big language model,
+I think it makes more sense to replace it with a deep equilibrium model just because we don't care about the trajectory of 
+the solution.
+Yeah, I think that's right.
+So in most of our work on DEQs, what we've been trying to think about is,
+how you can mimic or improve upon the function 
+of existing deep network structures using this implicit framework.
+So using these layers that converge to equilibrium points.
+And it's very much based upon this assumption that you are just looking for this one final,
+infinite depth, kind of a limit of the computation.
+And that's good enough. That's sort of the whole premise.
+It's discrete-time fundamentally because it's taking steps per layer,
+really mimicking existing structures a lot,
+But then, also very importantly,
+you really don't care about how you got there.
+You just care about the final equilibrium point.
+That is your features you've converged to,
+and the faster we can get there the better.
+So this seems to me like a good replacement for
+a lot of deep structures where they currently go through a lot of explicit computations to get there,
+but they don't ever care about the intermediate computation.
+No one cares about the 10th layer of your resnet.
+What you care about is the final result.
+And so that's really where I think DEQs make sense.
+I would also agree that neural ODEs make sense when you do care about the trajectory,
+and need to model these continuous time phenomena,
+and things like this.
+To be explicit, you can also use neural ODEs in most of the settings.
+There's a few more restrictions on the form of the layers.
+I guess I would say generally tend to be a little bit slower than the corresponding DEQ.
+One other difference is that the solution of the ODE is guaranteed to be unique,
+where that's only true for certain —
+you have to take an extra step to make that be the case for DEQs.
+Yeah, that's definitely true.
+So in general,
+there isn't that much we can say about the guaranteed existence of a fixed point for the DEQs that we've shown here
+so far, at least.
+We do actually the paper coming up this year at NeurIPS, so it will be presented
+in a couple days, about how you can have a special
+class of DEQ models called monotone DEQs that do have this guarantee,
+And they actually have a bunch more algorithms for computing fixed points.
+But that's a very specific class that's harder —
+it's not quite as plug-and-play, in some sense,
+as these other models we're talking about here,
+so it does take a little bit more sophistication to have those guarantees for a DEQ model.
+Then that kind of leaves the these specialty areas where you would definitely want to use 
+the neural ODE,
+which is if you're building a continuous-time time series model.
+For instance,
+if you have irregularly sampled data or you're building some sort of physical model.
+Again, if you're building flexible density models,
+there's advantages to the continuous flow setting. Or if you need to learn for some reason a homeomorphism,
+for instance if you need to
+warp a shape or something. We're gonna talk a little bit about a few 
+open problems and future directions
+in this general area. And there's a there's many more than these.
+The first one, the thing we haven't mentioned very much about DEQs and neural ODEs,
+I'd say their Achilles heel, is that they tend to require more function evaluations than the 
+corresponding like standard fixed discrete architecture for the same level of performance.
+And again, this is something that we could always tune as we go,
+but in general the network is going to be able to adapt to a fixed,
+discrete architecture a little better than this sort of implicit layer.
+I would just add to that: I think that's definitely true,
+DEQs definitely suffer from that, and typically,
+training a DEQ takes about 2 to 3 times longer than training a standard
+depth network of the same size.
+And so this is definitely the big challenge remaining because in every other way
+they're great, right?
+There's better performance, much less memory consumption.
+But this is obviously a big problem that I think we want to address with these 
+new methods for solving them.
+So we're gonna talk about that a little bit more.
+There's also, you know, I don't think we've really learned how to take advantage of these low memory architectures.
+Mostly we've been so far showing that yes,
+you can do the things we used to do, that we know work, in this new low-memory setting.
+But I think this is a new direction of design space that we can head.
+Absolutely. I would also agree with that.
+I would just say that,
+especially given this notion that like the DEQ module is kind of analogous to a cell,
+I think it'd be great to start thinking about architecture
+search, and stuff like this, for those cells, which may give us something very different from the cells that 
+we're used to in deep networks.
+We just have not really thought to try them because
+we're using what works already.
+There's a whole new sort of space to explore here.
+I think there's lots of room for applying things like latent SDEs
+People have been fitting, obviously,
+SDEs to data for a long time, for instance,
+in finance, but usually only on the order of
+tens or hundreds of parameters.
+Now we can fit millions.
+There's also lots of great work going on these days using partial differential equation solvers as a layer.
+So we're just gonna briefly talk about each of these in turn.
+So I was saying it would be nice if we could somehow reduce the number of function evaluations that are required
+to solve one of these implicit models.
+There's been a couple of papers this year, actually
+that tried to, for the neural ODE setting, regularize the dynamics to be easy to solve 
+by particular solver.
+So here's a toy example where this shows the trajectories of 
+a neural ODE that's learned to map from x to x cubed.
+Training to convergence, it still has all these funny little kinks inside,
+which don't actually affect the final solution.
+So the mapping here only depends on the inputs and the outputs,
+and these extra little swirls in here don't actually add anything to the model, they just slow down the 
+solver. So we can add the wiggly-ness of the trajectories as
+something to penalize during training.
+And so starting from this optimized solution,
+if we turn on that penalty,
+we can learn another set of dynamics that has almost exactly the same inputs and outputs,
+but takes many fewer function evaluations to solve.
+As you can see here, the red dots are where the function
+evaluations are happening,
+and there's fewer of them needed to model these smooth looking trajectories.
+So there there hasn't really been very much work done on the DEQ side,
+where we want to regularize a system of equations to be easy to find the solution to
+with a particular solver.
+Yeah, I think that in general,
+fast solving and the iterative methods we use to solve
+DEQs most optimally, and co-tuning the architecture and the solver, is
+still a big unsolved problem.
+One thing I forgot to mention is that this will induce a trade-off: every time we regularize 
+some extra part of our model
+that's not the original task, we're gonna do a little bit worse at that task.
+Fortunately, we have some encouraging results from these initial papers that show that the Pareto front
+it is not very diagonal and that if we were solving to a fine precision,
+we can usually decrease the number of function evaluations by some,
+maybe on this particular example,
+about half, before we start paying a serious penalty in terms of the training loss.
+Another fun direction that people are taking these sorts of of ideas, and have been 
+for 30 or 40 years really, is
+let's let's call it neural partial differential equations, or just PDE solvers as a layer.
+There's sort of two main ways we again can use these ideas.
+One is just to
+back propagate through the PDE solution to fit its parameters to data,
+and the other one is to try to learn to solve PDEs faster.
+There's been some nice work from Princeton recently,
+actually of jointly amortizing both of these problems at once, without ever having to run a slow PDE solver.
+So obviously one of the major things that's changed in the last few years is the ease of implementing these ideas.
+I won't have time to go through each of these,
+but for later reference, all of the demos that we showed (or almost all of them) have code available,
+in both PyTorch and JAX,
+including the convex optimization as a layer.
+Okay, so that's the end of the tutorial.
+I want to thank all of our collaborators who are,
+unfortunately, too numerous to name individually.
+But they, of course, did the bulk of this work.
+So with that, I'd like to thank you all for coming to our tutorial.
+Yes. Thanks, everyone.
+It's been really great really being here, virtually.
+And I guess if you're watching this at NeurIPS,
+we're gonna have a question and answer session either ongoing right now or a little bit later.
+You could ask questions, 
+and try to get more information about what's really going on here,
+and what are the cool directions to think about.
+Yeah, thanks for your attention!
+And be sure to check out those notes for more details and,
+you know, go try out these implicit layers!
+All right.
+Bye, everyone!
+Bye!

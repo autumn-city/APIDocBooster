@@ -1,0 +1,954 @@
+eig is a good, fast, general use eigenvalue/vector solver.
+It is appropriate for use when your matrix is of a realistic size that fits well in memory, and when you need all of the eigenvalues/vectors.
+Sparse matrices do not work at all in eig.
+Eigs is a solver that is more appropriate for when you need only a limited subset of the eigenvalues/vectors.
+It appears that eigs is based on [ARPACK (hyper-link)].
+Sit down with a copy of "Matrix Computations", or better yet, read the pair of references listed in the doc for eigs.
+The eigenvalue/eigenvector problem can be defined as
+where lambda is scalar (an eigenvalue), and V is a vector (an eigenvector).
+As far as I can see, nor the eigenvalues nor the eigenvectors have any specific correspondence to individual rows in the matrix A.
+Can you elaborate on why you don't want your eigenvalues/vectors to be ordered?
+The eigenvalues at least as mathematical constructs are completely well-defined and unambiguous (except for their order).
+If the eigenvalues are off this either means that one of the results is wrong, or the matrix is so ill-conditioned that eigenvalue solvers don't always give the correct (exact) result.
+That is, the second set of eigenvalues is correct.
+For 2x2 matrices the eigenvalues can easily be computed on paper.
+The two eigenvalues happen to be
+Now, look at the two terms appearing in the eigenvalues:
+Believe what MATLAB is telling you, your eigenvalues are fine.
+But when you copied a truncated version of the matrix into a separate eigenvalue computation (just like I did above), you got the wrong result due to the cancellation being only partial.
+Therefore, the eigenvalues will not match exactly nor are they guaranteed to come in the same order, which means the eigenvectors are in different columns:
+However, all of the eigenvalues, when given a similar ordering, have approximately the same value:
+The eigenvalues and eigenvectors of both matrices are, using the metric of relative machine precision, the same.
+However, the arithmetic operations used to create K1 create a (near-)perfect symmetric matrix which results in smooth eigenvalues from the algorithm used by eig, possibly some Hessenberg transformation since you're requesting eigenvectors as well.
+If you need the eigenvalues to be sorted, you must sort them yourself because general matrices will produce randomly order eigenvalues:
+From what I see, the Matlab and NumPy Eigenvalues are the same, but ordered differently.
+Try to order the NumPy Eigenvalues using e.g.
+[np.sort() (hyper-link)] and see if the Eigenvalues are the same.
+You'll then be able to use EIGS to calculate a smaller number of eigenvalues and eigenvectors.
+[http://www.mathworks.com/help/matlab/ref/eigs.html (hyper-link)]
+For example, to determine the eigenvalue of matrix A without balancing,
+The function eig in Octave does not perform balancing of matrix A.
+If I'm reading that right , you are profiling the performance of the random number generator in addition to the eig function.
+The huge difference is because in MATLAB you are only calculating the eigenvalues but in python/numpy you are calculating both eigenvalues and eigenvectors.
+To correct this and make appropriate comparisons, you must do one of the following:
+1. change numpy.linalg.eig(x) to numpy.linalg.eigvals(x) , leave matlab code as it is OR
+2. change eig(x) to [V,D] = eig(x) in matlab, leave python/numpy code as it is (this might create more memory being consumed by matlab script)
+in my experience, python/numpy optimized with MKL(I use windows; dont know much about acclerate framework) is as fast as or slightly faster than matlab optimized with MKL.
+I don't have all of the answers for you, but if you want to look into this, what you are asking for is a comparison of the Schur decomposition and the SVD (for example [http://www.ijcaonline.org/icvci/number14/icvci1529.pdf (hyper-link)]), since I believe the Schur decomposition is the way most people compute Eigenvalues.
+In my work, I generally prefer to use the singular value decomposition if for no other reason than the fact that eigenvalues can be complex numbers, whereas singular values are always real.
+I think when people say that the SVD is more accurate, they mean that svd(A) will yield more accurate singular values than eig(A^T * A), which is definitely true.
+This code will get the eigen values and eigen vectors for each of the matrices:
+The eigenvalues differ from the singular values because they are the square of S as noted in [https://en.wikipedia.org/wiki/Singular_value_decomposition#Relation_to_eigenvalue_decomposition (hyper-link)]
+This means that your singular value is the square root of the eigenvalue divided by the number of samples.
+eig_val is a 1d array.
+Convert it to a 2d square diagonal array with np.diag(eig_val).
+In the last line, np.diag(eig_val) is on the right in order to multiply each column of eig_vec by the corresponding eigenvalue.
+If you take advantage of numpy's broadcasting, you don't have to use np.diag(eig_val), and you can use element-wise multiplication (in either order, since element-wise multiplication is commutative):
+There is not only one valid answer for a eigenvalue problem.
+Normalize all eigenvectors to length 1 (example: [-0.4472,-0.4472,-0.4472,0.4472,0.4472]' instead of [-1,-1,-1,1,1]').
+For each eigenvectors with a negative value in the first component, take the negative value.
+Sort eigenvectors and eigenvalues in ascending order of the eigenvalues.
+If I modify your Python code as follows, I get the same array C and the same eigenvalues:
+you can get some inspiration here: [http://en.wikipedia.org/wiki/Eigenvalue_algorithm (hyper-link)]
+With [power iteration (hyper-link)] you can already find the dominant eigenvalue, and I knew there was an extension to this algorithm to also find the other eigenvalues, but cannot recall how that works :(
+I ended up finding success using the [Eigen (hyper-link)] library, combined with Emscripten.
+I made a javascript module to calculate eigenvalues, eigenvectors, or RREF(Reduced Row Echelon Form).
+You can install it using npm i @ahmaddynugroho/eig
+That's it, you just need to pass a matrix as a parameter for eig().
+I believe what you are looking for is: [numpy.linalg.eig() (hyper-link)] and [numpy.linalg.eigh() (hyper-link)], but there are also scipy counterparts [scipy.linalg.eig() (hyper-link)] and [scipy.linalg.eigh() (hyper-link)] which may be compiled offer slightly different behavior and performances.
+Take a look at [scipy.linalg.eig (hyper-link)] and [scipy.sparse.linalg.eigs (hyper-link)].
+The eigenvalues might be in a different order, and the eigenvectors might have a different scaling (eigenvectors are not unique).
+V is NOT sorted in any order, except to correspond to the order of the associated eigenvalues.
+The eigenvalues TEND to be in descending order, but this is not assured at all.
+Eig has no sort at the end to ensure that fact.
+I might point out the [eigenshuffle (hyper-link)] tool, designed to take a sequence of eigenproblems, then resorting the eigenvalues (and the corresponding eigenvectors) so they are consistent along the sequence.
+Alternatively, use eigs:
+Given λ1 = 3 the corresponding eigenvector is:
+any vector of the form [x, x]', for any non-zero real number x, is an eigenvector.
+So [0.70711, 0.70711]' is an eigenvector as valid as [1, 1]'.
+Octave (but also Matlab) chooses the values such that the sum of the squares of the elements of each eigenvector equals unity (eigenvectors are normalized to have a norm of 1 and are chosen to be orthogonal, to be precise).
+The result is the same as eig.
+Any eigenvalue problem has an infinite number of eigenvectors.
+When you find an eigenvector by hand, what you actually calculate is a parameterized vector representing that infinite family of solutions.
+The elements of a specific eigenvector Octave (and most computer software) returns for a given eigenvalue can be used to form the orthonormal basis vectors of the eigenspace associated with that eigenvalue.
+Any linear combination of those basis vectors will be an eigenvector.
+So, if you were expecting a different eigenvector, just check to make sure that it is linearly dependent on the basis vectors Octave computed.
+[linalg.eig (hyper-link)] returns two arrays, first the eigenvalues, then the eigenvectors.
+If you want the maximimum eigenvalue, then
+Here are the eigenvalues:
+[http://www.wolframalpha.com/input/?i=eigenvalues (hyper-link)]{{1.84026465%2C-0.463138}%2C%20{-0.21525501%2C%20-0.97655787}}
+And the eigenvectors:
+[http://www.wolframalpha.com/input/?i=eigenvectors (hyper-link)]{{1.84026465%2C-0.463138}%2C+{-0.21525501%2C+-0.97655787}}
+Note that eigenvectors are not unique.
+Multiplying by any constant, including -1 (which simply changes the sign), gives another valid eigenvector.
+This is clear given the [definition (hyper-link)] of an eigenvector:
+MATLAB [chooses (hyper-link)] to normalize the eigenvectors to have a norm of 1.0, the sign is arbitrary:
+For eig(A), the eigenvectors are scaled so that the norm of each is 1.0.
+For eig(A,B), eig(A,'nobalance'), and eig(A,B,flag), the eigenvectors are not normalized
+Now as you know, SVD and eigendecomposition are [related (hyper-link)].
+Note that svd and eig return results in different order (one sorted high to low, the other in reverse):
+To get consistent results, one usually adopts a convention of requiring that the first element in each eigenvector be of a certain sign.
+That way if you get an eigenvector that does not follow this rule, you multiply it by -1 to flip the sign...
+Apparently Octave has no option to determine the algorithm of eig command.
+If you want to calculate the Eigen values & vectors of ill-conditioned matrices in C++, you can implement DGGEV or DGGEVX routines of LAPACK.
+Eigenvectors are not unique.
+If u is an eigenvector, so is m *  u for all m != 0.
+Furthermore, the order that eig returns eigenvectors in Matlab is arbitrary.
+(I don't know what order Armadillo returns eigenvectors.)
+You could try and create a canonical order for the eigenvectors by sorting the eigenvalues, but that is problematic if you have complex eigenvalues.
+(Recall that real matrices can have complex eigenvalues.)
+Thus, (-1.0000, 0.5000) (first column of u in Matlab) is the same eigenvector as ( -1.0000e+000, 5.0000e-001) (second column of u in Armadillo).
+If you want a canonical representation of eigenvectors, you could rescale them to have norm 1, and also multiply by -1 if the sign of the first element is negative.
+Of course, if the first element in the eigenvector is close to 0, this is again problematic since the value might have ended up just barely on the wrong side of zero due to numerical reasons.
+Both SVD and eigenvectors are not fully unique.
+In SVD you can sign flip any vector in U as long as you do the same to the corresponding vector in V. The eigenvectors you get are not coupled in that way, therefore there is a good chance of sign mismatch.
+Use eigh instead of eig because you know A@A.T and A.T@A are symmetric.
+You can save one eigen decomposition because sigma@V = U.T@A and sigma being diagonal is easy to invert.
+There is no problem here with Eigen.
+In fact for the second example run, Matlab and Eigen produced the very same result.
+Please remember from basic linear algebra that eigenvector are determined up to an arbitrary scaling factor.
+if v is an eigenvector the same holds for alpha*v, where alpha is a non zero complex scalar.)
+It is quite common that different linear algebra libraries compute different eigenvectors, but this does not mean that one of the two codes is wrong: it simply means that they choose a different scaling of the eigenvectors.
+The main problem with exactly replicating the scaling chosen by matlab is that eig(A,B) is a driver routine, which depending from the different properties of A and B may call different libraries/routines, and apply extra steps like balancing the matrices and so on.
+all(imag(V(end,:))==0) (the last component of each eigenvector is real)
+This unfortunately means that the scaling is not unique, and probably depends on intermediate results of the generalised eigenvector algorithm used.
+As a general remark, in linear algebra usually one does not care too much about eigenvector scaling, since this is usually completely irrelevant for the problem solved, when the eigenvectors are just used as intermediate results.
+The only case in which the scaling has to be defined exactly, is when you are going to give a graphic representation of the eigenvalues.
+The eigenvector scaling in Matlab seems to be based on normalizing them to 1.0 (ie.
+In the application I was using it also returns the left eigenvector rather than the more commonly used right eigenvector.
+This could explain the differences between Matlab and the eigensolvers in Lapack MKL.
+cv %% eig$vectors and solve(eig$vectors, eig$valuesdiag(n)) are not equal even in the 2d case as the output in the question shows.
+The first equals eig$vectors %*% diag(eig$values) and the second equals t(eig$vectors) %*% diag(eig$values) -- note the transpose.
+To see this expand cv into eig$vectors %*% diag(eig$values) %*% t(eig$vectors) and note that eig$vectors is orthogonal (because cv is symmetric) so its transpose equals its inverse.
+Note that det(eig$vectors) is 1 (it must be 1 or -1 because it is orthognoal) and if A and B are any two conformable square matrices and v is a vector then:
+With this test I compared the performance of single and multi-threaded eig (multi-threading being delivered through MKL LAPACK/BLAS routines) with IPython parallelized eig.
+As you see the performance gain varies greatly over the different settings used, with a maximum of 1.64 times that of regular multi threaded eig.
+The speedup of using ip_map on a direct_view with 4 engines and MKL threading disabled vs regular multi threaded eig:
+The eigenvalues, each repeated according to its multiplicity.
+The
+  eigenvalues are not necessarily ordered.
+When a is real the resulting eigenvalues
+  will be real (0 imaginary part) or occur in conjugate pairs
+The normalized (unit “length”) eigenvectors, such that the column
+  v[:,i] is the eigenvector corresponding to the eigenvalue w[i].
+This is implemented using the _geev LAPACK routines which compute the
+  eigenvalues and eigenvectors of general square arrays.
+The number w is an eigenvalue of a if there exists a vector v such
+  that dot(a,v) = w * v. Thus, the arrays a, w, and v satisfy the
+  equations dot(a[:,:], v[:,i]) = w[i] * v[:,i] for i \in {0,...,M-1}.
+The array v of eigenvectors may not be of maximum rank, that is, some
+  of the columns may be linearly dependent, although round-off error may
+  obscure that fact.
+If the eigenvalues are all different, then
+  theoretically the eigenvectors are linearly independent.
+Likewise, the
+  (complex-valued) matrix of eigenvectors v is unitary if the matrix a
+  is normal, i.e., if dot(a, a.H) = dot(a.H, a), where a.H denotes the
+  conjugate transpose of a.
+Finally, it is emphasized that v consists of the right (as in
+  right-hand side) eigenvectors of a.
+A vector y satisfying dot(y.T, a)
+  = z * y.T for some number z is called a left eigenvector of a, and, in general, the left and right eigenvectors of a matrix are not
+  necessarily the (perhaps conjugate) transposes of each other.
+As Stuart pointed out in the comment to the question, eigenvectors are generally normalized.
+This is pointed out in a note in the documentation of [eig() (hyper-link)].
+If you want to ignore the eigenvalues returned from eig, do the following:
+The columns of evec represent normalized eigenvectors of A.
+Simply normalize your hand calculated eigenvectors and then compare with evec.
+eigh is only for symmetric matrices and thus uses a faster (and different) algorithm.
+There are an infinite number of eigenvectors for any given eigenvalue, so I don't think you need to be concerned.
+I've never used these methods and am just going off of my linear algebra knowledge and what I found about eigh and eig online, so please correct me if I'm wrong.
+Scipy is probably providing the correct eigenvalues.
+Octave [accepts a second matrix in its eig() function (hyper-link)] but doesn't specify what it does.
+[Matlab's documentation (hyper-link)] does say it's for a generalized eigenvalue problem, but in Octave adding the second matrix appears to have no affect on the eigenvalues.
+Out of curiosity, I have tried the same calculation with the [eig() (hyper-link)] routine in Julia.
+(Here, for clarity, I have used symbols A and B for the generalized eigenvalue problem.)
+In fact, the above V and D are found to be the solution of a standard eigenvalue problem A V = V D. So it seems that when B is a diagonal matrix, Octave simply neglects it by assuming the unit matrix...
+EDIT: A related function [balance (hyper-link)] is said to be the default preceding step in eig.
+by balancing a good-conditioned matrix (which means it has reasonable scale), the "asymmetry" is concentrated into the scaling matrix, T. According to the [documentation (hyper-link)] of eig, "In most cases, the balancing step improves the conditioning of A to produce more accurate results. "
+I know it has something to do with the matrix decomposition algorithms which Matlab picks when performing eig, eg "Pencil decomposition LU factorization etc", as @EJG89 has pointed out.
+But it's too deeply buried in my memory to recall :( Anyone who knows how Matlab perform commands like eig please consider expanding this answer!
+There's no such thing as a 'real' position of an eigenvector, just as (x,y) is just as valid as (y,x).
+Since a lot of matrix techniques work on eigenvectors in order of decreasing eigenvalue (i.e.
+EDIT: thanks to the comment by @AviGinsburg, I corrected the mistake that the eigenvalues are real (and thus should be mapped to a real Eigen vector).
+Any (nonzero) scalar multiple of an eigenvector will also be an eigenvector; only the direction is meaningful, not the overall normalization.
+and so they're actually the same eigenvectors.
+Think of the matrix as an operator which changes a vector: the eigenvectors are the special directions where a vector pointing that way won't be twisted by the matrix, and the eigenvalues are the factors measuring how much the matrix expands or contracts the vector.
+The eigenvectors are not unique, meaning that they could be at any magnitude as long as they have the same direction.
+Matlab normalizes eigenvectors if I recall correctly, so you can achieve similar results if you multiply the vector matlab provided with the magnitude of v_1 to make them have the same magnitude.
+You can also obtain the rational eigenvector [2, 2/3, 3/2, 1], which is equal to [12, 4, 9, 6]/6, by using the Symbolic Math Toolbox:
+In my experience (and there are many questions here to back this up), you NEVER want to use eig when eigh is an option - eig is very slow and very unstable.
+The relevance of this is that I believe your question is backward - you want to normalize the eigenvectors of eig to be like those of eigh, and this you know how to do.
+Since eigs is actually an m-file function, we can profile it.
+then in the first instance it calls arpackc (the main function that does the work - according to the comments in eigs it's probably from [here (hyper-link)]) a total of 22 times.
+In short: it simply takes the algorithm more iterations to converge when you ask it for the smallest eigenvalues of a structured matrix.
+The algorithm used in pretty much any standard eigs function is (some variation of) the [Lanczos algorithm (hyper-link)].
+It is iterative and the first iterations give you the largest eigenvalues.
+Largest eigenvalues take the least amount of iterations,
+Smallest eigenvalues take the maximum amount of iterations,
+All eigenvalues also take the maximum amount of iterations.
+There are tricks to "fool" eigs into calculating the smallest eigenvalues by actually making them the largest eigenvalues of another problem.
+Skimming over [the Matlab documentation for eigs (hyper-link)], I see that they have a sigma parameter, which might help you.
+Note the same documentation recommends proper eig if the matrix fits into memory, as eigs has its numerical quirks.
+The reason is actually much more simple and due to the basics of solving large sparse eigenvalue problems.
+The thing is that the a power series converge to the largest eigenvalue of (1).
+Therefore we have that the largest eigenvalues are found by the subspace spanned by: K^k = {A*r0,....,A^k*r0}, which requires only matrix vector multiplications (cheap).
+Now solving for the largest eigenvalue of (2) is equivalent to finding the smallest eigenvalue of (1).
+The function eig in MATLAB normalizes the eigenvectors (not the eigenvalues).
+[V,D] = eig(A) returns matrix V, whose columns are the right
+  eigenvectors of A such that AV = VD.
+The eigenvectors in V are
+  normalized so that the 2-norm of each is 1.
+Eigenvectors can vary by a scalar, so a computation algorithm has to choose a particular scaled value of an eigenvector to show you.
+eig chooses 2-norm = 1.
+Just look at the eigenvector definition to see why: AV=VD.
+Eigenvalues do not vary.
+The method you are looking for is [null (hyper-link)], i.e., calculate the null-space of c-eig_Val(i)*I.
+Be aware that it won't work out-of-the-box if you have eigenvalues with multiple eigenvectors, or if your eigenvalues are not (sufficiently) accurate.
+b) Chapel 1.20 does not yet have a distributed eigen solver in the LinearAlgebra module.
+If eig(A) computes invertible V, you can use 
+Vinv=V^(-1);.
+[http://www.netlib.org/lapack/lug/node31.html (hyper-link)]
+The according book is okay, a really good paper for a general overview is "Eigenvalue computation in the 20th century".
+Sorry, but there is NO magic way to just ignore NaN elements in a matrix to then compute the eigenvalues.
+You need ALL of the elements in an array to compute the eigenvalues.
+And converting a NaN into a zero is highly unlikely to yield meaningful eigenvalues for an array.
+And finally, if you have an NxM matrix that is not square, it is meaningless to compute the eigenvalues.
+Eigenvalues are only defined for square matrices.
+You will need to determine the entire matrix to compute the eigenvalues of that matrix.
+As you can see, the eigenvalues are the same.
+The eigenvectors corresponding to the eigenvalue 4 are different because that eigenvalue has multiplicity=2 and therefore its space of eigenvectors is two-dimensional.
+I.e., a numerical eigenvector solver could come up with any pair of linear independent vectors in that 2-dimensional space.
+Eigenvalues of a matrix have no intrinsic order.
+Both of your example codes in either [MATLAB (hyper-link)] or [Numpy (hyper-link)] return the eigenvalues in indeterminate unsorted order.
+Only the relation of the eigenvalue indices to the corresponding columns in the eigenvector matrix is determined.
+Also note that the eigenvalues are returned as 1-D array in the Numpy case, but 2-D matrix in the [MATLAB case (hyper-link)].
+The reported error suggested that eig was treated as a variable.
+In that case one should clear the workspace (clear) and try eig again.
+That would also immediately evident if one used: which eig in which case MATLAB would return: eig is a variable.
+If you are looking for the mathematical background, then [Eigendecomposition of a matrix (hyper-link)] contains a good introduction.
+[V,D] = eig(A,B) and [V,D] = eig(A,B,algorithm) returns V as a matrix whose columns are the generalized right eigenvectors that satisfy A*V = B*V*D. The 2-norm of each eigenvector is not necessarily 1.
+In this case, D contains the generalized eigenvalues of the pair, (A,B), along the main diagonal.
+When eig uses the 'chol' algorithm with symmetric (Hermitian) A and symmetric (Hermitian) positive definite B, it normalizes the eigenvectors in V so that the B-norm of each is 1.
+For open source options, try [Eigen (hyper-link)] and [Armadillo (hyper-link)].
+And if you believe [Eigen's claims (hyper-link)], they are the fastest open BLAS available with a superior API to the reference netlib LAPACK (IMO the API claim is pretty obvious once you take a look at the Fortran version!)
+When using Armadillo's [eig_sym() (hyper-link)] function, specify that the divide-and-conquer method is to be used.
+Since your randomMatrix is a 100x100 matrix, eig will return 100 eigenvalues, not a single value.
+If you want to store all these eigenvalues you will generate 100x100 elements:
+The first eigenvalue in the result should obviously be zero, so there's a rounding error, but otherwise the result is as expected.
+Due to the same issue of limited numerical precision I guess there could eventually be very small complex parts, too, but actually Matlab's eig should detect symmetry and produce only real-valued eigenvalues.
+I still do not know why double precision causes complex eigenvectors.
+As you saw in the docs of [numpy.linalg.eig (hyper-link)], it only accepts a single array argument and correspondingly it doesn't compute generalized eigenvalue problems.
+Fortunately we have [scipy.linalg.eig (hyper-link)]:
+The difference in the eigenvectors might be due to a different choice in normalization for the eigenvalues.
+I'd check with two nontrivial matrices and see if the results correspond to one another (comparing corresponding eigenvalue-eigenvector pairs, of course).
+You can use [scipy.linalg.eig (hyper-link)]:
+If a matrix A has cholesky decomposition, then A can be written as A=LL^T( which is feasible if A=QDQ^T and eigen values are all positive,  where L=QD^0.5) which implies that the matrix should be positive-definite(this subsumes the symmetricity also).
+From your example, for the matrix A = VDinv(V), the matrix of eigen vectors V, you chose is not Orthonormal.
+Then, the eigenvalues of A are the eigenvalues of your original matrices.
+The association between the eigenvalues and which ai matrix they belong to is hard to reconstruct after using eig(s).
+While eig gives the eigenvectors (1) sorted (by magnitude) and (2) such that the first entry is real, eigs has another sorting that must not be as in eig and also does not regularize the complex phase of the eigenvector.
+Correcting the phase is easily done by dividing the tensor by the phase of the first entry (corresponding to ensuring that the first diagonal element is real to get rid of the freedom of choosing the complex phase of an eigenvector and making Hermiticity possible...).
+Remember that eigenvalues and eigenvectors are not unique.
+If they're scaled differently, they're also an eigenvalue / eigenvector.
+However, a crucial error that you have assumed is that eig returns the eigenvalues and eigenvectors from smallest to largest.
+Nowhere in the [eig (hyper-link)] documentation does it talk about the order.
+What you need to do is [sort (hyper-link)] based on the magnitude of the eigenvalues, so you actually need to do something like this, assuming the matrix you want to sort is A:
+This takes the eigenvector matrix and properly rearranges the columns so that the largest eigenvalue's eigenvector appears in the first column and then goes in decreasing order.
+In any case, the left and right matrices are ultimately eigenvectors that are placed in the columns of the matrix.
+The problem lies somewhere else: The [singular values (hyper-link)] of v are the square roots of the eigenvalues of v'*v. If v is mean-free, then v'*v (in this case called "scatter matrix") is identical to the (unbiased-estimator) covariance matrix cov(v) – up to a factor size(v, 1) - 1.
+The additional sort is necessary because eig does not guarantee ordered eigenvalues.
+eigs uses an iterative method that is only practical or encouraged for large sparse matrices and when you only want a small number of eigenvalues (small compared to the size of the matrix).
+The error message you got in eigen is a little unfortunate.
+If your matrix is too big to fit into memory and you must use a sparse matrix, then I suspect you don't need all the eigenvalues.
+But, changing the precision of floating-point numbers is often the cause of the sort of problems you report, especially in tricky numerical methods such as eigenvalue computation.
+This is because eigs uses a random start
+Since eigs is a [ARPACK (hyper-link)] library it could be time consuming to read through its documentation.
+The columns of Y contain the eigenvectors that correspond to the eigenvalues in descending order from, left to right.
+Notice that I used the abs() function to measure the "size" of the eigenvalue.
+One way is to eigs:
+As I mentioned [elsewhere (hyper-link)], the eigenvalue and eigenvector are not unique.
+The only thing that is true is that for each eigenvalue $A v = lambda v$, the two matrices returned by eig and eigh describe those solutions, it is natural that eig inexact but approximate results.
+That both diagonalizations were successfull, but the eigenvalues are indifferent order.
+If you sort the eigenvalues you see they match
+Since many eigenvalues are repeated, the eigenvector associated with a given eigenvalue is not unique as well, the only thing we can guarantee is that the eigenvectors for a given eigenvalue must span the same subspace.
+If you search for the eigenvalues in the [lapack routines (hyper-link)] you will have many options.
+But I never tested carefully the behavior of eig vs eigh.
+Essentially there will be as many Eigenvalues in the dataset as variables.
+The Eigenvals will be covered in the new components or dimensions according to their explanatory power, the first component or dimension will usually explain most i.e.
+have the largest Eigenvalue.
+Eigenvalues of 1 explain just one variable, which is pretty boring.
+Mathematically, Eigenvalues are the sum of squared factor loadings.
+It should not do that unless there is a syntax error or your matrix has all the eigenvalues with positive real part.
+This gives the correct negative signed smallest real part (I guess that's what you mean by small) eigenvalues on R2016a.
+Note that smallest eigs are complex conjugates and one pair is given by only its negative imaginary part.
+Just because a matrix is symmetric and has all positive values doesn't guarantee positive eigenvalues.
+Performing eig([3 4; 4 3]) produces the eigenvalues of -1 and 7 and so one of the two eigenvalues is negative.
+Matrices that are positive definite have all positive eigenvalues which I believe is where you are confused.
+Perhaps you should take only the eigenvectors corresponding to the two largest eigenvalues.
+However it's likely that the eigenvalues are complex.
+One quick and easy optimzation is to use np.linalg.eigh.
+(And np.linalg.eigvalsh if you just want the eigenvalues.)
+Comparing timings, eigh takes ~5.3 seconds while eig takes ~23.4 seconds.
+The performance of np.linalg.eig, etc is going to be strongly dependent on which libraries numpy is linked to.
+whether or not a fortran compiler was availabe) scipy.linalg.eigh etc may be faster.
+A substantial amount of computational effort is spared if the algoritm isn't forced to look for all eigenvectors/eigenvalues (which you almost never need, and certainly don't need for your particular use).
+The eigenvalue functions in scipy.sparse.linalg give you explicit control over this.
+In particular, the eigs function in scipy.sparse.linalg accepts a parameter "k" which is the number of of eigenvalues/eigenvalues you want.
+Certainly the overhead of a SYSTEM() call is nothing compared to a large eigenvector computation.
+To prove this, create a symmetric matrix from your original matrix, using the upper right triangular part and run MATLAB's eig function:
+And the eigenvalues of the original x and the symmetric xx matrices:
+The diagonal values found in D will be your eigenvalues.
+If you are trying to plot eigenvalues for varying values of k, my suggestion is to make a loop:  Calculate the eigenvalues of HH for each value of k, and store these values into arrays.
+There is no such guarantee for the the output D of eig though.
+Eigenvectors and singular vectors have no defined sign.
+If a is an eigenvector, so is -a.
+This makes sense as normally the PCA is computed with respect to the covariance matrix, and the eigenvectors of x' * x are only identical to those of the covariance matrix if x is mean-free.
+I would compute the PCA by transforming to the basis of the eigenvectors of the covariance matrix (centered data), but apply this transform to the original (uncentered) data.
+Timm later defines "standardized components" as those which have been computed from centered data and are then divided by the square root of the eigenvalues (i.e.
+If  M is singular or if one is interested in eigenvalues near a point σ then a user may choose to work with C = (A - σ M)-1M
+Therefore, by explicitly specifying a numerical value for the shift parameter [sigma (hyper-link)], [eigs (hyper-link)] can attempt to converge to the nearest dominate eigenvalue as long as the shift doesn't make C singular.
+Calling eigs without a specified shift throws an error:
+But that's only the dominate eigenvalue found near 0.
+If looks like 4.1307 + 0.2335i might be the dominate eigenvalue of the system.
+Let's look around that point for some more eigenvalues:
+But are there bigger finite eigenvalues?
+Luckily, since A is invertible, we can check the eigenvalues directly by taking the reciprocals of eig(B/A):
+First, we see that annoying infinite eigenvalue giving all the problems.
+Second, we can see that eigs did find the largest finite eigenvalue but didn't find the slightly smaller magnitude eigenvalues in the complex plane because the purely real eigenvalues were closer to the shift point:
+Do to the large number of 1 eigenvalues in the example system, the chosen shift creates a singular C matrix, which is not good.
+eigs(A,n) returns the first n eigenvectors that have the largest magnitude.
+There is no way to efficiently calculate eigenvectors and eigenvalues analytically.
+The result of eigs depends on the initial vector for the Lanczos iterations.
+If you want the result to be the same every time, you can set v0 in eigs, e.g.
+eigs(M, nev=1, which=:LR, v0 = ones(3))
+If you write imag(D), you'll see that the imaginary component of the eigenvalues are in the order of 1e-18.
+That is within rounding error of 0 (when compared to the magnitude of the eigenvalues).
+But because MATLAB doesn't know the eigenvalues are supposed to be real-valued, it gives them to you as complex numbers.
+If you know the eigenvalues are supposed to be real-valued, simply take their real part:
+Finally, comparing the eigenvalues of coh and coh2, we find a difference of the order of magnitude 1e-8:
+The condition number is actually infinite because the smallest eigenvalue is 0, and this is basically what MATLAB's error message is about.
+I had the same problem with the eigs function.
+% Solve the eigenvalue problem using the full matrices
+% Sort out the eigenvalues using the sort function (the "-" sign is because you want the smallest real eigenvalues in magnitude)
+% In order to obtain the two eigenvectors corresponding to the 2 smallest eigenvalues:
+Here are the eigenvalue routines in lapack for double precision:
+[http://www.netlib.org/lapack/explore-html/d9/d8e/group__double_g_eeigen.html (hyper-link)]
+And the according SVD routines:
+[http://www.netlib.org/lapack/explore-html/d1/d7e/group__double_g_esing.html (hyper-link)]
+But as rule of thumb EIGs are cheaper than SVDs.
+Indeed, numpy.linalg.svd and numpy.linalg.eigh do not call the same routine of Lapack.
+On the one hand, [numpy.linalg.eigh (hyper-link)] refers to LAPACK's dsyevd() while numpy.linalg.svd makes use LAPACK's dgesdd().
+The common point between these routines is the use of Cuppen's divide and conquer algorithm, first designed to solve tridiagonal eigenvalue problems.
+For instance, [dsyevd() (hyper-link)] only handles Hermitian matrix and performs the following steps, only if eigenvectors are required:
+Compute the eigenvectors of the tridiagonal matrix using the divide and conquer algorithm, through  DSTEDC()
+It may stem from the fact that computing the SVD of a general matrix A is similar to performing the eigendecomposition of the symmetric matrix A^T.A.
+Regarding the symmetric eigenvalue problem, the complexity is 4/3n^3 (but often proves better than that) and the memory footprint is about 2n^2 plus the size of the matrix.
+Hence, the best choice is likely [numpy.linalg.eigh (hyper-link)] if your matrix is symmetric.
+For such 1D diffusion matrices, eigh outperforms svd, but the actual complexity are similar, slightly lower than n^3, something like n^2.5.
+However numeric.js fails to solve eigenvalues for this one -
+mathjs - eigenvalue decomposition limited to symmetric real matrices.
+sylvester-es6 - returns a vector of NaN eigenvalues for most binary matrices I tried.
+eigen - poor documentation, never figured out how to instantiate the Solver object.
+linear-algebra does not include eigenvalue decomposition
+linear-algebra-js does not include eigenvalue decomposition
+Because your matrix has two 2D subspaces with eigenvalues = -1.366 and 0.366.
+And for the 2D subspace you can select different linear combinations of linear independent eigenvectors.
+Pass the second, optional parameter to eigs, which controls how many eigenvectors are returned.
+I am guessing you can do something similar for eig.
+This cuts the small eigenvalues and their vectors out.
+Hence, your matrix must be such that ARPACK's algorithms cannot find the eigenvalues.
+blocks) and finding eigenvalues for each block separately.
+sp.sparse.linalg.eigs() doesn't necessarily return ordered eigenvalues, which means the result eigenvalues could be in random order.
+You might want to sort the eigenvalues before calling np.allclose.
+The eigenvalues returned by eigs are in random order.
+Calculate the eignen vectors of R and corresponding eigen values:
+Note that columns of eigVec are the eigen vectors of R.
+Some of the eigen values will be zero or if not, you can take a threshold.
+So you can eliminate the corresponding eigen vectors:
+Eigenvectors are NOT unique, for a variety of reasons.
+Change the sign, and an eigenvector is still an eigenvector for the same eigenvalue.
+In fact, multiply by any constant, and an eigenvector is still that.
+If an eigenvalue is of multiplicity greater than one, then the eigenvectors are again not unique, as long as they span the same subspace.
+As woodchips points out (+1), eigenvectors are unique only up to a linear transformation.
+This fact is readily apparent from the definition, ie an eigenvector/eigenvalue pair solve the characteristic function A*v = k*v, where A is the matrix, v is the eigenvector, and k is the eigenvalue.
+"For eig(A), the eigenvectors are scaled so that the norm of each is 1.0.
+Mathematica on the other hand is clearly scaling the eigenvectors so that so the final element is unity.
+Even just eyeballing the outputs I've given, you can start to see the relationships emerge (in particular, compare the third eigenvector from both outputs).
+I completely agree with Mr.Colin T Bowers, that MATHEMATICA does the normalization so that last value of EigenVectors become one.
+Using MATLAB if anybody want to produce EigenVectors result like MATHEMATICA then we can tell MATLAB Normalize the last value of EigenVectors result to 1 using following normalization step.
+The other eig functions like the QZ algorithm (which you have to use in Matlab coder for instance since Cholesky isn't supported), don't nomalize the way Matlab does for [V, lam] = eig(C).
+EX: [V,lam]= eig(C,eye(size(C)),'qz');
+From the documentation [http://www.mathworks.com/help/techdoc/ref/eig.html (hyper-link)]
+Note: For eig(A), the eigenvectors are scaled so that the norm of each is 1.0.
+For eig(A,B), eig(A,'nobalance'), and eig(A,B,flag), the eigenvectors are not normalized.
+Also note that if A is symmetric, eig(A,'nobalance') ignores the nobalance option since A is already balanced.
+For [V, lam]=eig(C); the eigenvectors are scaled so that the norm of each is 1.0.
+Matlab does that for the Cholesky formulation, so, how does one re-normalize the eigenvectors produced by QZ so they have that same scale?
+And even after doing this the signs may not be pointed in the same direction (the eigenvectors are still eigenvectors if they are multiplied times -1).
+Note the same sorting has to be applied to the lambda (eigenvalues) or those will be out of order.
+One final thing, for the 'B' value (the Generalized eigenvalue problem input matrix), I am using 'eye(size(C))'.
+[https://www.mathworks.com/help/matlab/ref/eig.html?searchHighlight=eig&s_tid=doc_srchtitle#inputarg_B (hyper-link)]
+Instead there is a really nice and still maintained Github-repo that is called arpack-ng which also makes all main routines for calculating extremal eigenvalues available via a C++ header file.
+If the eigenvalues are complex, [the sort order is lexicographic (hyper-link)] (that is, complex numbers are sorted according to their real part first, with ties broken by their imaginary part).
+This tup[0] is the eigenvalue based on which the sort function will sort the list.
+These attributes contain only the converged eigenvalues.
+If no eigenvalues have been found to accuracy specified by the tolerance, these results are empty.
+I think you're referring to the fact that as of 3.6, Octave no longer comes with eigs, and depends on an external arpack library.
+Once that's in, do brew install libarpack; brew install octave and your Octave may well pick up eigs.
+U and V are orthogonal matrices and S contains the eigen values.
+As kkuilla mentions, you can use the SVD of the original matrix, as the SVD of a matrix is related to the Eigenvalues and Eigenvectors of the covariance matrix as I demonstrate in the following example:
+V is a matrix containing the eigenvectors, and D contains the eigenvalues.
+I can't see why the Eigenvalues of the blocks would relate to the Eigenvalues of the matrix as a whole; they wouldn't correspond to the same Eigenvectors, as the dimensionality of the Eigenvectors wouldn't match.
+You should take advantage of the built-in functions in Matlab, and use the pca function directly, or even the cov function if you want to compare eigs to pcaconv.
+Now to answer your question, both return the same eigenvectors but not in the same order.
+In your code, you overwrite the result of pcavconv in the commented-out section with a transformation of the result of eigs so it is not clear what your are comparing at this point.
+Assuming you have several images of size r x c, then taken the steps described on wikipedia, you should now have eigenvectors ev1, ev2 ... of length r x c.
+Search for the class [EigenDecomposition (hyper-link)] in package org.apache.commons.math3.linear.
+By the way I think you can only find eigenvalues and eigenvectors of square matrices.
+It has a method in it's linear algebra module [scipy.linalg.eig (hyper-link)] that can be used to "solve an ordinary or generalized eigenvalue problem."
+eigs calls ARPACK routines.
+ARPACK exploits iterative methods (Arnoldi) to converge to, e.g., the eigenvalues with smallest magnitude (option sm).
+The NaNs indicate eigenvalues that have not converged when MaxIterations is reached.
+This can be specified by the option SubspaceDimension in eigs.
+If your problem requires a relatively large Krylov subspace for converging some eigenvalues to the desired Tolerance, this could explain why increasing k yields convergence of a larger number of eigenvalues.
+As Paul Panzer said, "h" in "eigsh" stands for [Hermitian (hyper-link)], which your matrix A is not.
+(Also, having positive eigenvalues does not imply being positive definite; this is only true if the matrix is Hermitian to begin with.)
+The method eigsh does not check the input for being Hermitian; it just follows a process assuming it is; so the output is incorrect when the assumption fails.
+Using eigs method produces the same results as Matlab:
+Of course, eigs takes a lot longer to run than eigsh.
+EDIT: removed mention of eigs* previous behavior -- the routine did not have the eigsh name before that, so that's not the case here.
+If v is an eigen vector then by definition : Av = lambda * v
+So if v is an eigen vector then -v is also an eigen vector since : A * (-v) = - A*v = -lambda * v= lambda * (-v)
+The goal of eigen vectors is to find non-colinear vectors (which is helpful if you want to diagonalise your matrix).
+Actually they are only different basis of the same vector space that consisting of all the eigenvectors.
+Although eigenvals returns a dict in this case you only care about the values of the dict so you can just do list(M.eigenvals()).
+In Matlab, the eigenvalues are sorted.
+Change E[i,:] = np.linalg.eigvals(A) to E[i,:] = sorted(np.linalg.eigvals(A)), then you'll get what you want.
+power iteration finds the dominant eigenvector, that is the eigenvector with the largest eigenvalue.
+and your algorithm converges in 5 iterations, then v is your dominant eigenvector;
+Your matlab call [U,V] = eig(data_matrix); is confusing because V should be a diagonal matrix of size [165 165], not a full matrix of size [3 3];
+to see what the largest eigenvalue is in the matlab output, i.e.
+You cat use power iteration to find this eigenvector:
+I think the best solution for this specific case is to use @PaulPanzer's suggestion, that is [np.linalg.eigh (hyper-link)].
+This works directly for Hermitian matrices, and thus will have only real Eigen values, exactly this specific use case.
+The [ArpackNoConvergence (hyper-link)] exception has .eigenvalues and .eigenvectors attributes that contain the partial results:
+The condition number is the ratio between the largest and smallest singular values, which are the square roots of the eigenvalues of A.T@A.
+If you want to use the eigenvalues then you have to sort them yourself.
+In the example below I compute a 2-d array with 3 columns, one for each eigenvalue.
+Beside the fact that eigenvalues returned by EIG are not guaranteed to be sorted, there is another difficulty you have to deal with if you to match eigenvectors as well: they are not unique in the sense that if v is an eigenvector, then k*v is also one, especially for k=-1.
+There are three ways I know of to do PCA: derived from an eigenvalue decomposition of the correlation matrix, the covariance matrix, or on the unscaled and uncentered data.
+It sounds like you are passing linalg.eig is working on the unscaled data.
+In both cases, I get the desired eigenvalues.
+If you look at the documentation, it's pretty clear from the shape that the eigenvectors are in the rows, not the columns.
+Basically the array declarations of WORK,eig,v_mat and t_mat.
+Finally solve eigenproblem with DSYGV.
+Numpy is calculating both the eigenvectors and eigenvalues, so it will take roughly twice longer, which is consistent with your slowdown (use np.linalg.eigvals to compute only the eigenvalues).
+In the end, np.linalg.eig is a tiny wrapper around dgeev, and likely the same thing happens in Matlab, which is using MKL.
+I think the misunderstanding is that void eig(int n, double **A) does not denote a "pointer to a 2D-array" but a pointer to a pointer to a double value.
+Depending on what you do with A in function eig, this can be meaningful or not: If eig is about allocating or reallocating a new array, then you'd use a double **A in order to pass back the newly allocated memory to the caller.
+Pay attention to line numbers: the problem isn't the call to eig, it's the assignment of a double** created by new *[DIM*DIM] to HMAT, whose type is double*.
+If cov_mat is 4-by-4, then eig will produce four eigenvalues and four eigenvectors.
+Then, the following are equivalent:
+a. the left singular vectors of X,
+b. the principal components of X,
+c. the eigenvectors of X X^T.
+Also, the eigenvalues of X X^T are equal to the square of the singular values of X.
+Then consider the eigendecomposition D = Q^T X X^T Q, where D is a diagonal matrix of eigenvalues.
+Principal Component Analysis requires manipulating the eigenvectors/eigenvalues
+of the covariance matrix, not the data itself.
+To get the eigenvectors/eigenvalues, I did not decompose the covariance matrix using SVD, 
+though, you certainly can.
+My preference is to calculate them using eig in NumPy's (or SciPy's) 
+LA module--it is a little easier to work with than svd, the return values are the eigenvectors 
+and eigenvalues themselves, and nothing else.
+Granted the SVD function will decompose any matrix, not just square ones (to which the eig function is limited); however when doing PCA, you'll always have a square matrix to decompose,
+regardless of the form that your data is in.
+The left singular values returned by SVD(A) are the eigenvectors of AA^T.
+Now, when you do PCA by using the SVD, you have to divide each entry in your A matrix by (N-1) so you get the eigenvalues of the covariance with the correct scale.
+You can multiple an eigenvector with any scalar including -1 and the result will also be an eigenvector.
+That's because the set of eigenvectors is linear subspace and is closed under scalar multiplication [read on Wikipedia (hyper-link)].
+Note that the first actual eigenvector is the last expected multiplied by -1
+Different implementations of eigen decomposition use different conventions for the ordering of eigenvalues in the result.
+That is to be expected for 2 different eigen decomposition implementations.
+but this is essential the ratio of the magnitude of the largest to the magnitude of the smallest (in magnitude) eigenvalue.
+So it makes more sense to get those to values using scipy.sparse.linalg.eigs() [Scipy reference manual (hyper-link)] and find out yourself.
+The sigma option is specified because the default options don't do a good job finding the smallest eigenvalues.
+This option computes the eigenvalues near sigma in shift-inverse mode.
+But you don't really know if you will get a good approximation of those eigenvalues like that.
+You will almost always improve the accuracy by using the k argument to compute more eigenvalues, but defaults should be accurate enough for most purposes.
+Real symmetric matrices have always only real eigenvalues and orthogonal eigenspaces, i.e., one can always construct an orthonormal basis of eigenvectors.
+If your physical system has a spacial symmetry, for instance if you can mirror it about some symmetry axis such that the physics of both systems is the same, then this symmetry is also reflected in the eigenspaces, they will always have even dimension and you can either construct odd and even symmetric eigenvectors or pairs of eigenvectors that are mirror images of each other.
+If you are looking to return the sorted output eigenvalues,
+ you can simply use [numpy.sort (hyper-link)].
+eigs is a std::array, but each element of eigs is a std::pair.
+Which will access the first element of the dealii::Tensor, which is contained in the .second member of the std::pair at the first position of the eigs variable (and again, eigs is a std::array).
+[https://octave.org/doc/v5.2.0/Sparse-Linear-Algebra.html#index-eigs (hyper-link)]
+You just have to find the index of the largest eigenvalue in D, which can easily be done using the function [DIAG (hyper-link)] to extract the main diagonal and the function [MAX (hyper-link)] to get the maximum eigenvalue and the index where it occurs:
+NOTE: As [woodchips points out (hyper-link)], you can have complex eigenvalues for non-symmetric matrices.
+Note that non-symmetric matrices tend to have complex eigenvalues.
+Also note that eig does not explicitly return sorted eigenvalues (although the underlying algorithm tends to produce them in a nearly sorted order, based on the magnitude of the eigenvalue), but even if you do do a sort, you need to understand how sort works on complex vectors.
+If you only care for the eigenvector associated with the largest eigenvalue, isn't it better to use [eigs (hyper-link)]?
+Yes, use [eigs (hyper-link)] to return the K largest or smallest eigenvalues.
+Example: eigs(A,[],K) will return the K largest-magnitude eigenvectors of matrix A.
+You are looking for [eigs (hyper-link)].
+From help eigs:
+Find a few eigenvalues and eigenvectors of a matrix
+MATLAB's eig(A,B) however should handle also singular Bs if memory serves me well.
+You should remove the last eig.carreraHorizontal.kid:
+and is not clear what you mean by "new" in new es.valencia.gp.sbch.entity.EvaluacionIndividualAnualYGdp(eia, eig, hch) there is not a new operator in SQL.
+The eigensolver in QuTiP uses the SciPy eigensolver.
+In the dense case, the eigensolver will use multiple cores if the underlying BLAS takes advantage (e.g.
+If you want all eigenvalues then you are basically stuck using dense solvers.
+However, if you need only a few., Such as the lowest few eigenstates, then sparse is the way to go.
+According to Matlab documentation, [V,D] = eig(A,B) produces a diagonal matrix D of generalized eigenvalues and a full matrix V whose columns are the corresponding eigenvectors so that A*V = B*V*D
+Then we explore its characteristic polynomial, eigenvalues, and eigenvectors.
+Thus MATLAB finds only the two independent eigenvectors
+associated with the single multiplicity 4 eigenvalue λ=1 ,  which therefore has defect 2.
+We find that B2 ≠ 0, but B3 = 0,  so there should be a length 3 chain associated with
+the eigenvalue λ = 1 .
+Choosing the first generalized eigenvector
+we calculate the further generalized eigenvectors
+Thus we have found the length 3 chain  {u3,  u2,  u1}  based on the (ordinary) 
+eigenvector  u3.
+(To reconcile this result with MATLAB's eigensys calculation, you 
+can check that  u3-42w1=7w2)
+(2) All imaginary parts returned by numpy's linalg.eig are close to the machine precision.
+The eigenvalues returned by scipy.linalg.eig are not real.
+Some of the eigenvalues are negative.
+Note that the Matlab results also produced negative eigenvalues.
+Matlab's eig detects if the input matrix is real symmetric or Hermitian and uses Cholesky factorization when it is.
+See the description of the chol argument in the [eig documentation (hyper-link)].
+If you want to use an algorithm that exploits the structure of a real symmetric or Hermitian matrix, use [scipy.linalg.eigh (hyper-link)].
+you can use diag to diagonalize a matrix and [eig_vect,eig_val] = eig(A) to give you eigenvectors.
+Then for each degenerate eigen-space V, diagonalise the restriction of C to V, and use this diagonalisation to compute simulaneous diagonalisations of C and H
+I assume you have an operator C that commutes with your Hamiltonian H. If V is the eigen-space of H for a particular (degenerate) eigen value, and you have a basis x[1] .. x[n] of V , then for each i, Cx[i] must be in V, and so we can expand Cx[i] in terms of the x[], and get a matrix representation C^ of the restriction of C to V, that is we compute
+A little algebra shows that this is an eigenvector of C, and also of H
+The eig function accepts a square matrix of type double or single as input.
+%Convert image to double precision to use eig function:
+%Find a square matrix that fits image for eig operation:
+%Find eigenvectors and eigenvalues:
+MATLAB eig usually returns real eigenvectors when the matrix is real and symmetric.
+I don't know how issymmetric is implemented (it's a built-in function), but maybe eig doesn't use the same criterion to determine if a matrix is real and symmetric than issymmetric.
+So eig((W+W')./2) should return real values and vectors.
+For your case, if d is the vector of eigenvalues:
+You can use the same I to sort the corresponding eigenvectors
+V in the same order:
+A decent constraint would be that the matrix should be [totally positive (hyper-link)], which guarantees positive, real eigenvalues.
+For each iteration, you want to calculate the maximum eigenvalue of A, and store all these eigenvalues in some vector (which I will call gVec).
+The function looped over by arrayfun is not max(eig(A)) but eigs(A,1), i.e., the 1 largest eigenvalue.
+The result will be the same, but the algorithm used by eigs is more suited for your type of problem -- instead of computing all eigenvalues and then only using the maximum one, you only compute the maximum one.
+This works: echo $row->eig->par;
+If you use apply you can assess each eigenvalue pair in V, which are grouped together at each column.
+You'll want to use the [EigenSolver (hyper-link)] class which is located in the Eigen/Eigenvalues header.
+Either use the EigenSolver constructor that takes a matrix parameter or of or call the compute method with a matrix and it will solve for that matrix's eigenvalues and eigenvectors.
+Then you can use the eigenvalues() and eigenvectors() methods to retrieve the eigenvalues and eigenvectors.
+Anyway, if someone here is looking for it, they should consider the GeneralizedEigenSolver ([http://eigen.tuxfamily.org/dox-devel/classEigen_1_1GeneralizedEigenSolver.html (hyper-link)]) that is available in the Eigen library.
+you refer to eigenvalue which does not exist.
+I presume you meant to use eig here instead:
+you call eigen() twice.
+Finally, I'll note that doing PCA via a singular value decomposition is considered better than via an eigen decomposition for reasons of numerical stability.
+The eigenvalues look the same to me, ordered from lower to higher (-2, 0 and 2).
+The eigenvectors that you get with LAPACK (row-major) are:
+This is also an eigenvector of the matrix, with the same eigenvalue (2).
+You get eigen values in different order but it corresponds to p1 up to a permutation.
+All in all, I don't see any code mistake here; your problem is that eig may sort the eigen values (in decreasing magnitude), it is not always the case.
+As mentioned in my comments, if your matrix is defective, but you know which eigenvectors/eigenvalue pair you want to consider as identical given your tolerance, you can proceed as with this example below:
+Where we see that the first three eigenvectors are almost identical to working precision, as are the two last ones.
+Here, you must know the structure of your problem and identify the identical eigenvectors of identical eigenvalues.
+Here, eigenvalues are exactly identical, so we know which ones to consider, and we will assume that corresponding vectors 1-2-3 are identical and vectors 4-5.
+(In practice you will likely check the norm of the differences of eigenvectors and compare it to your tolerance)
+Now we proceed to compute the generalized eigenvectors, but this is ill-conditioned to solve simply with matlab's \, because obviously (A - lambda*I) is not full rank.
+Which are our other generalized eigenvectors.
+returns the expected eigenvalues.
+First of all, in general eigenvalues and eigenvectors can be complex.
+Here I assume you want the first element of all the eigenvectors to be real and positive.
+Given symmetric A and symmetric, positive definite B, the [generalized
+eigenvalue problem (hyper-link)] is to find nonsingular P and diagonal D such that
+The diagonal of D holds the generalized eigenvalues, and the columns of P
+are the corresponding generalized eigenvectors.
+You can use [[V,D] = eig(A) (hyper-link)].
+[V,D] = eig(___) returns two optional outputs for any of the previous input syntaxes.
+D is a diagonal matrix containing the eigenvalues.
+V is a matrix whose columns are the corresponding right eigenvectors.
+A simple test you can do to make sure that what you compute is ok is to check that your eigenvalues and eigenvectors are correct by using :
+A freelancer helped me to get this working so while I don't profess to be an expert, I don't want to be a DenverCoder9 (or a Franz) so I'll share what I do know in case some of the 5 million+ EIG customers have similar issues (or others on similar shared hosting platforms that have crappy support and don't give out the IP of their hosted MS SQL DBs):
+The latter question you reference is discussing eig, which uses direct methods intended for general, dense matrices; you are discussing eigs, which uses iterative methods intended for general, sparse matrices.
+eig will return the eigenvalues in the order found by the direct method.
+For real symmetric matrices, the ordering from the direct method appears to generate the eigenvalues from most negative to most positive.
+eigs will return k eigenvalues and vectors with the largest/smallest magnitude/real part/imaginary part (user-specified).
+However, [as noted (hyper-link)], "eigs does not always return sorted eigenvalues and eigenvectors.
+Use sort to explicitly sort the output eigenvalues and eigenvectors in cases where their order is important."
+Though sort can be used to permute the eigenvalues into any required order.
+Check out this thread "[Eigenvector Centrality (hyper-link)]" thread.
+You can do that with the geigen package.
+Regarding the speed, you may want to check that the accuracy of the eigendecomposition is comparable.
+You want to use @time (E,F)=eig(D, balance=:nobalance);.
+However, eig doesn't take keyword arguments, so the code and the documentation are not currently in sync.
+The eigen calculation in Julia is outsourced to [LAPACK (hyper-link)] and [BLAS (hyper-link)], and I think it is also the case for Mathematica.
+The default choice for Julia is [OpenBLAS (hyper-link)] which is fast on most architectures and on my machine Julia is faster than Mathematica for the eigen calculation.
+The option for balancing has recently been added to Julia and mistakenly the option was not added to the function eig, which is only a MATLAB compatible interface to the eigfact function.
+Writing eigfact(A,balance=:nobalance) should work.
+Balancing can be switched off by writing eigfact(A,permute=false,scale=false).
+use [eigs (hyper-link)] if your data is sparse, or if you are interested in the first k values.
+For example, 
+eigs(A,k) returns the k largest magnitude eigenvalues.
+Note that eigs will be faster only for the first few eigen-values, and will be slower for k > some value (probably 5...)
+I don't think there is a built-in facility in Matlab for computing common eigenvalues of two matrices.
+I'll just outline brute force way and do it in Matlab in order to highlight some of its eigenvector related methods.
+Get eigenvectors/values for A and B respectively.
+Group the resultant eigenvectors by their eigenspaces.
+Check for intersection of the eigenspaces by checking linear dependency among the eigenvectors of A and B one pair eigenspaces at a time.
+Not to mention, finding common eigenvectors may not require finding all eigenvectors.
+where D(i), V(:,i) are the corresponding eigenpairs.
+In Matlab, eigenvalues are not automatically sorted in the output of [V,D] = eig(A).
+ia(i) tells you the beginning index of the ith eigenspace.
+So you can expect d(ia(i):ia(i+1)-1) to be identical eigenvalues and thus the eigenvectors belonging to the ith eigenspace are the columns W(:,ia(i):ia(i+1)-1) where W=V(:,I).
+which makes sense because the 1st eigenspace is the one with eigenvalue 3 comprising of span of column 1 and 2 of W, and similarly for the 2nd space.
+To complete the task of finding common eigenvectors, you do the above for both A and B.
+Next, for each pair of eigenspaces, you check for linear dependency.
+I should mention the observation that common eigenvectors should be those in the nullspace of the commutator.
+With the brute force method, we started with eigenpairs with low tol (see definition in earlier sections) and so we already verified the "eigen" part in the eigenvectors.
+Now suppose x is an eigenvector of A, with eigenvalue e. Then
+And so we have, mathematically, two possibilities: either Bx is 0, or Bx is also an eigenvector of A with eigenvalue e.
+A nice case is when all the elements of a are different, that is when each eigenspace of A is one dimensional.
+If you diagonalize A, and all the eigenvalues are sufficiently different, then you can assume each eigenspace is of dimension 1, but what does 'sufficiently' mean?
+If two computed eigenvalues are very close, are the eigenvalues different or is the difference rounding error?
+Anyway, to compute the eigenvalues of b for each eigenvector x of  A compute Bx.
+If ||Bx|| is small enough compared to ||x|| then the eigenvalue of B is 0, otherwise it's
+In the general case, some of the eigenspaces may have dimension greater than 1.
+The one dimensional eigen spaces can be dealt with as above, but more computation is required for the higher dimensional ones.
+Suppose that m eigenvectors x[1].. x[m] of A correspond to the eigenvalue e. Since A and B commute, it is easy to see that B maps the space spanned by the xs to itself.
+then a little algebra shows that y[l] is an eigenvector of B, with eigenvalue c[l].
+Moreover, since each x[i] is an eigenvector of A with the same eigenvalue e, each y[l] is also an eigenvector of A with eigenvector e.
+Diagonalise A, and sort the eigenvalues to be increasing (and sort the eigenvectors!)
+Identify the eigenspaces of A.
+For the 1 dimensional spaces the corresponding eigenvector of A is an eigenvector of B, and all you need to compute is the eigenvalue of B.
+A relatively expensive (in computational effort) but reasonably reliable way to test whether the commutator is zero would be to compute the svd of the commutator and take is largest singular value, c say, and also to take the largest singular value (or largest absolute value of the eigenvalues) a of A and b of B.
+According to the documentation of np.linalg.eig part: Returns, w: (...,M) array:
+The eigenvalues, each repeated according to its multiplicity.
+The eigenvalues are not necessarily ordered.
+When a is real the resulting eigenvalues will be real (0 imaginary part) or occur in conjugate pairs
+In your second case p,d=eig(A) [MATLAB (hyper-link)] is merely printing the previously calculated value of p from case 1 and then running the command d=eig(A).
+If you then run p,d=eig(A) it will return an error saying that p is undefined function or variable.
+From help eig:
+Note there is no V,D = EIG(X) option.
+second norm of inverse ought to be equal inverse of minimal eigenvalue of matrix
+This is only true if the matrix is hermitian with positive eigenvalues (ie positive definite).
+the square root of the largest eigenvalue of the positive-semidefinite matrix A*A
+You are just misinterpreting eig's return.
+The normalized (unit “length”) eigenvectors, such that the column
+  v[:,i] is the eigenvector corresponding to the eigenvalue w[i].
+So the eigenvector corresponding to eigenvalue 1 is not [ 0.4472136 , -0.70710678], but [-0.70710678, -0.70710678], as can be easily verified:
+You can  can calculate eigenvalues of a block-diagonal matrix composed of smaller [3 x 3] matrices:
+Given the Eigenvalues you got Eigenvalues = [2.84217094e-14  2.15257831e+02  8.95193455e+02]
+Your two largest Eigenvalues are 8.95193455e+02 and 2.15257831e+02,
+The sum of your eigenvalues is 1110.0 which corresponds to the 100% of the information.
+So your largest eigenvalue 8.95193455e+02 has 80.6% of the information.
+The second eigenvalue 2.15257831e+02 has the remaining 19.4% of the information, and the last eigenvalue 2.84217094e-14 is too small, thus it can be considered noise.
+For the eigenvectors that match these eigenvalues, each column of your  Eigenvectors matrix is associated to one eigenvalue, and they are in the same order.
+For example, your first eigenvalue 8.95193455e+02 is associated to the eigenvector
+The coeff which [pca (hyper-link)] outputs are already eigenvectors, which are all orthogonal.
+Relative weight is in the explained output parameter of pca.
+So transpose(coeff)*coeff gives you the identity matrix, which just contains ones and the eigenvectors of the identity matrix are, obviously, all just 1 in a single dimension.
+The reordering and change of sign is normal (you're just getting orthogonal vectors that map to eigenval * themselves).
+The eigenvectors are not unique (because Av==λv by definition, any w with μw==v and μ~=0 is also an eigenvector).
+It so happens that the eigenvectors returned by eig don't match up in the right way for SVD (even though they are normalized).
+However, we can construct U once we have V, which we will find as eigenvectors of A'*A as in your algorithm.
+Once you have found V as sorted eigenvectors, you have to find U to match.
+The [numpy docs (hyper-link)] are a bit clearer on what the left eigenvectors should be.
+Finally, it is emphasized that v consists of the right (as in
+  right-hand side) eigenvectors of a.
+A vector y satisfying dot(y.T, a)
+  = z * y.T for some number z is called a left eigenvector of a, and, in general, the left and right eigenvectors of a matrix are not
+  necessarily the (perhaps conjugate) transposes of each other.
+vl[:,i].T is the i-th left eigenvector.
+The eigenvalues match, but not the eigenvectors.
+The eigenvalues and vectors that I get satisfy their defining equation with high accuracy:
+Matlab will output the eigenvalues to the diagonal elements of the D matrix in ascending order (i.e.
+lowest eigenvalue is D(1,1) and the largest one is D(9,9)).
+Python doesn't follow this convention and the outputs (eigenvalues and eigenvectors) must be sorted with something like;
+In this case, the 5th order polynomial is in a form that is not recognized by the eigenvals routine so A.eigenvals() will generate an error.
+But if your matrix doesn't present such difficulties it may be possible to generate the eigenvalues more directly:
+[V,D] = eig(A,B) returns diagonal matrix D of generalized eigenvalues and full matrix V whose columns are the corresponding right eigenvectors, so that AV = BV*D.
+read the following document carefully  about situation where eig function does not return accurate results :
+[Matlab Doc (hyper-link)]
+In cases where your 2nd eigenvalue is also close to one this number will be much larger
+the function EigenvalueDecomposition.getV returns the eigenvectors in the orientation you expect (row / column)
+This implies the existance of an eigenvectors of one.
+Since you seem to not have an eigenvalue of 1, the most logical error is a typo in your matrix.
+Say you have N eigenvalues, and the corresponding eigenvector matrix is V (where the columns are the eigenvectors), you need to create a matrix A such that:
+Each row of 'A' has 1's in places corresponding to the eigenvalues you want to sum.
+I.e., A(i,[1 ,2]) = 1 if you want to sum the first and second eigenvectors.
+The result of A*V' will be a matrix where each row is the sum of eigenvectors you are looking for.
+that it is valid only for finding the leading (largest) eigenvalue, thus, it seems that it is working for you fine, and it is not guaranteed that the following eigenvalues will be correct.
+numpy.linalg.eig() works faster than your code for this matrix, but I am guessing you implemented it as an exercise.
+you ever only compute the absolute value of the eigenvalues.
+As you do not remove the negative eigenvalue -4.57408723, but effectively add it instead, the largest eigenvalue in the third stage is 2*-4.574.. = -9.148.. where you again computed the absolute value.
+From looking at the  [JohansenTestResult guide, (hyper-link)] we see that  the object stores the VECM eigenvectors and eigenvalues in the
+evec and eig properties, respectively
+The template parameter of EigenSolver needs to be an instantiation of the more specific [Eigen::Matrix (hyper-link)] template, not Eigen::MatrixBase (see the documentation [here (hyper-link)]).
+The definition of an eigenvalue can be found anywhere on the [web (hyper-link)]
+v being the eigenvector with lam, its corresponding eigenvalue.
+It is not necessary that each of the repeating eigenvalue should have its (independent) associated eigenvector.
+This means, an nxn matrix with an eigenvalue repeating more than once has less or equal to n linearly independent eigenvectors.
+Example 1: Matrix 
+                2 0;
+                0 2
+has eigenvalue 2 (repeating twice), but it has two linearly independent eigenvectors associated with eigenvalue 2
+has eigenvalue 1 (repeating four times), but it has only two independent eigenvectors associated with eigenvalue 1.
+If you also want eigenvectors, you want
+It doesn't make much sense to treat this as an eigenvalue problem if X is known.
+Lastly, the rationale behind multiplying the scaling constant follows from the fact that for a square matrix A with eigenvalues a1,...,an, the eigenvalues of a matrix kA, where k is a scalar is simply ka1,...,kan.
+The eigenvalues give the corresponding lengths of the major/minor axis of the ellipse, and so scaling the ellipse or the eigenvalues to the 95%tile is equivalent to multiplying the covariance matrix with the scaling factor.
+This piece of code is searching for elements in U who's corresponding eigen value - 1 is less than 1e-8
+You are only swapping first element of eigenvectors, use V(:, tt) for whole column.
+To sort eigenvalues by their real parts, try this:
+To show that the definition of the eigendecomposition is satisfied,
+The columns of V (eigenvectors) will be orthogonal if the above M is diagonal.
+If I has positive and negative entries use eig instead of eigh and before taking the square root cast to complex dtype.
+What you want to solve, Cx=λIx, is the so-called standard eigenvalue problem,
+and most eigenvalue solvers tackle the problem described in that format, hence the
+Numpy function has the signature eig(C).
+If your C matrix is a symmetric matrix and your problem is indeed a standard eigenvalue problem I'd recommend the use of numpy.linalg.eigh, that is optimized for this type of problems.
+On the contrary if your problem is really a generalized eigenvalue problem, as, e.g., the frequency equation Kx=ω²Mx you could use scipy.linalg.eigh, that supports that type of problem statement for symmetric matrices.
+With respect to the discrepancies in eigenvalues, the Numpy implementation gives no guarantees w/r to their ordering, so it could be just a different ordering, but if your problem is indeed a generalized problem (I not being the identity matrix...) the solution is of course different and you have to use the Scipy implementation of eigh.
+If the discrepancies is within the eigenvectors, please remember that the eigenvectors are known within an arbitrary scale factor and, again, the ordering could be undefined (but, of course, their order is the same order in which you have the eigenvalues) — the situation is a little different for scipy.linalg.eigh because in this case the eigenvalues are sorted and the eigenvectors are normalized with respect to the second matrix argument (I in your example).
+Ps: scipy.linalg.eigh behaviour (i.e., sorted eigenvalues and normalized eigenvectors) is so convenient for my use cases that I use to use it also to solve standard eigenvalue problems.
+For the eigenvectors, see the [documentation for eig (hyper-link)] as suggested by Luis Mendo, but also the [documentation for eigs (hyper-link)], which allows you to request k eigenvectors according to sigma:
+Using eigs with the k syntax should be marginally easier than eig, but either will work.
+Principal Component Analysis can help you to transform the data into 2D using the Eigenvectors.
+"Formulas for the second-order statistics of the eigenvectors have been derived in the statistical literature and are widely used.
+We point out a discrepancy between the statistics observed in numerical simulations and the theoretical formulas, due to the nonuniqueness of the definition of eigenvectors.
+The unscaled scores in vegan are unscaled in the (normal) sense that their sum of squares is 1 -- independent of eigenvalues:
+The same holds for cca, but there you need to study weighted sums of squares.
+For scaled scores these sums of squares are proportional to eigenvalues (but it may be useful to read vegan vignette on design decisions for constant scaling of the scores).
+When you run the eigenvalue decomposition on the covariance matrix, remember to sort the eigenvectors in order of descending eigenvalues.
+About vl, the eig docstring says:
+So the rows of the conjugate transpose of vl are the actual left eigenvectors of a.
+Now, the eig docstring also says in the description of the return values:
+and that is potentially misleading, since the conventional definition of a left eigenvector (e.g.
+[http://mathworld.wolfram.com/LeftEigenvector.html (hyper-link)] or [http://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors#Left_and_right_eigenvectors (hyper-link)]) is a row vector, so it is the conjugate transpose of the column of vl that is actually the left eigenvector.
+[Are eigenvectors returned by R function eigen() wrong?
+[eigenvectors when A-lx is singular with no solution (hyper-link)]
+The key here is noticing that computing eigenvalues can be a hard problem.
+You should note that usually we can compute the largest eigenvalues quite accurately, the errors in the smaller (in magnitude) ones usually increase.
+If the condition number was better (closer to 1) I would have suggested
+computing the singular values, as they happen to be the eigenvalues (due to the symmetry).
+The only case where anything is salvageable is for R=0, then we actually
+want to compute the sum of all eigenvalues, which happens to be the
+trace of our matrix, which can easily be computed by just summing the
+diagonal entries.
+It's not a problem of precision but one of scaling and the fact that eigenvectors are [not unique (hyper-link)].
+The only time the matrix of left eigenvectors (as rows) is guaranteed to be exactly the inverse of the matrix of right eigenvectors is for a Hermitian A; although their product is [always diagonal (hyper-link)].
+Additionally, the rows of the inverse of the matrix of right eigenvectors are always left eigenvectors of A but are not the only eigenvectors.
+Are L and Rinv matrices of left eigenvectors?
+Now what happens if we scale each left eigenvector (row) of L such that the above product is the identity?
+And since Rinv is a set of left eigenvectors, so it Lp.
+The eigenvectors are no longer unit length.
+In this case, both Julia and MATLAB are just calling well-optimized C/Fortran libraries for doing the eigenvalue calculation.
+To summarize: as we all (should) know,  eigenvalues and eigenvectors are only unique up to a multiplicative constant.
+While in this particular case R and MATLAB happened to end up with differing signs,  all subsequent matrix operations on the eigenvectors will yield the same result (again,to within sign or constant value).
+Those aren't coming from the eigen function, they're coming from the last two lines of your code.
+2-round off the eig(l) by the tolerance
+3-test if the given values belong to the rounded set through ismember
+something like ismember(str2num(prompt2),round(eig(l),tol))
+You currently have the top 100 eigenvectors that determine the basis vectors that retain the largest variance in your data.
+If you recall from dimensionality reduction, we currently have a matrix of eigenvectors where each column is an eigenvector.
+If you want to finally perform the reduction, it is simply a multiplication of the data matrix that is mean subtracted with the eigenvector matrix.
+It is important to note that the order of the eigenvectors in this matrix is such that the basis vector encompassing the largest variance that can be explained by your data appears first.
+That is why the sorting is performed on the eigenvalues as the eigenvector with the largest eigenvalue embodies this property.
+From your code, each column is an example and so you can transpose the eigenvector matrix instead:
+It should be faster than using the eigenvectors of the covariance matrix.
+Using the eigenvectors for dimensionality reduction is known to be unstable - specifically when it comes to computing eigenvectors for high dimensional data such as what you have.
+You can view this Cross Validated post on the relationship between the eigenvectors of the covariance matrix and using SVD for performing PCA:
+As such, compute the SVD on the covariance matrix and the columns of V are the eigenvectors you need to perform the computation.
+The added benefit with SVD is the eigenvectors are already ordered based on their variance and so the first column of V would be the basis vector that points in the direction with the largest variance.
+As such, you don't need to do any sorting as you did with the eigenvectors.
+You can take a look at my post on dimensionality reduction using eigenvectors and eigenvalues from the covariance matrix from my answer here:  [What does selecting the largest eigenvalues and eigenvectors in the covariance matrix mean in data analysis?
+It is faster and more stable than using the eigenvectors of the covariance matrix.
+There is a lot here that you could do more efficiently (i.e., most of this can be replaced by using the FFT and matrix multiplies instead of loops), but the specific problem you're running into here is that you're not using the roots of -1 in the calculation of the eigenvalues of V, you're using the roots of unity.
+... you will of course want to find more suitable penalty functions and play with the relative weighting, but this should give you the general idea.
+Result eigen:
+eigV1 from eigen is -eigV3 from Matlab,
+eigV2 from eigen is -eigV1 from Matlab,
+eigV3 from eigen is -eigV2 from Matlab,
+The eigenvalues are reordered equally....
+Recall that the eigen-decomposition of a matrix is not completely unique:
+eigenvalues/vectors can be arbitrarily reordered
+if v is an eigenvector, then -v is also a valid eigenvector
+Since your matrices are symmetric, you should use SelfAdjointEigenSolver to get them automatically ordered as MatLab.
+Then the eigenvectors will only differs from their sign, but you will have to live with that.
+This is problematic, because SQP in fmincon uses first and second derivatives of y, which also turn to millions in the neighborhood of a discontinuity like that, screwing up the next iteration.
+tf.self_adjoint_eig and tf.batch_self_adjoint_eig are all I see in the API, 
+[https://www.tensorflow.org/versions/master/api_docs/python/math_ops.html (hyper-link)]
+TensorFlow does not currently expose a generic eigendecomposition operator.
+[Add a new C++ operator (hyper-link)] that invokes Eigen's eigendecomposition functions.
+Use the [tf.py_func() (hyper-link)] op to run a Python function in your graph, and have this function call [scipy.sparse.linalg.eigs() (hyper-link)].
+Which shows that for K=1 you have an eigenvalue with a strictly positive real part.
+Although from "physical" point of view you need eigenvector with sum of its components equal 1, [scaling eigenvector by some factor does not change it's "eigenness" (hyper-link)]:
+the eig function returns unit vector as far as eigenvectors are concerned.
+So, if we take
+v = [0.6, 0.4], its length is:
+l = np.sqrt(np.square(a).sum()) or l = np.linalg.norm(v), so the normalized vector (as returned from scipy.linalg.eig) is:
+As cmdscale needs distances, try cmdscale(dist(points), eig = TRUE, k = 2).
+The eigenvectors are unique up to a sign change (see [https://math.stackexchange.com/questions/235396/eigenvalues-are-unique (hyper-link)]).
+you have 4 complex numbers forming an eigen vector say:
+Matlab code for normalizing eigenvectors:
+The singular values are just the squares of the eigenvalues.
+is that you multiply by the transpose of the eigenvector matrix, which is valid in the case of a real-valued normalised eigenvector matrix.
+It's not immediately obvious, but the eigenvectors you are being returned are actually the same in both cases.
+So you can get the matlab eigenvectors by multiplying the numpy ones by -0.13-0.99j, i.e.
+they are colinear and therefore the same as far as eigenvectors are concerned.
+to > 1e-8 and use Eigens functions (or [unaryExpr (hyper-link)]) to manipulate the values of the matrix:
+This is your PC2 Eigenvectors:
+In the pdf you linked to, the eigenvalues are obtained via the command:
+whereas the eigenvalues from dudi.pca (I presume), come from the centred and scaled covariance matrix.
+You can use the ARPACK based eigs function which is included in Julia 0.6.2 or you can use a pure Julia implementation of a related method in [https://github.com/JuliaMath/IterativeSolvers.jl (hyper-link)].
+The latter isn't Lanczos based but I guess it doesn't really matter as long as it gives you the eigenvalues.
+Eigen-vectors are always determined up to a sign, since multiplying an eigenvector by -1 does not change its status as an eigenvector.
+You can try using [eigenshuffle (hyper-link)] from the FEX .
+So, one possible workaround is to take the real part of the first complex eigenvalue:
+The following code eventually defines pdeig which returns the eigenvalues of a matrix which is a pdmatrix i.e.
+Calculating the eigenvectors quickly is also possible (they have an explicit formula):
+Since these matrices are diagonalizable, the eigenvalues should provide the diagonal matrix (just use diagm on them).
+To compute eigenvalues/eigenvectors just check [this link (hyper-link)] and [this API link (hyper-link)]
+What you are trying to do is find the significant modes of the correlation matrix of your image, that is the modes that have the largest eigenvalues.
+In general eig returns the eigenvalues/vectors in random order, @CrisLuengo is telling you that before throwing eigenvalues/modes away, you need to first order the results that eig returns as I have done in this script;
+If you plot diag(L), the (not-ordered) eigenvalues you will note the fitst 30 or so are near zero, meaning that they correspond to very, very little info.
+Even if you could compute them, the eigenvectors of the PCoA solution will need ~ 9Gb of RAM, just on their own.
+The calculations of your eigen solver are performed using finite precision floating point arithmetic.
+The true eigen values and eigen vectors are not even exactly representable in finite floating point data types.
+Just remove semicolon for the code solving eigenvalues and dcgain
+Eigenvectors are defined up to a multiplicative constant.
+And in both cases the [-1; 1] eigenvector corresponds to the sqrt(4) = 2 eigenvalue, while the [1; 1] eigenvector corresponds to the sqrt(16) = 4 eigenvalue.
+EJML doesn't support complex eigenvectors.
+To compute complex eigenvectors support for complex matrices and a complex eigenvalue decomposition must be provided, which EJML doesn't provide.
+If you want to order eigenvectors according to eigenvalues, you should only rearrange the columns of the eigenvectors:
+(Also, it may make sense to use the absolute value, in case you get complex eigenvalues)
+Matlab's eig returns the full matrix of eigenvectors and a diagonal matrix with eigenvalues.
+Because of this, the last column given by eig is the vector provided by tr2angvec.
+Note that theta=0.3655 while the real eigenvalue is one (because rotations do not change length).
+Then notice that the real part of the imaginary eigenvalues is 0.9339, and that acos(0.9339)=0.365626358 rad.
+Then recall that the imaginary eigenvalues of a rotation matrix are cos(theta) + i sin(theta) and cos(theta) - i sin(theta).
+With eigenvectors,V and values D:
+EDIT Properly referred to eigenvalues and vectors, used 0.2 sampling interval added code.
+As for the eigenvalues, first of all your signals are not independent (see above).
+Second of all, your filter matrix A is also not well conditioned, spreading out your eigenvalues further.
+The eigenvalues of that are:
+But maybe you can implement the eig a bit differently?
+To understand the reason, we need to look at the definition of eigenvectors (source: [wikipedia (hyper-link)]):
+An eigenvector or characteristic vector of a square matrix A is a non-zero vector v that, when multiplied with A, yields a scalar multiple of itself.
+where v is the eigenvector and n is the corresponding eigenvalue.
+As these are linear operations, A*(kv)=n*(kv) for any non-zero, scalar k. That means, an eigenvector multiplied by a factor k will be another eigenvector to the corresponding eigenvalue.
+Matlab outputs normalized eigenvectors, i.e.
+But still, both the positive and the negative version are eigenvectors of M. You can verify this by creating the negative version of your result and multiplying it with P, which will again give you the negative version of your result.
+The [eigs_sym() (hyper-link)] and [eigs_gen() (hyper-link)] functions (where the s in eigs stands for sparse) in Armadillo are for large [sparse (hyper-link)] matrices.
+It would be much faster to simply use the dense eigendecomposition [eig_sym() (hyper-link)] or [eig_gen() (hyper-link)] functions to get all the eigenvalues / eigenvectors, followed by extracting a subset of them using [submatrix (hyper-link)] operations like .tail_cols()
+There will be a slow-down due to the larger size, and all eigenvalues will be duplicated (which may slow down the algorithm), but it seems straightforward to test.
+To get NumPy to return a diagonal array of real eigenvalues when the complex part is small, you could use
+According to the [Matlab docs (hyper-link)], 
+[E, D] = eig(A) returns E and D which satisfy A*E = E*D:
+I don't have Matlab, so I'll use Octave to check the result you posted:
+In NumPy, w, v = np.linalg.eig(A) returns w and v which satisfy
+np.dot(A, v) = np.dot(v, np.diag(w)):
+The problematic example you gave is not a general rotation matrix, 1 is not an eigenvalue.
+This shouldn't affect the matlab function however, you are guaranteed a basis of generalized eigenvectors over the complex numbers.
+I'm noticing some calls to symmetric matrix-based functions, have you tried calling eig with the option 'qz' to explicitly call the non-symmetric based algorithm?
+Notice however that this test will likely fail if one or more eigenvalues has an eigenspace of dimension larger than 1, as pointed out by @Sven Marnach in his comment below:
+If any of the eigenvalues has a multi-dimensional eigenspace, you
+  might get an arbitrary orthonormal basis of that eigenspace, and to
+  such bases might be rotated against each other by an arbitraty
+  unitarian matrix
+You have a loop that goes 60,000 times, with calculations of eigenvalues etc.
+Applying the key=eig.get argument to sorted() allows you to sort a dictionary by value (the biggest obstacle for this problem).
+You probably want to take the absolute value of the eigenvalues before summming:
+You have provided a program that won't run, since "eig" is undefined.
+My theory is that roundoff errors (which are dependent on the particular CPU) caused it to return complex-valued eigenvalues on one machine but not the other.
+The eigenvectors of a real symmetric matrix [are orthogonal (hyper-link)].
+(1) Eigenvectors corresponding to distinct eigenvalues of a symmetric matrix must be orthogonal to each other.
+Eigenvectors corresponding to the same eigenvalue need not be orthogonal to each other.
+(2) However, since every subspace has an orthonormal basis,you can find orthonormal bases for each eigenspace, so you can find an orthonormal basis of eigenvectors.
+The eigenvectors of a real matrix will be orthogonal if and only if AA'=A'A and eigenvalues are distinct.
+If eigenvalues are not distinct, MATLAB chooses an orthogonal system of vectors.
+Calculate eigen values and eigen vector V-eigen vector  D-diagonal matrix with eigen values
+Eigenvectors of covariance matrix C (or so-called "Eigenfaces") can be recovered from L's eiegnvectors.
+Then you have a parametric line l(t)=m+t*b with t roughly ranging from -a to a with a=sqrt(eig.eigenvalues()(2)).
+which produces unit sum of all bar heights.
+which will give you the eigenvalues only (no vectors or matrices).
+While it is true that there is an orthonormal basis of eigenvectors of a symmetrical matrix, there is no guarantee that Numpy will return that basis.
+It will return any basis of eigenvectors, and there is nothing wrong about this approach.
+The matrix you are looking at has two eigenspaces: A two-dimensional one for the eigenvalue 3, and the one-dimensional kernel.
+For the kernel, the eigenvector is determined up to a constant factor.
+To get an orthonormal basis of eigenvectors of a symmetric matrix, you can use [numpy.linalg.eigh() (hyper-link)].
+The eigenvector corresponding to 4 can be any multiple of (1, 1, 2).
+In other words, as long as the first two values are the same and the third number is twice as big, it's an eigenvector.
+The eigenvalue -2 is repeated.
+Therefore the eigenspace corresponding to the eigenvalue -2 is two-dimensional.
+The simplest way to describe the 2D space generated by the two eigenvectors (1, 1, 0) and (1, 0, -1) is the set of all vectors (a, b, c) satisfying
+It is easy to check that all 6 eigenvectors found for -2 are of this form.
+Use select argument for [eig_banded() (hyper-link)]:
+The second plot looks like that because the eigenvalues of B are imaginary.
+You can do fplot(real(X), [-0.002 0.002]) instead to plot just the real part of the eigenvalues (assuming that's what you want).
+You are plotting the two components of one eigenvector as the x component of two vectors, and the other eigenvector as the y components.
+The first eigenface is the first eigenvector!
+as, if your code is right, each eigenvector should be the same size as your input images, but unrolled.
+Regarding Eigen's speed, you can get a significant boost by removing all heap allocation this way (almost one order of magnitude faster):
+You can also save 10% more by using a row-major matrix for M_eig so that A.transpose() is column-major:
+Finally, since your problem is numerically well conditioned, you can also use a Cholesky-based solver for an additional x2 speedup (in this case keep the default storage for M_eig):
+You have the correct implementation, but you're not checking both the eigenvector and eigenvalue for convergence.
+You're only checking the eigenvalue for convergence.
+The power method estimates both the prominent eigenvector and eigenvalue, so it's probably a good idea to check to see if both converged.
+On a side note with regards to eig, MATLAB most likely scaled that eigenvector using another norm.
+Remember that eigenvectors are not unique  and are accurate up to scale.
+If you want to be sure, simply take the first column of V, which coincides with the dominant eigenvector, and divide by the largest value so that we can get one component to be normalized with the value of 1, just like the Power Method:
+Let me also add that the symmetric eigenvalue decomposition is actually faster than SVD.
+The true advantage of SVD in this case is that it avoids squaring the entries, but since your input data are normalized and centered, and that you only care about the largest eigenvalues, there is no accuracy concern here.
+When you calculate the stationary distribution, you take the eigenvector whose eigenvalue is 1.
+You can avoid calculating the eigen decomposition 4 times by storing the calculation first as a list-column, and then just extracting the values in a subsequent step.
+if U is the eigenvector calculated from the covariance matrix of the data.
+Your code is a bit messy, but you could start with something to hold all eigen_values
+Then each time after calculating eigen_values assign it to the correct place in your storage variable.
+The error appears to mean that in your generalized eigenproblem
+the matrix A is not positive definite (check the eigs docstring -- in your case the matrix is probably singular).
+It affects the eigenvalues that are picked --- for instance with which='LM' are those for which lambda' = 1/(lambda - sigma) is large.
+Otherwise, it can probably be chosen arbitrarily, of course it's probably better for the Krylov progress if the transformed eigenvalues lambda' which you are interested in become well separated from the other eigenvalues.
+The eigenvalues are obviously 1,2,3,... and the matrix is positive definite and symmetric.
+It seems to be a problem of Armadillo, because when I use the unsupported Arpack support of Eigen it works just fine.
+The eigenvalue/vestor decomposition using SymEigsSolver on a sparse matrix of size 480,000 x 480,000 takes me 3 mins 50 sec (i7/16GB RAM).
+You'll need Eigen as well which is also available at the above address (and it's also header based).
+However, the covariance matrix of the input image is going to be a scalar, and you cannot find the eigenvalues and eigenvectors of it.
+You can project it to be a 2d matrix of size (1,1), but then your eigenvalue of that will simply be the covariance, and the eigenvector will be [[1]].
+So now we can find the eigen's:
+But for a one-elemnt matrix, there is only one eigenvalue and one eigenvector, and the eigenvalue is the element of the matrix, and the eigenvector is the length-1 unit vector / identity, so I'm not sure this is really what you want to be doing for your face recognition.
+On the other hand, you could get the covariance of the un-flattened input_image, then you'll have N eigenvalues and N eigenvectors:
+First i would double check that the eigen include directions are found.
+I compiled them by including the Eigen lib headers and OpenCV lib headers.
+eig returns the eigenvectors as columns, why do you take the row?
+Did you check the values of the corresponding eigenvalues in E, so you can be sure you are looking at a eigenvec corresponding to the 2nd smallest eigenval?
+Let U be the matrix containing the eigenvectors as shown above and let them be arranged such that the 1st column corresponds to the smallest eigenvalue and progressive columns correspond to the ascending eigenvalues.
+Then, take a subset of columns of U by retaining the eigenvectors corresponding to the smaller eigenvalues.
+the eignevalues [...] are proportional
+  to the squared length of the eigenvector axes.
+They are the same eigenvectors, as flipping the signs on eigenvectors does not change their formulation - they will have the same eigenvalue.
+Most likely because the subroutines that are run vary based on the matrix that is being operated on, and don't care what 'sign' they return because eigenvalues don't have one.
+If x is an eigenvector of matrix A with eigenvalue q, then by definition we have that Ax = qx.
+It follows that A(-x) = -(Ax) = -(qx) = q(-x) such that -x is an eigenvector with the same eigenvalue.
+Another difference is that eig sorts the eigenvalues in ascending order, so cca(X,Y) should flip the output of eig(Z).
+To compute the values of a,b,c from the eigen-space, you just need to compute the radius of the eigen-space projected ellipsoid.
+This is trivial because the ellipsoid is axis-oriented in eigen-space (which I assume is the only reason you are doing this in the first place).
+As a result once the regular smooth scrolling has reached one third of the window height, the display jumps by an additional one third.
+As you're dealing with row vectors instead of column vectors you need to adjust for it in the eigenvalue/eigenvector-decomposiiton.
+The short answer - you cannot track just any point, it should be a special point that has gradient in two directions and possibly some other qualities (stability, good localization, absence of close neighbors that are also good points).
+the complete sign reversals of the eigenvector.
+If a vector is an eigenvector, so is every scalar multiple of it (mathematically, the eigenvector is part of a subspace of eigenvectors belonging to an eigenvalue).
+Thus, if v is an eigenvector, so is λv.
+But 2v is also an eigenvector.
+The eigs function normalizes the vectors to norm 1, so the only freedom left is this sign reversal.
+To solve this non-determinism, you can choose a sign for the first non-zero coordinate of the vector (say, positive) and multiple the eigenvector to make it so.
+Regarding the second non-determinism source (inaccuracies), it is important to note that the true eigenvalues and eigenvectors are often real numbers which cannot be accurately represented by Float64, thus the return values are always off.
+If there are multiple eigenvalues with the same value, the subspace of eigenvectors is more than 1 dimensional and there is more freedom to choose an eigenvector.
+Look at this tutorial on [eigenfaces (hyper-link)].
+Use Eigenfaces as the training set, compose a label vector with 1 or -1s (if the ith column of Eigenfaces refers to 1, then the ith element in label is 1, otherwise it is -1) .
+And use Eigenfaces and label in svmtrain function.
+I read that as type inference failing to figure out the return type of eig.

@@ -100,7 +100,7 @@ def get_answer_body(Id):
    cursor = sql_connection()
    sql = '''
    select Body from posts
-   where Id= '''+Id+''' 
+   where Id= '''+str(Id)+''' 
    and PostTypeId  = 2'''
    cursor.execute(sql)
    results = cursor.fetchall()
@@ -176,6 +176,14 @@ def get_data(id):
    result = cursor.fetchall()
    return result
 
+def get_answer_from_question_id(id):
+   cursor = sql_connection()
+   sql = '''select id from posts
+   where ParentId ='''+str(id)
+   cursor.execute(sql)
+   result = cursor.fetchall()
+   return result
+
 def get_id(file):
    java_candidate = file[(file['TotalAnswerCount']>=10) & (file['TotalAnswerCount']<=18)]
    # candidate 
@@ -214,6 +222,37 @@ def get_tag_posts(tag):
    cursor.execute(sql)
    results = cursor.fetchall()
    return results
+
+def get_title(id):
+   cursor = sql_connection()
+   sql = '''
+   select Title from posts
+where id = ''' + str(id)
+   # print(sql)
+   cursor.execute(sql)
+   results = cursor.fetchall()
+   return results
+
+def get_description(id):
+   cursor = sql_connection()
+   sql = '''
+   select body from posts
+where id = ''' + str(id)
+   # print(sql)
+   cursor.execute(sql)
+   results = cursor.fetchall()
+   return results   
+
+def get_tag(id):
+   cursor = sql_connection()
+   sql = '''
+   select Tags from posts
+where id = ''' + str(id)
+   # print(sql)
+   cursor.execute(sql)
+   results = cursor.fetchall()
+   return results   
+
 
 @set_timeout(3, after_timeout) 
 def get_neg_answer(parentid):

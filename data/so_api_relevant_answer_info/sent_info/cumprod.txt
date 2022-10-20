@@ -1,0 +1,79 @@
+so I needed to apply a custom function that did the cumprod, and then convert everything to a list because of the incompatible indices with the original data frame.
+The first [::-1] reverses the row order of the dataset for expected cumprod() and the second one reverses it back to get back the original order of indices.
+Use qcut and cumprod:
+df.groupby('id').cumprod() is shorthand for df.groupby('id').transform('cumprod').
+(cumprod is short for cumulative product.
+The reason lies in what functions mean() and cumprod() are meant to do.
+Mean: "Return the mean of the values for the requested axis"
+Cumprod: "Return cumulative product over requested axis"
+So mean is meant to return one value for the given axis while cumprod will find the product of the values cumulatively.
+Unlike mean(), cumprod() (which converts a series into a single number) is not an aggregator and converts a series into another series.
+The number and order of rows in the original dataframe is the same as in the cumprod() result.
+You want to use cumprod then divide by the last value
+inverse_cumprod = (np.prod(X) / np.cumprod(X)) * X
+Upside down, do cumprod, flip back:
+Since numba does not yet support using kwargs like axis=0 with np.cumprod, your code will look like this:
+And some timings show that numba is about 4 times faster than using cumprod on a DataFrame and about 3.7 times faster than using numpy:
+If you fixed number of rows for your tibble data, you actually can use Reduce to implement cumprod, which seems a faster option
+You can create a helper column and groupby with cumprod:
+Standard cumprod but without the groupby.
+In fact, these results seem almost too good to be true with the numba function below being about 4,000x faster than the original method and 5x faster than plain cumprod without a groupby.
+While the cumprod method do multiplication of the elements that comes before the element in the current position.
+cumprod() returns the "cumulative product" which in the form of another series.
+cumprod() returns a Series of the cumulative product, i.e.
+Ref - Pandas docs:
+[prod() (hyper-link)]
+[cumprod() (hyper-link)]
+Note that the function needed is named cumprod, not cumproduct.
+You can identify the 1 blocks with cumsum, then groupby().cumprod() on that blocks:
+It doesn't use cumprod...
+Using np.where with cumprod
+The correct formula to calculate cumulative returns is cumprod(returns + 1) - 1.
+It's pretty much the same as for the cumprod:
+A way to avoid factorial and use cumprod is to loop over x and do the cumprod of the sequence of each value, i.e.
+Then, we use rowCumprods from matrixStats to get the cumulative product of each row
+Try this:
+df['Cumprod'] = df['Factor'].cumprod()
+[https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.cumprod.html (hyper-link)]
+Let's use groupby with cumsum to identify groups to apply cumprod over:
+Then I create a grouping variable and transform var usingcumprod:
+Thus, you would need reversed cumprod of b, perform elementwise multiplication with K array.
+Finally, to get c, perform cumsum and since c is stored before scaling down by b, so you would need to scale down the cumsum version by the reversed cumprod of b.
+Please be mindful that for extremely huge input array cases if the b elements are such small fractions, because of cummulative operations, the initial numbers of b_rev_cumprod might come out as zeros resulting in NaNs in those initial places.
+use groupby + [cumprod (hyper-link)]:
+apply(...,1,cumprod) applies the cumprod function to each row ("2" would apply it to columns).
+Try with cumprod
+You had the right idea with cumprod:
+We could do this in a concise way with rowCumprods after creating a matrix (assuming the vector is of even length)
+You can use na.omit to remove NA values in x before applying cumprod, e.g.,
+As an alternative to the accepted solution a much faster way ( > 5 times faster ) to get monthly returns is to combine the aggregate function with cumprod.
+Note that if you replaced cumsum with cumprod the output would be a vector 4 long, not 24, so we assume  you meant to replace it with prod.
+I had first suggested using .expanding() window but that's obviously not necessary with the .cumprod() and .cummax() built ins to calculate max drawdown up to any given point:
+Also, in my case, I was supposed to take the MDD of each strategy alone and thus wasn't required to apply the cumprod.
+Though actually, I'm still sorting out why this gives the same answer via prod() rather than cumprod().
+Alternately, there's myDT[, v := c(NA, first(value)*cumprod(xRatio[-1])), by=food], extending the OP's code, though I prefer just operating on full-length vectors with replace rather than trying to build vectors with c, since the latter can run into weird edge cases (like if there is only one row, will it do the right thing?
+Or using cumprod
+Another alternative with cumprod
+Seems like you want [cumprod (hyper-link)]
+an = a0 * f1 * f2 * ... * fn-1 * fn = a0 * cumprod(f)
+Otherwise, f1 would be NA and cumprod(f) would become NA as well.
+My understanding is that the function cumprod does a cumulative product for each row or column (depending of the selected axis).
+I'm saying this because I can see the function cumprod in your code.
+You don't want cumprod if you want to aggregate.
+cumprod will return an observation for every observation in the object passed to it.
+While we use cumprod, the order of the rows does not matter since we only choose the last element of cumprod.
+Therefore, in order to save computation, we should find the cumprod of the larger date then reuse it for smaller dates.
+This is done natually by reverse sorting on Date and apply cumprod on A+1, without any fancy algorithm.
+So you either need to use prod with rollapply.xts or cumprod with a split-apply-combine strategy, depending on what you actually want to do.
+IIUC after cumprod adding diff and min is the max-draw-down
+Incidentally, you probably want here cumsum, not cumprod.
+I think the cumprod function makes the calculation you would like:
+Now, we can apply the cumprod for each subset of data.
+Or if we are using cumprod (there were some errors in the OP's f.cumprod function).
+Also, I used directly the numpy product function, which is the same as taking the last cumprod element (pandas uses np.cumprod internally anyway).
+If you want the columns ordered as col1 - cumprod_col1... you can use [reindex_axis (hyper-link)] to sort the columns alphabetically, having added a suffix in this case with [add_suffix (hyper-link)]
+Compute the cumprod, then use [cytoolz (hyper-link)] and interleave the column headers:
+To understand how this works, try ?cumprod and ?shift.
+That said, it seems like they use something like Paul Panzer's cumprod method [under the hood (hyper-link)] so it should scale well.
+The issue is with how the NA values are getting used in the cumprod which can return NA for all values even if there is a single NA.
+In order to make sure that we are only applying the cumprod into non-NA elements, extract the non-NA elements with an index ('i1') -> x[i1], remove the first element, concatenate with 100, apply cumprod and then replace the NA vector with the 'val' based on 'i1'

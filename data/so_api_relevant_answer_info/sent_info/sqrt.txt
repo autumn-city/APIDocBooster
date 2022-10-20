@@ -1,0 +1,1031 @@
+sqrtss gives a correctly rounded result.
+rsqrtss gives an approximation to the reciprocal, accurate to about 11 bits.
+sqrtss is generating a far more accurate result, for when accuracy is required.
+rsqrtss exists for the cases when an approximation suffices, but speed is required.
+If you read Intel's documentation, you will also find an instruction sequence (reciprocal square-root approximation followed by a single Newton-Raphson step) that gives nearly full precision (~23 bits of accuracy, if I remember properly), and is still somewhat faster than sqrtss.
+edit: If speed is critical, and you're really calling this in a loop for many values, you should be using the vectorized versions of these instructions, rsqrtps or sqrtps, both of which process four floats per instruction.
+The difference might lie in how sqrt and rsqrt are computed.
+I'd suggest to start from reading about processor functions you are using, there are some info, especially about rsqrt (cpu is using internal lookup table with huge approximation, which makes it much simpler to get the result).
+It may seem, that rsqrt is so much faster than sqrt, that 1 additional mul operation (which isn't to costly) might not change the situation here.
+Once I was doing some micro optimalizations for my graphics library and I've used rsqrt for computing length of vectors.
+(instead of sqrt, I've multiplied my sum of squared by rsqrt of it, which is exactly what you've done in your tests), and it performed better.
+Computing rsqrt using simple lookup table might be easier, as for rsqrt, when x goes to infinity, 1/sqrt(x) goes to 0, so for small x's the function values doesn't change (a lot), whereas for sqrt - it goes to infinity, so it's that simple case ;).
+Also, clarification: I'm not sure where I've found it in books I've linked, but I'm pretty sure I've read that rsqrt is using some lookup table, and it should be used only, when the result doesn't need to be exact, although - I might be wrong as well, as it was some time ago :).
+In applications which don't require IEEE-754 compliance, the only reason to use div/sqrt is code readability.
+For x=sqrt(y), you can try to solve f(x) = 0 for x using f(x) = x^2 - y;
+Let's look at 1/sqrt(y) now.
+The rsqrt* instructions compute an approximation to the reciprocal square root, good to about 11-12 bits.
+Clearly x[n] approaches sqrt(n) and y[n] approaches 1/sqrt(n).
+The time complexity itself isn't different between the two loops (unless the complexity of sqrt itself is dependent on the number) but what is different is how many times you're computing the square root.
+Without optimisation like the compiler automatically moving loop invariant stuff outside of the loop (assuming that's even allowed in this case since the compiler would have to check a lot of things to ensure they can't affect the result or side effects of the sqrt call), the following code will calculate the square root about a thousand times (once per iteration):
+The first version forces the compiler to generate code that executes sqrt(number) every time the condition is tested (as many times as the for is looped).
+The second version only calculates the length once (single call to sqrt).
+The problem is that the whole expression i < sqrt(number) must be evaluated repeatedly in the original code, while sqrt is evaluated only once in the modified code.
+Well, the recent compilers are usually able to optimize the loop so the sqrt is evaluated only once before the loop, but do you want to rely on them?
+sqrt takes and returns a double.
+Use sqrtl that takes and returns a long double.
+sqrt will return INFINITY when the argument is INFINITY as well; e.g.
+factorCount' is constantly applying two extra arguments that never change (number, sqrt).
+Change: case (divisor(T,round(math:sqrt(T))) > 500) of
+To:     case (divisor(T,round(math:sqrt(T))) > 1000) of
+It's a way to get a very good approximation of 1/sqrt(n) without any branch, based on some bit-twiddling so not portable (notably between 32-bits and 64-bits platforms).
+Oh, and by the way, sqrt is faster :)
+Using (unsigned short) sqrt((float) i) took 3600ms.
+To do integer sqrt you can use this specialization of newtons method:
+Basically for any x the sqrt lies in the range (x ... N/x), so we just bisect that interval at every loop for the new guess.
+then create int[MAX_X] filled (on launch) with sqrt(x) (you don't need to use the function sqrt() for it).
+In many cases, even exact integer sqrt value is not needed, enough having good approximation of it.
+This equation generates smooth curve (n, sqrt(n)), its values are not very much different from real sqrt(n) and thus can be useful when approximate accuracy is enough.
+On my computer with gcc, with -ffast-math, converting a 32-bit integer to float and using sqrtf takes 1.2 s per 10^9 ops (without -ffast-math it takes 3.54 s).
+I found that refining the bisection using further if statements does improve accuracy, but it also slows things down to the point that sqrtf is faster, at least with -ffast-math.
+If you don't mind an approximation, how about this integer sqrt function I cobbled together.
+On my machine it's almost twice as fast as sqrt :)
+Note: This is exactly how GCC calculates (int) sqrt((float) num) with -Ofast.
+If you want higher accuracy for larger i, then we can calculate (int) sqrt((double) num) (as noted by Gumby The Green in the comments):
+The following solution computes the integer part, meaning floor(sqrt(x)) exactly, with no rounding errors.
+@orlp's isqrt gives insane results like isqrt(100) = 15
+using a fast inverse sqrt is very imprecise, you're better off using sqrtf
+for uint32_t this performs about 25x worse than using std::sqrt(float)
+for uint64_t this performs about 30x worse than using std::sqrt(double)
+Using sqrtf can provide incorrect rounding in the [228, 232) range.
+For example, sqrtf(0xffffffff) = 65536, when the square root is actually 65535.99999.
+For example, sqrt(0x3fff...) = 2147483648, when the square root is actually 2147483647.999999.
+Also note that sqrt_guess(0) = 1 which is actually necessary to avoid division by zero in the first iteration:
+The use of sqrt_guess makes a huge difference.
+Header file will provide the decalration to the sqrt() function.
+To use the sqrt function (or any function defined in math.h), you'll have to link the m library:
+The linker is missing the implementation of sqrt().
+The implementation of sqrt() is available in the math library or libm.
+If I do "man sqrt", I see the following.
+As the other answers say, you need to pass -lm in order to link to the library containing the sqrt symbol.
+The reason it works with a constant argument is because sqrt is allowed to be implemented as a builtin.
+GCC has an optimization where it replaces functions with builtin equivalents (such as sqrt) and constant arguments (such as 16.0) with the results of those calculations (such as 4.0).
+They are not equivalent: sqrt(N) will increase a lot more quickly than log2(N).
+There is no constant C so that you would have sqrt(N) < C.log(N) for all values of N greater than some minimum value.
+An easy way to grab this, is that log2(N) will be a value close to the number of (binary) digits of N, while sqrt(N) will be a number that has itself half the number of digits that N has.
+        log2(N) = 2log2(sqrt(N))
+of sqrt(N) to bring it down to the same order of complexity as log2(N).
+lim {n->inf} log n / sqrt(n) = (inf / inf)
+and thereby from above we can say log n = O(sqrt(n)),
+Also compare the growth of the functions below, log n is always upper bounded by sqrt(n) for all n > 0.
+for any k > 0 and base > 1 (k = 1/2 in case of sqrt).
+Now for sqrt(n) number of operation will be 2^9 and for log(n) it will be equal to 18 (we consider log with base 2 here).
+So, we can say that O(log n) is smaller than O(sqrt n).
+One way to approach the problem can be to compare the  rate of growth of O(sqrt(n))
+and O( log(n))
+Derivative of sqrt(n) is 1/2 (n ^ -1/2 )  ---- (1)
+To prove that sqrt(n) grows faster than lgn(base2) you can take the limit of the 2nd over the 1st and proves it approaches 0 as n approaches infinity.
+Since sqrt(n) and ln2 will increase infinitely as n increases, and 2 is a constant, this proves
+Is the value from the 'regular' version of double sqrt() experiencing a greater granularity of rounding than the long double?
+It could be that this 'granular' rounding happens to be hitting close to the correct value - closer than the long double sqrt.
+You have two issues here: First, 3L implicitly promotes to double not long double so even though you assign the return value to a long double it's still using the low precision version of sqrt.
+Secondly, only the double version of sqrt is imported into the global namespace because function overloading isn't supported in C, you have to use std::sqrt instead.
+long double s=std::sqrt(static_cast<long double>(3));
+The problem is that the language #lang pl 03 has a sqrt operator already.
+The name is therefore already used; and when you try to give another meaning you get the error "variant name is already bound in: sqrt".
+I think the simplest fix is to call your square root operator for Sqrt instead.
+But in terms of algorithms to compute the result, sqrt is specific to one thing whereas pow is generic.
+So you could (rightly) assume that it's possible to write a faster function for sqrt than it is to write the generic pow function.
+I remember reading somewhere that sqrt() is a special case that is guaranteed by the IEEE specification to be rounded correctly.
+Edit: According to the IEEE-754, both the pow() function and sqrt() are supposed to be implemented such that the rounded value is the closest possible floating point representation to the real value.
+However, sqrt() should still be faster.
+I ran a test for you to check the performance of sqrt(x) and pow(x,0.5)
+I don't know what sigma and theta mean, but sqrt is a constant time operation so it basically doesn't matter in big O notation, ie j+=sqrt(i); is the same as j+=i; is the same as j+=1;.
+Also (n-k) ~= n for k much less than n. This means as n gets large n-i is just n. So (n-i) * sqrt() = n * 1 = n. And you do this n times for the outer loop so n^2.
+In the constant case, the compiler is probably being smart and precomputing sqrt(2.0) (so the code that is compiled is essentially 'b = 1.414...;')
+No, you can’t just use i < sqrt(n).
+However, a basic floating-point error analysis shows that the error in computing sqrt(n) (before conversion to integer) is bounded by 3/4 of an ULP.
+a simple way to compute the ceiling sqrt
+Initializing with approximate float sqrt was not an option because integers are arbitrarily large and might overflow
+But here, you could seed the initial guess with floating point sqrt approximation, and my bet is that the exact solution will be found in very few loops.
+Truncate the continued fraction by removing the tail term (x-1)/2's at each recursion depth, one gets a sequence of approximations of sqrt(x)  as below:
+For example if the return value of sqrt() is 1.365, it will be stored as a simple 1.
+The compiler knows the prototype of sqrt, so it can - and will - produce the code to convert an int argument to double before calling the function.
+Let y be a number, x=sqrt(y) its square root, and say we have an approximation z to the square root with error eps = z - x.
+In other words, if you want the error of the square to be less than 1, then the error of the square root should be approximately less than 1 / sqrt(y).
+Calculate
+a = Sqrt(200000-1)=447.2124774645716 and use such piece of Sqrt(200000) that is larger than a.
+decimal digits required = ceil(-log10(sqrt(x+1)-sqrt(x)))
+To separate sqrt(x+1) and sqrt(x) and sqrt(x-1) at roughly the midpoints of the segments between them, the modification of the exact result sqrt(x) should be smaller than 1 /  (4*sqrt(x))
+Similarly, sqrt(a) == 2 * sqrt(a/4) == sqrt(4*a) / 2 which means you need only table entries for 1 < a < 4.
+pow(x, frac(y) is just pow(sqrt(x), 2 * frac(y)) and we have a decent 1/sqrt(x).
+But x^1/2 is just sqrt(x) and x^1/8 is (sqrt(sqrt(sqrt(x))).
+Saving one more operation, Newton-Raphson NR(x) gives us 1/sqrt(x) so we calculate 1.0/(NR(x)*NR((NR(NR(x))).
+We only invert the end result, don't use the sqrt function directly.
+Check my fixed point sqrt implementation using only integer operations.
+sqrt does not solve equations, only gives numerical output.
+You will need to formulate your equation as you need it, and then you can use sqrt(...) -1*sqrt(...) to give your positive and negative outputs.
+MATLAB (and every other programming language that I know of) only returns the [principal square root (hyper-link)] of x when calling sqrt(x) or equivalent.
+which can be computed more efficiently if you "factor out" the sqrt:
+You need to explicitely link with the math library as sqrt depends on it.
+If you don't look in there, you'll never be able to actually execute sqrt because the code simply isn't in your program.
+The Math.sqrt method defers to StrictMath.sqrt, which is done in hardware or native code.
+What do you expect something like sqrt 2 to compile to in Haskell?
+What about sqrt pi?
+Doing code-printing to replace Isabelle's sqrt with Haskell's sqrt is only going to give you a type error, since Haskell's sqrt works on floating point numbers, and not on Isabelle's exported real type.
+There is also a sqrt operation on natural numbers in Isabelle (i.e.
+In the AFP there also is an entry Sqrt_Babylonian, which contains algorithms to compute sqrt up to a given precision epsilon > 0, without any floating point rounding errors.
+If you use nested square-roots or combine different square-roots (like sqrt 2 + ... + sqrt 50), then the performance will degrade soonish.
+Hence a sqrt for double and sqrtf for float.
+In C++, the overloaded sqrt (defined in cmath, in namespace std) should be used.
+Here's [a page on MSDN documentation for sqrt() and sqrtf() (hyper-link)], that explains the difference:
+sqrt, sqrtf
+C++ allows overloading, so users can call overloads of
+  sqrt that take float or long double types.
+In a C program, sqrt always
+  takes and returns double.
+The sqrt function returns the square-root of x.
+If x
+  is negative, sqrt returns an indefinite, by default.
+So the difference in C++ is that sqrt() accepts either a double, a float or a long double while sqrtf() accepts only a float.
+C++ allows overloading, so there are actually three different versions of sqrt() taking floating point arguments of various sizes.
+On C, however, there would've been a conversion from float to double in the sqrt() call.
+sqrtf is a heritage of C.
+In C++ we have overloading, and the sqrt function has different overloads for the three floating-point types.
+In C, instead, there's no overloading, thus the various versions of the square root function must be distinguished with the name of the function; hence we have sqrt (that in C works only on doubles) and sqrtf for floats.
+In C++, the sqrt function is overloaded to take either a double, a
+float or a long double as argument.
+The function sqrtf is from C; in C, there is no overloading; sqrt is
+always sqrt(double), and sqrtf takes a float.
+I suspect that based on the type of argument, sqrt() is either expanded into an inline instruction or into a library call.
+C's sqrt() function (via math.h) does not return a complex type, but a double.
+If you want to use complex types, include [complex.h (hyper-link)] and use csqrt(), instead.
+This is happening because gcc can use builtin functions during the optimization process to compute certain functions including sqrt at compile time in many but not all cases.
+If that is the case it will not need to emit a call to sqrt and therefore will not need to link against libm.
+If I compile this code with gcc -S and look at the assembly emitted([live example (hyper-link)]) when we use sqrt(9.0) then gcc will use a builtin and not emit a call to sqrt at all since it will compute it at compile time.
+If we change the code to use sqrt(-9.0) it will now emit([live example (hyper-link)]):
+In the case of sqrt(-9) we have a domain error, if go to the C99 draft standard section 7.12.7.5 The sqrt functions paragraph 2 says (emphasis mine):
+The sqrt functions compute the nonnegative square root of x.
+Note the way you test the sqrt(.5) Since when val == 0.5 you get S = val * val which is 0.25.
+This resets min to 0.25  Since sqrt = (max + min) / 2; and the initial max is val (0.5) you can never get past 0.5.
+You will have to determine that since your initial val is less than 1, you want your initial max to be 1 so that your average is val < sqrt < 1
+It's an imaginary number, but sqrt doesn't support imaginary results, so the result is nan (not a number).
+The solution:  Don't pass negative arguments to sqrt.
+When we say a function's time complexity is O(sqrt(n)), we mean that the function belongs in a class of functions where the time required is proportional to the square root of the value of n, but only for very large values of n.
+You're very likely to gain more speed improvements by changing your algorithms than by changing their implementations: Try to call sqrt() less instead of making calls faster.
+(And if you think this isn't possible - the improvements for sqrt() you mention are just that: improvements of the algorithm used to calculate a square root.)
+Since it is used very often, it is likely that your standard library's implementation of sqrt() is nearly optimal for the general case.
+Note that, since that function uses 10% of your execution time, even if you manage to come up with an implementation that only takes 75% of the time of std::sqrt(), this still will only bring your execution time down by 2,5%.
+sacrifice accuracy for speed: the sqrt algorithm is iterative, re-implement with fewer iterations.
+caching: are you always sqrting the same limited set of values?
+On a related note, consider using simd/vectorised instructions for calculating square roots, like [_mm512_sqrt_ps (hyper-link)] or similar, if they suit your use case.
+How accurate do you need your sqrt to be?
+Long story short, SSE2's ssqrts is about 2x faster than FPU fsqrt, and an approximation + iteration is about 4x faster than that (8x overall).
+Also, if you're trying to take a single-precision sqrt, make sure that's actually what you're getting.
+I've heard of at least one compiler that would convert the float argument to a double, call double-precision sqrt, then convert back to float.
+Don't know if you fixed this, but I've read about it before, and it seems that the fastest thing to do is replace the sqrt function with an inline assembly version;
+It's about 4.7x faster than the standard sqrt call with the same precision.
+Runs about 5 times faster than the regular sqrt()
+Intel® 64 and IA-32 Architectures Software Developer's Manual, Volume 2B, Page 4-407, "SQRTSD—Compute Square Root of Scalar Double-Precision Floating-
+Point Value":
+VSQRTSD xmm1, xmm2, xmm3/m64
+For VSQRTSD we just define f(x, y) = √y, ignoring the first operand.
+(second expr) is the list (* 3 x) which is not a number, but the function sqrt demands a number for its argument.
+Since you say you want to do symbolic differentiation, you probably should return a list with the symbol sqrt in it, rather than calling the function.
+So the result is a negative number (1-8 = -7), and sqrt of that is NaN.
+If the argument is NaN or less than zero, then the result of Math.sqrt(argument) is NaN.
+is there a mechanism to keep the sqrt in symbolic form?
+Funny, y = 1//3 * x works, but not y = sqrt(3) * x as according to the orignal question.
+Basically calling std::sqrt(x) effectively calls ::sqrt(x) which happens to be the function you just defined!
+That is, you'd better not define ::sqrt in any shape or form.
+Here's an example for sqrt(2):
+for sqrt(3):
+You are checking if sqrt is larger than 4, but you are not modifying the value of sqrt inside the loop, so sqrt > 4 will forever remain true and the loop will keep on iterating forever.
+I've found that using math library's sqrt with the ** operator for the square is much faster on my machine than the one-liner NumPy solution.
+You can also experiment with numpy.sqrt and numpy.square though both were slower than the math alternatives on my machine.
+On some platforms, **0.5 is faster than math.sqrt.
+The first thing we need to remember is that we are using [Pythagoras (hyper-link)] to calculate the distance (dist = sqrt(x^2 + y^2 + z^2)) so we're making a lot of sqrt calls.
+If adding happens in the contiguous first dimension, things are faster, and it doesn't matter too much if you use sqrt-sum with axis=0, linalg.norm with axis=0, or
+sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+For example, it's likely that gcc emits a single fsqrt instruction for your sqrt() call, never calling your custom sqrt() at all.
+For example, -fno-builtin-sqrt would make gcc honour your non-standard sqrt().
+One can assume O(log n) < O(sqrt(n)) ([Order of common functions - wikipedia (hyper-link)])
+By the root-identities, it holds that sqrt(n) = n^(1/2).
+The same can be applied to n^(1/2 sqrt(n)), it becomes exp(log( n^(1/2 sqrt(n)) = exp(1/2*sqrt(n)*log(n)).
+That limit is 0 because const * n grows faster than sqrt(n)*log(n).
+Since n = sqrt(n) * sqrt(n), we can simplify it to:
+The problem was actually an array index which was under 1 in w, and there were multiple problems that somehow derived to that error when setting sqrt.
+Therefore, the numpy sqrt raises the exception when you call ws.
+As a result, it assumes that sqrt is a function which returns int:
+sqrt is defined in cmath header.
+If you look at the note attached to the table entries for the FSQRT instruction in the Cortex-A57 optimization guide, it says that the "FP divide and square root operations are performed using an iterative algorithm".
+Depending on the input the single-precision FSQRT can take between 7 and 17 cycles to complete whereas the double-precision variant can take between 7 and 32 cycles.
+He's not splitting the queries into buckets, but rather logically splitting the data into buckets of sqrt(k).
+If there are sqrt(n) buckets, then each bucket's size is sqrt(n).
+Let's say that q = sqrt(n).
+Since q = sqrt(n), then q*q^2 = sqrt(n) * n.
+How to prove the sqrt(Q) * k time complexity.
+The sqrt function has to trap for signed zero and NAN but if you avoid these with -Ofast both Clang and GCC produce simply sqrtpd.
+That said, it just so happens there is a builtin: __builtin_ia32_sqrtpd256, which doesn't require the intrinsics header.
+The scanf should go before the sqrt.
+If we were talking about math, it would be fine to say 'let b be the function sqrt(a), then find out what b(a) is'.
+Here is one of the most genius sqrt implementations which can be found on [wikipedia (hyper-link)].
+This is open to some improvement -- it uses x/2 as its initial guess at the sqrt(x).
+For anything since the 486 (or so) that has built-in floating point hardware, it's nearly certain that the FSQRT instruction will beat this (or pretty much anything else you can write).
+If our value we find the sqrt of is x and the start value is y then we iterate y->(y+x/y)/2
+You try to do  x div sqrt(x) where x is an Integer.
+The Sqrt function returns an Extended.
+You can store the returned value of Sqrt in an Extended variable.
+It's useful to store the result of an expensive calculation like Sqrt in a variable to avoid doing it twice.
+It can be done faster in one code line and without extra variables: Just compare the sqrt result with its truncated value.
+for x=64: sqrt(64)=8, trunc(sqrt(64))=8, => (sqrt(64) = trunc(sqrt(64))) = true;
+for x=65: sqrt(65)=8,062..., trunc(sqrt(65))=8, => (sqrt(65) = trunc(sqrt(65))) = false;
+But even the latter would have an error because the div operator wants two integers to work with, while the sqrt function returns a floating point number.
+This will compile, but it is still not guaranteed to provide the correct answer as the sqrt function will have round-off errors that may produce errors.
+Because if a number has factors other than itself and 1, then at least one of those factors will be less than the number's sqrt.
+Because you won't get any factors for non-primes which are > sqrt(n) (you would have already found the other, smaller factor).
+If N is a number that may or may not be prime, if there are no factors (not including 1) up to sqrt(N) then N must be prime.
+sqrt(N) itself may well be its only prime factor (eg 9 which is 3*3).
+If we are going to test to see if 17 is prime, we know that sqrt(17) is just above 4.
+A browser may not necessarily have any mapping defined for &radic; or &Sqrt;.
+If y = sqrt(x), it will be the same.
+If y > sqrt(x), then x/y < sqrt(x) by about the same amount.
+UPDATE: To speed up convergence on very large or very small numbers, changed sqrt() function to extract binary exponent and compute square root from number in [1, 4) range.
+if you need to find square root without using sqrt(),use root=pow(x,0.5).
+Here is a very awesome code to find sqrt and even faster than original sqrt function.
+These are the three possible functions for sqrt.
+Regarding question 1, suppose x < y but sqrt(x) > sqrt(y).
+Since square root is monotonic, then either sqrt(x) must be closer to the mathematical square root of y than sqrt(y) is or sqrt(y) must be closer to the mathematical square root of x than sqrt(x) is.
+Disordered sqrt results would violate those rounding rules too.
+Question 3 holds with identical reasoning (applied twice: op is weakly monotonic, and sqrt is weakly monotonic) subject to the proviso that a and b are non-negative (or are so small in magnitude that x [or y] zero even though a [or b] is negative, due to rounding during the conversion).
+Otherwise, you could have a < b, but sqrt(x) <= sqrt(y) does not hold because x is a NaN, which is not less than or equal to anything.
+The type of sqrt is:
+So, sqrt needs a type which has a Floating constraint.
+Check the [msdn document (hyper-link)].Entity sql doesn't support the sqrt function.
+LINQ to Entities does not recognize the method 'Double Sqrt(Double)' method, and this method cannot be translated into a store expression.
+So after banging my head against this for a while (after all, Math.Pow(double) is supported, and SQRT is available in SQL), I realised that the square root of a value is the same as its power of a half.
+The generated SQL uses POWER instead of SQRT:
+It is likely that the default algorithm of generating starting values in glm.nb gives negative prediction somewhere, and the sqrt link cannot tolerate that (unlike the log).
+The problem is that you're replacing the built-in sqrt() function when you do:
+Now the name sqrt refers to your button, not the function.
+If you look at the output of the compiler in the case where you used sqrt(10.2), I'll bet you see that a call to sqrt() isn't actually made.
+However, the returning type of sqrt+ is a list of numbers.
+However, the returning type of sqrt+ is a list of numbers.
+Similarly, the type of (eval s) is supposed to be a number, but sqrt+ consumes a list of numbers.
+Lastly, I also believe that your implementation of sqrt+ is also wrong.
+In particular, it doesn't make sense to write [else (sqrt ns (* (sqrt ns) -1))] because sqrt consumes a number...
+In VS, this option seems to be unavailable to be selected as a toggle but you can add it in the project properties -> CUDA C/C++ -> Command Line -> Additional Options as -prec-sqrt false.
+For each value you need to check the distance with the sqrt and keep if if better (for 4 values, use a bound of 4 and not 5 in the loop) :
+As to why the error don't happen if using sqrt(42) it is because gcc might constant-fold and inline it.
+I would move the 'sqrt' detection into another method for function detection.
+If you successfully read a string, pass that to a function name parser that uses string compares to generate a token that represents a call to sqrt or sin or whatever function you like.
+I thought a map of strings to function pointers might be a concise way to represent things like sqrt, sin, cos, etc.
+(Most of code below is written originally by Stroustrup, there's only my vision of effective sqrt() calculating)
+First, it's required to assign a symbolic constant, that'll indicate there's a sqrt() call.
+In general, this block of code is responsible for defining variables, but we created the sqrt "keyword" by entering a sequence of characters s,q,r,t.
+If there's that keyword, we return a token that represents a sqrt.
+While calculating, expression() will encounter ( character and it'll be possible to enter any sequences as an argument of  user's sqrt() function and  get a reasonable answer.
+So in your case what happens is that you implicitly declare sqrt with the default return type int, so the return value you get from sqrt is (falsely) interpreted as an int and that int is then converted to double when you store it in wurzelZwei.
+Here are my observation, firstly you need to include the header math.h as sqrt() function declared in math.h header file.
+secondly, if you read manual page of [sqrt (hyper-link)] you will notice this line Link with -lm.
+But application still says undefined reference to sqrt.
+Compiler error is correct as you haven't linked your program with library lm & linker is unable to find reference of sqrt(), you need to link it explicitly.
+You asked Wolfram Alpha if sqrt(d) - (r1+r2) < y is equivalent to d - (r1+r2)^2 < y and Alpha said “no”.
+Sure, see std::sqrt in header [<cmath> (hyper-link)].
+In C++  sqrt() accepts either a double, a float or a long double while sqrtf() accepts only a float.
+C++ allows overloading, so there are actually three different versions of sqrt() taking floating point arguments of various sizes.
+In C++, the overloaded sqrt (defined in cmath, in namespace std) should be used.
+To get decent performance, gcc inlines the square root calculation by calling the hardware instruction (sqrtsd), but to set errno, it seperately checks the sign of the argument, and calls to the library function only in case the argument was negative, so the library function can set errno.
+Neither seems to realize that any result of sqrt will be non-negative or NaN, and thus floor(sqrt) = trunc(sqrt)
+GCC's back-end doesn't optimize away floor (with either front-end language), -msse4 just makes it cheap enough for the throughput bottleneck of sqrtsd to hide its cost in your C benchmark.
+Since compilers don't realize that and/or don't take advantage of the fact that a sqrt result is non-negative (or NaN), we can remove it ourselves:
+(Your throughput benchmark will bottleneck [on the back-end throughput (hyper-link)] of sqrtsd, e.g.
+Note: use abs(), sometimes at the time of evaluation sqrt() can take negative values which leave to domain error.
+First look for the index of Sqrt[ and then look for the matching closing bracket.
+The first initialization float b = sqrt(1234) works because the language "upcasts" the integer literal 1234 to double before calling sqrt, and then converting the result to float.
+The second initialization int b = sqrt(1234.22) works for the same reason, except this time the compiler does not have to upcast 1234.22 literal before the call, because it is already of type double.
+In the case of sqrt() you would typically #include <math.h>.
+The other way is to declare the function explicitly in your source code: double sqrt (double);.
+Your  int argument will be blindly passed as an int using some implementation-specific method, while the sqrt() function will retrieve its parameter as a double using some other implementation-specific method.
+so you need to repeat that, see if you are calling math functions, if so what are they feeding sqrt, did they actually link in the right stuff, then I would simply print the result in hex.
+In Rakudo, sqrt is implemented using the sqrt_n NQP opcode.
+Internally, I'm pretty sure this just maps to the sqrt functionality of one of the underlying math libraries that MoarVM uses.
+I guess what we need is an ecosystem module that would export a sqrt function based on Rational arithmetic.
+That would give you the option to use higher precision sqrt implementations at the expense of performance.
+As stated on Elizabeth's answer, sqrt returns a Num type, thus it has limited precision.
+If want to implement your own sqrt using newton's method, this the basic idea behind it:
+The error 'get: undefined name sqrtx is returned by your get_value method
+In the Token::get method:
+after the loop while(cin.get(ch) && (isalpha(ch) || isdigit(ch))) s+=ch;...sqrt x)
+s would be equal to "sqrt" but for "sqrtx" , s would be equal to "sqrtx" so it does not match with sqrt and returns a Token(name,s) instead of Token(square_root)
+Therefore, you could take that algorithm, and replace b with the constant 0.5, and now you have a sqrt() that is at least as fast as that pow().
+Please note that that pow() function is an approximation and has (relatively) large error, and therefore is not nearly as accurate as say, most library sqrt functions.
+If you relax your implementation of sqrt to the same limits of approximation, you could indeed make it at least as fast.
+With regard to C standard library sqrt and pow, the answer is no.
+First, if pow(x, .5f) were faster than an implementation of sqrt(x), the engineer assigned to maintain sqrt would replace the implementation with pow(x, .5f).
+Second, implementations of sqrt in commercial libraries are typically optimized specifically to perform that task, often by people who are knowledgeable about writing high-performance software and who write in or near assembly language to get the best performance available from the processor.
+Third, many processors have instructions to perform sqrt or to assist in calculating it.
+The code you linked/question you asked is about attempting a crude approximation of sqrt using a crudely approximated pow.
+I also measured the run-time of the system (Mac OS X 10.8) pow and sqrt and of [the sqrt approximation here (hyper-link)] (with one iteration and multiplying by the argument at the end to get the square root, rather than its inverse).
+The sqrt approximation returns 1.73054.
+The correct value, returned by the system pow and sqrt, is 1.73205.
+Running in 64-bit mode on a MacPro4,1, the pow approximation takes about 6 cycles, the system pow takes 29 cycles, the square root approximation takes 10 cycles, and the system sqrt takes 29 cycles.
+~9X performance for sqrt();
+Sqrt() elapsed time was 2002.000000 milliseconds
+[std::sqrt is defined (hyper-link)] to return implementation defined error on a domain error.
+Because you're calling the function double sqrt(double), and the double return value can only store real numbers, infinity (with sign), or NaN.
+From [this sqrt reference page (hyper-link)]:
+So you simply can't use pow(sqrt(x), y) for any real x that is negative.
+Note that [std::sqrt(std::complex) (hyper-link)] is used here.
+The reason behind the behaviour you encountered is the signatures of [sqrt (hyper-link)], namely:
+double sqrt (double x);
+float sqrt (float x);
+long double sqrt (long double x);
+double sqrt (T x);           // additional overloads for integral types
+So, sqrt(-1) will be replaced by a nan probably, which can not be treated by pow(), so that -1 remains intact, because of the exponent.
+As a result the information is already lost after the call to sqrt() and pow() can do nothing about it.
+The problem is because [Math.sqrt(double a) (hyper-link)] returns a double and you are trying to set the result to be an Integer.
+Always make sure when you are doing divisions or sqrt where float values are possible to either use double/float or manually cast.
+You are right, O(log(sqrt(n))) is the same as O(log(n)) by the reasoning given in your question.
+Although the difference between log n and log sqrt(n) is in insignificant, log n will always take double the amount of time log sqrt(n) takes
+For the same reason, O(Log(Sqrt(N))) is O(1/2.Log(N)) is O(Log(N)), and that in any base.
+Since it's in a BEGIN block, there is no current line, so $root is the empty string -- which again is treated as 0 when passed to sqrt().
+A natural name for this generator is "sqrt(n)",
+which is what Sage uses.
+The problem with sqrtL2 is x is not in scope outside the list comprehension.
+sqrtL3 is fine except you don't have a fromIntegral anywhere and sqrt is Floating a => a -> a so it doesn't work with Integer.
+I realized sorting by the un-sqrt-ed values was the same so I skipped it altogether.
+I looked in System.pas (where SQRT is located) and while there are a number of blocks marked as licensed from the Fastcode project, SQRT is not.
+In fact, it just makes an assembly call to FSQRT, so it most likely hasn't changed.
+To see this, you can note that the sqrt is not the problem, rather it is the fact that the coefficient is irrational.
+For large enough n, the last equation is pretty close to 1 / (2 * sqrt(n)).
+So you only have to call sqrt once.
+(thanks @Ulysse BN)
+You can optimize loop by simply saving previous sqrt(n) value.
+Required Inverse (reciprocal) Square Root function rsqrt
+You can also see accuracy compared with two-sqrt version in single graph: [https://www.google.com/search?q=(sqrt(x)-sqrt(x-1))-(0.5%2Fsqrt(x-0.5)) (hyper-link)]
+For more info about implementation, see [https://en.wikipedia.org/wiki/Fast_inverse_square_root (hyper-link)] and [http://www.lomont.org/Math/Papers/2003/InvSqrt.pdf (hyper-link)] .
+Not always solution: 0.5 / sqrt(n-0.5)
+[ARM Cortex A9 (hyper-link)], [Intel Core2 (hyper-link)]) 
+division takes nearly same time as hardware square root, 
+so it's best to use original function with 2 square roots sqrt(n) - sqrt(n-1) OR
+reciprocal square root with multiply instead 0.5 * rsqrt(n-0.5) if exist.
+You'll always invoke double sqrt(double) this way, but that's probably ok, given your description.
+No, sqrt generally does not take floats.
+In your case, you have several overloaded sqrt functions, one takes float, one takes double, and one takes long double.
+There are several solutions, but first, there is a problem with your
+code: where does the function sqrt come from.
+If the user includes
+<sqrt.h>, then you should get only the double version, and no
+ambiguities.
+If the user includes <csqrt>, then in pre C++11, the
+code shouldn't find any sqrt; in practice, no compiler implemented
+this correctly, and what you get depends on the implementation.
+The safest solution is to declare a special namespace of your own,
+include <csqrt>, define the sqrt you need in it, using std::sqrt
+in their implementation, and call the sqrt in your namespace:
+And you have a way
+for clients to define new numeric types which might be usable: they just
+have to define their sqrt in the same namespace, probably forwarding
+to an implementation in the same namespace as the type.
+This is actually a fairly nice solution, except that it could screw up
+client code not expecting to find std::sqrt( float ) in the global
+namespace.
+The problem is caused by ambigues input of the function call of sqrt.
+The sqrt function has  different input parameter (overloaded function) either float or double.
+I had to struggle .. whatever I tried was failing - very different error messages, some looking crazy, like illegal conversion from complex sqrt, but I used only float types; converting mpreal to long double throwing away precision.
+If y = sqrt(x) then dy/dx = 1/(2 * sqrt(x)).
+So if x=0 or, for your purposes, if squared_euclidean_distances=0 then the gradient will be NaN because 2 * sqrt(0) = 0 and dividing by zero is undefined.
+math.sqrt() is a different beast altogether since there's no bytecode for it and it involves a function call.
+math.sqrt(x) is actually a little bit faster than x ** 0.5, presumably because it's a special case of the latter and can therefore be done more efficiently, in spite of the overheads:
+If you don't explicitly [give an initializer function (hyper-link)] to embedding_columns, tensorflow will use the default initializer, which is a normal with 0 mean and 1/sqrt(vocab_size) standard deviation as the code below:
+sqrt(-1) is not representable as double (which models real numbers).
+The result of sqrt(-1) is NaN (not a number), not the complex number i you expect.
+To make Armadillo work with complex numbers, use cx_mat instead of mat everywhere, and instead of sqrt(-1), use std::complex<double>(0, 1) or, if you can rely on C++14, using namespace std::literals; and 1i.
+You have in your while loop in your sqrt() function a compareTo(100) which (I suspect) is always returning 1 ie the absolute value of number minus the guess squared is always greater than 100.
+Your assumption that sqrt(N)*sqrt(N) = N is fallacious, because you're only computing the integral part, so there will be an error proportional to N.
+sqrt: function seems to be available on OS X since v10.5, but not on iOS.
+Unfortunately sqrt: is not supported for this kind of use.
+If you aren't looking for an exact result, and don't mind the additional logic required to make it work, you can use specialized operations such as RSQRTSS, RSQRTPS, which calculate 1/sqrt, to combine the two expensive operations.
+With typical libraries on common modern hardware, sqrt is faster than atan2.
+Recent x86 implementations actually have a fairly efficient sqrt instruction, and on that hardware the difference can be quite dramatic.
+Indeed, sqrt is better than atan2, and 1/sqrt is better than sqrt.
+Likewise, the type of round (sqrt 2) is going to be Integral b => b and is going to require the sqrt 2 type to be RealFrac a => a.
+Since sqrt(n) = 2^(log_2(n)/2).
+The sqrt(n) upper bound approximation is O(1).
+Whole algorithm is O(sqrt(n)) (I think).
+and so it provides an upper bound (similarly for start_val < sqrt(number)).
+for the next prime number candidate with the previous estimation for the square root of sqrt_appr and get upper bounds with an error of about 10E-6.
+(Although every time I checked how close the approximation was, which was for intervals of 3 million numbers, I set sqrt_appr=sqrt(number)+1 to reset the process.)
+You should use SSE / SSE2 for sqrt in modern code, not x87.
+If you want to check if an integer is a perfect square, you can use float sqrt and then do a trial multiplication of the integer result.
+If you want int a = sqrt((int)b), then write that in your code and let the compiler generate those three instructions for you.
+I guess sqrt() has to set errno on some kinds of errors.
+You just can't call a function sqrt, since that's reserved.
+Your function is getting called, but your implementation is also including a header file that says that sqrt cannot throw.
+You can also see the problem if you change your function to double sqrt(double const& x) {.
+Using the masters theorem you get: a=sqrt(2), b = 2 and therefore c = logb(a) = 1/2.
+So your complexity is O(sqrt(n))
+sqrt :: (Floating a) => a -> a expects a Floating, and Floating inherit from Fractional, which inherits from Num, so you can safely pass to sqrt the result of fromIntegral
+If T (n) = T (n - 1) + sqrt (n), then T (n - 1) = T (n - 2) + sqrt (n - 1), therefore
+T (n) = T (n - 2) + sqrt (n - 1) + sqrt (n)
+T (n) = T (n - 3) + sqrt (n - 2) + sqrt (n - 1) + sqrt (n)
+T (n) = T (n - 4) + sqrt (n - 3) + sqrt (n - 2) + sqrt (n - 1) + sqrt (n)
+The sum of the square roots from 1 to n is about the same as the integral of sqrt (x) from 1 to n.
+You should use sympy.sqrt() instead of numpy.sqrt().
+I doesn't look like the same formula as in the A = sum(B*C)/sum(B) you're using C column which is not existent in your first formula D = (sum_B / double(E))*std::sqrt(E)
+As for your primary question "sqrt" is simply an acronym of "square root".
+The definition of standard std::sqrt is available under [cppreference.com (hyper-link)].
+std::sqrt(arg) - computes the square root of arg
+If you #include <cmath> then std::sqrt becomes available for use.
+Don't rely on it being implicitly included and equally, don't rely on sqrt being available, in case someone else has defined sqrt for whatever reason.
+"The problem" might be that you have hardware that implements sqrt() now, making it faster than a software approach.
+[See this answer (hyper-link)] for details about the number of cycles for the x86 fsqrt instruction, for instance.
+Contrary to [this (hyper-link)] question, sqrt or inverse sqrt may have been optimized in CPU level.
+If you really want to demonstrate 'slow' vs 'fast' you need to actually know what both algorithms do, since there's no special reason to think sqrt() is slow.
+Write your own slow_sqrt function.
+(hint: it is using a sqrt-cpu-instruction)
+sqrt(); function Behind the scenes.
+Example: sqrt(16)=4;
+         sqrt(4)=2;
+Now if you give any input inside 16 or 4 like sqrt(10)==?
+It repeats this step again and again until it gets the perfect answer i.e sqrt(10)==3.16227766017 .It lies b/w 2 and 4.All this in-built function are created using calculus,differentiation and Integration.
+fsqrt(x) will denote the floating point approximation of exact square root.
+let f x = fsqrt(f(n)) and f y = f(p) / f(q).
+Thus if x < y then problem is solved sqrt(n) < p/q.
+And if x > y then problem is solved too sqrt(n) > p/q.
+There may be slight differences in the numeric representation of the hardware on the two computers or in the algorithm used for the sqrt function of the two compilers.
+An example where IEEE 754 accuracy is not guaranteed is with the OpenCL native_sqrt function.
+OpenCL defines native_sqrt (in addition to IEEE 754 compliant sqrt) so that speed can be traded for accuracy if desired.
+Bugs in IEEE 754 sqrt implementations are not too common today.
+A difficult case for an IEEE 754 sqrt function is when the rounding mode is set to nearest and the actual result is very near the midway point between two floating point representations.
+A method for generating these difficult square root arguments can be found in a paper by William Kahan, [How to Test Whether SQRT is Rounded Correctly (hyper-link)].
+Integer currentValue = Math.sqrt(index);
+The problem comes from the fact that when you use mod, the type of the numbers must be Integral a => a, and when you use sqrt the type of the numbers must be Floating a => a.
+Your other two examples typecheck because they only use one of mod or sqrt.
+You can get the combination of the two to work using fromIntegral before applying sqrt:
+The sqrt() does not work in place in general.
+So you have to replace the line np.sqrt(a[[True, False], :], out=a[[True, False], :]) with a = np.sqrt(a[[True, False], :], out=a[[True, False], :]) to get the result of the sqrt function in array a.
+The limit as n -> inf of log n / 2^sqrt(log n) has to be != inf in order for that to be true.
+lg(x) < sqrt(x) for large x.
+Therefore, lg(log n) < sqrt(log n) for large n (substituting log n for x).
+Raising 2 to the power of both sides yield the result: log n < 2^sqrt(log n) for large n.
+Let m=lg(n), we need to show m=O(2^sqrt(m)).
+Again let N=sqrt(m), now it boils down to showing N^2=O(2^N).
+You need to use the sqrt function from the math module.
+sqrt works with both int and float.
+UnboundLocalError refers to somewhere later in your function, you had defined variable in your function named sqrt.
+You have to choose a different name for either the sqrt you imported from math by doing so:
+Or change the other variable inside your function named sqrt (you did not show us that, so I can be sure where that is).
+Another possibility is that in your actual code, answer variable doesn’t exist, instead you named it sqrt.
+See [(Sqrt in) Binary numeral system (base 2) (hyper-link)].
+I first saw this in Knuth's Seminumerical Algorithms book, and used it to code sqrts on 16 bit minicomputers back in the early 1970s with the same speed as divides.
+Try n = ::sqrt(n) (or n = std::sqrt(n) if you #include <cmath>) instead of n = sqrt(n), as that will just call your own function that you are defining, since your function will mask global scope.
+n = sqrt(n) makes your function recursive, and not compile.
+The line x = sqrt(3.0); is calling your RDN::sqrt() method which returns a string.
+I think you're trying to call the sqrt() function in cmath.
+Alternatively, you might be able to call std::sqrt(3.0)
+This would be far better written with xrange(2, int(sqrt(n))+1)
+The function is infact checking for sqrt(n).
+Because islice(count(2), sqrt(n)-1) means count sqrt(n)-1 numbers starting from 2.
+Using int(sqrt(n)) here, would mean we are checking an additional number - no harm but unnecessary.
+Using int(sqrt(n) - 1) means we do only the comparisons that are necessary.
+Which means, if for any number between 2 and sqrt(n), remainder of integer division is 0, the all() will return false.
+If for 2 to sqrt(n), the remainder of integer division is never 0, then the number is prime - all() will return true as there are no zeroes in the iterations.
+How it works is sqrt :: Float -> Float (or Double -> Double, but really
+also, the conflicting type error is due to the fact that the sqrt function prototype is
+This overwrites the math module's sqrt function with a Rectangle object.
+Here's a version without sqrt, though I'm not sure whether it is faster than a version which has only one sqrt (it may depend on the distribution of values).
+Here's the math (how to remove both sqrts):
+The key thing to notice here is that if a2>=a1+1000, then is_smaller always returns true (because the maximum value of sqrt(b1) is 1000).
+There is also newton method for calculating integer sqrts as [described here (hyper-link)]
+Another approach would be to not calculate square root, but searching for floor(sqrt(n)) via binary search ... there are "only" 1000 full square numbers less than 10^6.
+One method to make 
+the sqrt a bit faster is to add the -fno-math-errno option to gcc or clang.
+More performance improvement is possible by using the vectorized 
+sqrt instruction sqrtpd, instead of the scalar sqrt instruction sqrtsd.
+Peter Cordes [has shown (hyper-link)] that clang is able to auto vectorize this code,
+such that it generates this sqrtpd.
+So its trying to call double.sqrt(double), which does not exist.
+So, you pass a negative value to sqrt, which expects positive values.
+In reality one can calculate the square root of a negative number as well if the domain of the result is the set of Complex numbers, but, unfortunately sqrt is not applicable for that purpose.
+The domain error results from passing an illegal argument to sqrt.
+The sqrt function takes a non-negative argument and returns the non-negative square root.
+It is a good idea to check the argument of the square root, the discriminant, before calling sqrt unless you can be absolutely sure that the argument is valid.
+If you need to use it you can use std::sqrt or using std::sqrt;.
+You need to iterate the cycle not for i := 1 to x-1 but for i := 2 to trunc(sqrt(x)).
+You don't need to include cmath because your code has a prototype for sqrt in it already, the very first line.
+Header files hold only declarations (signatures), and you've included one in the first line (prototype: double sqrt(double)).
+In case of sqrtfoo it cannot find anything, whereas in case of sqrt it finds it in some standard library (I do not know the details here).
+"m" refers to "libm", which is the math library containing sqrt.
+Considering the std::sqrt reference,
+You're looking the wrong std::sqrt page: it's the page of the non-template version.
+If you use std::sqrt<double> and std::sqrt<float> functions, you're using the template version of std::sqtr, that is referenced in [this page (hyper-link)].
+As you can see, std::sqrt<T>
+works because the lambda call (std::sqrt(x), where x is a float) the not template function.
+works because std::sqrt<double> is the template version of std::sqrt that receive a Complex const & (std::complex<double> const &) and return a Complex const &
+To make it works, you have to use the non-template version of std::sqrt (so no <float> and no <double>) and cast the right pointer type (to select the right version of the std::sqrt non-template but overloaded version).
+is different; you have to remove the template part (<float>), given that std::sqrtf isn't a template function.
+So should works (std::sqrtf isn't overloaded, so no cast should be required, given there isn't ambiguity)
+As far I understand it's because cmath doesn't put sqrtf inside the std namespace (and seems to me that g++ and clang++ are not conforming).
+The floating-point overloads of std::sqrt() and std::sqrtf() are not templates, so these forms are invalid syntax:
+Would be okay, except that std::sqrt() is overloaded, so the name can't decay to a single pointer like it would if it wasn't overloaded.
+Is because the std::complex version of std::sqrt() is a template, where the template parameter is the underlying type of the complex object.
+First, you're calculating sqrt(n) on every loop iteration.
+Second, the way you're using sqrt doesn't reduce the number of numbers it checks, because you don't exit the loop even when i is bigger than sqrt(n).
+If you input 2,2<=sqrt(2) is false.
+(Maybe this applies to only rsqrt here but it is an expensive calculation (it also includes multiple multiplications) so it probably applies to other calculations too)
+Also sqrt(x) is faster than x*rsqrt(x) with two iterations, and x*rsqrt(x) with one iteration is too inaccurate for distance calculation.
+So the statements that I have seen on some boards that x*rsqrt(x) is faster than sqrt(x) is wrong.
+So it is not logical and does not worth the precision loss to use rsqrt instead of sqrt unless you directly need 1/x^(1/2).
+The type of sqrt is sqrt :: Floating a => a -> a and you have to do proper type conversion using fromIntegral to make it typecheck.
+For induction case, you want to show that T(n) is O(sqrt(n)) given that T(n/2) is O(sqrt(n/2)).
+observe that for c > 4,  c / sqrt(2) + 1 < c, so
+Therefore, T(n) is O(sqrt(n))
+The second is to note that the line f(c) = c/sqrt(2) + 1 intersects with the line f(c) = c at about c = sqrt(2) / (sqrt(2)-1) = 3.4143 (or so), so all you have to do is force c to be > this value in order to get (c/sqrt(2) + 1) < c.  4 certainly works, so that's where the 4 comes from.
+Since 1/(1-sqrt(1/2)) is a finite constant (it's about 3.4), T(n) must be O(sqrt(n)).
+Three of the things you see in the autocomplete popup are sqrt function overloads -- they use the same function name, but different parameter types.
+This way you can remember sqrt means "square root" and use that name regardless of whether you're working with Float, Double, or CGFloat numbers.
+The other two, appearing as sqrt(Double) and sqrtf(Float) in the autocomplete popup, are imported C API (and probably the underlying implementation of the other three sqrt functions).
+std::sqrt is not defined as constexpr, according to section 26.8 of N3291: the C++11 FDIS (and I doubt they added it to the final standard after that).
+If we look at the closest draft standard to C++11 [N3337 (hyper-link)] we can see that sqrt is not marked constexpr, from section 26.8 c.math:
+none of the changes include adding constexpr to sqrt.
+Explanation: sqrt(x + a) - sqrt(x) is equal to (sqrt(x + a) - sqrt(x)) * (sqrt(x + a) + sqrt(x)) / (sqrt(x + a) + sqrt(x)).
+Now multiply the first two terms to get sqrt(x+a)^2 - sqrt(x)^2, which simplifies to a.
+For example, if x = 1 and a is small, we know from a Taylor expansion around 1 that sqrt(1 + a) should be 1 + a/2 - a^2/8 + O(a^3), so sqrt(1 + a) - sqrt(1) should be close to a/2 - a^2/8.
+As you've identified, the problem is that your template expects a type (because that's how you've written it), and though std::plus is a type (a functor), std::sqrt is a function.
+A simple workaround could be to wrap sqrt and exp into functors with a templated operator():
+std::sqrt is an overloaded function, not a type.
+A simple fix would be to write a generic lambda that wraps std::sqrt, and then use its type when calling foo, like this:
+from properties of logarithm, we know that log( sqrt( (8*16) )  = (log(8) + log(16))/2 = (3+4)/2 = 3.5
+Now, sqrt(8*16) = 11.3137 and log2(11.3137) = 3.5.
+You have commas inside your SQRT function, causing your operand to have multiple columns.
+It complains that you specified Integral a but it needs Floating a for sqrt.
+Distance = sqrt(pow((x2-x1),2)+pow((y2-y1),2));
+Distance = sqrt(pow((x2-x1),2)+pow((y2-y1),2));
+printf("The distance between (X2,X1) and (Y2,Y1) is %f", Distance);
+As a side note, we start with a state |+>|+>(a|0> + b|1>), which is 0.5 (a,b,a,b,a,b,a,b) in vector form (both |+> states contribute a 1/sqrt(2) to the coefficients).
+The state of the third qubit after measuring |00> on the first qubit will be: (3+i)a |0> - (3i+1)b |1>, multiplied by some normalization coefficient c.
+c = 1/sqrt(|3+i|^2 + |3i+1|^2) = 1/sqrt(10)).
+Now we need to check whether the state we got, |S_actual> = 1/sqrt(10) ((3+i)a |0> - (3i+1)b |1>)
+is the same state as we'd expect to get from applying the V gate, 
+|S_expected> = 1/sqrt(5) ((1+2i)a |0> + (1-2i)b |1>).
+This translates into the following equations for p and amplitudes of |0> and |1>: (3+i)/sqrt(2) = p (1+2i) and -(3i+1)/sqrt(2) = p (1-2i).
+We solve both equations to get p = (1-i)/sqrt(2) which has indeed the absolute value 1.
+In your example, f(n) = sqrt(n), c1 = c2 = 1, a = 3, b = 2.
+That said, there are numerical methods to calculate square root, but I am not sure that they would in practice be faster than the sqrt call, no matter how slow.
+pre-compute sqrt(16*16+9*9)/16:
+This line of code returns sqrt of the numbers in your matrix if it is positive or zero, otherwise returns negative of negative sqrt.
+Ignoring the other problems, it will still be the case that sqrt() is a bit slower than sqrtsd, unless compiled with specific flags.
+sqrt() has to potentially set errno, it has to check whether it's in that case.
+Replacing sqrt with std::sqrt what you get is:
+Now it uses a different sqrt overload for integers (i_2 is int and sum_6 is double).
+Under Windows (MinGW) this is different since [sqrt(double) calls into msvcrt (hyper-link)].
+To my knowledge there's currently no way to specify sqrt as scale for the axis that would trigger a visual change to the axis labels like the case is for fig.update_xaxes(type="log"):
+tickvals=ysqrt this sets the values at which ticks on this axis appear to the square root of ybase
+math.sqrt(x) returns a float.
+Here you need to make your math.sqrt to int, if its not made to int you would always receive an error
+So, there might be some form of conflict between the standard C sqrt() function (which lives in the global namespace) and your glm::sqrt(), which is "promoted" to a global sqrt.
+Use the sqrtss intrinsic __builtin_ia32_sqrtss?
+The result of sqrtss is only one Heron iteration away from the target.
+I'm having trouble in solving this one: T(n) = 4*T(sqrt(n)) + n
+You need to write a sensible sqrt function.
+Also, don't call the sqrt function each time in the loop.
+What is happening is that <cmath> contains 3 different [definitions of sqrt (hyper-link)] and the compiler doesn't know which one you are trying to use.
+but fast inverse square root still slower that 1/sqrt().
+The sqrt() function you are using from the library was itself (likely) also optimized, as it has pre-computed values in a sort of LUT (which act as initial guesses for further approximations); using such a more "general function" (meaning that it covers more of the domain and tries to efficientize it by precomputation, for example; or eliminating redundant computation, but that is limited; or maximizing data reuse at run-time) has its complexity limitations, because the more choices between which precomputation to use for an interval, the more decision overhead there is; so knowing at compile-time that all your inputs to sqrt are in the interval [0, 1] would help reduce the run-time decision overhead, as you would know ahead of time which specialized approximation function to use (or you could generate specialized functions for each interval of interest, at compile-time -> see meta-programming for this).
+You have a button called sqrt on your form.
+Hence, when you write sqrt in code, it refers to the button, not to the RTL function.
+Solution: Write System.Sqrt instead of Sqrt (=Self.Sqrt, the button), or rename the button.
+Your professor is right that sqrt(num) will work - num will be promoted to double automatically - C has rules for type changes in function calls, etc.
+To answer your actual question: sqrt() does not have an overload for int, but it has overloads for both double and float, and so the compiler cannot guess which one to use.
+Indeed, in C there is only one sqrt, defined as
+The problem is that the sqrt function does not take an integer as a argument.
+sqrt((double)n) or sqrt((float)n) to fix it.
+If you included #include <math.h>, you can fix the error of: for (int i = 2; i <= sqrt(num); i++) by changing the sqrt(num) to a simple declared variable (like n, x, i... ) because sqrt(num) already used in the math.h library.
+the function of sqrt() define as double sqrt(double) so you're input should be double or float.
+For example in you're code write i<=sqrt(float(num));
+The first equation can also be written as s = i * (i + 1) / 2 which means that in i is approximately sqrt(s * 2) and sqrt(n * 2), and as we see from the code the while loop runs i time, each does a O(1) calculation.
+Therefore the overall complexity is O(sqrt(n))
+math.sqrt(2) returns a float value, which doesn't support the precision you are asking for.
+Use [Decimal.sqrt() (hyper-link)] instead:
+Edit: @casevh is correct: gmpy2.sqrt() returns what you want.
+[Math.Sqrt (hyper-link)]
+log(n * sqrt(n)) = log(n^{1.5}) = 1.5* log(n)
+sqrt gives that error when you try to use it with a negative number.
+sqrt(-4) gives that error because the result is a complex number.
+When you only use import math the sqrt function comes in under a different name: math.sqrt.
+If you only import math to call sqrt function you need to do this:
+This is because from math import sqrt brings you the sqrt function, but import math only brings you the module.
+The Undefined reference: sqrt message might be because your compilation command (run by make) has -lm missing or in the wrong order.
+What is the point implementing custom math functions in C++ (like SQRT)?
+Other platforms usually have their own reciprocal square root, for example ARM has VRSQRTE and a handy instruction that does the Newton step too.
+std::sqrt based:
+You need to create rules in your .l file for "abs" and "sqrt"; declare the tokens they will each return via %token; and use those token names in the grammar rules: ABS "(" expr ")" : ...
+gk.sqrt(other)
+That probably means that at some point X[i][j] - Y[j] was negative, and you're getting a NaN (not a number) back from sqrt.
+Also, X and Y are arrays of booleans, so X[i][j] - Y[j] will always be 1, 0, or -1, and you really don't need the sqrt.
+Since both X and Y are bool, there are chances for the argument that is passed to sqrt() to be negative.
+[sqrt (hyper-link)] only takes one argument.
+Or did you confuse sqrt with [hypot (hyper-link)]?
+sqrt has only one argument, according to [Opengroup (hyper-link)]
+Well, isqrt looks good.
+The sumsquare of an empty list is just zero, otherwise apply isqrt to the first element, recursively sum the remaining elements, and add the two results.
+Now if you want to use sqrt from Math you can do math.sqrt(81)  but it might be annoying to write math all the time, thus you can just import the function by
+from math import sqrt
+print(sqrt(81)).
+You can either import the whole package as import math and do math.sqrt(81).
+But since you only need sqrt() function from math, you can just import that from math import sqrt
+Instead, you can check whether the input is negative before calling sqrt, or (if your implementation properly supports IEEE 754 in detail) you can check whether the output is NaN (using isnan) afterward.
+Upon a domain error in sqrt,
+It looks to me that Strategy I, uses sqrtsd instruction.
+The for loop, Strategy II uses call sqrt to compute the square root.
+This may be an optimized version of sqrt, achieved through approximation, thus faster than the call to sqrtsd.
+Even if the call sqrt uses in the back the sqrtsd instruction there is no reason for which it should run faster outside of the loop.
+The rdtsc instruction has a latency of it's own and because nowadays CPUs are superscalar and out of order you cannot know that rdtsc sqrtsd rdtsc get executed completely in program order.
+They sure do not execute on the same port therefore the sqrtsd is not guaranteed to be complete at the time the second rdtsc completes.
+Another important thing to consider is that when you execute sqrt in the loop, you decrease the average latency of the instructions.
+Agner Fog's [instruction tables (hyper-link)] shows that Ivy Bridge's sqrtsd instruction can have a throughput ranging from 1/8 to 1/14 instructions per cycle.
+E5-2680 is a Sandy Bridge CPU and both the latency and the reciprocal throughput for SQRTSD is 10 to 21 cycles/instr.
+The sqrt function in GLIBC simply checks the sign of the argument and arranges for the non-negative branch to get executed speculatively via branch prediction, which in turn is a call to __ieee754_sqrt, which itself is simple inline assembly routine that on x86-64 systems emits sqrtsd %xmm0, %xmm0.
+Thus it could have two copies of sqrtsd %xmm0, %xmm0 at different stages of execution in the pipeline.
+Since the result of sqrt is not needed immediately, other instructions could be executed while sqrt is being processed and that's why you measure only 21.8 cycles on average.
+Confirmed (more or less) the suggestion of different C calls with the following C code, which calls the sqrt() and pow() functions from the
+system math library.
+The correct solution is to calculate 1/sqrt(x) using NR, and then multiply once to get x/sqrt(x) - just check for x==0 up front.
+The reason why this is so much better is that the NR step for y=1/sqrt(x) is just y = (3y-x*y*y)*y/2.
+It's the sqrt(i) call inside frequency_of_primes() that's the problem, the call in main() is optimized out.
+Your issue is probably that you are using gcc and you are forgetting to link in libm.a via -lm, which is giving you an undefined reference to sqrt.
+GCC calculates the sqrt(20.0) at compile time because it is a constant.
+You can confirm this by looking at the generated assembly when you replace x with a constant in the sqrt call.
+Then take a look at the assembly in myfile.s and you will not see the line call sqrt anywhere.
+Using AMD GPU Shader Analyzer it showed that float bias = 0.005 * sqrt ( 1.f - N_L_dot * N_L_dot   ) / N_L_dot ;
+Will generate fewer clock cycle instructions in the shader assembly ( 4 instructions estimating 4 clock cycles).
+Looks like the sqrt method will generally perform better.
+Use the rational representation of 4+sqrt(11):
+Make a Cmd-Click on the function name sqrt and you enter the file with all other global math functions and constanst.
+Instead of sqrt() there's the squareRoot() method on the FloatingPoint protocol.
+There is some extra logic done by the compiler and/or Math.Sqrt when you pass in unsigned numbers vs signed numbers, and how this related to negative numbers.
+Math.Sqrt needs a double, so why not just provide it with one?
+It doesn't need to call sqrt to compute the result; it's already been calculated by the SQRTSD instruction.
+It calls sqrt to generate the required behaviour according to the standard when a negative number is passed to sqrt (for example, set errno and/or raise a floating-point exception).
+The PXOR, UCOMISD, and JBE instructions test whether the argument is less than 0 and skip the call to sqrt if this isn't true.
+If you are open to using SymPy, this problem can be stated as a diophantine equation z = sqrt(16+x**2) -> z**2 = 16 + x**2 where x and z must be integers:
+So by realizing that +/-x give the same result you need only search half the original range; realizing that you may be off by 1 when computing the sqrt doubles the tests that you do...but with a lot less need for insight and trickery.
+Sqrt is basically unchanged on most systems.
+If you have proven that the call to sqrt() in your code is a bottleneck with a profiler then it may be worth trying to create an optimizated version.
+In general, it is unlikely that sqrt() itself is your bottleneck.
+Even if sqrt() is the bottleneck, then it is still reasonably likely that there are algorithmic approaches (such as sorting distances by length squared which is easily computed without a call to any math function) that can eliminate the need to call sqrt() in the first place.
+Many modern C compilers are willing to inline CRT functions at higher optimization levels, making the natural expression including calls to sqrt() as fast as it needs to be.
+In particular, I checked MinGW gcc v3.4.5 and it replaced a call to sqrt() with inline code that shuffled the FPU state and at the core used the FSQRT instruction.
+Thanks to the way that the C standard interacts with IEEE 754 floating point, it did have to follow the FSQRT with some code to check for exceptional conditions and a call to the real sqrt() function from the runtime library so that floating point exceptions can be handled by the library as required by the standard.
+With sqrt() inline and used in the context of a larger all double expression, the result is as efficient as possible given the constraints of of standards compliance and preservation of full precision.
+After all, would you rather maintain (-b + sqrt(b*b - 4.
+I find it very hard to believe that the sqrt function is your application's bottleneck because of the way modern computers are designed.
+Then you can look at how efficient that CPU's sqrt instruction is, and see if there are better alternatives.
+Of course, the downside to this is that if I run your app on another CPU, your code might turn out slower than the standard sqrt().
+You're unlikely to be able to come up with a better solution to the problem  "implement an efficient replacement for the standard library sqrt".
+This is (very roughly) about 4 times faster than (float)(1.0/sqrt(x))
+That said, I'm generally not creating my own optimizations but relying on a crude approximation of inverse square root provided as a SIMD instruction: rsqrtps.
+Using rsqrtps can actually reduce the entirety of the operation which includes deforming and normalizing vertex normals to almost half the time, but at the cost of the precision of the results (that said, in ways that can barely be noticed by the human eye).
+I've also still found the fast inverse sqrt as often credited incorrectly to John Carmack to still improve performance in scalar cases, though I don't use it much nowadays.
+That said, I wouldn't even attempt to beat C's sqrt if you aren't trying to sacrifice precision for speed.
+I suppose this is a learning exercise, because bisection and recursion is a very poor way to solve for sqrt().
+If you supply no generator Poly will create a polynomial with two generators: x and sqrt(x).
+To the best of my knowledge, there is no way to prevent Maxima from simplifying 2*sqrt(2) to 2^(3/2), with two probably-hard-to-use exceptions:
+(2) Disable the simplification sqrt(2) to 2^(1/2) via :lisp (setf (get '%sqrt 'operators) nil) But then Maxima for the most part doesn't know what to do with sqrt.
+Unfortunately if you try tex(2*sqrt(2)) to get the TeX code, you'll get $$2\,\sqrt{\boxed{2}}$$instead.
+sqrt takes a double ( apparently various different doubles in your compiler) - you are passing it an int
+just do sqrt( (double) .... )
+Ok - to be more precise, sqrt() must take a floating point number - either a float or a double.
+The bit of your CPU doing the sqrt calculation is probably (assuming x86) doing the calculation in 80bits which is neither a float nor a double/
+There are three sqrt-methods: One that takes a long, one that take a float and one that takes a double value.
+sqrt() does not take int as a parameter.
+You cannot take the sqrt of an integer.
+You're in effect passing an int to sqrt, which only takes arguments of type float, double or long double.
+Additionally, sqrt doesn't return an int.
+There are three overloads of sqrt which take different parameters: float sqrt(float), double sqrt(double) and long double sqrt(long double).
+If you call sqrt with an integer parameter, like sqrt(9), an integer can be cast to any of those three types.
+Just cast the parameter to match one of the overloads like this: sqrt(static_cast<float>(((a.x-b.x)*(a.x-b.x))+((a.y-b.y)*(a.y-b.y))).
+For GCC [this (hyper-link)] page suggests that it will work if you use the GCC builtin sqrt function __builtin_sqrt.
+However, if you're using GNU [glibc (hyper-link)], sqrt will be correct to within 0.5 ULP (rounded), so you're specific example would work (neglecting NaN, +/-0, +/-Inf).
+Then you need the Double you get from sqrt to be converted back to Int.
+Now you can use this instead of sqrt in your code.
+When you check the type of sqrt
+You cant take the sqrt of a negative number, it is not defined, hence the result is NaN.
+[http://php.net/manual/en/function.bcsqrt.php (hyper-link)]
+echo bcsqrt('0.0000000065',20); //Result 0.00008062257748298549
+So x={'2\u221A2': 2*np.sqrt(2), '2':2, '\u221A3':np.sqrt(3)}.
+Because if a<0 then sqrt can have complex output values.
+C# calls the native sqrt() from <cmath> C++.
+Seeing as Dictionary is O(1) it was the best possibility for caching the sqrt() results.
+Then you can use sqrt functions.
+sqrt is defined in the math module, import it this way.
+You are using a sympy symbol: either you wanted to do numerical sqrt (in which case use numpy.sqrt on an actual number) or you wanted symbolic sqrt (in which case use sympy.sqrt).
+Each of the imports replaces the definition of sqrt in the current namespace, from math, sympy or numpy.
+I suspect from the line which follows, you want sympy.sqrt here.
+Note: many modern platforms also offer inverse square root, which has the speed approximately the same as sqrt, but is often more useful (e.g.
+by having invsqrt you can compute both sqrt and div with one multiplication for each).
+For Core 2 Duo E6700 latency (L) of SQRT (both x87, SSE and SSE2 versions)
+For newer processors, the cost is less and is almost the same for DIV and for SQRT, e.g.
+Floating-point SQRT is
+SQRT even a tick faster for 32bit.
+So: For older CPUs, sqrt is itself 30-50 % slower than fdiv; For newer CPU the cost is the same.
+sqrt() instead of math.sqrt(), log instead of math.log10()
+sqrt is not a builtin in Python, unlike R. So yes in Python you need either import math or from math import sqrt before you can use it.
+Then use np.sqrt instead of sqrt.
+and then use np.sqrt(9)
+[http://nbviewer.ipython.org/github/rasbt/One-Python-benchmark-per-day/blob/master/ipython_nbs/day8_sqrt_and_exp.ipynb?create=1 (hyper-link)]
+Remember that any function that is O(log n) is also O(sqrt(N)), because sqrt grows asymptotically faster than log.
+That means because log(n) < sqrt(n) ,
+we can say that Skip Lists are also O( sqrt(n) ).
+But you would need to be somewhat clever with the algorithms to make sure that the maximum number of elements in the shorter list is bounded by O(sqrt(N)) and the maximum distance in the longer list between adjacent elements of the shorter list is also bounded by O(sqrt(N)).
+Without using a complex type, sqrt of any value below 0 is meant to cause an exception.
+It means you've called sqrt with a negative argument.
+You're right that if sqrt is the ceiling of the square root, then you'll never reach 1 by repeatedly applying square roots.
+You have to import sqrt from math.
+Without importing sqrt you can't use it.
+pow() and abs() are predefined functions in python but sqrt is not  predefined in python.
+Alternatively, you can use pow(N, 1/2) as it is equivalent to sqrt(N)
+You are currently importing the entire math library and not actually using the sqrt function.
+In the case of sqrt(), it would never matter; there's only one argument, x.
+For those reasons, some would say it's good practice to name your arguments even perhaps in a situation (like maybe sqrt()) where it might seem unnecessary.
+Although I generally err on the side of passing arguments to functions by name rather than position, IMO it's a little overkill for something like sqrt().
+Is there such a function for 1 - sqrt(x)?
+While exp(x) converges to 1 as x goes to 0, meaning that given the same floating point precision exp(x)-1 has more significant figures than exp(x) for small x, this is not true for sqrt(x), which converges to 0 as x goes to 0.
+In other words exp(x)-1 can be made fractionally more precise than exp(x) for small x, but the same is not true for 1-sqrt(x) -- which would in fact get worse, since you're taking it from something near 0 (1e-6) to something near 1 (0.999999).
+If on the other hand you instead wanted to calculate sqrt(1+x) for very small x (as an accurate measurement of sqrt(x) very near x=1), sqrt(1+x)-1 would be a more accurate floating point computation.
+And its Taylor series would work very well; I find that for |x| < 1e-9, x/2 - x^2/8 + x^3/16 is a good approximation of sqrt(1+x)-1 to within an RMS fractional error of 3e-29 (with a maximum of 8e-29 on the edges) -- twice as many digits as are accurate in a double.
+Just use numpy.sqrt() ([see docs (hyper-link)]) on the resulting pd.Series:
+Nikolaj's idea of defining a function is_sqrt is also an interesting idea and has the advantage that it is quantifier-free, so it will work with nlsat (the most powerful nonlinear solver in Z3).
+For numbers larger than 1e14, the sqrt(), saved as a float, will always be a whole number - convertible exactly to an integer (if in the integer range).
+Square roots use [Newton's method (hyper-link)] with some clever implementation tricks: you may find somewhere on the web an extract from the Quake source code with a mind bogging 1 / sqrt(x) implementation.
+hypot(x, y) = abs(x) sqrt(1 + (y/x)^2) if x > y (hypot(y, x) otherwise) to avoid overflow.
+Example: root(16,2) == sqrt(16) == 4
+Example: root(16,2,2) == sqrt(sqrt(16)) == 2
+Example: root(64,3) == 4
+Usage: Sqrt(Number,depth)
+Example: Sqrt(16) == 4
+Example: Sqrt(8,2) == sqrt(sqrt(8))
+The explanation for these results lies in the type of the values returned by the sqrt function:
+In addition to Zalman's excellent [answer (hyper-link)]: The result of the sqrt is always less than INT64_MAX because the input of sqrt is in the uint64_t range.
+[c++ practical computational complexity of <cmath> SQRT() (hyper-link)]
+For recent pentium microarchitectures, a sqrt has a latency of 10-22 cycles (to compare to 3cy for a fp add, 5cy for a fp mult and 2-4cy for type conversion fp-int).
+The cost is significantly higher, especially as sqrt is not pipeline and it only possible to start a new operation every 5 cycles.
+So 90% of the time you have a normal sqrt to compute (and the test cost is negligible) and 10% of the time, you have a mispredict.
+You avoid the 10-20 cycles sqrt, but you pay 15 cycles branch penalty.
+10% of the time you will pay a branch mispredict and a sqrt.
+Compared to 100% sqrt, on the average, there is a win.
+The Java Math.sqrt function
+This scheme converges to y=1/sqrt(x), exactly as requested, and without any true divides at all.
+The function fxrsqrt() below implements this approach.
+At the end of the computation the result is denormalized according to formula 1/sqrt(22n) = 2-n. By rounding up results whose most significant discarded bit is 1, accuracy is improved, resulting in almost all results being correctly rounded.
+I have a solution that I characterize as "fast inverse sqrt, but for 32bit fixed points".
+You are ultimately calculating an integer square root, so ideally you'd want to avoid routing your calculation through sqrt :: Floating a => a -> a.
+From the recurrence we have T(k+1) = T(k+1 - sqrt(k+1)) + T(sqrt(k+1)) + 1.
+From the induction hypothesis, this is equal to (k+1 - sqrt(k+1))(c + 1) - 1 + sqrt(k+1)(c + 1) - 1 + 1.
+I assumed sqrt was a prefix operator because sin and cos are (I believe) and I thought they'd be defined similarly.
+The compiler is perfectly capable of generating fsqrt instruction, you don't need inline asm for that.
+The fsqrt instruction has no explicit operands, it uses the top of the stack implicitly.
+Note that fsqrt is of course x86-only, meaning it wont work for example on ARM cpus.
+As far as I can tell most of the other ufunc operations (sin, cos, ... ) do have sparse ufuncs except for sqrt, don't know the reason why.
+Similarly, any sqrt function defined within SMT-LIB would also be total, so we cannot define a sqrt function by any other means such that (assert (= y (sqrt x))) is equivalent to (assert (and (= x (* y y)) (> y 0.0))).
+In addition to the above difference as to whether or not y = sqrt(x), x < 0 (pseudocode) is considered satisfiable, it is also the case that (assert (and (= x (* y y)) (> y 0.0))) is decidable (it is in QF_NRA), while (assert (= y (^ x 0.5))) is not.
+Furthermore, this has the advantage that y = sqrt(x), x < 0 (pseudocode) will return unsat if it is represented in SMT-LIB via the statements (assert (and (= x (* y y)) (> y 0.0))) and (assert (< x 0.0)).
+No, the gcc compiler knows that sqrt(2) is a constant value and just calculates the value at compile time.
+To trigger a use of the sqrt() library function, use code like this:
+So does using a approximated value of sqrt(2) provide different results for left and right hand sides?
+Look at the bright side: If you re-work that equation to remove the sqrts, then since you'll be dealing with reasonably sized whole numbers, the equation will be exact in floating point ;)
+To answer another part of your question: No, the represenatation of sqrt(2) is indeed the same on both sides.
+Generally I use [(1 + sqrt(2))^2] - [3 + 2*sqrt(2)] < 0.00001 to test equality in such conditions (of course for some cases I ignore this usage)
+So does using a approximated value of sqrt(2) provide different results for left and right hand sides?
+It's because representing continuous (infinite) functions like sqrt(x) can't be done on a discrete (finite) state machine exactly.
+In double precision, (1 + sqrt(2))^2 = 3 + 2*sqrt(2) seems to hold.
+In general, however, the expression 3 + 2*sqrt(2) should be expected to be the more accurate (in cases where they differ), because it incurs only two roundings (the square root and the add) for any binary IEEE-754 type, whereas (1 + sqrt(2))*(1 + sqrt(2)) incurs three roundings (square root, add, and multiply).
+sqrt(2) doesn't have an exact representation in binary.
+sqrt(2) doesn't have an exact representation in decimal, hex, or any other base-n system either; it is an irrational number.
+The only exact representation of sqrt(2) is sqrt(2).
+O(nlog(log(sqrt(n)))) is O(nlog(log(n))), because log(sqrt(n)) = log(n)/2.
+If your tree's level should be proportional to O(sqrt(n)) then the elements should form a square (level^2 = n) or rectangle so speculating graphically:
+C++'s <cmath> provides those functions and overloaded versions of sqrt for all three floating-point types.
+It's trivial to register PHP's [sqrt (hyper-link)] with [sqlite_create_function (hyper-link)].
+When a <= b the only thing at play to make ceil(sqrt(a)) > floor(sqrt(b)) possible is for the repetitive sqrt() of a and b to reduce their difference to be less than the rounding error.
+In a worst-case scenario, we're looking at how the repetitive sqrt() of a large b "shrinks" to meet the termination requirement with a small a.
+To compute an approximate number of necessary recursions, r, we could look at the final value of the repetitive sqrt() of n at the end of the recursions, say m, and establish an equation with the following logic:
+m is the result of applying sqrt() to n for r times
+An implementation conforming to the IEEE-754 standard on allowed errors for basic operations (of which sqrt is an example) requires that values be correctly rounded.
+from numpy.lib.scimath import sqrt works to find sqrt of sparse matrix with negative numbers.
+1 is replaced by T(sqrt(n)).
+Notice that as sqrt(n) * sqrt(T(sqrt(n)) < T(n), we can show similar to the previous case that T(n) = Omega(n^{2/3}).
+Instead of doing sqrt(81.0) == 9.0, try 9.0*9.0 == 81.0.
+y*y == x and the computation of y*y does not involve any rounding, overflow, or underflow), then sqrt(x) will return y.
+This is all because sqrt is required to be correctly-rounded by the IEEE 754 standard.
+That is, sqrt(x), for any x, will be the closest double to the actual square root of x.
+That sqrt works for perfect squares is a simple corollary of this fact.
+Let's suppose we have an IEEE 754 compliant sqrt which rounds the result correctly.
+Let's decompose sqrt(x) into I*2^m where I is an odd integer.
+Thus, for e=ulp(I^2) up to sqrt(ulp(I^2)) the square root is correctly rounded to rsqrt(I^2+e)=I... (round to nearest even or truncate or floor mode).
+Thus we would have to assert that sqrt(x)*sqrt(x) == x.
+But above test is not sufficient, for example, assuming IEEE 754 double precision,  sqrt(1.0e200)*sqrt(1.0e200)=1.0e200, where 1.0e200 is exactly 99999999999999996973312221251036165947450327545502362648241750950346848435554075534196338404706251868027512415973882408182135734368278484639385041047239877871023591066789981811181813306167128854888448 whose first prime factor is 2^613, hardly a perfect square of any fraction...
+EDIT:
+If we want to restrict to the case of integers, we can also check that floor(sqrt(x))==sqrt(x) or use dirty bit hacks in squared_significand_fits_in_precision...
+A consequence is the fact that
+  the floating-point computation of a/ sqrt (a2 + b2) is always in the
+  interval [−1, 1].
+and the compiler, with actual numbers, can "prove" that each call to sqrt doesn't have side effects (.125t.vrp2):
+isn't "smart enough" to determine that a call to sqrt(i) doesn't have side effects (but a small help is enough, e.g.
+std::sqrt(std::abs(i))).
+The reason is that the standard requires to set errno in case sqrt is passed a negative number.
+Also taking the absolute value before calling sqrt apparently ensures g++ that it's impossible to have a negative argument to pass.
+Instead, the error is internal to the sqrt implementation.
+At the same time, the precision error with sqrt() is not that much to visible, though it is not fully displayed with the printf().
+a does not contain 2.645751 following your call to a = sqrt(i); -- that is just the default precision output by your printf statement.
+The issue is that the Rational type doesn't have a Floating instance, and you appear to be using the expression (-1 + sqrt 5) / 2 in a context where a Rational is expected.
+If you pass an integer to sqrt() it will not be converted to a double, but the sqrt() function will interpret the bit pattern as double.
+Maybe calling sqrt is not supported !
+The problem is missing debug info for the sqrt you are actually using.
+Without that debug info, GDB has no clue what parameter type to pass to sqrt(), and what it returns.
+What sqrt functions do have debug info?
+Note: __sqrt is at the same address as sqrt, but GDB knows its type!
+sqrt(double n) is a function prototype (almost; needs a return type).
+You mean either sqrt (double (n)) or sqrt ((double) n).
+The sqrt functions in <math.h> provide the IEC 60559 square root operation.
+IEC 60559 (equivalent to IEEE 754) says about basic operations like sqrt:
+For pure comparative performance between code run on different platforms, I usually count transcendentals, sqrt, mads, as one operation.
+Hence N >= d * (d + m), and for m > 0 this also holds N >= d * d.
+Now you take sqrt() both sides and you get your answer.
+sqrt(float) function is depreciated.
+replace it with sqrt(int) may it helps you.
+As far as I know, the only case when SQRT(X) gives the error "An invalid floating point operation occurred" is when X is negative.
+However, you already fixed this by using the ABS function like this: SQRT(ABS(X)).
+So, my guess is that the error does not really come from the SQRT function but from something else nearby.
+sqrt() is a function that already has a defined behavior.
+It's saying: create a variable named i, and set its value equal to whatever is returned by calling sqrt(-1).
+So the code calls sqrt(-1), which returns NaN, so the value of i is NaN.
+sqrt expect floating point images ([documentation link (hyper-link)]), but from your code, I think they are 8-bit images.
+sqrt() will return a floating point number, so all comparisons are done for floating-point numbers and they are imprecise by design, so those two comparisons above [can yield different results (hyper-link)] and thus in one of cases you'll have off-by-one and undefined behavior.
+Your second loop run once more: 500000 is not a perfect square, so i < sqrt(500000) and i <= sqrt(500000) are always equal and the +1 ensure another iteration.
+But also, like others already said, you should not use a floating point value (result of sqrt) with an integer comparison as floating point values are... tricky.
+Now in racket, sqrtt: counts as an identifier.
+What you probably meant was sqrtt :, with a space in between.
+And sqrtt: is counts as the id.
+The running time is in O(n^1.5), i.e., O(n*sqrt(n)), and you know this because the code in the inner loop runs less than n*sqrt(n) times.
+Furthermore, you know the bound is tight because the code in the inner loop runs more than n/2*sqrt(n/2) times as i goes from n/2 to n, and n/2*sqrt(n/2) = n*sqrt(n)/(2*sqrt(2)).
+The number of executions of the inner loop is f(n) = sqrt(1) + sqrt(2) + ... + sqrt(n).
+We can show this is Theta(n sqrt(n)).
+First, it is clear that f is O(n sqrt(n)) by choosing c = 1.
+For the other direction, note that sqrt(a) + sqrt(b) > sqrt(a + b) for positive a, b; then, pair off elements of the summation sqrt(1) + sqrt(n) > sqrt(1 + n), sqrt(2) + sqrt(n - 1) > sqrt(n + 1), and so on; so the summation is greater than (n/2)sqrt(n+1) when n is even.
+The choice c = 2 or thereabouts should therefore work for this direction: twice your summation, or thereabouts for odd n, should always be greater than n sqrt(n).
+The problem is that floating point calculations are not exact, and that 1 - 1^2 may be giving small negative results, yielding an invalid sqrt computation.
+That should give you a clean 0 for the sqrt.
+If we are limited by 2 jars, we can apply sqrt-strategy.
+Such strategy gives O(sqrt(n)) drops, because triangle number formula is n~T(k)=k*(k+1)/2, so to reach height above n, we should use about k ~= sqrt(n) tryouts, and less than k tryouts for the second jar.
+[sqrt (hyper-link)] function returns float value, not int.
+[sqrt (hyper-link)] returns a float, not an integer, therefore [is_int (hyper-link)] returns false.
+If you want to check whether a sqrt is an integer, you can do:
+sqrt() always returns a result of datatype float, irrespective of the value
+Data type of sqrt(100) is float.
+The result of sqrt is never an integer; however, you can check whether a floating-point value has any non-zero fractional significant figures by comparing it to one in which you deliberately took them all off.
+As for every k > 0, you can find a constant a such that f(x) < k * sqrt(n) holds for all x > a, hence this solution is o(sqrt(n)).
+In order to prove O((log(n))^2) < O(sqrt(n)),we only need to prove the derivative of the first is smaller than the second.Which means 2log(n)/n < 1/sqrt(n).Then we have to prove log(n) < sqrt(n).This is pretty tricky.
+The first thing you should note is that you'll have to be careful to pick the correct root for sqrt(1 - sin(x)**2), otherwise you run the risk of evaluating |cos(x)|, which is not the same.
+sqrt is still on the whole implemented with a Newton-Raphson type algorithm and its evaluation will take a handful of clock cycles.
+There are three sqrt functions in C++:
+You could pick the one you want and typecast, sqrt((double)sample), or you probably just want to declare sample as double to begin with.
+You can actually use std::sqrt with this complex type to compute sqrt(-1):
+the sqrt return a nan (not a number).
+If you actually need complex number you can swap np.sqrt((EA**2)-(m**2))/(EA)) to np.sqrt(complex((EA**2)-(m**2))/(EA))) it will return complex instead of NaN and you can actually do operation on it.
+The problem is not sqrt.
+There is no need to remap sqrt: NumPy knows about sqrt, it just does not know how to apply it to a symbol such as Rzy.
+if a number (named num) num > sqrt(n) and is not a prime number 
+num must be : num = a * b 
+one of a and b must below sqrt(n)  
+so it is already diminished before the procedure below the number sqrt(n) 
+so there is no need to judge the number over sqrt(n)
+sympy really wants to simplify by pulling terms out of sqrt, which makes sense.
+I think you have to do what you want manually, i.e., get the simplification you want without the sqrt call, and then fudge it using Symbol with a LaTex \sqrt wrap.
+Suppose you had a function isqrt which exactly computed the integer part of the square-root of an integer.
+There's more than one way to write an isqrt function; this is an example implementation based on the [material at code codex (hyper-link)]:
+lim (2^sqrt(x))/x^10) when x->infinity then this limit is Infinity, which means that  2^sqrt(x) is not O(x^10).
+The code can be improved by looping over primes rather than all possible divisors for 2..sqrt(n).
+The choices listed above are computed as [choice for choice in powerset([8,9,17,19]) if prod(choice) < math.sqrt(N)].
+Could you get the prime factorization of N and then find the greatest product combination of all of the prime factors that is less than sqrt(N)?
+And you know that those are all factors of 36, so you find the largest one such that it is less than sqrt(36) which turns out to be 4.
+But even then (back to the first version raving) O(sqrt(n)) is a pretty fast runtime, and only requires O(1) memory, so really the first algo might just be the way to go.
+2) Missing #include <math.h> for sqrt().
+This likely explains the problem as without a prototype, sqrt assumed to return int.
+Convert the data to a type that is supported by sqrt.
+So we are defining (T) a function called "func", and importing (U) a symbol called sqrt.
+The eventual program will have to be linked with -lm, as that's where sqrt is actually defined.
+sqrt is a built-in function.
+Since the run time does not contain a call to sqrt, there is no need to link with -lm.
+Disable intrinsics by removing the #pragma intrinsics (sqrt) line, and adding #pragma function (sqrt) (see [msdn (hyper-link)] for more info).
+Tweak the code using workarounds such as 0-sqrt(2.0), -1*sqrt(2.0) (which remove the unary minus operator) in an attempt to fool the compiler into using a different code generation path.
+The function distance returns an integer, therefore it truncates the result of the sqrt.
+I am restricting to a sqrt implemented with IEEE-754 round-to-nearest-or-even mode.
+The most interesting part of this stability-wise is the denominator, sqrt(1 - c*c).
+For that, all you need to do is expand it as sqrt(1 - c) * sqrt(1 + c).
+Here's a numerical demonstration, using Python on a machine with IEEE 754 binary64 floating-point and a correctly-rounded sqrt operation.
+The exact value of the expression sqrt(1 - c*c), rounded to 100 decimal places after the point, is:
+With some more work, it ought to be possible to state and prove an absolute upper bound on the number of ulps error in the expression sqrt(1 - c) * sqrt(1 + c), over the domain -1 < c < 1, assuming IEEE 754 binary floating-point, round-ties-to-even rounding mode, and correctly-rounded operations throughout.
+Where FMA is available, the expression can be evaluated numerically stable and without risk of premature overflow and underflow as fabs (b * c) / sqrt (fma (c, -c, 1.0)), where fabs() is the absolute value operation for floating-point operands and sqrt() computes the square root.
+Some environments also offer a reciprocal square root operation, often called rsqrt(), in which case a potential alternative is to use fabs (b * c) * rsqrt (fma (c, -c, 1.0)).
+The use of rsqrt() avoids the relatively expensive division and is therefore typically faster.
+However, many implementations of rsqrt() are not correctly rounded like sqrt(), so accuracy may be somewhat worse.
+The automated [Herbie tool (hyper-link)], which tries to find numerically advantageous rewrites of a given floating-point expression [suggests (hyper-link)] to use fabs (b * c) * sqrt (1.0 / fma (c, -c, 1.0)).
+You can't call sqrt with an int as its parameter, because sqrt takes a float, double, or long double.
+This is because sqrt doesn't accept ints.
+Start by finding the largest-degree factor inside of the sqrt(), which would be 12nlogn.
+The largest-degree factor makes all the other factors irrelevant in big O terms, so it becomes O(sqrt(12nlogn)).
+A constant factor is also irrelevant, so it becomes O(sqrt(nlogn)).
+Then I suppose you can make the argument this is equal to O(sqrt(n) * sqrt(logn)), or O(sqrt(n) * log(n)^(1/2)), and eliminate the power on logn to get O(sqrt(n)logn).
+But I don't know what the technical justification would be for that last step, because if you can turn sqrt(logn) into logn, why can't you turn sqrt(n) into n?
+Hint: Consider the leading terms of the expansion of sqrt(1 + x) for |x| < 1.
+sqrt is an overloaded name.
+You probably wanted sqrt(double(~0ull)).
+There's no sqrt overload which takes an unsigned long long.
+sqrt doesn't round anything - you do when you convert your integer into a double.
+Dividing by 'n', we get:
+T(n) / n = T(sqrt(n)) / sqrt(n) + 1
+So g(n) = g(sqrt(n)) + 1
+This basically means g(n) is the number of times we can take the sqrt(n) before which we reach the constant base case a.
+Take a look at some other sqrt recurrences:
+Chances are that your compiler doesn't even use std::sqrt.
+x86 has a built-in inverse sqrt nowadays, so that saves you not just the square root but it also replaces a division by a multiplication.
+Square root is relatively simple to calculate, but I'm not convinced it's a huge difference between sqrt(1-sin*sin) and calculating cos again.
+If you don't do that, I'd go with the "sqrt(1-sin(x)^2)" route.
+In every processor architecture document I've looked at so far, the FSQRT instruction is significantly faster than the FSIN function.
+would work because the .o file introduces an unsatisfied reference to sqrt, which is satisfied by libm.
+The undefined reference to sqrt is then introduced after that point and there are no other objects or libraries to satisfy it.
+Note that sqrt(a*b) = sqrt(a) * sqrt(b) (for real, positive numbers at least).
+From [the documentation of Math.Sqrt (hyper-link)];
+The problem is that you are trying to substitute for a, after creating a polynomial in sqrt(a).
+Essentially you are treating a polynomial as an expression that happens to have polynomial form in sqrt(a).
+which returns sqrt(2) as expected.
+You've given Poly an expression that isn't a polynomial, but it tries to create a polynomial out of it anyway, by making it a polynomial in sqrt(a) instead of just a.
+You've defined sqrt as a function which takes two arguments.
+Later, your code references your function: sqrt.
+Try changing  "/Users/Brett/Desktop/Python/squareroot.py", line 21 to use math.sqrt, or provide it with a second argument.
+Your sqrt function has two parameters, but you only provided one argument.
+Your sqrt() function takes two arguments, n and one.
+[sqrt (hyper-link)] is only supports floating point types.
+bool cond = dist < threshold * sqrt(3);
+So using one algorithm (sqrt) and a different one (pow()) with the same inputs cannot be expected to give bitwise-identical results.
+Typically, pow() is implemented in terms of ln() and exp() (with a multiplication in between), whereas sqrt() can use a much faster implementation (which probably involves halving the mantissa as a first step).
+You can simply cast the result of sqrt() to an int:
+Given the nature of the sqrt() function, you might even consider assigning the result of lround() into an unsized data type (i.e.
+define int1 as type int, and then have int1=sqrt(n);.
+floor(sqrt(floor(2))) = floor(sqrt(2)) = floor(1.41...)
+Obviously the outer floor is not redundant, since for example, sqrt(2) is not an integer, and thus floor(sqrt(2))≠sqrt(2).
+It is also easy to see that sqrt(floor(x))≠sqrt(x) for non-integer x.
+Since sqrt is a monotone function.
+We need to find out whether or not floor(sqrt(floor(x)))==floor(sqrt(x)) for all rationals (or reals).
+Let us prove that if sqrt(n)<m then sqrt(n+1)<m+1, for integers m,n.
+Therefor by the fact that sqrt is montone we have that
+Therefor floor(sqrt(n))=floor(sqrt(n+eps)) for all 0<eps<1 and integer n. Assume otherwise that floor(sqrt(n))=m and floor(sqrt(n+eps))=m+1, and you've got a case where sqrt(n)<m+1 however sqrt(n+eps)>=m+1.
+It is easy to see that floor(sqrt(n)) ≠ floor(sqrt(ceil(n))).
+Then we have three numbers to consider:
+a = sqrt(x), b = floor(sqrt(x+d)), c = sqrt(x+d).
+The inner one is redundant, because the square root for any number in the interval [x,x+1[ (where x is an integer) always lies within the interval [floor(sqrt(x)),ceil(sqrt(x))[ and therefore you don't need to floor a number before taking the square root of it, if you are only interested the integer part of the result.
+If the inner floor were not redundant, then we would expect that  floor(sqrt(n)) != floor(sqrt(m)), where m = floor(n)
+floor(sqrt(n)) != floor(sqrt(m)) requires that the values of sqrt(n) and sqrt(m) differ by at least 1.0
+however, there are no values n for which the sqrt(n) differs by at least 1.0 from sqrt(n + 1), since for all values between 0 and 1 the sqrt of that value is < 1 by definition.
+thus, for all values n, the floor(sqrt(n)) == floor(sqrt(n + 1)).
+n <= sqrt(x) < n+1, so floor(sqrt(x)) = n;
+n^2 <= floor(x) < (n+1)^2, so n <= sqrt(floor(x)) < n+1, so floor(sqrt(floor(x))) = n.
+Therefore, floor(sqrt(floor(x))) = floor(sqrt(x)), which implies the inner floor is redundant.
+Then with the help of this theorem You can find sqrt() I think.
+There is an old computer graphics trick for computing 1/sqrt:
+(original code from Quake III)
+Since sqrt(2016) is not an integer the term in the clause before the sqrt must be zero.
+Since sqrt(2016) is not a rational number, y must also be -2016.
+numbers that satisfy (x - y * sqrt(2016.0)) / (y + sqrt(2016.0)) = 2016
+With sqrt(x) not being exactly √x and peculiarities of double math, there may be other solutions that pass a C code simulation.
+You must take into account that [std::sqrt() (hyper-link)] is not an ordinary function but a function template:
+This is equivalent to directly passing double as template argument to std::sqrt():
+Since C++14 you can also wrap the call to std::sqrt() by means of a generic lambda and assign this lambda to the std::function object:
+MATLAB produces an error that sqrt isn't defined for char inputs when used without parentheses.
+That it failed in MATLAB but not Octave merely says that TMW has now inserted an error check for character input to sqrt (so that exactly this results in an error, instead of a difficult to debug problem for those who have not ever seen this happen.
+So an error is logically what should happen when you use sqrt in the command form.)
+sqrt-iter is so named because it's tail recursive.
+Fortran 2008 (13.7.159) defines the result of the sqrt function, for argument X, as (my emphasis):
+Unfortunately, sqrt doesn't belong to Integral, but to Floating (just run :i sqrt in GHCi).
+So in order to find the square root of our integer, we have to use sqrt .
+In your case, you would've seen right off that sqrt x complains that x isn't a Floating type.
+Because the same x is used as input to mod and sqrt (and, inside intsqrt, to floor):
+The sqrt you reference here is a generic intrinsic function.
+If you write sqrt(3.0_wp) then the two expressions will be of the same kind, and I'd expect the two values to agree more closely.
+So sqrt will compute the square root to that accuracy.
+We continue the algorithm until both numbers are equal (a / sqrt(a) = sqrt(a), and (sqrt(a) + sqrt(a))/2 = sqrt(a)) or, due to rounding errors, they cross over.
+The problem might be in the argument that sqrt() takes.
+In your first sqrt() call, you pass the value of 3 by just typing it inside the parenthesis - the compiler probably treats this 3 as a double and compiles successfully.
+As C doesn't support function overloading, the compiler can't find the sqrt function which takes an int parameter and it pops up an error.
+I falsely supposed that providing it first would be the correct way since then the linker might know where to find the function, but instead I should have provided it last so that the linker would already know that I need sqrt from my program.
+As explained by user Weather Vane, the first call to sqrt is probably replaced or removed due to an optimization, thus producing no error.
+The fact that sqrt does not cause a link error when called with a constant argument is that the compiler evaluates it during compilation, as answered [here (hyper-link)], [here (hyper-link)], and [here (hyper-link)].
+If you use the parametric representation (as by Christoph's answer), you can also use the inverse function of sqrt(t), which would be t**2, e.g.
+Using quotation marks as you did around "=SQRT(((G2-H2)^2)+((G3-H3)^2))" means just that, to have the result be the string between the quotation marks.
+You need to delay the call of sqrt.
+NB: You need to use a cast to select the correct sqrt overload.
+I don't believe (without a benchmark to prove this wrong) that a pure Java implementation could me much faster than Math.sqrt().
+Math.sqrt() can be pretty fast
+It's using the library sqrt function for error handling.
+As an optimization, it first tries to perform the square root by the inlined sqrtsd instruction, then checks the result against itself using the ucomisd instruction which sets the flags as follows:
+sqrtsd on its own correctly produces NaN for negative and NaN inputs, and sets the IEEE754 Invalid flag.
+The question make more sens if it was T(n) = T(n - sqrt(n)) + m
+So as long as your n decreases over iterations (and it does because n > n - sqrt(n)) your recursion is actually free.
+If i is the square of a prime number you are relying on high precision of the sqrt and pow to have the correct result.
+sqrt, on the other hand, is guaranteed to be correctly rounded by the IEEE specification, and that's why your code works with sqrt and not with pow.
+First of all, sqrt(x) should be faster and more accurate than pow(x,0.5), why do you think it's in the library?
+Finally, you're calculating a floating point sqrt() twice inside each iteration of the loop, which is terribly slow.
+R6RS has exact-integer-sqrt.

@@ -1,0 +1,651 @@
+hi everyone welcome to another pie torch
+tutorial in today's video we learn how
+to do time
+sequence prediction with pytorch so
+we're gonna predict the values of our
+input sequence in the future
+using an lstm this tutorial will give
+you a really good learning experience
+since you will practice how to work and
+reshape different tensors how to deal
+with
+lstms and how to implement the typical
+training and testing pipeline in pytorch
+and i will also show you a different
+optimizer in this video so not just use
+the good old adam optimizer
+so let's do this
+[Music]
+so in this tutorial we want to deal with
+a sine wave like we can see
+here so this is our input signal and we
+only have the values
+up to a certain point so like here for
+up to the point 1 000 and then for the
+next
+thousand values we want to predict the
+um values so in the start we can see
+that our network is
+not good at all so these are our
+predictions
+but then with each training step it will
+get better and better
+and predict the zenerwave in the future
+so this is a relatively simple example
+but the concepts we use here can be
+applied to any time series prediction
+so let's jump to the code and here i
+already have all the imports we need so
+the first thing we want to do is create
+our data so we want to create values for
+a sine wave
+so let's create some parameters for this
+so let's say
+the number of samples should be 100
+l is the length for each sample so the
+number of
+values we have for each sine wave and
+then we also have a parameter t
+that specified the width of our wave
+so let's create some samples so we say
+x is a numpy array and this should be a
+empty numpy array and
+as shape we give it the size n
+and l so n again is the number of
+samples and
+l is the length for each sample and we
+also give it a
+data type so we say float 32
+then we want to shift each sample a
+little bit randomly
+so we say x and then colon
+so for each for each
+sample and then all values we want to
+shift this a little bit
+so we say the values are a numpy array
+in the
+range of l so this will give us values
+between
+0 and 909 but now we want to shift them
+a little bit so we say plus
+numpy and then we say random
+and then random int and now the
+range should be from four
+times t until plus times four
+times t and then we need to give it the
+shape so this should be n and now we
+have to reshape this
+so it must be in n and 1
+otherwise we can't apply the plus here
+so now we have this and now we want to
+create the corresponding sign values so
+we say
+y equals numpy dot sin
+and now here we um say x
+divided by 1.0
+divided by t so this will just um
+specify the width and then we want to
+have this s
+type and again here we say numpy float
+uh 32 and now we have this so
+let's actually plot this so that we can
+see how this looks like
+so for this we create a numpy a sorry a
+mud plot lip figure
+and this should be or here we can give
+it a
+fix size and this should be
+let's say 10 and then eight
+and then let's give it a title plt
+dot title and let's say this should be
+a sine wave
+then let's also define some x and y
+labels so plt dot x label
+and here we just say x p l t
+dot y label we say y
+then we also want to have x and y
+ticks so we say x ticks and give it
+a font size of let's say 20 here
+and the same for the y ticks so y
+ticks sorry y ticks and here again the
+font
+size should be 20. and then again we
+want to plot
+the actual points so here we want to
+plot points from 0 to
+999 so we can get them by saying
+numpy arrange and then here
+um we have to say x dot shape
+and then the first dimension
+so this will be one thousand
+and as the second parameter that we want
+to plot
+um so here we want to plot y
+and here we want to plot only one sample
+so we say the first one zero and then
+all the values
+then let's give it a color red
+and let's also give it a line width
+of 2.0 and then we say plt
+dot show so now we have our sine wave so
+let's actually
+run this and see if this is working
+and here i see i have a parenthesis
+missing
+so let's say python main dot pi
+and i also have a typo here with a numpy
+arranged with only
+one r so let's try it again
+all right so this worked so here we have
+our sine wave
+from 0 up to 1 000
+and now for the next 1000 values we want
+to predict the values
+so let's do this so let's comment this
+out again we don't want to plot this now
+and now let's create
+a class and we call this lstm
+let's call this lstm predictor and this
+must
+inherit from nn.module
+then we the first we define the init
+method which gets
+self and we also give this a parameter
+number of hidden so the hidden size
+and let's give it a default value of
+let's say
+51 here so you can play around with this
+and now the first thing we want to do is
+call the
+super initializer like so and then let's
+store the hidden size
+so let's call so let's say self.n
+hidden equals and hidden and now we want
+to create our
+different layers so in this example we
+want to
+um apply two lstm
+cells so lstm1 and lstm2
+and at the end we want to have a linear
+layer because we want to do
+a prediction so let's do this so let's
+say
+self lstm1 equals
+and in this case we say nn.lstm
+cell so notice there is an lstm
+and an lstm cell so there's
+a slight difference and an lstm cell
+just will give you a little bit more
+flexibility
+so in this case we want to use this one
+and we have to give it a input and
+a hidden size so as input we just say
+one because we go over our sine values
+one by one
+and then here we say self dot and
+hidden and then we want to stack two
+lstms together so we say we create
+another
+lstm cell and say self.lstm2 equals
+nn.lstm cell
+and now here as the input we want to get
+the
+hidden size so this is the output size
+as well as from the first cell and again
+our hidden size equals self.n hidden
+and then we create a linear layer so we
+say self.linear
+equals nn.linear
+and now here is the input size we say
+self dot
+n hidden and as the output size to 1
+because we only predict
+one value for our sine wave so this is
+the y
+value then we define the
+forward function and this gets self and
+it
+also gets x and it gets an
+optional parameter that we call future
+and by default this is none so if we
+specify the future value with for
+example
+1000 then this would mean that we also
+want to predict the next 1000 values and
+if we just say
+0 then we don't do the future prediction
+but only do the training on the values
+that we know
+so here we create an outputs array
+so this is just an empty list in the
+beginning
+then we say the number of samples equals
+x dot size zero so because we
+need this multiple times and then
+for the lstm cell we need a hidden state
+and a cell state so first we have to
+create an initial um state
+with zeros so we say let's call this
+h t equals and then torch
+dot zeros and then as
+the size so here we say
+number of samples and then the next
+value should be the hidden size so self
+dot
+n hidden and as data type
+data type equals torch dot
+float 32 so
+this is our initial hidden state
+then we do the same thing for the
+initial
+cell state so let's call this ct and now
+we need the very same thing for our
+second lstm cell so let's again copy and
+paste this and let's call this
+ht2 and ct2 and now we want to go
+over our tensor x
+one by one so that's why we used one as
+an
+input here so for this we could just do
+a normal for loop and
+get the current index and then do a
+slicing operation with our tensors
+but there's an even better way with
+pytorch so we can do this directly by
+saying
+for input t in and then there's a
+function that is called
+x dot split or torch dot split
+and here we need to give it the chunk
+size so in this case we say one
+and we want to give it a dimension of
+one
+so this will split the tensor into
+chunks and each chunk is a view of the
+original tensor
+so this just will split our tensor in
+one value chunks for example if our
+whole
+tensor for example has the size n so our
+batch size
+and then 100 so then in here
+we will get n and then by one only
+so we do this one by one and here we
+call
+our layers so first we call the first
+lstm
+cell so we say ht and ct
+equals lstm1
+and now as an input we say input
+t and then as a tuple we need the
+initial hidden state h t
+and ct and this will output them again
+so we will store them
+again in those cells and
+then we call the same for the lstm2
+so our second lstm cell but now the
+input of this one is actually
+h2 so this is the hidden state of the
+previous one and here we store them in
+h22 and ct2
+and now our output equals
+now we apply our linear layer to get the
+prediction
+so self.linear off ht
+2 and then we append our output
+to our outputs array so we say out
+puts and then dots append our
+output and now we have this
+and now if our future value
+is greater than zero then we want to do
+the same thing
+for the future values so we say
+for i in and then range
+um future so if this is zero then we
+won't go over this loop at all and
+in here we do the same thing so
+here first we call the first lstm then
+the second one then our linear one and
+then we append it to the outputs and now
+here we have to be careful
+so now the input for the first
+lstm is the previous
+output so this one so this is used to
+get the next
+output for the future and now that we
+have that we
+simply want to concatenate
+our outputs and
+put it into a torch tensor so right now
+this is
+a list so here we say outputs
+equals and then we can use torch dot
+cat and use the outputs and then we also
+need to give it the dimension
+equals one and then we return the
+outputs
+all right so this is the future me and
+here i realized a dumb mistake that
+happened through copy and paste
+so here i want to say ht2 and
+ct2 for the second lstm cell
+and the same down here ht2 and
+ct2 so again we um
+call the first lstm cell
+with the hidden and the cell states for
+the
+first um cell and then we use
+the output of the first cell as
+input for the second cell but here
+we use its own hidden and cell states
+and then again we use the output of the
+second lstm cell as the input for
+our linear layer so now it should be
+fine
+and this is all that we need for our
+models and now we have an
+lstm predictor that can take an input
+value
+and do future predictions
+so now let's actually test this so for
+this
+we say if name equals equals main
+so now the first thing we want to do is
+generate some training and
+testing samples so let's call this train
+input and here we say this is
+torch dot from numpy
+and then here we put we put in
+y and now we start at batch
+three or it's sample three so we say
+three
+colon to the end and for the
+values we start at the very beginning
+and go until the last value
+and this is excluded and
+now for the training target
+so this is the values we want to predict
+we do the same thing we take these
+samples
+starting at three and here we use
+the values starting at 1 and go
+all the way all the way to the end
+so this is a little bit tricky here so
+the first thing you should notice here
+is that for the
+input we don't use x so we don't use
+this at all but what we want to do here
+is
+we only want to look at the y values
+and then we have a y value
+that is shifted so that reaches
+one value more into the future
+and with this we are then able to train
+our network so we have the
+value of the previous position
+and then want to predict the value of
+the next position
+so this is what we do here and then we
+also need
+test input and test target so test
+input and test target
+and here again we want a shift that
+tensor
+but now we only want to have the batch
+or the samples
+one two and three so we start at the
+beginning and go
+until three excluded so this will give
+us the indices
+one two zero one and two so let's write
+down the actual shapes here to
+make this a little bit more clear so our
+y
+has to shape 100 by 1 000
+and now this has the shape 97
+and 99 999 and this is the same
+97 samples and 999
+values for each sample and here we only
+have
+three samples and again 999
+values and the same for the test targets
+so now we have this and now we create
+our model
+so our model equals our lstm predictor
+and the hidden size we leave this as 51
+and then we need a criterion
+so a loss function and in this case we
+just
+use the mse loss so the mean
+squared error and then we also need a
+optimizer
+so let's say optimizer equals
+optim dots and now here we don't use the
+atom optimizer so in this example
+i want to use the lbfgs
+optimizer and this needs the model dot
+parameters that we want to optimize and
+it also needs
+a learning rate so model parameters and
+lr equals and here i say 0.08 so again
+you can play around with this so
+um i actually have the full
+name up here so this is called limited
+memory
+bfgs and this stands for brighton
+fletcher goldfarb shannon algorithm
+and this works a little bit different
+than the atom optimizer so
+this optimizer can work on the whole
+data
+and it needs to have a closure which
+means it needs a function as an input so
+you will see how this
+works in a second so let's use this
+and then let's define the number of
+steps
+so in this example i only use 10 for the
+training in this video
+so you can increase this a little bit to
+get an even
+better prediction um but for now this
+should be okay
+so then i say 4i in range
+and then the number of steps and first
+let's
+print the step step um
+and then this is the current i
+and then as i said we need a closure for
+this
+optimizer so this basically is a
+function
+so we define a function closure
+and it don't has any input parameters
+and in here we need to empty the
+gradients
+then we need to apply the loss
+we need to apply a forward step and then
+also a backward step
+and apply our criterion so here we say
+optimizer.0 grad
+then we call our model so we say out
+equals
+model and we use our training
+inputs here then we
+calculate our loss by saying loss equals
+criterion and here we put in
+out and our train target values
+and then here we can say print
+loss loss and now here we will
+say loss dot item and
+um after that we have have to say loss
+dot
+backwards to apply the back propagation
+and then we want to
+return the loss so this is our
+closure for the optimizer and then after
+that we simply call
+optimizer.step and this needs the
+closure and now we have this
+and now we have a have done the training
+in this step and now we want to
+um actually do the predictions and for
+this we
+don't need to track the gradients so we
+say with
+torch dot no grad and then we define
+the future values let's say the next
+1000 steps
+and then we call the prediction so
+press equals and then again we call the
+model with now our
+test input and as the future
+future equals future so
+this is the parameter that we
+can put in here so now we actually do
+predictions with this
+and then again we want to calculate the
+loss so we say
+the loss is the criterion with the
+prediction
+and the test target but now here we want
+to be careful
+what we use for the predictions because
+for the test
+target we only have 999
+values but now our prediction also
+includes the future values so we want to
+exclude them here actually so here we
+use
+all the samples so just a colon
+and then we start at the beginning and
+excludes
+the last future values so we can say
+minus future like this and then we print
+the
+loss um so here we say again
+print and this is our test
+loss and then we say loss dot item
+and now we generate our actual
+y and use this as numpy array so here we
+say
+y equals prediction dot
+d touch and then dot numpy
+and now we have this as numpy array and
+can use this for
+plotting and now we want to plot this
+and for this i actually want to plot
+this into a pdf
+file so i can grab the code
+from here and then put it
+down here again as well and
+do the correct indentation and we don't
+need this
+and let's also change the fix size a
+little bit
+so this should be 12 by 6 and as the
+title here we say step and
+then our step is let's say this
+is i plus 1 and then it must be
+an f string and we can leave the rest as
+it is and then we create a little
+helper function so for this we say
+define
+draw and then here we want to draw the
+current
+y i and we also give it a
+color and then we grab the same
+command as we are doing here
+with the arrange function and now for
+the shape
+um let's use n equals and this
+is let's use train input dot
+shape one so this should be 999
+values so here we put in n
+so this is what we need at the x axis
+and at the
+y axis we want to have y i
+and starting at the beginning until
+n so the first n values from 0 to
+199 and this is
+our color parameter so these are
+our actual values that we have and
+now we want to predict to plot the
+predictions
+so here we want to say a range from 999
+until n plus future so
+until um so the next 1 000 values
+and here we start at
+n and go until the end so
+n colon um
+the end so these are our predictions
+so let's call them let's plot them in a
+slightly different style so we say
+color plus and then colon so this will
+put it in a
+dashed style so now we have this helper
+function
+and now we draw the first three
+test samples so we only have three test
+samples so we plot all
+three of them so for this we say
+draw and then let's say y zero
+and as a color let's use red
+then we again do this for y one
+and y two and let's here you use
+blue and green for the colors
+and then after this we want to say plt
+dot save figure and now we can
+save this in a pdf file by simply saying
+predicts and then here let's use percent
+d dot p d f
+and the parameter percent d is just
+our current step and then we have to be
+careful and
+i've also have to call plt dot
+close to close the file so now this is
+everything we need
+so let's run this and hope that
+everything works
+so let's clear this out and say python
+main.pine
+and i think i have a typo somewhere with
+n hidden so let's have a quick look
+and hidden so we do have this here
+and we also have this here
+and here i have the n missing so n
+hidden so let's test this again
+all right so now we can see the loss
+being printed in here
+and now if we monitor our folder
+then you might see the pdfs um
+appearing here so let's wait until this
+is completed
+all right now so training is done and we
+can see that we have 10 new pdf files
+here and we also see
+our final test loss so this is pretty
+low so i hope that we can see
+accurate predictions so let's have a
+look at those pdf files
+and let me actually put them into one
+file for you
+all right so after the first step we can
+see that our predictions are not very
+good
+and then it's starting to get better for
+step three
+and two and in step four it's actually
+getting
+worse again but now it's
+getting more stable and after step nine
+and ten we can see we have a pretty good
+prediction of
+the sine wave in the future so yeah this
+worked and i hope you enjoyed this
+tutorial and if you did so then please
+hit the like button and consider
+subscribing to the channel
+and then i hope to see you in the next
+video bye
+you

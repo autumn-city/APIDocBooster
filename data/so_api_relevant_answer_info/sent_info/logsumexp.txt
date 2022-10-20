@@ -1,0 +1,18 @@
+Change from scipy.misc import logsumexpto from scipy.special import logsumexp
+The otherwise great solution from @Miff was causing my code to crash with certain datasets as infinities were being produced which I eventually figured out was due to an underflow problem which can be avoided by using the 'logSumExp trick': [https://www.xarg.org/2016/06/the-log-sum-exp-trick-in-machine-learning/ (hyper-link)]
+Use the  axis parameter: logsumexp(a, axis=?
+comb, logsumexp
+But never expect logsumexp to be as fast as a standard summation, because exp is quite a expensive operation.
+You can inspect the source code defining logsumexp [here (hyper-link)].
+So yes, scipy's logsumexp is subtracting the maximum from each element.
+To mimic the behavior of logsumexp all you have to do is subtract the max of its argument (check the [source code (hyper-link)]) before taking the exp, sum, log and then re-add it at the very end.
+The function logsumexp does it better, by extracting the max of the number set, and taking it out of the log:
+According to scipy.misc.logsumexp [documentation (hyper-link)]:
+If you search for "logsumexp" you will see several useful explanations.
+logsumexp works by evaluating the right-hand side of the equation
+To have stable results when you're working in log-space, You need the logsumexp trick in each of these summations.
+The logsumexp function is known to be numerically stable.
+So it's enough to trust them that they implemented backward pass of logsumexp in a numerically stable way.
+Actually the gradient of logsumexp is the softmax function (for reference google "softmax is gradient of logsumexp" or see [https://arxiv.org/abs/1704.00805 (hyper-link)] proposition 1).
+It's intended that LogSumExp of a set containing one element returns that element - this way, though, the other example you gave does have a higher return.
+The long answer to what that function does is well explained in this [LogSumExp Wikipedia Page (hyper-link)].

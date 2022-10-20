@@ -1,0 +1,146 @@
+OpenCV has a [randn() (hyper-link)] function and also a [RNG (hyper-link)] class.
+Internally, OpenCV implements randn() using RNG.
+The disadvantage if using randn() is that you lose control over the seed.
+Randn is as far as i know MarsenneTwister.
+[randn() (hyper-link)] returns a random scalar drawn from the standard normal distribution.
+randn generated a standard normally distributed matrix of random numbers (standard in this context is defined as mean = 0 and standard deviation = 1).
+randn seems to give a distribution from some standardized normal distribution (mean 0 and variance 1).
+randn:
+Following up to @Mike Williamson's explanation about variance, standard deviation, I was caught trying to workout the example provided in the [Numpy documentation for randn (hyper-link)]
+The example provided there:
+The point to note here is that Normal Distribution follows notation N(Mean, Variance), whereas to implement using .randn() you would require to multiply the standard deviation or sigma and add the Mean or mu to the Standard Normal Output of the Numpy method(s).
+sigma * numpy.random.randn(2, 4) + mean
+The numpy.random.randn function is based on a standard normal distribution, meaning that there is not a maximum value or a minimum value.
+np.random.randn return a sample (or samples) from the “standard normal” distribution (see documentation [here (hyper-link)]).
+The function numpy.random.randn returns values from the standard normal distribution, which can be anything between negative and positive infinity, so there's no max or min.
+So in your example, passing (3,3) into np.random.randn(3,3) returns a 3x3 array of values from the standard normal distribution.
+The reason why the values do not lie in the interval [4500,5500] is that the numbers coming out of randn() are not confined to the interval [-1,1], which is why your approach does not work as you intend, even though the general approach makes sense.
+The numbers coming from randn are drawn from the standard normal distribution, which has a standard deviation of one and a mean of zero.
+Theoretically, any value between -inf and +inf can come out of randn.
+If yo are using the normal distribution (randn) then you can not really limit your numbers to be in a range, as in the normal distribution only infinity and minus infinity have zero probability, the rest, while having a minuscule probability, can happen.
+According to opencv documentation cv::randn uses mean and standard deviation of generated numbers.
+This gives for me the same numbers for rand() and np.random.random(), however not for randn, I am not sure if there is an easy method for that.
+With newer matlab versions you can probably set up a RandStream with the same properties as numpy, for older you can reproduce numpy's randn in matlab (or vice versa).
+You could just write that algorithm in matlab to create the same randn numbers as numpy does from the rand function in matlab.
+The user asked if it was possible to reproduce the output of randn() of Matlab, not rand.
+I have not been able to set the algorithm or seed to reproduce the exact number for randn(), but the solution below works for me.
+So if instead of randn(1, 1000) you use randn(1,1000000) with a high probability you will see a larger range.
+The value 0.2 that you multiply the randn() with just changes the energy of this random signal.
+Since the documentation of [randn (hyper-link)] does not explain this transformation and the source code is not available (it is a built-in function), it is hard to say anything more about this without reverse-engineering.
+An alternative would be to write your own Matlab random number function in C++ as a [MEX file (hyper-link)] (using C++'s normal_distribution), and use this function in Matlab instead of randn.
+Using the Matlab Compiler SDK, you will be able to export the specific Matlab functionality you need, in your case perhaps randn function.
+randn has a mean of 0 and standard deviation of 1.
+randn generates number using Normal or Gaussian distribution.
+*randn(100,1);
+A solution might be to truncate the values: regenerate the values when randn returns a value outside of the desired range.
+NumPy's np.random.randn returns samples from a standard normal distribution.
+The first thing to note is that, for a given seed value, each variate produced by [rand (hyper-link)] (or [randn (hyper-link)], etc.)
+2) randn(n,1000000*(j),:) is also bad syntax.
+Do you mean randn(n,1000000*(j))?
+3) x(j,:) = randn(1,10000)*sqrt(NV(i,j));: x as written in your code is not the right size unless g is magically of length 10000.
+Write m in base n, keeping track of the largest needed exponent, say e. Then, find the biggest multiple of m that is smaller than n^e, call it k. Finally, generate e numbers with randn(), take them as the base n expansion of some number x, if x < k*m, return x, otherwise try again.
+Assuming that randn() returns an integer between 0 and n - 1, n * randn() + randn() is uniformly distributed between 0 and n * n - 1, so you can increase its range.
+If randn() returns an integer between 0 and k * m + j - 1, then call it repeatedly until you get a number <= k * m - 1, and then divide the result by k to get a number uniformly distributed between 0 and m -1.
+Use !help(numpy.random.randn) instead in pdb.
+s is a vector of length 200 (because k = 1:200), and you're adding to it randn(1, M), which is a vector of length M = 16.
+the answer would be to use x = randn(n, 1);
+In any case, randn isn't defined in the pandas namespace.
+After you've done this, you can access randn via random.randn:
+If you really want to use simply randn, you could do
+After searching a bit, I found out that the [equivalent to randn on Emgu (hyper-link)] is the SetRandNormal(MCvScalar, MCvScalar) method on Matrix.
+You could have N = 100 random numbers from t = randn(N, 1);.
+Regarding randn() - it produces i.i.d samples from a zero-mean unit standard deviation Gaussian.
+That way randn only take a scalar value and you iterate over different N.
+As documented in randn:
+1.17 documentation is even more explicit (note randn has been moved in that version):
+randn() fulfills zero-mean distribution as it samples from a standard normal distribution ~N(0,1).
+The problem is that randn(1) produces an Array{Float64,1} and not a Float64.
+The function randn(1) creates an array with elements of type Float64, and not only one element.
+You can see the documentation for randn and see why:
+If you take the vector from randn() and then add one it will have the same standard deviation as before but now it'll also have a mean of 1.
+v=randn(1000,1)+1
+The function RANDN takes an int, and yet you pass it a double, using the function rnd.
+Then 2 is added to that value and the result is truncated to an int, always1 passing the value 2 to RANDN.
+1 Since the formula for getting the range is (double) rand() / (double) RAND_MAX;, the function rnd could return the value 1.0, which would result in passing 3, not 2, to RANDN.
+An example of a Gaussian random number generator randn_box_muller() using a pointer to this calloc array r[n][n] is:
+Consider randn generates number from 1 to n and randk generates number from 1 to k.
+The difference between [rand (hyper-link)] and [randn (hyper-link)] is (besides the letter n) that rand returns random numbers sampled from a [uniform distribution (hyper-link)] over the interval [0,1), while randn instead samples from a [normal (a.k.a.
+Meanwhile, the distribution for randn looks like this:
+The first obvious difference between the uniform and the normal distributions is that the normal distribution has no upper or lower limits — if you generate enough random numbers with randn, you'll eventually get one that's as big or as small as you like (well, subject to the limitations of the floating point format used to store the numbers, anyway).
+But most of the numbers you'll get will still be fairly close to zero, because the normal distribution is not flat: the output of randn is a lot more likely to fall between, say, 0 and 0.1 than between 0.9 and 1, whereas for rand both of these are equally likely.
+In fact, as the picture shows, about 68% of all randn outputs fall between -1 and +1, while 95% fall between -2 and +2, and about 99.7% fall between -3 and +3.
+To legitimize the solution, let's start off with an input of A = randn(8,3,N) and initialize the output out with it.
+In your code, double randn[5][7] should be int randn[5][7].
+Once we have thunk function, we can define randN like so:
+It's worth mentioning that randN is impure, since random numbers are impure by definition.
+You can easily create custom-sized random arrays with numpy with the commands numpy.random.rand(d0, d1, …, dn) for uniform distributions or numpy.random.randn(d0, d1, …, dn) for normal distributions, where dn is the number of samples in the nth dimension.
+Or the standard normal distribution for numpy.random.randn(d0, d1, …, dn) (i.e.
+For completeness and to avoid re-inventing the wheel, here is an implementation for both numpy.rand and numpy.randn in C++
+I don't understand what for  do you use randn for three times with multiplication and sum (maybe you want some special distribution) but - You want noise signal, so you get it: you can check it by using autocorr function for y:
+[ (hyper-link)]
+Note that if you use the new way, rand and randn share the same stream so if you are calling both, you may find different numbers being generated compared to the old method (which has separate generators).
+This affects the rand, randn, and randi functions.
+Commenting out randn('state',2) will have an effect on the code and its output as randn('state',2) is old [discouraged (hyper-link)] MATLAB syntax to specify the random number generator to use with randn and to seed it.
+note the differences between 'rand', 'randn', 'rng'
+Thus, rand, randi, and randn produce a different sequence of numbers after each time you call rng.
+randn = Normally distributed random numbers
+Those signals are realizations of stochastic processes (white Gaussian processes, in your case, because you use [randn (hyper-link)]).
+You should set the seed of the random number generator or every time you call randn you will obtain a different distribution.
+Check [randn (hyper-link)].
+In one of the examples, the random state is saved and every time it calls randn he previously sets the random state with the saved one, obtaining the same distribution:
+randn is programmed in such a way that it does not produce the same result per default every time you call it.
+I wrote a small function test with the nested function call_randn to illustrate that.
+randn accepts the shape only as randn(d0, d1, ..., dn)
+This assigns the results of randn to the memory allocated by np.zeros
+np.random.randn function randomly initializes the array object of a given shape to a "np.float64"
+You can find this out yourself by doing as follows:
+You can use randn() to generate a noise vector 'awgnNoise' of the length you want.
+randn utilizes rand2, and does this in a binary-wise manner.
+But in the end randn returns add % N, which is 22 % 5 = 2, so in a way generating a random number of binary length N first, then uses the same length to get a random value between 0 to 4 again for the result, which is range 0 to (N-1).
+randn(100,1) creates a 100 row, 1 column array
+randn(200,1) creates a 200 row, 1 column array
+I can launch Python, but trying to run x = randn(100,100) gives me a Name Error: name 'randn' is not defined, whereas, as I understood, this command should work when using Anaconda, as the numpy package is included
+If you want to use the randn() function without having to call the complete name, you can import it to your local namespace:
+Otherwise, the call numpy.random.randn is your way to go.
+I think what is causing the huge change in error rate is this process:
+    randn(samples,dimension);
+Have you looked at the output of this process for each time you use it?
+randn is a random number generated from a normal distribution, so it could generate some really large numbers that could mess up your results (considering your range is quite small).
+randn is used for normally distributed points and this is why you get negative values
+randn returns a third-party ndarray rather than a Python builtin array (i.e.
+OPTION 1: using [randn (hyper-link)]
+The function randn takes an integer as parameter, not a float.
+See [numpy.random.randn (hyper-link)].
+Also Matlab [doc page (hyper-link)] on randn mentions this method.
+NormalTransform:  Transformation algorithm used by randn(s, ...) to
+  generate normal pseudorandom values.
+But you haven't taken into account that randn(1,G1) will give you different length vecors each iteration, which will cause dimension mismatch errors if you do not pay attention.
+Notice the indexing in y(counter,1:counter)=randn(1,counter); to avoid the mismatch errors.
+Matlab randn generates realisations from a normal distribution with zero mean and a standard deviation of 1.
+randn(N, 1) creates an N-by-1 vector.
+randn in matlab produces normal distributed random variables W with zero mean and unit variance.
+For uniform distribution use [rand (hyper-link)] (randn is for normal distribution).
+If B = randn(10,25); then it's very easy because Matlab function usually works down the rows.
+You're creating a namespace collision by importing the random module as randn which is the method you wish to call from that module.
+So you need to remove that assignment and reference the np.random.randn module explicitly (or add a from np.random import randn).
+If you are trying to call the randn method, it is part of the random module.
+Since you imported the random module as randn, the call should be randn.randn(Nbits, 1).
+I would suggest usind randn directly from the numpy module, as np.random.randn(Nbits, 1)
+'module' object is not callable in the code bits = randn(Nbits,1) > 0.
+There is only one function call there, which is randn().
+However, you imported it as import random as randn.
+From your code, I assume you are looking for [numpy.random.randn (hyper-link)].
+You can pass the dimensions of the array you require to numpy.random.randn:
+You could use randn and convert to integer by rounding the output number.
+If you want integers, you can use randn and round the numbers.
+randn doesn’t produce bounded numbers.
+You probably meant to call the randn function, and that requires that you use parentheses and pass an actual argument:
+Without parentheses, the symbol randn refers to the address of the function, and C++ doesn't allow arithmetic operations on function pointers.
+See the n in randn() ?
+The slow part of this particular code is randn, a function which is both computationally expensive and typically sequential.
+In such case you may use mvnrnd or use randn with Cholesky decompistion as following.
+The function randn as opposed to rand generates normally distributed random numbers.
+Basically, you can now set the seed using rng(sd) before using the function rand or randn as usual.
+Your question follows the approach to start from standard multivariate normally distributed random numbers Z as produced by randn, and then apply a linear transformation.
+This is not the case in your code, since you call randn separately for calculating Sfinal and S_h.
+Then, I generated the the delta_st term with rand instead of randn since the noise should be "white".

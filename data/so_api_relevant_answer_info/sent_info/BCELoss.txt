@@ -1,0 +1,37 @@
+The BCELoss function did not use to be numerically stable.
+However, this issue has been resolved with [Pull #1792 (hyper-link)], so that BCELoss is numerically stable now!
+It turns out that BCELoss and log_loss behaves differently when the weights sum up to more than the dimension of the input array.
+This loss combines a Sigmoid layer and the BCELoss in one single
+  class.
+This version is more numerically stable than using a plain
+  Sigmoid followed by a BCELoss as, by combining the operations into one
+  layer, we take advantage of the log-sum-exp trick for numerical
+  stability.
+You might want to use torch.nn.BCEWithLogitsLoss(), replacing the Sigmoid and the BCELoss function.
+This loss combines a Sigmoid layer and the BCELoss in one single class.
+This version is more numerically stable than using a plain Sigmoid followed by a BCELoss as, by combining the operations into one layer, we take advantage of the log-sum-exp trick for numerical stability.
+Our solution is that BCELoss clamps its log function outputs to be greater than or equal to -100.
+If so, then that is not what the weight parameter in BCELoss does.
+Take a look at BCELoss in [torch.nn.modules.loss (hyper-link)] or [torch.nn (hyper-link)]
+nn.BCELoss expects that we have already applied sigmoid activation over logits, while nn.BCEWithLogitsLoss expects logits as inputs and internally applies sigmoid activation over logits before calculating binary cross entropy loss.
+So, if you want to go with nn.BCELoss make sure you apply activation function to logits before sending them to loss_func.
+If there are multiple classes, you should work with [torch.nn.CrossEntropyLoss (hyper-link)] instead of [torch.nn.BCELoss() (hyper-link)]
+To recap, torch.nn.BCELoss() is intended to be used for a task of classifying c independant binary attributes per input example.
+So you're asking the BCEloss to compare tensors that just have different shapes, and [the documentation (hyper-link)] is quite clear about it being forbidden (and the error is quite explicit about it as well).
+Binary Cross-Entropy Loss  (BCELoss) is used for binary classification tasks.
+Mathematically BCEloss (logist) is just a special case of CrossEntropy loss for the case of two classes.
+BCEloss only takes input in between 0 and 1.
+The logist (BCEloss) only takes one channel with a number ranging between 0 and 1.
+Finally you can use the [torch.nn.BCELoss (hyper-link)]:
+But then you need to use [torch.nn.CrossEntropyLoss (hyper-link)] instead of BCELoss.
+The code that you refer to uses CrossEntropyLoss but you are using BCELoss.
+CrossEntropyLoss takes prediction logits (size: (N,D)) and target labels (size: (N,)) whereas BCELoss takes p(y=1|x) (size: (N,)) and target labels (size: (N,)) as p(y=0|x) can be computed from p(y=1|x)
+CrossEntropyLoss expects logits i.e whereas BCELoss expects probability value
+It seems from the code that you are passing logit values and not probability values, so you may also need to compute sigmoid (model_output) if you want to use BCELoss or alternatively you can use BCEWithLogitsLoss.
+In case of multi-label classification BCELoss is a common choice.
+The fundamental problem is that you are incorrectly using the BCELoss function.
+The problem you are having is that PyTorch's [BCELoss (hyper-link)] computes the binary cross-entropy loss, which is formulated differently.
+If you give the same tensor [0.2, 0.2, 0.6] to BCELoss, you are modeling a situation where there are three data instances, where data instance 0 has probability 0.2 of being class 1, data instance 1 has probability 0.2 of being class 1, and data instance 2 has probability 0.6 of being class 1.
+It is not y that doesn't allow the computation for gradients, it is BCELoss() that doesn't have the ability to compute gradients with respect to the second argument.
+As far as I know, the second argument of BCELoss(input, target),target should be a tensor without gradient attribute.
+BCELoss is not error.

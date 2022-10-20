@@ -1,0 +1,134 @@
+np.tensordot is an attempt to generalize np.dot; for 2d arrays like this it can't do anything that a few added transposes can't.
+Your result isn't a tensordot in that sense.
+einsum like dot and tensordot is built around sums of products, but gives us a finer control over which axes are multiplied, and which are summed.
+I don't use these scalar like axes modes of tensordot much.
+[How does numpy.tensordot function works step-by-step?
+The problem with tensordot is that it outputs all dimensions of A before those of B and what you are looking for (when permuting) is to "interleave" dimensions from A and B.
+[How does numpy.tensordot function works step-by-step?
+So, tensordot/dot won't work here.
+[More info on tensordot (hyper-link)] might explain it somehow on why it won't.
+As numpy.tensordot support only 2 element axes this means there is no way to imitate the
+So I don't see how this can be done with numpy.tensordot.
+tensordot swaps axes and reshapes the inputs so it can apply np.dot to 2 2d arrays.
+The idea with tensordot is pretty simple - We input the arrays and the respective axes along which the sum-reductions are intended.
+The answers above are great and helped me a lot in understanding tensordot.
+According to the documentation of tf.tensordot,
+So for example, tf.tensordot(a, b, [[0,1],[0,1]])) should have returned an error, because a is 3x2 and b is 2x3.
+If a and b were compatible, then tf.tensordot(a, b, [[0,1],[0,1]])) would be a simple dot product.
+What tf.tensordot does internally is that it basically flattens a and b and compute the dot product.
+Your specific tensordot can be cast to a simple matrix multiplication by "squeezing" the first two and last two dimensions of tensor4D.
+While using tensordot instead would be much more simpler for generalization.
+In this specific case, einsum is probably easier to understand than tensordot.
+You can do this with tensordot as well.
+(Of course, if anyone else would like to add a tensordot example as another answer in the meantime, feel free!)
+np.tensordot is not a tensor product, but rather a dot product for tensors.
+Actually you think that np.tensordot(rho1,rho2,axes=0) is equivalent to:
+But in fact np.tensordot(rho1,rho2,axes=0) compute:
+The tensordot docs does say that axes=0 gives a tensor product:
+The [tf.tensordot (hyper-link)] is not suitable in the case because, based on your explanation, it necessary to set axis equal to 1 which cause the incompatibility in matrix sizes.
+On smaller arrays it's about 5x slower than tensordot; on larger arrays it's still 50x slower.
+This is not too surprising in retrospect, since dot and tensordot are both using BLAS under the hood, as @hpaulj [reminds us (hyper-link)].
+tensordot with scalar axes values can be obscure.
+[How does numpy.tensordot function works step-by-step?
+There I deduced that np.tensordot(A, B, axes=0) is equivalent using axes=[[], []].
+tensordot works by reshaping and transposing axes, reducing the problem to one that np.dot can solve.
+The reduction is along axis=1 for X and axis=0 for tensor, thus [np.tensordot (hyper-link)] based solution would be -
+As such, tensordot won't work directly.
+Without going into the details, these two calculations recreate the actions taken by tensordot, and produce the same perm values.
+The advantage of np.tensordot is that it links to whatever fast numerical library you have installed (i.e.
+So, tensordot will run faster and in parallel when you have the right libraries installed.
+Both [tf.tensordot() (hyper-link)] and [tf.einsum() (hyper-link)] are syntactic sugar that wrap one or more invocations of [tf.matmul() (hyper-link)] (although in some special cases tf.einsum() can reduce to the simpler elementwise [tf.multiply() (hyper-link)]).
+This partially solves the problem using tensordot(),
+Under the covers, tensordot reshapes and swaps axes so that the problem becomes a 2d np.dot call.
+In tensordot, every axis is either:
+So when you write tensordot(d * y, r, axes=((1, 2, 3), (2, 3, 4))), you are calculating:
+Hence, this isn't something that tensordot can do all by itself.
+Okay I found an answer to this, we can fix this using the following parameters given to tensordot:
+dot, and its derivative tensordot don't handle that kind of stacking.
+If you apply np.tensordot to a pair of arrays of shape (w, h, 2) along the last axis, you will get a result of shape (w, h, w, h).
+You can't use np.dot or np.tensordot for this.
+dot and tensordot keep the untouched dimensions of both arrays, as explained earlier.
+I'm not sure if you're still facing this issue (as it's been a month) but I resolved the same issue by using tf.tensordot and tf.map_fn, which accepts nested input elements and parallelizes a function across the first (usually, batch) dimension.
+[tf.tensordot API (hyper-link)]
+Alternative way to get parte1 would be with [np.tensordot (hyper-link)] -
+Why doesn't numpy.tensordot work for the later two sum-reductions?
+Well, we need to keep the first axis between dinMat1/dinMat2 aligned against the first axis of temp_rho/np.conj(temp_rho), which isn't possible with tensordot as the axes that are not sum-reduced are elementwise multiplied along two separate axes.
+Therefore, when used with np.tensordot, we would end up with two axes of length N corresponding to the first axis each from the two inputs.
+As I stress in my earlier answers, tensordot is an extension of np.dot, allowing us to specify which dimensions are used in the sum-of-products.
+The way tensordot puts it, the noncontracted dimensions of B follow those of A.
+tensordot does not provide a way of reordering the noncontracted dimensions.
+The tensordot is the equivalent of this dot:
+The original answer is totally correct, but as an update, [Pytorch now supports tensordot (hyper-link)] natively.
+tensordot normally is thought of as a generalization of np.dot, able to handle more complex situations than the common matrix product (i.e.
+I just tried to explain what is happening when axes is a scalar (it's not trivial)
+[How does numpy.tensordot function works step-by-step?
+In any case it's evident from the output that this tensordot is producing the same numbers - but the layout is different from the kron.
+The way [tensordot works (hyper-link)], it won't work here (not at least directly) because of the alignment requirement along the first axes.
+As such, using np.tensordot might not necessarily result in performance improvement, but since the question has specifically asked for it, let's suggest it anyway.
+Now, np.tensordot would spread out the axes that don't take part in sum-reduction as separate axes, resulting in (N,N).
+Here's how a solution with np.tensordot would look like -
+There would be cases where np.dot/np.tensordot might come out as winner, but that requires that the sum-reduction axes have decent lengths.
+As far as I understand it from the tensordot documentation, you are supplying a list of axis in ans, ans2 and ans3 (ans and ans2 just only have one element in the list).
+link: [https://numpy.org/doc/stable/reference/generated/numpy.tensordot.html (hyper-link)]
+tensordot has just transposed the 2 arrays and performed a regular dot:
+In general, tensordot uses a mix of transpose and reshape to reduce the problem to a 2d np.dot problem.
+With the development of einsum and matmul/@, tensordot has become less necessary.
+Since contractions involve pairs of indices, there's no way you'll get a 3d object by a tensordot operation.
+The trick is to split your calculation in two: first you do the tensordot on the index to do the matrix operation and then you take a tensor diagonal in order to reduce your 4d object to 3d.
+Einsum basically supersedes tensordot (not dot, because dot is normally using optimized linear algebra packages), code wise it is completely different.
+Of course you can translate einsum notation to tensordot notation too I am sure, and that is probably a bit faster since the loops would end up being mostly in C...
+Here is a much simpler implementation that separates the einsum in multiple tensordots.
+np.tensordot, which consists in reshaping/broadcasting the input arrays and then calling BLAS (MKL, OpenBLAS, etc) for the matrix multiplication.
+As a result, tensordot [will be generally faster  than  einsum (hyper-link)] in single core execution, unless small  array sizes are used (and then the reshaping/broadcasting overhead becomes non negligible).
+According to the sheduling doc that http: //dask.pydata.org/en/latest/scheduling-policy.html I would expect the upper tensordot intermediary results to be summed up one by one into the last sum result as soon as they have been individually computed.
+I actually managed to solve my last problem after having looked at [tf.tensordot's source code (hyper-link)].
+I have a small suspicion that this is an inefficient way of doing this, as the tensor rank now has to go through python in order to get inserted to the axes and eventually tf.tensordot op.
+[numpy.tensordot() (hyper-link)] is the right way to do it:
+Another Edit: I've come to the conclusion that numpy.tensordot() is not the best solution here.
+Your best bet, since your reduction dimensions neither match (which would allow broadcasting) nor are the "inner" dimensions (which would work natively with np.tensordot) is to use np.einsum
+You could simply swap the axes on the tensordot result, so that we would still leverage BLAS based sum-reductions with tensordot -
+Alternatively, we could swap the positions of m and n in the tensordot call and transpose to re-arrange all the axes -
+np.tensordot is more difficult to apply to this problem.
+Writing np.tensordot(ind, dist, axes=[1, 1]) (as in the answer you linked to) computes the correct values for you, but returns a 3D array with shape (3, 4, 3).
+This gives you the correct result, but because tensordot creates a much larger-than-necessary array first, einsum seems to be a better option.
+So obviously using tensordot was the wrong way to do it (not to mention memory error in bigger examples, just as @ajcr stated).
+tensordot just reshapes (and if needed transposes) the arrays so it can apply the ordinary 2d np.dot.
+It's easier to work with einsum than tensordot.
+It's easy to specify the dot summation axis (axes) in tensordot, but harder to constrain the handling of the other dimensions.
+In which case tensordot won't help.
+or if you do not like this way of specifying what has to happen, you can also use  numpy.tensordot instead of numpy.einsum, and specify the axes as follows:
+for more info, see [http://docs.scipy.org/doc/numpy/reference/generated/numpy.tensordot.html (hyper-link)] and [http://docs.scipy.org/doc/numpy/reference/generated/numpy.einsum.html (hyper-link)]
+You can use tensor based multiplication, [np.tensordot (hyper-link)] -
+[Related post to understand tensordot (hyper-link)].
+and with tensordot
+All of these reshape ops are added by [tf.tensordot (hyper-link)], which is used by [tf.layers.dense (hyper-link)] for high-dimensional inputs (in your case 4D).
+tensordot applies reshape and transpose to the arguments to reduce the problem to single call to np.dot.
+einsum is better than tensordot (at least in speed):
+Alternatively, you can use numpy.tensordot():
+a and b are lists; tensordot turns them into arrays.
+The basic processing in tensordot is to transpose and reshape the inputs so it can then pass the results to np.dot for a conventional (last of a, second to the last of b) matrix product.
+If my reading of tensordot code is right, the axes parameter is converted into two lists with:
+np.tensordot(a,b,((),())) is the same as np.tensordot(a,b,axes=0)
+The tensordot operation is then as follows (roughly):
+The tensordot operation is then as follows:
+We can then construct the tensordot operation.
+einsum indeed seems to be a bit quicker than tensordot:
+I think what you want is np.tensordot(a, b, (0, 0)).
+This isn't as pretty as the tensordot solution, but you can construct the einsum string from ndim of the inputs:
+While messier to write, the einsum solution is faster than the tensordot one (3x faster for small test arrays).
+If you use pairwise multiplication, then there will be no summation over the paired indices (unlike in tensordot, which sums up over the paired indices / axes).
+SIMD commands, like elementwise-ops, matvecs, tensordots and etc.
+The reduction is along axis=2 for arr and axis=0 for w. Thus, with [np.tensordot (hyper-link)], the solution would be -
+We can use a combination of tensor matrix-multiplication with [np.tensordot (hyper-link)] and [einsum (hyper-link)] to basically do it in two steps -
+(tensordot doesn't apply itself neatly to this particular problem as we need multiplication along two axes and summation along just one.
+These operations only come in pairs with tensordot.)
+Turns out that [tensordot (hyper-link)] is helpful after all.
+You can certainly use [np.tensordot (hyper-link)], but need to swap axes afterwards, like so -
+Note the error - with optimization, it uses tensordot (transpose plus dot), rather than the original einsum nditer approach.
+In fact c_einsum is faster even when the tensordot version works
+This example might be too small to show of the advantages of tensordot/blas.
+tensordot is not well named; the 'tensor' means it can work with larger than 2d (but then all of numpy can do that).
+With einsum and matmul/@ tensordot isn't needed.
+Using [np.tensordot (hyper-link)] in parts, you can vectorize things like so -
+from [https://docs.scipy.org/doc/numpy/reference/generated/numpy.tensordot.html#numpy.tensordot (hyper-link)]
+This outputs a rank-4 tensor, that you want to reduce to a rank-3 tensor by taking equal indices on axis 1 and 3 (your k in your notation, note that tensordot gives a different axis order than your maths).

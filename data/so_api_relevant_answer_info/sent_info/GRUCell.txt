@@ -1,0 +1,17 @@
+Tensorflow's contrib's API supports GRUCell only on later version, i.e.
+GRUCell or LSTMCell) in Keras directly.
+In short, the weights between compat.v1.nn.rnn_cell.GRUCell and keras.layers.GRUCell are not compatible between each other.
+Input to the GRUCell's call operator are expected to be 2-D tensors with tf.float32 type.
+This means that the ResidualWrapper adds the inputs to the outputs of the GRUCell it wraps.
+So you have to make sure that the last dimension of the input and output of the GRUCell it wraps must be the same.
+While searching for the documentation for these classes to add links, I noticed something that may be tripping you up: there are (currently, just before the official TF 2.0 release) two GRUCell implementations in TensorFlow!
+There is a [tf.nn.rnn_cell.GRUCell (hyper-link)] and a [tf.keras.layers.GRUCell (hyper-link)].
+From what I can tell, the GRUCell has the same __call__() method signature as [tf.keras.layers.LSTMCell (hyper-link)] and [tf.keras.layers.SimpleRNNCell (hyper-link)], and they all inherit from Layer.
+You should be able to just use the same RNN framework and pass it a list of GRUCell objects instead of LSTMCell or SimpleRNNCell.
+I can't test this right now, so I'm not sure if you pass a list of GRUCell objects or just [GRU (hyper-link)] objects into RNN, but I think one of those should work.
+[tf.nn.rnn_cell.GRUCell (hyper-link)] is initialized with num_units and activation etc, but not with inputs.
+The constructor of GRUCell doesn't add any nodes to the Graph.
+Function call() of GRUCell has a parameter of 'scope', I assign the same variable scope as the curgru to it.
+In that sense the original version is preferable since there the same GRUCell operate on the whole sequence.
+In my version the layers.GRU operate on the input sequence after which the state will be passed on to the layers.GRUCell.
+This has the drawback that the weights for the layers.GRUCell will have to optimised (learnt) separately and do not benefit form using the same weights as the layers.GRU, and vice versa.

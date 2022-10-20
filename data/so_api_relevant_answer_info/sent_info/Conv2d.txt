@@ -1,0 +1,277 @@
+Now if I use the above code I don't need to omit the padding='same' from second last conv2D block and its working
+You must have in mind that the purpose of a Conv2D network is to train these filters values.
+The Keras Conv2D function uses as default the 'glorot uniform' algorithm, as specified in [https://keras.io/layers/convolutional/#conv2d (hyper-link)].
+The accepted answer is right but it would certainly be more useful with a complete example, similar to the one provided in [this (hyper-link)] excellent tensorflow example showing what Conv2d does.
+The only time we received the error was in the scenario @The Guy with The Hat has mentioned, that the line from tensorflow.python.keras import regularizers was not run before you attempted to make the Conv2D layer.
+In tf.nn.conv2d, you need to set filters to a multidimensional array (tensor) that you've created in advance.
+In layers.Conv2D, Keras manages the multidimensional array for you, but you configure the array's dimensions.
+I think Conv2dCPU is implemented in this file using Eigen [conv ops Line 61 onwards (hyper-link)]
+After some searching, I found actual implementation of CPU Conv2D is in [deep_conv2d.cc (hyper-link)].
+If padding="VALID" and stride=[1, 1, 1, 1] then conv2d operation will "shrink" input tensor in spatial dimension by substracting filter_size in spatial dimension.
+With padding="SAME" the conv2d operation tries to preserve spatial dimensions by adding zero values (the process is called "zero padding").
+The entry point into the C++ pytorch code for conv2d is [here (hyper-link)].
+So you can easily define an appropriate, custom initialization in my_init() and use that in your Conv2D layers.
+Dimensions must be equal, but are 1 and 2 for 'Conv2D' (op: 'Conv2D')
+model.add(Conv2D(64, (2, 2), padding='valid', data_format='channels_last', input_shape=(4, 4, 1)))
+If you specify input_shape in Conv2D layer then there is no need of  explicitly add Input layer to the model and don't mix keras and tf.keras
+If you would like to use Input layer, then you can remove input_shape from Conv2D layer
+First is having the wrong input shape, and second is specifying two input shapes, once in the Input constructor, and second in the Conv2D instance:
+add padding="same" as parameter to conv2d and the output dimension will be the same as the input dimension.
+In pytorch, the nn.Conv2d module needs the data to be in float.
+They're not the same; the conv2d kernel has many more weights and is going to train differently because of that.
+Also, depending on what padding is set to, the output size of the conv2d operation may not be 1D either.
+tf.nn.conv1d just call the tf.nn.conv2d
+Internally, this op reshapes the input tensors and invokes tf.nn.conv2d.
+The result is then reshaped back to [batch, out_width, out_channels] (where out_width is a function of the stride and padding as in conv2d) and returned to the caller.
+conv2d is a function to perform 2D convolution [docs (hyper-link)]
+keras.layers.Conv2D() will return an instance of class Conv2D which perform convolution function.
+K.conv2d is used inside keras.layers.Conv2D when conv_layer apply convolution on some input x such as conv_layer.
+EDIT: You are better off using conv1d for text / temporal data, instead of the multiple reshapes to use conv2d.
+TFlite changes Conv2D weights shape for optimization reasons.
+In standard tensorflow, Conv2D weight shape is HWIO, meaning (filter_height, filter_width, input_channels, output_channels).
+The [conv2D (hyper-link)] is the traditional convolution.
+On the other hand, the [SeparableConv2D (hyper-link)] is a variation of the traditional convolution that was proposed to compute it faster.
+(In a Conv2D, the init would have the "filters", "kernel_size", etc.)
+Since we're not creating this layer from zero, but deriving it from Conv2D, everything is ready, all we did was to "change" the build method and replace what would be considered the kernel of the Conv2D layer.
+SIMPLE ANSWER:
+The Keras Conv2D layer, given a multi-channel input (e.g.
+(2) Your first layer of your network is a Conv2D Layer with 32 filters, each specified as 3x3, so:
+Conv2D(32, (3,3), padding='same', input_shape=(32,32,3))
+(5) The result is a Keras Conv2D convolution of a specified (3,3) filter on a (32,32,3) image produces a (32,32) result because the actual filter used is (3,3,3).
+(6) In this example, we have also specified 32 filters in the Conv2D layer, so the actual output is (32,32,32) for each input image (i.e.
+You have 64 Conv2D filters against 16 ConvLSTM2D filters
+This will eliminate the time steps (and should make the LSTM work exactly as the Conv2D if we understand them correctly).
+In short, using Resizing + Conv2D instead of Conv2dTranspose minimizes these checkerboard artifacts.
+The conv2d hyper-parameters (3x3, 32) represents kernel_size=(3, 3) and number of output channels=32.
+For more details, see [nn.Conv2d (hyper-link)].
+Conv2d layers have a kernel size of 3, stride and padding of 1, which means it doesn't change the spatial size of an image.
+[Conv2d (hyper-link)] needs 4D tensor with shape: (batch, rows, col, channel).
+Second, as @Amir mentioned you need to expand the dimensions if you want to used a Conv2D layer.
+The lines I linked to have the eigen code required to do a Conv2D operation on both row-major and col-major data so you'll probably only need half of it.
+It is to use a Reshape layer (reshaping by (334,35)) just after the last Conv2D layer and then add LSTM layers.
+I think you would need to do a time distributed Conv2D layer so that the dimensions match.
+In the ConvLSTM2D layer before Conv2D, you use return_sequence is False.
+It might be confusing that it is called Conv2D layer (it was to me, which is why I came looking for this answer), because as Nilesh Birari commented:
+Create a model that just does a Conv2D convolution:
+You can add padding in Pytorch by setting Conv2d(padding=...).
+In your case, the Quant_conv2d operation does a convolution with inputs:
+If input is video, then it good practice to use Timedistributed layer along with Conv2D.
+You can then use TimeDistributed to apply the same Conv2D layer to each of the 60 timesteps, independently:
+input shape to Conv2D should be:
+On the other hand, Conv2D has an output shape of (batch_size, rows, cols, features).
+Having it vice versa (ConvLSTM2D first, then Conv2D) would make much more sense.
+Otherwise those nodes take on default numpy type of float64, which doesn't have Conv2D kernel
+It returns the list of graph nodes ([GraphDef (hyper-link)] proto to be exact), among which there are also Conv2D nodes, like this one:
+A Conv2D layer requires four dimensions, not three:
+So, if you're really going to work with TimeDistributed+Conv2D, you need 5 dimensions.
+My convs were depthwise(conv2d is depthwise in pytorch and onnx if it has groups parameter > 1)
+You should base yourself in the Conv2D class and check where self.padding member variable is used.
+Conv2D applies convolutional operation on the input, but in the contrary, Conv2DTranspose applies Deconvolutional operation on the input.
+Conv2D mostly used when you want to detect features e.g.
+In the contrary, Conv2DTranspose is used for creating features, for example in the decoder part of an autoencoder model for constructing image.
+I think you are looking for [torch.nn.functional.conv2d (hyper-link)].
+tf.layers.conv2d has a padding parameter that you can use to do this.
+The input to [Conv2d (hyper-link)] is a tensor of shape (N, C_in, H_in, W_in) and the output is of shape (N, C_out, H_out, W_out), where N is the batch size (number of images), C is the number of channels, H is the height and W is the width.
+The function T.nnet.conv2d has a parameter subsample which permits you to do this.
+Use the GlobalAveragePooling2D with Conv2D layers with a filter size equal to the number of categories.
+Try this: from keras.layers.convolutional import Conv2D
+For Keras 1.2.0 (the current one on floydhub as of print(keras.__version__)) use these imports for Conv2D (which you use) and Conv2DTranspose (used in the Keras examples):
+Now, the numpy input array has dimensions: (1, 21, 21, 1) which can be passed to a TF Conv2D operation.
+Example of padding='Valid': Have used same input for Conv2D that we used above for padding = 'Same' .i.e.
+Two similar implementation exists for conv2d:
+In other words conv2d doesn't take the max over the whole pooling region, but rather the element at index [0,0] of the pooling region.
+This is taken from this thread [what is the effect of tf.nn.conv2d() on an input tensor shape?
+I think you should check the definition of [conv2d (hyper-link)] in PyTorch.
+I think in Tensorfolow if group > 1 you should use SeparableConv2D.
+A specific padding isn't specified in Conv2D but instead a ZeroPadding2D layer.
+how to use conv2d) but I found another way to do it.
+First of all, I learned that I'm looking for is called a valid cross-correlation and it is actually the operation implemented by the [Conv2d][1] class.
+Hence my solution uses the Conv2d class instead of the conv2d function.
+A Keras Conv2d layer automatically has n input channels for its convolutional filters, where n is the depth / number of channels of the layer before it.
+This preceding layer feeds as input data into the Conv2d layer.
+Assumptions likes these make Keras easier to use for common use cases like chaining together Conv2ds in deep convolutional networks.
+2) You can also pass in a weights kwarg into the Conv2D constructor.
+In the [docs for Conv2D (hyper-link)] it says that the input tensor has to be in this format:
+Implementing with vector operations will be much faster but not as efficient as the high-level APIs such as tf.nn.conv2d or tf.nn.convolution.
+up-sampling, conv2dtrans) to reach a better accuracy.
+I faced the same problem, but it was solved by changing the conv2d function:
+So, including one parameter padding='same' during declaring the Conv2D/3D layer solved the problem.
+Actually, Conv3D or Conv2D layer reduces the input data.
+Yes, if the order is conv2d -> ReLU -> BatchNorm, then having a bias parameter in the convolution can help.
+As you said in the question, when the order is conv2d-> BN -> ReLu, then the bias is not useful because all it does to the distribution of the Wx is shift it by b, and this is cancelled out by the immediate BN layer:
+Conv2D layers are applied to 2D data.
+Because of this Conv2D is designed to be applied in multiple channels you have to add this extra dimension declaring how many channels your data have (1 channel in your case)
+Conv2D expects 4 dimensions that's right, these are: (BatchSize, Channel, Width, Height).
+You need to pass padding='same' to Conv2D.
+You apply each filter in a Conv2D to each input channel and combine these to get output channels.
+A counterexample where there is a difference between conv2d(SAM) and a symmetric tf.pad +conv2d(VALID):
+conv2d(SAME) here would be the same as tf.pad(0 pixel left/top, 1 pixel right/bottom), and would yield a (3,3,1) output.
+For Conv2D, you always need 2-d kernels, when we pass an integer like 3, keras uses same dimensional kernels meaning the width and height of the kernel is 3.
+I don't think your result is surprising at all, the implementation of Conv2D in Keras is left to the backend, and most backends (like TensorFlow) have very optimized versions of the convolution operations, specially if you use CuDNN.
+Its possible that in order to make a meaningful comparison, you will have to implement a baseline Conv2D that does convolution in a naive way, without any kind of optimizations.
+Also, for Conv2d you will need to have the input with rank [4 (hyper-link)].
+But also like the comment suggests that you should ask yourself what benefit Conv2D will bring that Conv1D doesnot.
+By the time the inputs have passed through the 4th Conv2D layer the output shape is already (4,80).
+You cannot apply another Conv2D layer with filter size (5, 5) since the first dimension of your output is less than the filter size.
+The problems is that the output of layer conv2d_4 became zero or negative.
+Use "same padding" for Conv2D layer, which results in no downsampling during the convolution step.
+The default for keras conv2d :
+If you use conv2d in the last convlstm2d layer, you must change return_sequences=True to return_sequences=False.
+Conv2D expects 4 dimensions.
+A Conv2D is mostly a generalized version of Conv1D.
+You can of course use a degenerate version of Conv2D to reproduce a 1D convolution - 
+You'll need to add in another dimension to the data:
+You'll need to make your own Conv2D that takes as input the image to process AND the kernel to use.
+(We will rewrite out dynamic conv2d so that it takes a category and stores its
+own kernel per category)
+input_shape we provide to first conv2d (first layer of sequential model) should be something like (286,384,1) or (width,height,channels).
+The docstring of conv2d says signal.conv.conv2d performs a basic 2D convolution of the input with the
+given filters.
+You need a custom Conv2D layer for that, where you change its call method to apply the zero at the center.
+Then you can just multiply that by out_channels from your previous Conv2d layer.
+Although I'm not able to reproduce your graph and values based on information provided, it's possible that you're seeing additional memory usage due to intermediary values materialized during the computation of Conv2D.
+Number of parameters in Keras Conv2D layer is calculated using the following equation:
+The problem here was a misunderstanding of the conv2d function which is not simply a 2-dimensional convolution.
+The compiler certainly accepts conv2d layers, even though the kernel tensors do not satisfy those shape requirements, as you have rightfully pointed out!
+And the Conv2d operation is defined on a three dimensional tensor, having a batch of images would just perform the 2D convolution for each input image separately in parallel.
+The conv2d operator is listed under the list of GPU operators supporting channels_last.
+This is not true for the CPU version of conv2d:
+Since padding='same' for conv2d_1, dim will remain 14 x 14.
+Conv2D expects input in 4D, you can't change that.
+Based on [conv2d doc (hyper-link)]:
+In other words, while the output shape of tf.layers.conv2d() is divided by the stride, the output shape
+ of tf.layers.conv2d_transpose() is multiplied by it:
+Get_weights() and set_weights() functions for conv2d returns a list with weights matrix as first element and bias vector as second.
+Replace -> tf.keras.layers.Conv2D( 158 , input_shape=(32, 158,163,3), kernel_size=( 3 , 3 ), activation='relu' )
+with -> tf.keras.layers.Conv2D( 158, kernel_size=( 3 , 3 ), activation='relu', input_shape=(158,163,3))
+Conv2d is a filter with 2 dimensions (like a 2d array) and it is more suitable for data like images where it can retain more spatial information in a data point because it is applied to all the neighbors.
+The internal implementation of conv2d might need to use temporary storage unrelated to the size of the output.
+Here Conv2d(D, N, K, S) denotes a 2D convolutional layer with kernel size KxK, stride S, input depth D and output depth (i.e.
+Order of the operations :
+Conv2D --> BatchNormalization --> MaxPooling2D  is usually the common approach.
+For Conv2D --> BatchNormalization --> MaxPooling2D :
+conv1_1 = Conv2D(64, (3, 3), activation='relu', padding='same')(input_image)
+bnorm1_1 = BatchNormalization()(conv1_1)
+mpool1_1 = MaxPooling2D((2, 2), padding='same')(bnorm1_1)
+and then use mpool1_1 as input for next layer.
+For Conv2D --> MaxPooling2D --> BatchNormalization:
+conv1_1 = Conv2D(64, (3, 3), activation='relu', padding='same')(input_image) 
+mpool1_1 = MaxPooling2D((2, 2), padding='same')(conv1_1)
+bnorm1_1 = BatchNormalization()(mpool1_1)
+and then use bnorm1_1 as input for next layer.
+As mentioned in the other answer, you also did not pass the correct input to one of the Conv2D layers.
+why TensorFlow documentation says conv2d_transpose() is "actually the transpose (gradient) of conv2d rather than an actual deconvolution".
+For more details on the actual computation done in conv2d_transpose, I would highly recommend [this article (hyper-link)], starting from page 19.
+tf.nn.conv2d
+tf.nn.conv2d_backprop_filter
+tf.nn.conv2d_backprop_input
+tf.nn.conv2d_transpose
+With tf.nn.conv2d in hand, one can implement all of the 3 other ops by transforming inputs and changing the conv2d arguments.
+Notes that this is only valid with the above assumptions, however, one can change the conv2d arguments to generalize it.
+This shows how
+conv2d,
+conv2d_backprop_filter,
+conv2d_backprop_input, and
+conv2d_transpose are related to each other.
+Please see the [full scripts (hyper-link)] for the implementation of tf_rot180, tf_pad_to_full_conv2d, tf_NHWC_to_HWIO.
+conv2d_transpose() simply transposes the weights and flips them by 180 degrees.
+Then it applies the standard conv2d().
+To obtain the "deconvolution" or "transposed convolution" we can use conv2d_transpose() on the convolution activations in this way:
+OR using conv2d() we need to transpose and flip the weights:
+Then we can compute the convolution with conv2d() as:
+Also the very same result can be obtained with conv2d_backprop_input() using:
+[Test of the conv2d(), conv2d_tranposed() and conv2d_backprop_input() (hyper-link)]
+[https://github.com/simo23/conv2d_transpose (hyper-link)]
+Here I replicate the output of the conv2d_transpose() function using the standard conv2d().
+One application for conv2d_transpose is upscaling, here is an example that explains how it works:
+If Conv2d is the first layer, the in_channels correspond to the no.
+But I'm not sure how you could concat the two BasicConv2d outputs.
+Your implementation of BasicConv2d is fine, here is the code of Inception module.
+note that the little change in Conv2D that is about in your code it was classifier.add(Conv2D(32, 3, 3, input_shape=(64, 64, 3), activation='relu')) and in the other one has kernel_size = (3, 3).
+Better make a lambda that will make a Conv2D layer and fix the initializer as needed and call it in the model definition part.
+In a keras sequential model, only the first layer needs to know the input_shape it should expect, in your case its Conv2D layer.
+as the documentation says: https://www.tensorflow.org/api_docs/python/tf/keras/layers/Conv2D
+you need a 4 dimensional input for Conv2d layer.
+ncoder_output = Conv2D(64, (3,3), activation='relu', padding='same', strides=2, data_format="channels_last")(encoder_input)
+Conv2d(...).
+Weight initialization is being defined when creating a conv2d layer.
+In the API ([https://www.tensorflow.org/api_docs/python/tf/contrib/layers/conv2d (hyper-link)]) there is a parameter in such function named weights_initializer that can be filled with a tf.initializer object and defines the way weights are initialized.
+The weights you are asking are for a fully connected (dense) layer, not for a convolutional layer (which is what Conv2D is).
+Conv2D is not the right operation to use in this case.
+Conv2D expects a set of 2D feature plane inputs (i.e.
+See the documentation for [tf.nn.conv2d() (hyper-link)] for an explanation of the required filter shape.
+[tf.nn.conv2d (hyper-link)] takes filters as an input argument for the layer:
+To specify the dataformat of your input images tensor conv2d layer accepts data_format argument.The default is "channels_last".
+Your conv2D kernel [filter_height, filter_width, in_channels, out_channels] expects that the input image has 3 channels and it's a 4D tensor with shape [batch, in_height, in_width, in_channels] whereas you have load the input image in grayscale format.
+Convolution2D is now Conv2d
+In Keras 2 Convolution2D has been replaced by Conv2d along with some changes in the parameters.
+Conv2D(10, 3, 3) becomes Conv2D(10, (3, 3))
+convolution2D is changed into Conv2d or Conv2D
+Also, have a look if you are building up the computation graph multiple times because conv2d_171 seems to be quite a high number.
+The dimention of tf.nn.conv2d input shoul be 4, (batch_size, image_hight, image_with, image_channels).
+Take conv1d and conv2d for example: with a (1, n) in the conv1d, you are going through a 1D input (i.e w>0 and h=1) when the kernel has reached the end of the line its result is ready.
+If my observations are correct, we can say that a single-layered d*h*w tensor going through a conv3d (1x3x3) kernel is the same as a d-layered h*w tensor going through a conv2d with d, d-layered 3x3 kernels.
+However, when adding depth to your conv3d (layers could work as a 4th dimension), you won't be able to match that with a conv2d, as the name implies!
+The error is because you are trying to load an int32 tensor to the conv2d block.
+For instance if you checkout the tensorflow source code over here [tf.nn.conv2d (hyper-link)] for conv2d, the supported input types are half, bfloat16, float32, float64.
+This is also indicated in your error after the statement - "All kernels registered for op Conv2D"
+Here is some example code which defines a kernel for Conv2d and a 5x5 mask that only lets the center and outside values pass through.
+I believe the documentation for [tf.nn.quantized_conv2d (hyper-link)] is confusing, because this operation is only registered for the input datatype tf.quint8.
+conv1 = {Conv2d} Conv2d(3, 64, kernel_size=(7,7), stride=(2,2), padding=(3,3), bias=False).
+So the differences area) the kernel_size is 7x7 not 3x3b) padding of 3x3 not 1x1 andc) the weights from resnet50.conv1 from the pretrained model will be conditioned on the training and not initialized as random normal as the will be for nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1, bias=False)
+Or, use tf.keras.Conv2DTranspose
+Specify that you are not using the default data format by passing data_format='channels_first' to Conv2D.
+What you have done for doing Conv2D(64, (3,3), activation='relu', padding='same', strides=2)(encoder_input) is you put encoder_input as a input for Conv2D().
+Conv2D Output shape
+[Conv2D (hyper-link)]
+[Dense (hyper-link)]
+Actually the functioning seems correct to me, tf.contrib.layers.conv2d() returns the output of the layer, and it is normal that it returns different outputs when you call it two times.
+Conv2D performs convolution with 2D filter, it can be square (use single int to define) or not square (use tuple).
+Kernel_size as well as stride and padding affect Conv2D output shape, and you should take that into account if you want MaxPooling2D output of specific shape.
+The kernel size for Conv2D is always 2 dimensional
+If you use Conv2D you must choose MaxPooling2D , if you use Conv1D you must choose MaxPooling1D.
+with the conv2D layer being
+to the backend you are using, theano is channels_first and tensorflow is channels_last) and pass 2 as the number of channels in Conv2D.
+Or if you have many channels for each images, then again stack them up and pass the total number of channels to Conv2D.
+If you used MaxPooling2D and Conv2D so much that your tensor shape before flattening is like (16, 1, 1, 128), it won't make a difference.
+This code will change your dense layer to respective Conv2D layer.
+conv2d_same is absolutely the same as conv2d when stride == 1.
+When stride > 1, then we do explicit zero-padding, followed by conv2d
+  with 'VALID' padding.
+You could either tweak the strides, kernel_size, and/or padding arguments in your Conv2D layers in your model to adjust what output size you want at the end (e.g., (720, 1280, 3)) or you could add a Lambda layer for resizing your final output (or the one before the final activation layer) to have your desired shape.
+In order to backpropagate through nn.Conv2d, you need to keep in memory the input to this operation.
+Note that even though your operations may be computationally efficient (for instance have small kernels), they still require the same amount of memory to hold the input feature map - in other words, you pay for a large fixed cost for each nn.Conv2d, regardless of its own complexity.
+So, clearly, if you replace one nn.Conv2d with three, you can expect a roughly threefold increase in memory consumption.
+So, you can precompute the kernel based on three sets of weights (corresponding to point_wise, depth_wise and low_pass) and then call [nn.functional.conv2d (hyper-link)] once.
+Remember that conv2d wants  an input tensor of shape [batch, in_height, in_width, in_channels] and a filter / kernel tensor of shape [filter_height, filter_width, in_channels, out_channels].
+In fact, reshaping your data the results are the one expected (please note that conv2d computes the correlation and not the convolution).
+The problem was that input_shape must be specified outside Conv2D and inside TimeDistributed.
+Suppose your stride is 1, set the padding parameter (3, 3), then use same for conv2d.
+tf.nn.conv2d(...) is the core, low-level convolution functionality provided by TensorFlow.
+tf.contrib.layers.conv2d(...) is part of a higher-level API build around core-TensorFlow.
+tf.layers.conv2d.
+The difference is simply, that tf.nn.conv2d is an op, that does convolution, nothing else.
+tf.layers.conv2d does more, e.g.
+Without knowing your use case: Most likely you want to use tf.layers.conv2d.
+there will be no difference between tf.keras.layers.Conv2D and tf.keras.layers.Convolution2D in Tensorflow 2.x.
+Conv2d has a parameter called padding [see here (hyper-link)]
+Second parameter of nn.Conv2D constructor is number of output channels:
+You haven't actually defined the weights with conv2d, you need to do that.
+It is actually very simple : torch.nn.functional.conv2d !
+You essentially want to perform only the 1st part of the separable convolution operation, which is exactly what the DepthwiseConv2D layer in keras/tensorflow does.
+Build a model to run a [kernel (hyper-link)] (to run more kernels make kernel_init a generator and readily adjust the number of filters when initializing Conv2D)
+The following custom conv2d layer implements convolutions in a checkerboard stride as indicated in the original question.
+This layer basically acts like a normal Conv2d but with the checkerboard stride.
+As it is mentioned in the documentation, if you choose "channels first" for your conv3d, then you can do BatchNormalization with axis=1 on a 3D vector (since the position of the channels will be the same as for the conv2D)
+If you look at the bottom of the [nn.Conv2d (hyper-link)] documentation you'll see the formula used to compute the output size of the conv layer:
+Yes, they are pretty random, made via the [initialization function (hyper-link)] used for the [Conv2d (hyper-link)].
+This may change but by default, nn.Conv2d uses init.kaiming_uniform_.
+In tensorflow, the filter argument of conv2d must be a tensor corresponding to the weights of the convolution, not a convolution size.
+Example for conv2d:
+You have initialized two nn.Conv2d with identical settings, that's true.
+These will differ every time you create a new Conv2d, even if you use the same arguments.
+According to this [doc (hyper-link)], FusedResizeAndPadConv2D is only generated for ResizeBilinear.
+As you can see, it is not documented in [tf.layers.conv2d (hyper-link)]
+2.0 Compatible Answer: Even in Tensorflow 2.0, the Default Kernel Initializer in tf.keras.layers.Conv2D and tf.keras.layers.Dense is glorot_uniform.
+Link for Conv2D is [https://www.tensorflow.org/api_docs/python/tf/keras/layers/Conv2D?version=nightly#init (hyper-link)]
+In the link above you'll find that Conv2D has the parameters:

@@ -1,0 +1,247 @@
+model.add(GRU(units[1], input_shape=(units[0], 1), return_sequences=True))
+model.add(GRU(units[1], input_shape=(units[0], 1), return_sequences=True,  reset_after=True))
+I had a TF1.x saved model containing GRU layers.
+The number 2040 is entirely made up from the numbers 13 (features) and 20 (units in GRU).
+This is how the basic GRU cell looks like.
+It says it's about LSTMs, but everything said there applies for GRUs as well.
+In the GRU, outputs_info contains just one element:
+By taking only rval[0] in the GRU, since in the GRU code rval is a Theano variable and not a list of a Theano variables, you removed the part in the red rectangle:
+Another GRU implementation that can be plugged in the LSTM tutorial:
+The second model is attempting to compress a sequence of 23 x 178 vectors via single GRU layer.
+The repeat vector simply takes the output of the 1st GRU layer (the encoder) and makes it in input of the 2nd GRU layer (the decoder).
+Instead of the TimeDistributed layer, I'd recommend that you use return_sequences=True in the 2nd GRU (decoder).
+When GRU is not instantiated with batch_first=True, then the output shape is (seq_len, batch, num_directions * hidden_size) -- not that seq_len and batch_size are flipped.
+If it helps, here's the forward method of a GRU classifier network:
+See [https://www.kaggle.com/alvations/gru-language-model (hyper-link)]
+Thats because docker is exposing port 8088 whereas Gru server expects Dgraph to be running on 8080.
+You also have to run Gru server and caddy as mentioned in the README.
+Now that I think about it the UI doesn't need to be run separately from the Gru web server.
+set reset_after=True in your GRU layer
+As the ValueError explains, the GRU layer is waiting for a 3-dimensional input but the output of your last Conv2D is of dimension 4 (In your case the dimension is:(None, 17, 76, 64)).
+Depending on what you need to do, you need to reduce the dimension shape before feeding the GRU layer.
+You can see this description coded either in GRUCell and in LSTMCell for instance in the [source code (hyper-link)].
+One reason for Overfitting might be that you are using 3 GRU Layers.
+You can start with 1 GRU Layer because stacking many GRU Layers not only leads to Overfitting but also is very expensive.
+If the Model is not Overfitting with 1 Layer and if there is scope of improvement in terms of Accuracy (or the respective Metrics), then we can add the 2nd GRU Layer.
+We also need to add Dropout and Recurrent_Dropout in every GRU Layer, as shown below.
+Here's an example of how a state dict looks for a GRU (I chose input_size = hidden_size = 2 so that I can print the entire state dict):
+For the GRU example above, we need a tensor of the correct size (and the correct device, btw) for each of 'weight_ih_l0', 'weight_hh_l0', 'bias_ih_l0', 'bias_hh_l0'.
+To get this you need to add the parameter return_sequences set to True when you create the GRU layer.
+If by 'hidden layer' you mean taking the internal state of the GRU, then it is supported by Tensorflow.
+What you need to do is setting return_state parameter to True when creating the GRU layer, as explained in the [official documentation (hyper-link)].
+This has nothing to do with GRU.
+From what I have read, it seems you want to add GRU instead of LSTM.
+You can just add GRU layer like you did with LSTM
+If you want LSTM and GRU together (which really depends what you are doing and why you should do it), you need to return sequences from GRU first
+While searching for the documentation for these classes to add links, I noticed something that may be tripping you up: there are (currently, just before the official TF 2.0 release) two GRUCell implementations in TensorFlow!
+There is a [tf.nn.rnn_cell.GRUCell (hyper-link)] and a [tf.keras.layers.GRUCell (hyper-link)].
+From what I can tell, the GRUCell has the same __call__() method signature as [tf.keras.layers.LSTMCell (hyper-link)] and [tf.keras.layers.SimpleRNNCell (hyper-link)], and they all inherit from Layer.
+You should be able to just use the same RNN framework and pass it a list of GRUCell objects instead of LSTMCell or SimpleRNNCell.
+I can't test this right now, so I'm not sure if you pass a list of GRUCell objects or just [GRU (hyper-link)] objects into RNN, but I think one of those should work.
+But in GRU code you have decoder_states as the output of the GRU layer which will have a different type.
+OK, so it seems the only way to achieve this is to define a stack of GRU Layer instances.
+This is what I came up with (note that I only need stateful GRU layers that return sequences, and don't need the last layer's return state):
+Tests on Colab have showed no difference so far, if anything it's actually slightly slower than using a straight RNN initialized with a list of GRU cells.
+The [nn.GRU (hyper-link)] module works like other PyTorch RNN modules.
+There is no internal memory in GRU, which means there is no cell state.
+GRU, in general directly operate on the hidden state to get the output value.
+For most of the purpose, GRU has the same performance as that of LSTM, while with less computation (less number of parameters).
+For GRU, I guess you could remove the two lines of code related to the bias term:
+Also, I think you don't need to re-implement a CGRU layer to use a custom cell.
+Yes, the papers do not lie; in fact, there are fewer computations for a GRU-cell than an  LSTM-cell.
+Ensure that you do not compare simple GRU with CuDNN-LSTM.
+For a true benchmark, ensure that you compare LSTM with GRU and CuDNNLSTM with CuDNNGRU.
+GRU (Gated Recurring Units): GRU has two gates (reset and update gate).
+GRU use less training parameters and therefore use less memory, execute faster and train faster than LSTM's whereas LSTM is more accurate on datasets using longer sequence.
+In short, if sequence is large or accuracy is very critical, please go for LSTM whereas for less memory consumption and faster operation go for GRU.
+The documentation [nn.GRU (hyper-link)] is clear about this.
+For the unidirectional GRU/LSTM (with more than one hidden layer):
+E.g., setting num_layers=2 would mean stacking two GRUs together to form a stacked GRU, with the second GRU taking in outputs of the first GRU and computing the final results.
+I don't think you're supposed to call nn.GRU in a loop like that.
+I think nn.GRU is supposed to accept a sequence of tokens.
+If you want to write code where you manually loop, you probably want nn.GRUCell ([https://pytorch.org/docs/stable/generated/torch.nn.GRUCell.html (hyper-link)]).
+If you look at the example at the bottom of [https://pytorch.org/docs/stable/generated/torch.nn.GRU.html (hyper-link)] , you can just pass your sequence in all at once.
+(Remember to be careful that the batch dimension lines up with the batch_first arg to the GRU constructor.)
+On the other hand a GRU (or LSTM) layer accepts a sequence as input and therefore its input shape should be (batch_size, num_timesteps or sequence_length, feature_size).
+So to make it work with GRU you need to add a third dimension to x_train and x_test:
+and then remove that return_sequences=True and change the input shape of GRU to input_shape=(3000,1).
+This way you are telling the GRU layer that you are processing sequences of length 3000 where each element consists of one single feature.
+However, I think you may get better results if you use an [Embedding layer (hyper-link)] as the first layer and before the GRU layer.
+Therefore, feeding GRU or LSTM layers, which relies on the order of elements in a sequence, with this representation does not make sense.
+LSTM/GRU needs a 3D array as input.You need to convert your data to an array with 3Dimension ie (samples, timesteps ,features).
+The key is that tensorflow will separate biases for input and recurrent kernels when the parameter reset_after=True in GRUCell.
+You can look at some of the [source code (hyper-link)] in GRUCell as follow:
+As you can see,  the default parameter of [GRU (hyper-link)] is reset_after=True  in tensorflow2.
+But the default parameter of GRU is reset_after=False in tensorflow1.x.
+So the number of parameters of a GRU layer should be ((16+32)*32 + 32 + 32) * 3 * 2 = 9600 in tensorflow2.
+What Keras does in GRUCell.call() is:
+If you set return_sequences = False in your last layer of GRU, the code will work.
+Consider that we have the following Unidirectional GRU model:
+output of shape (seq_len, batch, num_directions * hidden_size): tensor containing the output features h_t from the last layer of the GRU, for each t. If a torch.nn.utils.rnn.PackedSequence has been given as the input, the output will also be a packed sequence.
+For Bidirectional GRU (requires reading the unidirectional first):
+Where RECURRENT_MODULE is either GRU or LSTM (at the time of writing this post), B is the batch size, S sequence length, and E embedding size.
+This answer is written on the assumption that you are using something like torch.nn.GRU or the like, and that if you are making a multi-layer RNN with it, that you are using the num_layers argument to do so (rather than building one from scratch out of individual layers yourself.)
+The third point in particular drove me absolute bonkers for about three hours the first time I was playing RNNs and GRUs.
+If your target is only learn the implementation of LSTM or GRU, you can use the low level API of deep learning framework to build a LSTM network by yourself.
+Hopefully it will help you get some idea about the LSTM / GRU network.
+GRU is just used to find the relation between the input data.
+The "state" of a GRU layer will usually be be same as the "output".
+Here's an example of an encoder/decoder for a seq-2-seq network using GRU layers
+But to your point, using return_state isn't really necessary here as the output and state from encoder_gru_layer will be the same.
+This function is used to get the first hidden state when you call a GRU layer without specifying an initial state and the layer is not stateful, i.e.
+the common usage GRU(...)(x).
+It happens using GRU only (lstm has no problem).
+I figured out that we need to also set the seed for the intializers of the gru cells as well as the initializers of the weights in the dense layer at the output (this is at least acccording to my model); so the definition of the cell is now:
+I doubt anyone on stackoverflow is going to debug a custom implementation of GRU for you.
+Once you know your implementation can learn things that a GRU based recurrent network should be able to learn, then you can start using your own data.
+In a course of forward pass (either predict() or fit()) GRU (and other RNNs) takes the first item from your sequence, recalculates its state, takes the second item, recalculates its state and so on.
+You can take a closer look at what's [inside the GRU layer (hyper-link)] implementation [torch.nn.GRU (hyper-link)] by peaking through the weights and biases.
+First the parameters of the GRU layer:
+You can look at gru.state_dict() to get the dictionary of weights of the layer.
+~GRU.weight_ih_l[k] – the learnable input-hidden weights of the layer (W_ir | W_iz | W_in), of shape (3*hidden_size, input_size).
+~GRU.weight_hh_l[k] – the learnable hidden-hidden weights of the layer (W_hr | W_hz | W_hn), of shape (3*hidden_size, hidden_size).
+~GRU.bias_ih_l[k] – the learnable input-hidden bias of the layer (b_ir | b_iz | b_in), of shape (3*hidden_size).
+~GRU.bias_hh_l[k] – the learnable hidden-hidden bias of the (b_hr | b_hz | b_hn).
+The four expressions for a GRU layer: r_t, z_t, n_t, and h_t, are computed at each timestep.
+Here is a minimal example of an nn.GRU inference manually computed:
+Which you can compare with output, _ = gru(x).
+This is an example of 2 GRUs one after the other, and I did back propagation in 2 different ways according to the code in optimize()
+Perhaps a google search for gru tutorials might turn up some helpful blogs.
+[This (hyper-link)] is a great blog to help explain how RNNs (GRU is one specific example) are set up and how backpropagation through time is used to update the weights.
+The weights of the GRU then determine how the cell state is updated.
+The Recurrent Neural Network (RNN or GRU or LSTM) loses its state while executing it in Non-Eager-Mode/Graph-Mode by default.
+As illustrated by [this (hyper-link)] article, LSTM and GRU cells are just arrangements of non-linearities and arithmetic operations.
+[This repository (hyper-link)] contains custom LSTM, GRU and other RNN cell implementations for pyTorch.
+[This repository (hyper-link)] contains custom LSTM and GRU implementations for TensorFlow.
+you can simply add a recurrent layer, like GRU or LSTM, above your embedding layer
+Train a usual LSTM or GRU on the training set.
+[LSTM (hyper-link)], [GRU (hyper-link)]
+This might have to do with the fact that you are not passing the output of your nn.GRU to the first linear layer in GRUNet's forward function:
+Then you will have the shape (90582, 517, embedding_dim), which can be handled by the GRU.
+Add it as the first layer of your Neural Network before the fist GRU layer.
+The function performs the more general task of converting weights between CuDNNGRU/GRU and CuDNNLSTM/LSTM formats, so it is useful beyond just my use case.
+For my use case (putting CuDNNGRU weights into a GRU), the solution using this function is the following:
+Note that to use the cuDNN-compatible implementation of tf.keras.layers.GRU, one must [use a specific combination of parameters (hyper-link)] (in particular, use_bias=True).
+When I call model.input I get the following output that suggests that the GRU layer requires its input to be a float tensor.
+In this case, the computation graph should be detached after the second forward pass with gru1 i.e.
+Following [the GRU formula (hyper-link)] I got, h(t) = 0.73105857863 * 0 + (1 - 0.73105857863) x 0.761594155956 = 0.20482421480989209117972 which matches output 0.20482421.
+[https://d2l.ai/chapter_recurrent-modern/gru.html#hidden-state (hyper-link)]
+[https://pytorch.org/docs/stable/generated/torch.nn.GRU.html (hyper-link)]
+Side note (as I mentioned in [my comment (hyper-link)]): if you are running the training on a GPU then you can consider using [CuDNNGRU (hyper-link)] instead of GRU (or CuDNNLSTM instead of LSTM) since it is specifically optimized for a GPU and speeds up the training process.
+First, GRU is not a function but a class and you are calling its constructor.
+You are creating an instance of class GRU here, which is a layer (or Module in pytorch).
+Even though it is called hidden_size, for a GRU this parameter also determines the output features.
+In other words, if you have another layer after GRU, this layer's input_size (or in_features or in_channels or whatever it is called) must match the GRU's hidden_size.
+Also, it tells you what will be the expected input once you actually use your layer (via self.gru(...)) and what will be the output of that call.
+Check documentation of [torch.nn.GRU (hyper-link)], you are after last step of the sequence, not after all of the sequences you have there, so you should be after:
+[code snippet]
+but I think this part is fine otherwise.
+That GRU layer should (for it to work) be given a tensor of shape (batch_size, sequence_length, features) but instead it's getting a (batch_size, 5, 10, 256) with its input_shape parameter pointlessly set to (256,84,84).
+To get what you want, make the convolutional part time-distributed ([https://www.tensorflow.org/api_docs/python/tf/keras/layers/TimeDistributed (hyper-link)]), then flatten everything after the second dimension (using [https://www.tensorflow.org/api_docs/python/tf/keras/layers/Reshape (hyper-link)]), and only then apply the GRU.
+You don't have to tell the GRU layer the correct input shape since it will infer that automatically.
+The problem with the (full) code above was that the initial hidden state of the GRU did not have the correct dimensions.
+4 represents the hidden_size (num neurons) in the GRU.
+Function call() of GRUCell has a parameter of 'scope', I assign the same variable scope as the curgru to it.
+Keras GRU uses the following code for computing h:
+I'm not familiar with the GRU architecture.
+However, this paper compares the LSTM and GRU architectures, I think it's exactly what you need.
+Since you don't use the GRU layer after its creation and the only reference to that is the gru variable, it is destroyed after creating the next GRU layer in the next iteration of for loop.
+Or better than that, if you intend to stack multiple GRU layers on top of each other, you can do this:
+I confirmed this today, in a project involving bi-dir GRUS on speech mfccs.
+The source of the problem, think it, is that in __init__ you wrap the gru_cell in a layers.RNN.
+This causes the same gru_cell to be used twice: once in warmup() and then again in call().
+Replace your custom RNN layer with a layers.GRU
+(edit)
+NOTE: The gru_cell and the gru_rnn layers will not be sharing their weights as they do in the original code.
+In that sense the original version is preferable since there the same GRUCell operate on the whole sequence.
+In my version the layers.GRU operate on the input sequence after which the state will be passed on to the layers.GRUCell.
+This has the drawback that the weights for the layers.GRUCell will have to optimised (learnt) separately and do not benefit form using the same weights as the layers.GRU, and vice versa.
+The shape[0] of hidden output for bidirectional GRU is 2.
+LSTMs(and also GRUs in spite of their lighter construction) are notorious for easily overfitting.
+Well, "GRUß" is non-sensical in the first place for the reasons you state.
+If limGru is fixed value?
+If so then you can do [Conditional split (hyper-link)] with condition [NameOfYourFirstColumn] == "limGru"
+it means GRU is part of the graph.
+I think the units of GRU are very high there.
+Too many GRU units might cause vanishing gradient problem.
+For starting, I would choose 30 to 50 units of GRU.
+Added doupout=0.1 for the 2nd and 3rd GRU layers.Reduced batch size to 1000 and also set loss function to mae
+The constructor of GRUCell doesn't add any nodes to the Graph.
+came back ans myself:
+there’s some “very long sentence” in my dataset, may make some “noise”, because of RNN(GRU) method hard to keep those info, after taking “very long sentence” away from my dataset, loss strat going down and acc was pertty
+concatenated states of the forward and backward RNN (shape: batch × length × 2 GRU dimentsion)
+I found the answer myself, the hidden state of the GRU was still attached to the last batch run, so it had to be detached using
+The first argument to the GRU initializer is not the number of cells that you are using, but rather the dimensionality of the hidden state (or, in Keras' awkward terminology, the units).
+The following GRU layer expects an input of shape (None, 1) (not including the batch size) and outputs a tensor of shape (None, 512) (i.e.
+No, FANN does not support [recurrent neural networks (GRU, LSTM) (hyper-link)].
+Yes but you can convert to a CuDNN compatible GRU/LSTM
+Can GRU layers run inference on a GPU?
+Another problem with your code: the second GRU layer expects a sequence input, therefore you should use return_sequences=True inside the first GRU layer.
+Input to the GRUCell's call operator are expected to be 2-D tensors with tf.float32 type.
+By using [Left join (hyper-link)], you can get manager if not has any relation in Gru Table.
+Note that, GruId and GruName are null because no manager in Gru Table.
+Also note that I have added batch_size parameter to the first GRU layer.
+Found here: [Angular with Yeoman 1.0 and Grunt (hyper-link)]
+nn.GRU [expects (hyper-link)] (line 181) either a [PackedSequence (hyper-link)] or a tesnor as input.
+CudnnGRU is not an RNNCell instance.
+CudnnGRU expects the input tensor to be time-major (as opposed to the more standard batch-major format i.e.
+CudnnGRU:
+CudnnCompatibleGRUCell:
+But with GRUs, the Cudnn implementation has inherently different math operations, and in particular, more weights ([see the documentation (hyper-link)]).
+Unlike dynamic_rnn, CudnnGRU doesn't allow you to specify sequence lengths.
+I'm not sure about extending a GRU, but I would do something like this:
+For the GRU layer you have 128 input dimensions to BN, requiring 128 x 4 = 512 parameters.
+If you want to use a single GRUCell for each RNN, you need to call the constructor twice to have two different instances to pass.
+If you are using MultiRNNCells you should have as well two of these, but also one instance of GRUCell per layer on each of these.
+This layer allows another "configuration" of the output of LSTM/GRU/SRNN and avoid the output to vanish.
+As suggested by the error you got, the input tensor shape expected by the GRU is three dimensional with shape (batch_size, seq_len, input_size)[1 (hyper-link)]
+The RNN class which is super class of the GRU,  expects an input shape with:
+Why do they apply RelU layer before GRU cell?
+These actually perform the step function which contain the computation of a GRU cell for example.
+The problem is that the decoder_gru layer does not return its state, therefore you should not use _ as the return value for the state (i.e.
+increase its capacity) by stacking multiple GRU layers on top of each other:
+Further, instead of using GRU layers, you can use LSTM layers which has more representational capacity (of course this may come at the cost of increasing computational cost).
+Side note: If you have a GPU available, then you can use [CuDNNGRU (hyper-link)] (or [CuDNNLSTM (hyper-link)]) layer instead, which has been optimized for GPUs so it runs much faster compared to GRU.
+However, we are not interested in this example, we want to run LSTM / GRU, and not bug-fix this example.
+Can RNN, LSTM or GRU used to predict subsequence as posed above?
+LSTMs and GRUs are types of RNNs; if by RNN you mean a [fully-connected RNN (hyper-link)], these have fallen out of favor because of the vanishing gradients problem ([1 (hyper-link)], [2 (hyper-link)]).
+Because of the  relatively small number of examples in your dataset, a GRU might be preferable to an LSTM due to its simpler architecture.
+Also, GRUs will be faster than LSTMs due to their simpler architecture.
+This works for both LSTM and GRU cells.
+This problem is occurring because you have increased layer of  your GRU cell but your initial vector is not doubled.
+Since, you are trying to model the system as a time-series, you just have to concatenate all the frames [dataframe in your case], and consider every frame as a input to the time series model[LSTM, GRU].
+We can also (of course) extend this to the GRU example.
+The dropout keyword argument in tf.keras.layers.GRU is dropout on the inputs, and the next Dropout layer is on the outputs.
+gru_1_1/Variable:0) to feed the model state from TensorFlow, and the identity variables I created out of the 'Exit' tensors were used to extract the new states after feeding the model at each timestep
+$name  = rawurlencode('Lóms Gruñes'); use can use //( $_POST ['name']
+Your target network design doesn't seem to start with the dense layer, but with GRU, so I removed it.
+GRU [https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/ops/rnn_cell_impl.py#L441 (hyper-link)]
+the variables j, gru, A, B, C, D, E are defined in main but never used
+You are passing complete sentence, what GRU will recieve one word at a time and it roll-out for the number of words in the sequence.
+Let me share a private piece of C++ code that creates a GRU simimilar to the Layers library (without all the options).
+Your overall pattern therefore indeed does not match "gruell-Core.exe" because there is no character after the .exe.
+Try matching "gruell-Core.exee" instead.
+If you want your matches to end with .exe, then anchor your pattern instead: gruell.
+In short, the weights between compat.v1.nn.rnn_cell.GRUCell and keras.layers.GRUCell are not compatible between each other.
+all_kernel = np.concat([gru_cell/gates/kernel, gru_cell/candidate/kernel], axis=1) # shape (B+H, 3 * H)
+bias = np.concat([gru_cell/gates/bias, gru_cell/candidate/bias], axis=0) # shape (B, 3 * H)
+The problem is that the 'l1_decoder_gru' does not return its states (i.e.
+or alternatively you can set the return_state argument to True for 'l1_decoder_gru' layer (of course, if it makes sense to do so and you may need state of this layer in another part of your model).
+The same thing applies to other GRU layers you have defined and used in your model.
+TimeDistributedDense applies a same dense to every time step during GRU/LSTM Cell unrolling.
+The importable implementations have been deprecated - instead, LSTM and GRU will default to CuDNNLSTM and CuDNNGRU if all [conditions are met (hyper-link)]:
+reset_after = True (GRU only)
+The return_sequences param in the GRU layer instructs the model to return the state at each time step rather than the final activation.
+If you set that flag to False in the second GRU, your model will return the shape that you expect.
+Instead of using CuDNNGRU or CuDNNLSTM, use normal GRU or LSTM with following options
+Code that throws error when CuDNNGRU or CuDNNLSTM models trained on GPU throw error while inference on CPU-only instances.
+CuDNNGRU
+GRU
+tf.keras.layers.GRU expects input A 3D tensor, with shape [batch, timesteps, feature]
+More informations on the topic [here (hyper-link)] (in there is another link pointing towards math differences), except one thing seems to be wrong: not only GRU is time-major, LSTM is as well (as pointed by [this issue (hyper-link)]).
+Found it,
+When using Bidirectional, it should be treated as a layer, shifting the input_shape to be contained in Bidirectional() instead of in the GRU() object solved the problem
+You mentioned, "I want to implement LSTM/GRU to predict the next word in another group" - this statement is completely ambiguous.
+.grunt-init and grunt-init are two distinct names, both perfectly valid.
+After this Dense you should use a Reshape to make the output ready for GRU.
+You can fit this safely to your GRU layer

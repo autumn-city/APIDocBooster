@@ -1,0 +1,1144 @@
+hello everyone welcome to today's talk
+on building a custom lstm cell in
+pytorch
+and thereby opening the magic lstm black
+box
+so in this talk basically i'll be
+focusing on and walking you through the
+lstm cell architecture and then
+implementing it
+from scratch in pytorch
+then
+moving forward
+i like to introduce myself
+my name is shreya sajal and i am a
+pre-final year student at iit guwahati
+currently i am a kaggle notebooks master
+ranked at around 200 and
+a 2 into expert
+in the discussions and data set section
+on kaggle and then
+other than that i was recently offered
+the applied scientist intern role at
+amazon for the summer of 2022.
+so moving forward i would like to
+give the required credits for the
+content of this talk
+so
+there is this ai summer block they
+curate very good blog posts and their
+understanding lstm blog post was very
+helpful
+and this entire presentation is very in
+uh the content is influenced uh by their
+blog post and then this github repo of
+this ml scientist piero esposito
+that i have mentioned the links in my
+slide
+so moving forward to
+what's in store for today's talk
+so first i'll be covering some rnn
+basics
+because lstm is one of the most
+interesting architectures of the
+recurrent neural networks
+so before directly jumping to the lstm
+architecture
+it can be very overwhelming at first but
+then
+if i
+implementation so once the maths or the
+equations and the gates are clear
+then the pie torch implementation is
+just a cake walk
+so
+i'll move forward
+so a quick glimpse into a simple rnn
+cell so as you can see in the figure
+it is basically
+a common neural network with shared
+weights the weights are same for every
+time step and it is taking in sequential
+data
+so
+and that sequential data can be a
+variable length
+so that is a limitation when it comes to
+a common neural network you cannot pass
+in variable length data but then rnns
+were able to overcome that limitations
+limitation
+one can achieve this by connecting the
+time steps output to the input
+so this is called the sequence unrolling
+the entire sequence is unrolled into the
+different time steps and then the
+processing of the whole sequence is done
+processing of the whole sequence is done
+and we have an algorithm that takes into
+account the previous states of the
+sequence as well so in this manner we
+are having a notion of memory in a cell
+so
+this is
+uh what uh so this is the simple rnn
+cell
+now
+moving
+forward what is back propagation through
+time
+so this is basically
+a method that is used for learning of
+weights in a regular neural network so
+one thing that we talked about in the
+last slide was that the rnn networks
+have this feature of input unrolling
+which means that when it is provided
+with a sequence of length n it does not
+process the entire sequence at once
+rather it processes the input into time
+steps
+and then
+it processes each time step so when we
+talk about the learning of the
+parameters the weights of this in this
+recurrent neural network so how does
+this this
+uh take place so it basically takes
+place to
+back propagation through time so back
+propagation through time it is based on
+the
+unrolled input so we can calculate a
+different loss per time step and then
+that loss is back propagated and the
+error of the multiple losses
+to the memory cells is like back
+propagated and in this direction we can
+compute the gradients from the multiple
+parts and then these are added to
+calculate the finite gradients so this
+is how the back propagation through time
+works
+so
+moving forward we now come to the lstm
+so that is long short term memory cells
+so the lstm is one of the most
+interesting architectures on the record
+in neural networks
+it enables to the model to learn from
+long sequences
+but
+and it also creates a numerical
+abstraction for the long and short-term
+memories being able to substitute one
+for another whenever needed so there was
+this problem in recurrent neural
+networks that was of the vanishing
+gradients or exploring gradients
+so
+the
+long-term dependencies were not
+being
+captured by the recurrent neural
+networks so when lstms were introduced
+they were able to
+overcome this limitation of recurrent
+neural networks because they had a gated
+structure so this gated structure
+enabled them
+to
+take in account the long and the
+short-term memories
+so this ha they have some mathematical
+operations that make the information
+flow this entire gated structure and
+because of that it is able to decide
+between its long and short term memory
+and output reliable predictions on the
+sequence data
+so this is uh
+just of the lstm now we'll be moving
+part by part in this long short term
+memory cells and we look into the
+architecture
+so
+uh this is a picture that you'll be
+basically finding mostly
+in
+on the internet whenever you type lstm
+architecture so you can be overwhelmed
+at first looking at this like what is
+this
+there so
+there is so much to it
+but then i
+hope that in the following slides i am
+able to
+make you understand what actually is
+this entire working by taking in
+the equations
+step by step and how it works
+so
+some important points before moving
+further into the maths is that
+all the equations that i'll be
+mentioning further the weight matrices
+are indexed
+so you will see something like
+i
+x uh
+or
+f i t something like that so that is
+basically
+the first index is the vector that they
+are processing while the second index
+refers to the representation that is the
+input gate or the forget it so second
+representation refers to what you are
+turning
+after the processing
+turning it into if you are calculating
+for the input vector
+then uh input gate vector
+then it is w
+x i if you are taking in the input that
+is x and you are processing it and
+making it into i so it is w x i so you
+will
+understand it when you move further
+then dot with the outer circle
+represents element wise multiplication
+that is the hadamard product basically
+and the matrices are depicted with the
+capital board letters file vectors with
+the non-capital bond letters that is uh
+the
+standard notation
+so moving further we have the equations
+of the lstm cells as it is mentioned
+over here so here the x t that is there
+is basically a vector of n dimension
+and uh here n refers to the feature
+length of each time step uh so i can
+make you understand like what is the
+future length at each time step means at
+each time step means
+so uh for example if you are taking a
+sentence say it is having five words
+so for every sentence you are having an
+embedding
+because you know machine learning models
+uh any type of model they work with
+numbers you cannot pass text directly so
+you have embeddings for that feature
+embeddings so for example i take word to
+vector or glove embeddings say they are
+50 dimensional so that 50 dimension that
+is the feature length of each word so
+each word will have an embedding of 50
+uh
+50 dimension
+so that is the feature length n that is
+what it refers to over here x t
+and then uh the other things that are
+there i t f t o t h t it's t minus one c
+t t
+so
+the
+t thing is basically the time step
+whereas these uh are in the
+edge dimension and it is the hidden
+straight dimensional hidden stray
+dimension that is the
+uh
+number of neurons in the hidden state
+because you can see just that hidden
+state but inside that there are
+many neurons right
+so
+so that hidden state dimension is
+basically
+the dimension of the vectors like the
+input gate vector or the forget gate
+vector or the output gate vector
+or the hidden state vectors and or the
+cell state vectors that we will be
+looking forward and these are the five
+main equations of the lstm
+you can see uh as we talked about the
+capital w bold
+x i so it is taking an x like it you are
+seeing that this is having the product
+with
+this matrix multiplication with x uh
+t
+and it is giving i so therefore the
+sub uh so therefore it is having that
+index x i
+so that is easy to understand
+so i'll move further so the first
+equation is of the input gate
+so the input gate as you can see
+it is obtained after applying this
+sigmoid activation over this
+linear combination that you can see here
+there is this weight matrix
+and there is this matrix multiplication
+with the x d that is the input
+at the current time step
+then you have h t minus 1 with which
+there is this another weight matrix a
+product with the
+h t minus one and there is this third
+weight matrix that is calculating the
+product with c t minus one so h t minus
+one is the previous hidden state
+uh
+vector and c t minus one is the previous
+cell
+vector that is the context vector
+so when we look at the
+dimensions so the dimension of
+h and c is same that is that size into
+the hidden state dimension whereas the
+hidden state dimension is basically a
+parameter of the hidden state
+and it is like the
+neurons
+but that term is now depreciated
+and the term that is mainly used is the
+hidden state dimension or the number of
+neurons in the hill and state
+and then we have x t that is the current
+time step input that is having the bad
+size into feature length dimension so
+feature length here f refers to as we
+talked about say the dimension of the
+embedding that you're using for example
+if you're using the 50 dimensional word
+many then the hidden the feature length
+is 50.
+so
+uh basically this was about the input
+gate we later see how the input gate
+is actually acting as a filter for the
+input that is passed
+that is used for generating the
+new
+cell state vector
+so
+equation 2
+we saw the forget it the equation is
+almost the same as the equation above
+that you saw for the input gate but here
+we are modeling something different and
+the weight matrices have a different
+meaning
+but then it is also taking the current
+input
+current time step input and the previous
+time step hidden state and the previous
+time step cell vector so that is
+something that is same
+then we have
+equation 3 that is the new cell or
+context vector
+so
+here you can see
+that we have already learned a
+representation that corresponds to the
+forget as well as for modeling the input
+vector there were f and i that we saw in
+equations one and two
+so we can keep them aside and then we
+inspect the tanning activated uh
+function over here the tanning
+activation that is applied this entire
+term pannage
+and there is this uh
+linear combination of this matrix
+multiplication and then there is this
+bias term that is just a vector that is
+added
+uh so that's not something very
+cooperative it's also a learnable
+parameter
+like the weight matrices
+so here we have another linear
+combination of the input and the hidden
+vector which is again totally different
+and this term is the new cell
+information that you see in the that is
+passed to the tanning activation
+function in the
+rightmost part of this equation for the
+new cell state so this is the current
+cell information so it is uh
+basically passed to the tannage function
+to introduce non-linearity and to
+stabilize the training but we don't want
+to simply update the cell with the new
+states that is the new cell information
+therefore we see such a big equation or
+it could just have been a tanning
+activation function but then this would
+defeat the entire purpose of the lsd
+itself because you see it is having the
+long short term memory and it is having
+the mathematical abstraction for both
+the long and the short term memory
+so here you have there comes the role of
+the input and the forget case that we
+just mentioned in the previous slide so
+the input gate actually acts as a filter
+to the new cell information that how
+much of it has to be passed because the
+input gate was a value between 0 and 1
+and it decides
+that how much of the cell information
+has to be passed
+and similarly the forget gate also was a
+value between 0 and 1 because there was
+a sigmoid activation function used so
+it also decides uh how much of the
+previous sales state information because
+you see in the forget state forget uh
+gate
+it is having this element wise
+multiplication with ct minus one that is
+the previous cell state information
+so
+we filter the new cell information by
+applying an element while multiplication
+with the
+input gate vector that is similar to
+filtering and then we have the forget
+gate vector that comes into play now so
+instead of just adding the filtered
+input information we just perform an
+element-wise
+vector multiplication with the previous
+context vector so we see so we would
+like the model to mimic the forgetting
+notion of humans as a multiplication
+filter so this was a line that was
+mentioned in that blog blog post and
+you want to
+mimic the forgetting notions of the
+human as a multiplication filter only
+the important information has to be
+remembered that's the important
+importance of the role of the forget
+game so this is how the current cell
+state is updated so we add the
+previously described term in the tanning
+pattern thesis and we get the new cell
+stake as shown
+so now we have the output that is very
+simple we have the new cell state uh
+information just a linear combination
+this is uh of three vectors x t h t
+minus one that is a previous
+hidden state
+the current
+uh time step input and ct that is the
+current cell state the new cell state
+that we obtain in equation three so we
+add another non-linear function in the
+end that is a sigmoid so we will now use
+the calculated cell state cp as opposed
+to equations one and two where we use
+the previous states ct minus one so
+they were used so as to uh
+uh uh in because we wanted to have
+previous informations as well and the
+relevance of the new information and how
+much of it has to be kept
+so we have almost calculated the desired
+output but then we'll now see the new
+context vector that is in the next slide
+that is the last equation that equation
+4
+so here we are having
+hd is equal to ot tan h ct so
+uh the title in equation 4 was uh
+like we have the output rate so
+that output was not like the final
+output that is not the hidden state
+output that was just the
+uh
+that was uh
+almost output not the final output so
+this one can calculate the new output
+like
+the new hidden state that will be passed
+on to while calculating the next time
+step
+these gates and the cell state and the
+hidden state so this a new hidden state
+that is calculated based on this
+equation
+so this is basically uh a mix of the new
+context vector ct with the calculated
+output vector ot this is exactly the
+point where we claim that lstm small is
+contextual information so instead of
+producing an output as shown in equation
+four we further in inject the vector
+called context so looking back in
+equations one and two we can observe
+that previous context
+uh were
+uh
+involved you can see in equations one
+and two the previous context were
+involved ht minus one because like
+wherever there is t minus one you know
+that the previous context was involved
+and finally uh the information based on
+previous time steps is involved in
+calculation of ht because you calculate
+we calculated ot
+based on ct and ht minus 1 uh also and
+ct also had information from the
+previous time set so in general we are
+having the previous time step
+information inward and that also with
+the application of the input gate and
+the forget it
+so these are actually acting as filters
+to the new cell information as well as
+to the previous cell information how
+much of the information has to be kept
+how much how much of it has to be
+filtered so this move this entire notion
+of the context enabled the modeling of
+the temporal connections or the time
+related correlations in the long term
+sequence is easy so that is where lstms
+they
+uh
+were able to capture the long term
+dependency and they will do and they
+actually justify their name long short
+term memory
+so now when you look at this
+architecture it is a bit clear so you
+see here we are having ct minus 1 ht
+minus 1
+as the input
+and then we are having x t for the
+current time step input ct minus 1 hd
+minus 1 as the previous cell states and
+the hidden states previous time steps uh
+cell state and the hidden state and then
+we had having this entire lstm unit and
+this entire lstm unit is not as simple
+as it looks because here also you are
+having having the hidden state features
+that was there in the dimensions you are
+not seeing that because there is this
+entire box but then that is something
+that is important because when you will
+implement it in pi torch you will
+understand the importance of the
+dimensions because
+they are very important when you want to
+uh make these gates right so uh
+the
+time steps are involved so
+you see x t minus one x t and x t plus
+one so here we are having the first
+thing as the sig you see
+two sigmoids so one is for the input
+gate one is for the forget gate
+and uh for the input gate uh after xt is
+passed ct minus 1 is passed ht minus 1
+is passed
+then we are having the sigmoid and then
+we have the forget gate first and then
+we are having the input gate second
+after this sigmoid and uh the forget
+gate is applied to the ct minus one for
+calculating the cp the first term in the
+calculation of cp and the second term
+was uh the input gate into the tarnish
+uh with the xt and ct uh hd management
+uh okay you will see one thing over here
+is that ct minus one is not involved
+because that is a people connection in
+the calculation of the input and the
+forget gates in the official python's
+documentation you will not find the ct
+minus one that was the third term that
+you saw over here
+this uh third term in equations one and
+two wc ct minus one that is generally
+ignored for the easier uh simplicity of
+the calculations
+so that is generally ignored and
+uh in the official python documentations
+and in the coding part also i'll not be
+using that term so as because if without
+using that term increase in because you
+are doing completely uh entire uh matrix
+multiplication so why to increase the
+complexity when you are able to work
+without it also because hd minus 1
+already captures the previous hidden
+state information and
+other things so
+we see over here
+that
+we calculate the forget gate the input
+gate and then they are uh combined over
+here through this tuition see the first
+row there is this plus so ct minus one
+into ft and i t into the tannage thing
+that was inside the parenthesis that is
+what is being calculated over here
+and then after that you get the ct and
+then ot into tannage into c uh than its
+uh activation layer applied to
+the current cell state we get the
+current hidden state and that hidden
+state is passed on to the
+next layer calculation for calculations
+and the current cell state is also
+passed so this is now becomes easier
+because earlier when you saw it was like
+very overwhelming and baffling because
+it was very confusing because obviously
+you cannot understand this entire black
+box so now we'll move on to the uh
+implementation okay
+so i hope things were clear till now and
+with the implementation things will
+become even more clear i move on to the
+code now
+so
+uh now i will move on
+to the custom lsdn pytorch
+implementation
+so to implement it on pi dots we will
+first do the proper imports so we can
+see we have imported the
+required
+packages the libraries
+so
+before moving on further like we have
+seen lstm equations but just here i've
+changed the name of the variables
+so fn is the number of features that we
+have talked about like 50 dimensional in
+glove and weddings if i'm using glove
+and writings 50 dimensional then
+whatever is the
+input
+size that you are taking is the number
+of features then you have the number of
+output nodes that is the hidden state
+dimension and the bad size that has to
+be considered and then after that each w
+something matrix below has the shape
+fn edges each use something matrix below
+has this shape edges edges because it is
+linking a hidden state parameter to a
+hidden state dimensional parallel it is
+what uh i mean through this is
+it is link uh it is multiplying
+uh matrix multiplication is with the
+previous hidden state so it is having
+the
+dimension of the hidden state only
+dimension of the hidden state and
+it is used to make like the input gate
+the forget gate
+so
+it is also uh having uh the dimension of
+the hidden street so the
+matrix involved is having the dimension
+hshs
+w something is do taking in input x t
+and
+it is having the dimension feature
+length and it is what it is giving out
+is
+the forget gate or the input gate so
+basically it will have the dimension f n
+it edges
+because of the matrix multiplication
+principles as you know
+so b something matrix has the shape one
+into edges because
+it is
+basically the bias turn and it is
+having the dimension of the hidden state
+and it's also a learnable parameter and
+xt matrix has the shape bsfn that is the
+batch size into the feature length
+corresponding to the element index t of
+each sequence of the batch
+and h t matrix below has this shape vs
+into edges because it is belonging to
+the hidden state at time t of each
+sequence of the batch
+so hidden state is having dimension
+um hs and input is having dimension fn
+and like entire input is having this
+dimension as bs into fm but now we will
+see that is each time step so now we're
+coming to the custom lstm uh
+class that we have built
+so uh
+we are
+creating this class
+by inheriting it from the nn dot module
+and then also instancing its parameters
+and wave initializations
+which we see here
+and we notice that its shapes are
+decided by the input size and output
+size of the network so
+you see here what it is taking as the
+parameter is the input size
+and the hidden size
+so
+these are the hyper parameters actually
+when you will
+declare an object of this custom lstm
+class
+these are the
+uh
+hyper parameters that you'll be passing
+that is the input size and the
+hidden size as the
+length of the embeddings and hidden size
+whatever you want to keep
+and then
+we have
+uh
+we in in we are initializing these
+parameters inside the init
+function inside the init function of the
+class as we know from the oops concepts
+that we have we initialize these
+parameters that are the same or input
+size select heading size these are the
+what we have passed while declaring the
+class and now we are declaring the input
+gate first
+so for that we are just declaring three
+ways we will do the further operations
+in the forward function
+but in this we are declaring just the
+matrices that is uh
+wi for that is of the size input
+set and hidden size
+input sizing to hidden size as we talked
+about it
+and the ui
+that is of the size hidden size into
+hidden size because it is taking in
+hidden size and giving out the parameter
+of the dimension hidden size this is
+taking in input size uh dimension
+whereas giving out the hidden size
+dimension whereas bi is taking it
+it's not doing anything it's just a
+biased term so it is of the dimension
+hidden size because further it is
+contributing to the making of the input
+gate that is of the dimension input uh
+hidden size similarly for the forget
+gate also we have different weight
+matrices because we are modeling
+something different as we saw in
+previous slides
+and this is a parameter that we have uh
+that is learnt uh the reserve
+of the dimension hidden size
+and it is the bias term and similarly
+for ct we also have the wc uc and bc
+and similar for ot we have w o
+u o n view and then we initialize the
+weights so init weights that we are
+using
+the weight initialization that is the
+one that is using the pythagoras default
+nn dot module so this is how it
+initializes the weight
+from the uniform distribution minus
+standard deviation to standard deviation
+so you can see that
+so here uh
+we saw one thing that we don't have the
+peephole connection over here that was
+the cp minus one turn in calculation of
+the i t fp and
+ot but
+it is not pairing official fighters
+documentation that is why i didn't
+include it but you can always include
+one more weight over here
+say
+uh self dot
+v
+f for the forget it and then you can uh
+do the same thing over here
+and you you because you're wanting to
+include the people connection
+so it will have the dimension
+it what is this people connection then
+let's understand it like that so it is
+taking in ct term and it is giving out f
+theta so it will also have the dimension
+hidden size into hidden place because ct
+term is also having dimension f of
+of hidden size and
+this uh f2 term is also having so we can
+always include that i'm not including it
+now over here the people connection this
+i am making this in accordance with the
+pythons documentation but since it is
+custom you can always include you can
+always tweak this implementation
+including more
+weights or something more
+information to your
+cell
+so you can always do that but it's
+better not to complicate
+uh so here you are having
+another feed forward operation it
+receives the init states parameter that
+is a tuple with the htct parameters htct
+is the hidden state and the cell state
+uh parameters of the equations that we
+saw and it is set to zero if not
+introduced we then perform the feed
+forward of the lstm equations for each
+of the sequence elements preserving the
+htct so whenever it is none
+the htc is initialized to 0 when it is
+not introduced whereas when it is
+introduced it is uh
+set as the introduce because it's a uh
+if it is introduced it will be in the
+form of a
+tuple of ht
+ct
+okay
+like this
+so now not talk about that so what this
+v forward operation will receive is the
+input in the shape of that size sequence
+size input size
+so you know that says there is a hyper
+parameter that is set when you will
+create your model
+so like 128 256 or any size that you
+want according to your memory
+then we have sequence size and then we
+have input size sequence size is
+basically
+the number of time steps so n
+because we saw the sequence unrolling so
+there is a certain number of time steps
+that is involved
+so
+the number of time step is the sequence
+size and one time step at the time that
+is the main thing of
+this inside lstms
+so and then the input size that is the
+feature length that we talked about so
+when you look at x dot size so you can
+get the batch size and the sequence i
+sequence size from here
+and then we have the hidden sequence
+that is empty now because you're passing
+the first time step now so it is empty
+at this time point of time and it is
+initialize the hidden state and the
+excel state is initialized to zero and
+this is now will be it will be
+it will be now
+uh
+like
+uh
+further we will see how it will
+help in
+uh predicting the next element of the
+sequence so now
+we move towards 40 in range sequence uh
+size so sequence size means number of
+times well every time step you pass it
+to the lstm
+so you have to perform
+these operations right so you declared
+the weights as the parameters and now
+you perform these operations what are
+these these things that you see over
+here these are exactly these equations
+and you finally get the hidden state the
+new hidden state
+so you
+multiply the xt with wi hd with ui and
+then the bias term and introduce the
+sigmoid for the input and for the forget
+gate similar sigmoid and then for the gt
+that is the term that you use for the
+new cell information in the current cell
+state
+so that was the damage to introduce the
+normally uh to make it from minus one to
+one
+and and then there's this ot term that
+was the sigmoid
+of
+the
+uh
+like the similar thing or the input and
+the previous cell state
+and after that you have the current cell
+state how it is updated
+forward
+into ct plus i t into gt so this is what
+we had studied when we were looking at
+the mathematics so this input gate
+filters the new cell information gt is
+the forget gate filters the previous and
+information cp and making the new cell
+information ct and it's updating like
+the cell information city and then
+hd is there that is uh 40 into
+first dot planet ct that is the spanish
+layer over activation over this ct and
+you know what is ot ot is the output and
+ht is
+the current hidden state so we get this
+so this is what we wanted so we got the
+current theorem state and we got the ct
+and this is what are after giving it a
+different shape to the hidden sequence
+they uh
+return the like this hidden sequence was
+an empty list so we are appending the
+hidden states one by one to the sequence
+so for every time step you will be
+appending updated hidden sequence to
+hidden state to it so in the end it will
+be having n elements having this uh i
+think uh the bad size into
+the output size length and
+it will have n elements say n is the
+sequence length
+sequence size or the number of time
+steps and spct is returned over here
+that is the final thing that we get
+let's take an example let's take an
+example of this lstm net for example it
+is taking text sequence and classifying
+it into fake news or non-fake news so
+you have
+a many-to-one rna or lstm variation of
+the rnl so many to one lstm is taking n
+inputs n is the sequence size and it is
+outputting
+uh one thing that is the uh the fake
+whether it is a fake news or not fake
+news and then you calculate the loss and
+then you
+uh update the weights accordingly and
+hence train your entire lstm network
+to predict the
+uh whether the news is fake or not so
+you are making a lstm network for a text
+classification task so how can you
+actually form the network once you have
+built your customer list dm cell
+because this is important this is what
+you will be using for training the model
+this is not a cell is of no use if
+you're not including it in your network
+so you inherited from the nlot module
+and then
+and then
+you you have this self dot embedding
+thing
+so
+say you are having some encoder
+vocabulary uh that you did like its
+encoder vocabulary what i'm saying
+through this is it's a dictionary of
+like what is your dictionary size
+so
+if you're having like 16 000
+like you have a text corpus right so it
+will have a dictionary size for getting
+the embeddings so that is there and one
+what is the dimension of each embedding
+that you want so here it is 32 30. so
+here i have mentioned it 32 so this is
+the sell dot embedding so you have this
+embedding for each time step you need
+the embedding then you have the lstm
+layer
+so
+this ls name layer is actually your
+custom lstm class and building is and we
+are taking in
+here the input size and the healing size
+to build this self.stm object so this is
+a parameter of our network and then we
+have this uh
+with this
+uh like information that is 32 into 32
+32 is basically the embedding dimension
+that is the future length and the
+uh
+whatever and the hidden strain dimension
+is also 32
+and after that you have self dot fc1
+that is n and not linear 3232 so what is
+it doing is it is a linear layer that is
+basically a matrix multiplication to
+give a two dimensional output from a 32
+dimensional input like it is taking in
+the hidden state
+uh whatever is whatever your hidden
+state is giving out so hidden state
+output was of the hidden three dimension
+that is 32 and it is giving it to
+a dimensional output so you want a two
+dimensional output right when you want
+to classify something into whether it is
+fake or not weak so this is how you
+build this
+cell dot fc one so you need a fully
+connected layer for that purpose so
+after that you
+make the speed forward network it
+receives x x was of this uh
+x was of the shape the batch size into
+the
+sequence length now you are generating
+the embeddings to make it that size into
+sequence and the feature length so after
+that you have
+you you pass it through this
+self lstm and what you finally get is
+hidden sequence htcp that is what you
+are
+in listening like feed forward return
+right
+so it is x dash that is a list okay it
+is a list of all the hidden states
+and here you are having h and cn that is
+the last time steps
+hidden state and the current cell state
+output
+you don't need these but what you need
+is x dash because that was a hidden
+sequence uh
+like hidden sequence calculation that
+you did and x dash is of the form it's
+having the dimension patch size
+into
+the sequence length input into the
+output size output size is 32 over here
+because you have initialized it to 32
+the hidden state size but you need only
+the last because you have many to one so
+we need the last
+sequence we need the last
+hidden state output so we need the
+output of the last sequence that's why
+we use minus one last time step output
+so it is x
+all about
+all the
+examples in that batch
+and
+all the dimensions of the
+hidden state
+but only the last dimension of the
+sequence that is the last time step
+output so this is how you model many to
+a now obviously last dimension of the
+last
+output
+will have
+like it is having minus one but it is it
+is minus one is the last one but it is
+since it is lstm it is covering the
+previous cell state informations as well
+so it is having this x dash that you
+will output
+so this will have the oh it is only in
+it is considering only one dimension so
+it is just 2d you can think of it as a
+2d matrix like
+if you consider all the sequences as all
+the like your sequence length n so you
+have n pages and every page is a 2d
+matrix
+of batch length into output size so you
+just got the last one out that is the
+bachelor into output size and since it's
+the lstm it is having the previous
+information as well and you will use
+this to model
+the
+final output
+so final fully connected layer over this
+last layer last output
+last
+time step output
+and it will give x dash and you return
+that x dash that is the final prediction
+and you can use it to calculate the loss
+now binary cross entropy most probably
+because you have a
+fake news on fake news so
+x dash
+x dash is over here and you've shown x
+dash
+self dot fc one
+basically does is
+makes it into the number of labels so
+here you are having to say you are
+having a multi classification problem
+um say ten thousand labels so this will
+become ten thousand and this hyper
+parameters that you are having the input
+size and hidden size will also change
+for that and
+uh
+finally this x dash is
+what you will get uh
+prediction for from this network
+and that prediction will be of
+two dimensional prediction and you can
+apply like some
+layer over it to make it
+in between zero and one say sigmoid
+something like that
+so that is what lstm biotouch
+intermediate i hope it was clear
+and
+finally i would like to conclude
+so i like to conclude the talk
+thank you for attending
+and i hope it was useful and i was able
+to make things
+the concepts and the implementation
+clear
+for any doubts you can always reach out
+to me on linkedin
+and these are some of the links for my
+linkedin and kaggle ids
+so
+thank you again

@@ -1,0 +1,46 @@
+PRelu formula is [this (hyper-link)]:
+So, PReLU became ReLU after fusion and transpose conv+bias became transpose conv.
+The implementation of PReLU seems straight-forward based on the PreLU implementations (see: [Keras (hyper-link)], [TFLearn (hyper-link)] and [TensorLayer (hyper-link)]) of the higher level libraries.
+PReLU already exists in TensorLayer
+If you want more than one different prelu layer, you should set a 'name' parameter:
+Then you can give each prelu a different name, for example:
+You have it in Keras implemented as a layer (from version 2.3.0 onwards): tf.keras.layers.PReLU.
+Here is the link to the documentation page: [https://www.tensorflow.org/api_docs/python/tf/keras/layers/PReLU (hyper-link)].
+Here is the PRelu implementation in [tensorflow (hyper-link)] as a function rather than layer which is available as a built-in activation layer and (I think that should be used), [PRelu (hyper-link)].
+They do get better accuracy by using PReLU, but that is very minor.
+I am unsure if the improvement offsets the higher workload you have to do by using PReLU instead of ReLU.
+Use PreLU(shared_axes=[1,2]) so shape is computed on compilation.
+I was able to train fine using PReLu for my network, albeit with a bit lower accuracy that using ReLu.
+And yes, I simply swapped out ReLu with PReLu as well.
+However, I have almost consistently noticed that PReLU converges much faster than ReLu.
+PReLU is not guaranteed to produce results more accurate than those with ReLU.
+The main difference between "ReLU" and "PReLU" activation is that the latter activation function has a non-zero slope for negative values of input, and that this slope can be learned from the data.
+I used "PReLU" activation for fine-tuning nets that were trained originally with "ReLU"s and I experienced faster and more robust convergence.
+Note that by initializing the negative slope to 0, the "PReLU" activations are in-fact the same as "ReLU" so you start the fine tuning from exactly the same spot as your original net.
+I do not know that why advanced activation functions must be used as a layer but PReLu can be used with CNNs, and there is no problem at all.
+Yes, the Conv1D layer will use the PReLu activation function.
+Some special activation functions like elu, LeakyReLU and PReLU are added as separate layers and we can't include them in the Conv1D layers using the activation= argument.
+The 4900 parameters of PReLU are the slope parameters which are optimized with backpropagation.
+So, the outputs ( unactivated ) of the Conv1D layer will pass through the PReLU activation which indeed uses the slope parameter to calculate the activated outputs.
+Your above code of PReLU in TensorFlow, visualized using [TensorBoard (hyper-link)], looks like following (the ORIGINAL graph):
+To simply resolve this problem, change the PRelu to 
+Max(x, 0) + alphas* Min(0, x)
+[https://www.tensorflow.org/api_docs/python/tf/keras/layers/PReLU (hyper-link)]
+The correct way to use the advanced activations like PReLU is to use it with add() method and not wrapping it using Activation class.
+For Keras functional API I think the correct way to combine Dense and PRelu (or any other advanced activation) is to use it like this:
+However, when it comes to this line: c1 = PReLU()(c1), I get the
+  error: nt() argument must be a string, a bytes-like object or a
+  number, not 'NoneType'.
+Actually, if you previously set shared_axes=[1,2] for PReLU (default value shared_axes=None), you will not see this error.
+Therefore, the real issue here is that PReLU's parameters, previously set only for an 41x41 input, but now are asked to work for an arbitrary input size.
+If you don't care about the possible degradation, you can load all layer weights of your pretrained model except for the PReLU layer.
+Then manually compute  appropriate PReLU parameters can be shared across shared_axes =[1,2], and use it as the new PReLU parameters.
+The [nn.PReLU (hyper-link)] layer is a [nn.Module (hyper-link)], like most other layers you can access the weights directly using the weight property.
+(PReLU is similar to ReLU, so this initializer might still be better than others).
+The initialization scheme I ended up using comes from [this paper (hyper-link)] on PreLU optimization.
+If you check the implementation you will find all the supported operations and it doesn't include PRelu.
+The shape of outputs of both input and prelu layer must be same.
+prelu and max pool are applied, then the output is fed as input of next convolution layer.
+So at this point feed() is 'consumed' and you are left with something like (modified)self.prelu()..... And this repeats with another method.
+The feed method - as well as, presumably, the conv and prelu methods - return self.
+Since you are using PRelu as the activation function of your last layer, you always get float output from the network.

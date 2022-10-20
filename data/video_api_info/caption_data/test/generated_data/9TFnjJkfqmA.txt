@@ -1,0 +1,800 @@
+[Music]
+right so with that motivation let's go
+to the next module where we will talk
+about a long short term memory and gated
+recurrent units okay so now all this is
+fine in terms of okay I gave you a
+derivation on the board and say that
+this is not required but can I give you
+a concrete example where RN ins also
+need to selectively read write and
+forget right only then you will be
+convinced that this kind of morphing is
+bad in the case of Ireland so I'll start
+with that example and then once we agree
+that we need selectively read write and
+forget how do we convert this into some
+mathematical equation so it because
+conceptually it's fine but you have to
+write some equations so that the RN can
+do some computations where you have
+selectively it right and forget right so
+that's what we are going to do over the
+rest of the lecture so first let me
+start with a concrete example where you
+want to predict the sentiment of a
+review using an RN and so this is the RN
+structure we have done this in the past
+that you have a sentence one word at a
+time is your every time step you feed
+this to the RN n and at the last time
+step you will make a prediction okay and
+as I said the RN reads a document from
+left to right and by the time it reaches
+the end the information obtained from
+the first few words is completely lost
+right because it's a long document and
+continuously writing to the same cell
+state so you lose the information that
+you had gained at the previous time step
+but ideally we want to do the following
+we want to forget the information added
+by stop words like a and these do not
+contribute to the sentiment of I can
+ignore these words and still figure out
+the sentiment of the document
+I want to selectively read the
+information added by previous sentiment
+baring words so when I have reached the
+last time step I should be able to read
+everything else which had some
+sentiments before it and focus on those
+just I want to selectively read from
+these sentiment baring words and also I
+want to selectively write the new
+information so I have read the word
+performance now I want to selectively
+write it to the memory whether I should
+write it completely or should I only
+write parts of it or not that's what I
+need to decide right so that's fair this
+is a typical example where RN and also
+when it's reading with long documents it
+needs to understand what is the
+important information in the document
+that needs to be retained and then
+selectively read write and forget okay
+so I am spending a lot of time on this
+analogy because you need to really are
+stand that this is important and this is
+where RNN suffer read if you are using
+them for very very long documents if you
+have documents of the size 1000 words
+which is not common which is not
+uncommon right because Wikipedia pages
+have much more than that per document so
+it's going to be very hard to encode the
+entire document using an RNN not that
+it's going to become significantly
+easier with LS teams or gr use but to
+certain extent it will become easier
+okay now the next part is how do we
+convert this intuition into some
+mathematical equations right so let's
+look at that so in this diagram
+recall that the blue-colored vector is
+called the state of the RN it has a
+spine I'd sighs and now I'll just call
+it as st belongs to some RN and the
+state is analogous to the whiteboard and
+sooner or later you get overloaded with
+information and we need to take care of
+this right so now our wish list is
+selectively read write and forget okay
+so let's start with that so what we want
+to do is that and this is the problem
+definition now that we have computed the
+state of the RNA this is the blue
+colored vector although it's not blue
+but this is the blue colored vector from
+the previous diagram where the state of
+the RNN was computed I know what the
+state is at time step st minus 1 now I
+want from here to here go from here to
+here that means from st minus 1 i want
+to compute the new state of the art
+Ihnen right so i had something written
+on the whiteboard I want to write
+something new I will change the state of
+the whiteboard and this is the new
+information that is coming to me red X T
+is the new information at time step T
+and while doing this I want to make sure
+that I use selectively write read and
+forget so these three operations have to
+come in somewhere in the between so that
+I am true or faithful to the analogy
+which I've been giving that's the
+question is this is the problem
+definition now going from s T minus 1 to
+s T and introducing these three
+operations along the way ok that's what
+we are interested in doing and we'll go
+one by one we will implement each of
+these three items right so we'll start
+with selective right so recall that in
+RN ins this is what happens at every
+time step T you take the previous time
+step or previous cell state you take the
+current input
+do you recognize the operation here how
+many if you recognize the operation here
+okay so this is nothing but the
+following operation and as usual I have
+ignored the bias okay
+is that fine so that's what I am
+representing at us but now so one way of
+looking at it is that when I'm computing
+s T I'm reading or I'm taking the whole
+of s T minus one so once I have computed
+s t minus one I'm writing this to my
+white board and then whole of it would
+be used to compute the next time step
+okay but instead of doing this what I
+want is I want to read only selective
+portions of s T minus one or rather I
+want to write only selective portions of
+s T minus one
+once I've computed s t minus one I don't
+want to write the whole of it because
+then the whole of it will be used to
+compute the next cell state I don't want
+that I just want to selectively write
+some portions of it okay now in the
+strictest case since I know that s T
+minus one belongs to RN it's a 9-iron
+dimensional vector in the strictest case
+what I could have done is I could have
+used a binary decision that of all these
+n entries I'm going to read some entries
+and ignore the others so all the other
+entries I'm going to set to zero fine
+that's the strictest thing that you
+could have done now for any of these
+strictest things what's the soft
+solution so for binary what's the soft
+solution binary 0 to 1 so what's the
+soft solution for that between 0 to 1 to
+read some fraction of each of these
+dimensions right so let's try to
+understand what I am trying to do here
+ok so on the third bullet some of these
+entries should have gone to 0 right
+thank you
+so instead of doing this what we want to
+do is we have this vector which has n
+entries this is the cell state at t
+minus 1 now I don't want to write the
+entire vector onto the final cell state
+what I want to do is I will take sound
+fractions of it say 0.2 of this point 3
+of this point 4 of these and then write
+only that do you see the operation that
+I am trying to do right I want to take
+some fractions and write only those to
+the say
+and as I said this is a softer version
+of the hard decision which would have
+been zero for this one for this again
+zero for this and so on right how to do
+this why to do this all that is not
+clear I'm just telling you the intuition
+however I will become clear later is
+that fine okay
+so we want to be able to take s t minus
+one and write only selective fortunes of
+it or pass only selectively portions of
+it to s T so whenever we compute s T we
+don't want to write the whole of s T
+minus one you just want to use selective
+portions of that so what we do is we
+introduce something known as a gate okay
+and so this gate is ot minus one okay we
+take the original cell state s t minus
+one do an element-wise product with our
+gate which is known as the output gate
+and then write that product to a new
+vector which is HT minus one okay so
+initially this will look confusing but
+it will become clear by the end of this
+lecture okay so is that fine this is
+what I'm trying to do again how to do
+this is not clear but this still matches
+the intuition which I have been trying
+to build that I want to write only
+selective portions of the data which I
+already have is that fine
+okay so each element of ot minus one
+gets multiplied by the corresponding
+element of s t minus one and it decides
+what fraction is going to be copied and
+this o t minus one is going to be
+between zero to one but how do i compute
+o t minus one
+how does the RN n know what fraction of
+the cell state to get to the next state
+how will it do it we need to learn
+something whenever you want to learn
+something what do we introduce everyone
+parameter sorry what did he say back
+propagation back propagation will do
+what it will work in the air or
+propagate to water whenever you want to
+do some kind of for learning I want to
+learn some function what do I introduce
+parameter right so that's what we are
+going to do we are now going to
+introduce a parametric form for 40 minus
+1 right and remember this throughout in
+machine learning
+whenever you want to learn something
+always introduce a parametric form of
+that quantity and then learn the
+parameters of that function you get this
+how many if you get this statement
+okay this is what we have been saying
+day from right from class 2 or class 3
+right always introduced a parametric
+function for your input and output and
+learn the parameters of this function so
+that's exactly what I'm going to do I'm
+going to say that oh t minus 1 is
+actually this function I'm just giving
+you some time to digest this so this is
+a time step t minus 1 so it depends on
+the input at time step t minus 1 it also
+depends on the output at output means
+whatever comes out of this right so the
+same operation would have happened at
+time step t minus 2 so whatever was the
+output at that state it will also depend
+on this just take a while to digest this
+equation you will see at least 6 more
+equations of this form in this lecture
+so if you are comfortable with one all
+of them would be clear so try to connect
+the whole story I have s t minus 1 I
+don't want to pass it as on a pass it on
+as it is to s T so I am computing some
+intermediate value where I'll only
+selectively write some portions of s t
+minus 1 and selectively write in the
+strictest case which should be binary
+but that's not what we are interested in
+we introduced fractions if the fraction
+has to learn binary let it learn but
+we'll make it fraction that means we'll
+make it between 0 to 1
+hence the sigmoid function right
+remember in one of these lectures we had
+said that sigmoids are still used
+because in RN n sandela streams remember
+we said that sigmoids are bad you
+Standish or use relu but we had ended
+with sigmoids are still used in the case
+of recurrent neural networks and Ellis
+teams so this is where they are used ok
+how many if you get that connection ok
+good fine so we use sigmoids because we
+want the fraction to be between 0 to 1
+and you also want some parameterization
+right and this is a particular form that
+we have chosen
+there are various equations possible
+various things you could have done here
+in fact there are 10 to 15 different
+variants of L STM's I am covering the
+most popular one which uses the
+following equation right so it says that
+this is how you will compute the output
+gate and that gate will regulate how
+much of the cell state should be passed
+on from t minus 1 to the next okay if
+even clear with this okay so now if you
+are clear with this give me an equation
+for HT minus 1 loudly everyone s t minus
+1 is that fine right so this is the
+equation that we will have so we have
+done selective writing and these
+parameters are no special they'll be
+learned along with the other parameters
+of the network
+okay so let's spare some thought on that
+you got a certain loss at the output
+okay
+earlier you just had these parameters
+wuv which were the parameters are
+foreign in which you are adjusting to
+learn this loss now in addition you also
+have the flexibility to adjust these
+parameters so that if the loss could
+improve by selectively writing something
+then these parameters should be updated
+accordingly right maybe you are being
+over aggressive and making ot minus 1 to
+be all once that means you are passing
+everything to the next state right now
+it has the chance because they have
+introduced parameters if it helps the
+overall loss it better make these
+fractions more appropriate so that only
+selective information is passed to the
+next state
+how many if you get this intuition okay
+so that's why anytime you introduce
+parameters you have more flexibility in
+learning whatever you intend to know
+there is remember one clear difference
+here and that's what I said that while I
+was giving the analogous really setting
+up things but here there is one
+distinction what is the distinction that
+is there ideally what would I have
+wanted suppose I take the example of the
+review ok and the review was say the
+movie was long but really amazing ok now
+which is the word here which is actually
+trying to miss lead so overall sentiment
+is positive right everyone agrees with
+that but which is the word which is
+misleading long right that means I need
+to do what to that word
+forget that word right now ideally I
+would have wanted someone telling me
+retain retain retain forget retain
+retain retain I would have a label for
+each of these words and then I could
+have a loss function which tells me
+whether my gates
+actually adhering to this decisions are
+not right so remembers my gates are
+learning some distribution oh t minus
+one which tells me what fraction to
+retain and at this particular time step
+I would have wanted ot minus one to be
+all zeros okay I would have wanted to
+forget but this kind of info not just oh
+t minus 1 this will become more clear
+when I do all the other gates also so
+what I am trying to say is that you
+should have had some supervision which
+tells you which information to retain
+and which information to forget but you
+don't have the supervision right no one
+is telling you these are the important
+words these are not the important words
+so that's the difference between the
+white board analogy there you knew
+exactly which step is important and
+which step is not important here you
+don't know that all you know is that you
+have a final loss function which depends
+on plus or minus whether the this
+prediction is close to positive or close
+to negative and what's the loss and that
+loss is what is being back propagated
+but the difference now is that you have
+introduced a model which can learn to
+forget some things right earlier you did
+not have a model which could learn to
+write or read or forget selectively now
+you have introduced a model this is a
+better modeling choice right so the same
+as we have had arguments that you could
+do Y is equal to W transpose X or you
+could do Y is equal to deep neural
+network of X right you're making
+different modeling choices here and with
+the hope that one modeling choice is
+better than the other choice so just as
+RNN was one modeling choice now you're
+using a different modeling choice where
+again with the help of these gates and
+all you can definitely write a function
+of Y as a function of the input and that
+function is going to be the lsdm
+function which we'll see in detail so
+this is one part of that function and
+while doing this you're just making a
+better modeling choice which allows you
+to learn more parameters and along the
+way if important do selectively write
+read and forget is that clear right
+should see the difference what would
+have been the ideal case and what is it
+that you have the ideal case would have
+been explicit supervision for what to
+forget read and write you will never
+have that but you're still making a
+modeling choice which allows you to do
+that so if it is required the model
+while backpropagation should be able to
+learn these parameters so get you are
+able to do that I know I'm repeating
+myself but it's very important that you
+understand this distinction how many of
+you get this now and as I said these
+parameters will be learned along with
+the other parameters and ot is called
+the
+put gate because it decides what to
+output to the next cell state okay
+still you see that there's a lot of gap
+here we have not reached st yet we are
+still at s t minus one we have computed
+some intermediate value but you have not
+reached s T yet and along the way we had
+three things selectively write read and
+forget we have only taken care of
+selectively right so far okay now let's
+look at selectively read so what does
+selectively read do you are going to get
+new information at time step T which is
+X T right and now instead of this
+original cell state you have used the
+selectively written cell state because
+that's what you have written now so that
+is what you should use
+now using a combination of these two I'm
+going to compute some intermediate value
+okay and just stare at this equation
+this equation form is very similar to
+the RNN equation form wait only thing is
+that instead of s T minus one I'm using
+HT minus one and for good reason
+because I know that HT minus one
+contains only selectively written values
+from s t minus 1 is that fine and XT is
+the new input still there is some gap
+here I have not reached s T yet I am
+still at an intermediate value so this
+is the new input which I have received
+now what should I do with this new input
+selectively read this input I do not
+want to take all of this info input
+because maybe the input which I have got
+now is a stop word and I don't want to
+read all of it right do you get that so
+now it captures all the information from
+the previous state as was the current
+input and you want to selectively read
+this so now what would you do to
+selectively read again the same
+situation that you have an S tilde the
+answer is already here Yemen s tilde and
+you don't want to pass it on as it is to
+s T this is s tilde s T somewhere here
+which you don't know how to get to but
+you know that you don't want to pass on
+all the input that you have read you
+want to selectively pass it on so what
+will you do now again introduce a gate
+and this gate will be called input gate
+or the read gate right ok
+so now what can you give me an equation
+for the gate i T is equal to Sigma off
+okay that's good because sigmoid is what
+we need it is going to be a fractional
+thing let me add the easy part W into XT
+minus 1 that's telling you what has
+happened so far and you times 60 you see
+the same equation same form the
+parameters have changed and these we
+will call as WI UI and bi and they are
+depending on the input as well as the
+previous state previous temporary state
+that we had computed
+okay so that's exactly what your input
+gate is going to be and now this
+operation is the selectively reading
+operation I mean if you are fine at this
+point okay and then this product is
+going to use to be the ad is will help
+us to read selectively from this
+temporarily value that we have
+constructed or the input that we have
+taken okay so so far what do we have we
+have the following we have the previous
+state which was st minus 1 then we have
+an output gate which was o t minus 1
+using these two we have done selectively
+right right we have taken the previous
+state and the gate and then a
+selectively right is that fine okay if
+you need to check if the sigmoid should
+come here because the sigmoid is already
+there in the computation of HT minus 1
+right oh it's not there so this already
+has one sigmoid right yeah so then again
+a sigmoid on that is it there okay we'll
+figure it out just check the equations
+right so there may or may not be the
+Sigma the sigmoid might already applied
+to s t minus 1 but we can figure that
+out ok so this is the Selective right
+portion then you compute the current
+temporary state ok and just look at the
+similarity between these equations then
+you have an input gate and using these
+two you have done a selective read okay
+so I have taken care of selectively
+right and selectively read but you are
+still not reached st i still don't have
+an arrow here i still need to figure out
+how to compute the st finally okay so
+what is the operation which is remaining
+now selective circuit okay so what do
+you think should we forget we want to
+find new s T so let's see what we will
+forget right so the question now is that
+you had this s
+t minus one and now you have a temporary
+state s tilde T which is here how do you
+combine these two to get the new cell
+state okay so the simplest way would be
+that you say that s T is equal to
+whatever was there in s t minus 1 plus
+selectively reading from the current
+input is that fine this is one way of
+doing it okay but now what am I doing
+here what is the problem here I am
+reading I am taking s T minus 1 as it is
+right so what should I do
+I should forget some parts of s T minus
+1 so what should I do for that
+introducer
+what gate forget K right so we may not
+want to use s T minus 1 as it is but we
+want to forget so there is at this point
+all of you should get some confusion if
+you don't then I would be worried if you
+are getting some confusion good wait you
+should all get confused at this point
+why are you confused because you already
+read selectively right and now again you
+are doing a selectively forget also
+right right but there's a difference
+because the Selective right was then
+used to compute how to read the
+information right but now once you have
+read the new information you want to see
+how to assimilate it back with the old
+information that you had right so that's
+why you introduced a separate gate so
+think of it as this way that you just
+are keeping these functions separate
+input output and forget so they can
+separately learn things ok so whatever
+you want to selectively right let it be
+a separate function these XT minus 1 is
+not going back to s T right let us just
+be used so that you can compute these
+temporary States so that's what is being
+passed to the next temporary state let I
+T only decide how much of this input
+should be read okay and then when you
+want to combine these two just use a
+separate gate and this exact idea which
+is confusing all of you I have a
+separate right gate and a separate
+forget gate led to something known as
+gated recurrent units where they merged
+these two gates ok so we will get back
+to that ok so at this point it's fine I
+am just telling you the original
+equations for LS t
+and this was the motivation that they
+had so as I said there are at least 15
+to 20 different variants of LST M which
+use different equations they tie some of
+these weights so one thing could be that
+forget is the same as one - remember
+write or output could be same as one
+minus input right you could have tied
+these gates instead of learning separate
+parameters for them so in the most most
+parameterised form you have a separate
+parameter for all of these okay so we
+introduce the forget gate again can you
+tell me a forum for this forget gate ft
+is equal to first term WF second term UF
+what would be there in the second term
+XT and the first term okay so this is
+what it will look like so if you
+remember one of these equations you'll
+be able to write all of these not that
+I'm going to ask you to write them in a
+quiz or something but why take a chance
+so and then once you have computed the
+forget gate instead of this equation can
+you tell me what is the equation that
+you are going to use what is the first
+I'm going to be it's st minus pine here
+what is it going to be now ft into st
+minus 1 right fine
+okay so now we have the full set of
+equations for LST M we have certain
+gates and certain states what are the
+gates output gate input gate forget why
+do you guys have this momentary amnesia
+like suddenly you forgot everything okay
+so output gate input gate and forget
+gate all of these have the same form
+with different parameters okay what
+about the states which are the states
+that we have computed one was s T the
+other was HT and the third one was still
+dirty okay s tilde T from s tilde T we
+get s T and from st we compute HT okay
+so yeah so in the diagram that you see
+here at the top tell me which are the
+computations which are happening at one
+time step at time step T which are the
+computations which are happening is that
+I'll give you the options right is it
+this or is it this okay let's call this
+one let's call this two or this three or
+this four which are the computations
+happening at one time step and you see
+the order also here this should be
+straightforward right why how many of
+you say four that's the one right
+because you start with selective reading
+right and you can just go buy these
+right these are all indexed by T right
+is that fine
+okay so these are the computations would
+happen at time step T and these are
+exactly the computations which were at n
+right so we have the three gates which
+you need to compute at every time step
+and you have the three states which you
+need to compute at every time step is
+that fine and this st minus one is not
+being computed it's just taken from the
+previous time step is that okay fine so
+you have these six computations would
+happen at every time step and the output
+final output of an LST M so when you use
+tensorflow or something the output of an
+Ellis team would give you two things it
+will give you HT gamma s T okay well
+these are both the states that are being
+computed one is the running state and on
+one is the current state which is being
+computed okay and I chose the notation s
+because that's what we have been using
+for our n ends but in lsdm in all the
+literature instead of s you will find it
+to be CT okay because it's called the
+cell state so that's why CP okay so all
+these equations wherever you see a nest
+s when you are reading some standard
+blogs or things like that you will see C
+instead of s right you just do this
+mapping in your head okay okay so Alice
+team actually has many variants which
+include different number of gates and
+also different arrangement of the gates
+as I was saying that you could say that
+input is 1 - output or input is 1 -
+forget or things like that and also why
+this particular parametric form right
+why not make W not into HT minus 1
+instead of HT minus 1 and so on so all
+kinds of things that you could do and
+all of these are valid these are all
+valid variants of LS teams so there is
+this paper called lsdm a search space or
+do you see they can go go and look at I
+think we link it in the pre in the
+reading material right so you can see
+that there are actually many many
+variants of LS teams but this is the
+more standard and default variant which
+you'll find in most platforms on
+tensorflow or PI torch and so on
+and there is another very popular
+variant of LS teams which is called
+gated recurrent units so we'll just see
+gated recurrent so I'll just give you
+the full set of equations for GR use so
+you have gates but unlike LS teams you
+have only two gates you have an output
+gate and you have an input gate you
+don't have the forget gate okay so what
+am I going to do for the forget gate so
+this is what I'm going to do you see the
+last equation so instead of forget gate
+I am just saying that okay this is what
+you are going to selectively input from
+the current temporary state so the rest
+of you rest of it you take from the
+previous state so I've just tied the
+input gate and a forget key okay any
+other changes do you see in this so
+earlier we had HT minus 1 everywhere
+right now we have st minus 1 itself is
+it fine okay so the basic idea right
+these equations are many many and you
+could think of your own equations you
+could say that I will not really use
+this input information at all or I will
+choose to use it differently or whatnot
+and there are several things that you
+could do at a very abstract level this
+is what you need to understand so these
+parameters could then make a difference
+and they could adjust it accordingly and
+so on right so that's what I was coming
+so so the there are various ways of
+realizing this right at the abstract
+level you need to understand that the
+original problem was trying to store all
+the information from time step 1 to time
+step T capital T right which is not
+feasible because of this finite size
+that you have so along the way we build
+the solution that it should be good to
+have these operations which allow you to
+selectively read write and forget right
+how do you mathematically realize these
+operations there are various various
+choices for doing that and we saw a few
+choices for doing that right there are
+many others you could have done but this
+is largely what whenever you say that I
+am using a list iam most likely you're
+using the set of equations which I saw
+which we saw on the previous slide and
+whenever you are using a gru these are
+the set of equations that you will be
+using okay
+and again remember this that there is no
+explicit supervision here it is just
+that we have a better modeling choice we
+just introduced more parameters so that
+if required these parameters could be
+adjusted to do a selectively read write
+and again so it's often a it's often
+valuable if you're doing some task with
+RNN zor-el STM's you should visualize
+these gates right you should see that at
+time step T if you thought that it
+should have forgotten everything that it
+has learned so far because suppose you
+had this the movie was long but I really
+loved it because the direction was
+superb and so on now this word but
+actually changes everything right
+because it whatever was written before
+it does not matter anymore so is it
+really learning those kind of gates
+where everything before but was
+forgotten right so it would be helpful
+to you visualize these output gates and
+see what kind of values they are
+learning what kind of things they're
+remembering forget Dave and forgetting
+and selectively reading and so on right
+so so as I said I'll just again
+summarize the key thing here is the
+intuition and then the realization in
+the form of equations there are multiple
+choices we have seen a few of those
+right that's what I'll end with and in
+particular in gr use there is no
+explicit forget gate and instead of HT
+minus one you use HT minus one
+[Music]
+[Music]
