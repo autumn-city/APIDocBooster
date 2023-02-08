@@ -5,7 +5,7 @@ This repository contains the code and summarization benchmark for APIDocBooster.
 We construct the first benchmark named APISumBench for augmenting API documentation from multi sources.
 We also propose APIDocBooster, a novel solution to automatically augment each section of API documentation by generating complementary summaries from multiple sources.
 The following figure is an illustration of our approach's pipeline.
-![APIDocBooster](presentation/APIDOCBOOSTER.pdf)
+![APIDocBooster](presentation/end2end.jpg)
 
 # Benchmark
 
@@ -18,7 +18,7 @@ The second stage data consist of summaries for augmenting API documentation, eac
 <figure>
 <!-- ![](figure/groundtruth_summary.png) ![](figure/datafield.png)
  -->
-<img src='presentation/benchmark_diagram_v2.pdf' style="zoom: 30.7%;"/>
+<img src='presentation/benchmark.jpg' style="zoom: 30.7%;"/>
 </figure>
 </center>
 
