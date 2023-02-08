@@ -1,0 +1,21 @@
+" We created our ADADELTA method to overcome the sensitivity to the hyperparameter selection as well as to avoid the continual decay of the learning rates."".  The second good thing about AdaDelta is you don't have to choose the learning rate, it automatically computes it. "
+Adaptive gradient algorithms have learning rates for each parameter.  This is very helpful when you have models where some parameters might be more sparse (increase its learning rate) or not sparse (decrease its learning rate).
+Adadelta is an adaptive learning rate method which uses exponentially decaying average of gradients. 
+"Adadelta optimizer has a way to adaptively change learning rate but still, it needs an initial value of learning rate. "
+"At step 0, the running average of these updates is zero, so the first update will be very small. "
+ If you have gone side-track just remember one thing we are going into so much hassle because normal gradient descent has its learning rate constant for the entire training phase... which is so LAME!  So the optimizers like AdaDelta have some techniques to vary the learning rate with every iteration that's it. 
+"As the first update is very small, the running average of the updates will be very small at the beginning, which is kind of a vicious circle at the beginning "
+"Looking at [Keras source code (hyper-link)], learning rate is recalculated based on decay like:"
+I suspect that decay is not intended to be used with Adadelta. 
+It just multiplies the variable updates (see [the update op implementation (hyper-link)]). 
+"For any ""automatic learning rate"" scheme, you can always scale the resulting updates by a constant (whether it's necessary to do so is a separate issue). "
+" To overcome this issue AdaDelta was born.  In the AdaDelta paper by Matthew Zeiler, he talked about this drawback of AdaGrad saying ""due to the continual accumulation of squared gradients in the denominator, the learning rate will continue to decrease throughout training, eventually decreasing to zero and stopping training completely. "
+" This was made possible due to this rho hyperparameter.  It is also known as 'Decay Constant'.  Instead of writing it with this equation, I have written it separately because we will need delta theta in this equation.  So, this term over here is the learning rate calculated by AdaDelta. "
+" We are dividing square root of delta x with the square root of alpha... again this epsilon is a very small number to avoid zero division error.  Then we can sum it with our theta term... normal gradient descent stuff!  At last, we will update our initialized delta x term by rho multiplied by delta x of the previous iteration plus one minus rho into update square. "
+" So, what AdaDelta does is in case of   RMSProp you are taking the exponentially decaying  average of the squared gradient; AdaDelta instead   of taking the exponentially decaying average of  squared gradient it computes the moving window   average.  So, you can take a more window size of  say W. So, when you compute v t, v t is computed   over a past window size of W. So, if I take the  window size W is equal to say 5, in that case in   order to compute say v 10 it will take the first  5; that means, it will take v 10 v 9 v 8 v 7 and   v 6 or the say s 6 s 7 s 8 s 9 and s 10.  So, you are computing average over past   samples which are within this window size of W.  So, this is what is moving window average. "
+Use an adaptive gradient algorithm like Adam or Adadelta or RMSProp. 
+The rule is related to updates with decay. 
+The full algorithm from the [paper (hyper-link)] is: 
+The issue is that they accumulate the square of the updates. 
+Here is my code to play a bit with the Adadelta optimizer: 
+"The thing you need to know about AdaDelta is the general context of online machine learning.  Online machine learning is where you get your data one-at-a-time (and thus have to update your model's parameters as the data comes in), as opposed to batch machine learning where you can generate your machine learning model with access to the entire dataset all at once."

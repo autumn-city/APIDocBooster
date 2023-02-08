@@ -1,0 +1,12 @@
+"In a ViewGroup the ViewGroup has the ability to steal the touch events in his dispatchTouchEvent()-method, before it would call dispatchTouchEvent() on the children.  The ViewGroup would only stop the dispatching if the ViewGroup onInterceptTouchEvent()-method returns true. The difference is that dispatchTouchEvent()is dispatching MotionEvents and onInterceptTouchEvent tells if it should intercept (not dispatching the MotionEvent to children) or not (dispatching to children)."
+The dispatchTouchEvent() method of a ViewGroup uses onInterceptTouchEvent() to choose whether it should immediately handle the touch event (with onTouchEvent()) or continue notifying the dispatchTouchEvent() methods of its children. 
+"dispatchTouchEvent is actually defined on Activity, View and ViewGroup.  Think of it as a controller which decides how to route the touch events."
+For ViewGroup.dispatchTouchEvent things are way more complicated.  It needs to figure out which one of its child views should get the event (by calling child.dispatchTouchEvent). This is basically a hit testing algorithm where you figure out which child view's bounding rectangle contains the touch point coordinates.
+dispatchTouchEvent handles before onInterceptTouchEvent. 
+•ViewGroup.onInterceptTouchEvent(MotionEvent) - This allows a   ViewGroup to watch events as they are dispatched to child Views. 
+How a ViewGroup handles touch: 
+"ViewGroup.dispatchTouchEvent()  onInterceptTouchEvent()  Check  if  it  should  supersede  children Passes  ACTION_CANCEL  to  active  child If it returns  true  once,  the ViewGroup consumes  all  subsequent  events  For  each  child  view  (in  reverse  order  they  were  added)       If  touch  is  relevant  (inside  view),  child.dispatchTouchEvent() If  it is not  handled  by  a previous,  dispatch  to  next  view  If  no  children  handles the  event, the listener  gets  a  chance       OnTouchListener.onTouch()  If there is no listener, or its not handled       onTouchEvent() "
+Intercepted  events  jump  over the child step 
+The event dispatch in Android starts from Activity->ViewGroup->View. 
+"But before it can dispatch the event to the appropriate child view, the parent can spy and/or intercept the event all together. "
+"When using dispatchTouchEvent , you take all touches in your activity, if you want only detect one touch, you have to filter the touch by its type, you can do this using the MotionEvent parameter. "
