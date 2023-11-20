@@ -1,0 +1,809 @@
+Hi, I’m Aurélien Géron, and today I’m
+going to show you how to implement a capsule
+network using TensorFlow.
+In my previous video, I presented the key
+ideas behind capsule networks, a recently
+published neural net architecture.
+If you haven’t seen this video, I encourage
+you to do so now, today I will focus on the
+TensorFlow implementation.
+I wrote a Jupyter notebook containing all
+the code and detailed explanations, and I
+published it on my github account (as always
+I’ll put all the links in the video description
+below), so I encourage you to clone it, and
+play with it.
+So, it reaches over 99.4% accuracy on the
+test set, which is pretty good, considering
+it’s a shallow network with just two capsule
+layers and a total of about 1,200 capsules.
+There’s a lot of code in this notebook,
+so I won’t go through every single line
+in this video, but I’ll explain the main
+difficulties I came across, and hopefully
+this will be useful to you for other TensorFlow
+implementations, not just CapsNets.
+Okay, let’s build the network.
+First, we need to feed the input images to
+the network.
+And that’s our input layer.
+We implement it using a simple TensorFlow
+placeholder.
+The batch size is unspecified, so that we
+can pass any number of images in each batch,
+in this example, 5.
+Note that we directly send 28x28 pixel images,
+with a single channel, since the images are
+greyscale.
+Color images would typically have 3 channels,
+for red, green and blue.
+And that’s it for the input layer.
+Next, let’s build the primary capsule layer.
+For each digit in the batch it will output
+32 maps, each containing a 6x6 grid of 8 dimensional
+vectors.
+The capsules in this particular map seem to
+detect the start of a line segment.
+You can see that the output vectors are long
+in the locations where there’s a start of
+a line.
+And the orientation of the 8D vector gives
+the pose parameters, in this case, I’ve
+represented the rotation angle, but the vector’s
+8 dimensional orientation would also capture
+things like the thickness of the line, the
+precise location of the start of the line
+relative to the cell in the 6x6 grid, and
+so on.
+The implementation is really straightforward.
+First, we define two regular convolutional
+layers.
+The input of the first layer is X, the placeholder
+that will contain the input images we will
+feed at runtime.
+The second layer takes the output of the first
+layer.
+And we use the parameters specified in the
+paper.
+The second layer is configured to output 256
+feature maps.
+And each feature map contains a 6x6 grid of
+scalars.
+We want a 6x6 grid of vectors instead, so
+we use TensorFlow’s reshape() function to
+get 32 maps of 8 dimensional vectors, instead
+of 256 maps of scalars.
+In fact, since the primary capsules will be
+fully connected to the digit capsules, we
+can simply reshape to one long list of 1,152
+output vectors (that’s 32*6*6), for each
+instance in the batch.
+And the last step is to squash the vectors
+to ensure that their length is always between
+0 and 1.
+For this, we use a home made squash function.
+There it is.
+This function implements the squash equation
+given in the paper.
+It squashes every vector in an array, along
+the specified dimension, by default the last
+one.
+So, as you can see, it involves a division
+by the norm of the vector, so there’s a
+risk of a division by zero if at least one
+of the vectors is a zero vector.
+So you could just add a tiny epsilon value
+in the denominator, and it would fix the division
+by zero problem.
+However you would still run into another issue.
+The norm of a vector has no defined gradients
+when the vector is zero.
+So if you just use tensorflow’s norm() function
+to compute the norm in this equation, then
+if at least one of the vectors is zero, the
+gradients will be undefined (it will return
+n-a-n, nan, not a number).
+So, as a result, when gradient descent updates
+the weights of our model, the weights will
+end up being undefined as well.
+The model would effectively be dead.
+You don’t want that.
+So the trick is to compute a safe approximation
+of the norm, shown in the equation on the
+right.
+And, that's about it, that’s all for the
+primary capsules.
+Apart for computing the norm safely, it was
+pretty straightforward.
+On to the next layer where all the complexity
+is: the digit capsules.
+There are just 10 of them, one for each digit,
+0 to 9, and they output 16 dimensional vectors.
+In this particular example, you can see that
+the longest output vector is the one for digit
+4.
+And again its orientation in the 16 dimensional
+space gives information about the pose of
+this digit, its rotation, its thickness, its
+skew, its position, and so on.
+By the way, note that most of the position
+information in the first layer was encoded
+in the location of the active capsules in
+the 6x6 grid.
+So, for example, if I shift the digit 4 slightly
+to the left in the input image then different
+capsules in the first layer get activated.
+See?
+So, the output of these first layer capsules
+only contain local shift information, relative
+to the position of the capsule in the 6x6
+grid.
+But in the second capsule layer, the full
+position information is now encoded in the
+orientation of the output vector in 16 dimensional
+space.
+Okay, now let’s see how to implement this
+layer.
+The first step is to compute the predicted
+output vectors.
+Since this second layer is fully connected
+to the first layer, we will compute one predicted
+output for each pair of first and second layer
+capsules.
+For example, using the output of the first
+primary capsule, we can predict the output
+vector of the first digit capsule.
+For this, we just use a transformation matrix
+W_1,1, which will gradually be learned during
+training, and we multiply it by the output
+of the first layer capsule.
+This gives us û_1|1, which is the predicted
+output of the first digit capsule, based on
+the output of the first primary capsule.
+Since the primary capsules output 8 dimensional
+vectors, and the digit capsules output 16
+dimensional vectors, the transformation matrix
+W_1,1 must be a 16x8 matrix.
+Next, we try to predict the output of the
+second digit capsule, still based on the output
+of the first primary capsule.
+Note that we are using a different transformation
+matrix, W_1,2.
+And we do the same for the third digit capsule,
+using W_1,3.
+And so on for all the digit capsules.
+Then we move on to the second primary capsule,
+and we use its output to predict the output
+of the first digit capsule.
+And so on for all the digit capsules.
+Then we move on to the third primary capsule,
+we make 10 predictions.
+And so on, you get the picture.
+There are 1,152 primary capsules (multiply
+6 * 6 * 32), and 10 digit capsules, so we
+end up with 11,520 predicted output vectors.
+Now we could just compute them one by one,
+but it would be terribly inefficient.
+Let’s see how we can get all the predicted
+output vectors in just one matmul() operation.
+Now you know that TensorFlow’s matmul()
+function lets you multiply two matrices, but
+you may not know that you can also use it
+to multiply many matrices in one shot.
+This will be incredibly efficient, especially
+if you are using a GPU card, because it will
+perform all the matrix multiplications in
+parallel in many different GPU threads.
+So here’s how it works.
+Suppose A, B, C, D, E, F and G, H, I, J, K,
+L, are all matrices.
+You can put these matrices in two arrays,
+each with 2 rows and 3 columns, for example.
+So we have 2 dimensions for this 2x3 grid
+of matrices, and each matrix is 2 dimensional,
+so these arrays are 2+2=4 dimensional arrays.
+If you pass these arrays, these 4D arrays,
+to matmul(), it will perform an elementwise
+matrix multiplication, so the result will
+be this 4 dimensional array containing A multiplied
+by G, here, B multiplied by H, here, and so
+on.
+So let’s use this to compute all the predicted
+output vectors.
+We can create a first 4D array containing
+all the transformation matrices: there’s
+one row per primary capsule, and one column
+per digit capsule.
+The second array must contain the output vectors
+of each primary capsule.
+Then we just pass these two arrays to the
+matmul() function, and it gives us the predicted
+output vectors for all the pairs of primary
+and digit capsules.
+Since we need to predict the outputs of all
+10 digit capsules for each primary capsule,
+this array must contain 10 copies of the primary
+capsules’ outputs.
+We will use the tile function to replicate
+the first column of output vectors, 10 times.
+But there’s one additional catch.
+We want to make these predictions for all
+the instances in the batch, not just one instance.
+So there’s an additional dimension for the
+batch size.
+It turns out that the primary output vectors
+were already computed for every single instance,
+so the second array is fine.
+It already has this dimension.
+But we need to replicate the 4D array containing
+all the transformation matrices, so that we
+end up with one copy per instance in the batch.
+Now if you understand this, then the code
+should be pretty clear.
+First, we create a variable containing all
+the transformation matrices.
+It has one row per primary capsule, one column
+per digit capsule, and it contains 16 by 8
+matrices.
+That’s 4 dimensions, and we add another
+dimension at the beginning of size one at
+the beginning to make it easy to tile this
+array for each instance in the batch.
+The variable is initialized randomly, using
+a normal distribution of standard deviation
+0.01 (that’s a hyperparameter you can tweak).
+And that's about it.
+Create this variable!
+Next we want to tile this array for each instance,
+so first we need to know the batch size.
+We don’t actually know it at graph construction
+time, it will only be known when we run the
+graph.
+But we can use TensorFlow’s shape() function:
+it creates a tensor that *will* know the shape
+at runtime, and we grab its first dimension,
+which is the batch size.
+Then we simply tile our big W array, along
+the first dimension, to get one copy per instance.
+Now, recall that the output of the primary
+capsules was a 3 dimensional array: the first
+dimension is the batch size, that we will
+know at runtime, then there’s one row per
+capsule, and each capsule has 8 dimensions.
+So we need to reshape this array a bit to
+get the shape that we are looking for, to
+do the big matmul() operation.
+First we add an extra dimension at the end,
+using TensorFlow’s expand_dims() function.
+The vectors are now represented as column
+vectors, instead of 1 dimensional arrays.
+Each of these is a column vector.
+A column vector is a matrix, a 2D array, with
+a single column.
+Then we add another dimension, for the digit
+capsules.
+And we replicate all the output vectors 10
+times across this new dimension, once per
+digit capsule.
+And lastly, we just use matmul to multiply
+the transformation matrices with the primary
+capsules’ output vectors, and we get all
+the digit capsule’s predicted outputs for
+each pair of primary and digit capsules, and
+for each instance in the batch.
+In one shot.
+And that’s the end of the first step for
+computing the digit capsules’ outputs, we
+now have a bunch of predicted output vectors.
+The second step is the routing by agreement
+algorithm.
+So first, we set all the raw routing weights
+to 0.
+For this, we just use tf.zeros().
+There’s one weight for each pair of primary
+and digits capsules, for each instance.
+The last two dimensions here are equal to
+1, they will be useful in a minute.
+Next we compute the softmax of each primary
+capsule’s 10 raw routing weights.
+Okay?
+So softmax happens along this dimension.
+Next, we compute the weighted sum of all the
+predicted output vectors, for each digit capsule,
+using the routing weights.
+The weighted sum is along this dimension.
+This is pretty straightforward TensorFlow
+code: first multiply the routing weights and
+the predicted vectors (this is an elementwise
+multiplication, not a matrix multiplication),
+then just compute the sum over the primary
+capsule dimension.
+And the two dimensions we added earlier for
+the routing weights are useful in the multiplication
+step, so that the two arrays have the same
+number of dimensions, the same rank.
+They don’t have the exact same shape, but
+they have compatible shapes so TensorFlow
+will perform broadcasting.
+Now if you don't know what broadcasting is,
+this should make it clear.
+I’m multiplying two matrices, but one of
+them just has one row, so TensorFlow will
+act as if this row were repeated the appropriate
+number of times.
+You could achieve the same thing using tiling,
+as we did earlier, but this is more efficient.
+You may wonder why we didn’t use broadcasting
+earlier, but the reason is it does not work
+for matrix multiplication.
+Here we are doing elementwise multiplication.
+Okay, back to the digit capsules.
+We computed a weighted sum of the predicted
+vectors, for each digit capsule, and we just
+run the squash function, and we get the outputs
+of the digit capsules.
+Hurray!
+But wait, this is just the end of round 1
+of the routing by agreement algorithm.
+Now, on to round #2.
+So first, we need to measure how good each
+prediction was, and use this to update the
+routing weights.
+For example, look at the predictions that
+we made using this primary capsule’s output.
+Notice that, for example, the prediction for
+digit 4, is excellent.
+And this is measured using the scalar product
+of the predicted output vector and the actual
+output vector.
+These two vectors are actually represented
+as column vectors, meaning a matrix with a
+single column.
+So to compute the scalar product, we must
+transpose the predicted column vector û_j|i
+to get a row vector, and multiply this row
+vector and the actual output vector v_j, which
+is a column vector.
+We will get a 1x1 matrix containing the scalar
+product of the vectors.
+Now of course we need to do this for each
+predicted vector, so once again, we can use
+the matmul() function to perform all the matrix
+multiplications in just one shot.
+First we must use the tile() function to get
+one copy of the actual output vectors v_j,
+for each primary capsule.
+Then we use matmul(), telling it to transpose
+each matrix in the first array, on the fly,
+and lo-and-behold, we get all the scalar products
+at once.
+So now, we have a measure of the agreement
+between each predicted vector and the actual
+output vector.
+We can then add these scalar products to the
+raw weights, using a simple addition.
+And the rest of round 2 is exactly the same
+as the end of round 1.
+The code is really identical, except we’re
+now using the raw routing weights of round
+2.
+We compute their softmax to get the actual
+routing weights for round 2, then we compute
+the weighted sum of all the predicted vectors
+for each digit capsule, and finally we squash
+the result.
+And now we have the new digit capsule outputs,
+and we’ve finished round 2.
+We could do a few more rounds exactly like
+this one, but I’ll stop now, and use the
+current output vectors at the end of round
+2 as the output of the digit capsules.
+Now you probably noticed that I implemented
+the routing algorithm’s loop without an
+actual loop.
+It’s a bit like computing the sum of squares
+from 1 to 100, with this code.
+Of course, this will build a very big TensorFlow
+graph.
+But it works.
+You can think of it as an unrolled loop.
+Now, a cleaner way to do this would be to
+write a for loop in Python, like this.
+Ah, much better.
+However, it’s important to understand that
+the resulting TensorFlow graph will be absolutely
+identical to the one produced by the previous
+code.
+All we are doing here is constructing a graph,
+and TensorFlow will not even know that we
+used a loop to build the graph.
+Again, this works fine, it’s just that you
+end up with a very large graph.
+So you can think of this loop as a static
+loop, that only runs at graph construction
+time.
+If you want a dynamic loop, one that TensorFlow
+itself will run, then you must use TensorFlow’s
+while_loop() function like this.
+The while_loop() function takes 3 parameters:
+the first one is a function that must return
+a tensor that will determine whether the loop
+should go on or not, at each iteration.
+The second parameter is also a function that
+must build the body of the loop, that will
+also be evaluated at each iteration.
+And finally, the third parameter contains
+a list of tensors that will be sent to both
+the condition() and loop_body() functions
+at the first iteration.
+For the following iterations, these functions
+will receive the output of the loop_body()
+function.
+So you can pause the video if you need to
+take a closer look at this code.
+Once you get it, you can try modifying my
+capsnet implementation to use a dynamic loop
+rather than a static unrolled loop.
+Apart from making the code cleaner and the
+graph smaller, using a dynamic loop allows
+you to change the number of iterations using
+the exact same model.
+Also, if you set the swap_memory parameter
+of the while_loop() function, if you set it
+to True, TensorFlow will automatically swap
+the GPU memory to CPU memory to save GPU memory.
+Since CPU RAM is much cheaper and abundant,
+this can really be useful.
+And that’s it!
+We’ve computed the output of the digit capsules.
+Cool!
+Now the length of each output vector represents
+the probability that a digit of that class
+is present in the image.
+So, let’s compute these probabilities.
+For this, we can’t use tensorflow’s norm()
+function because training will explode if
+there’s a zero vector at any point, as I
+mentionned earlier.
+So instead we use a home-made safe_norm()
+function, similar to what we did with the
+squash() function.
+And note that the sum of the probabilities
+don’t necessarily add up to 1, because we
+are not using a softmax layer.
+This makes it possible to detect multiple
+different digits in the same image (but they
+all have to be different digits: you can detect
+a 5 and 3, but you can’t detect, say, two
+5s).
+Next, let’s predict the most likely digit.
+We just use the argmax() function that gives
+use the index of the highest probability.
+The index happens to be the number, the digit
+itself.
+Note that we first get a tensor that has a
+couple extra dimensions of size 1 at the end,
+so we get rid of them using the squeeze()
+function.
+If we called squeeze() without specifying
+the axes to remove, it would remove all dimensions
+of size 1.
+This would generally be okay, except if the
+batch size was equal to one, in which case,
+we would be left with a scalar value, rather
+than an array, and we don’t want that.
+So it's better to specify the axes.
+Great, now we have a capsule network that
+can estimate class probabilities and make
+predictions.
+We can measure the model’s accuracy on the
+batch by simply comparing the predictions
+and the labels.
+In this case the prediction for the last digit
+in the batch is wrong, it’s 7 instead of
+1.
+So we get 80% accuracy.
+The code is really straightforward: we just
+use the equal() function to compare the labels
+and the predictions y_pred, and this gives
+us an array of booleans, so we cast these
+booleans to floats, which gives us a bunch
+of 0s (for bad predictions) and 1s (for good
+predictions), and we compute the mean to get
+the batch’s accuracy.
+The labels y are just a regular placeholder.
+Nothing special.
+And that’s it, we have a full model, able
+to make predictions.
+Now let’s look at the training code.
+This diagram is about to get pretty crowded
+so I’ll remove the accuracy for clarity.
+And now, first, we want to compute the margin
+loss.
+It’s given by this equation.
+By the way, I made a mistake in my first video:
+I squared the norms instead of the max operations.
+Sorry about that.
+This here is the correct equation.
+Computing it is pretty straightforward, so
+I won’t go through it in details.
+The only trick is to understand how you can
+easily compute all the T_k values.
+For a given instance, T_k is equal to 1 if
+a digit of class k is present in the image,
+otherwise it’s equal to 0.
+So, you can get all the T_k values for each
+instance by simply converting the labels to
+a one-hot representation.
+For example, if an instance’s label is 3,
+then for this instance, T will contain a 10
+dimensional vector full of zeros except for
+a 1 at index 3.
+Okay!
+Next, we want to compute the reconstruction
+loss.
+So first, we must send the outputs of the
+digit capsules to a decoder that will try
+to use them to reconstruct the input images.
+This decoder is just a regular feedforward
+neural net composed of 3 fully connected layers.
+It’s really simple code, so you can pause
+the video if you want to take a close look
+at it.
+It outputs an array containing 784 values
+from 0 to 1, for each instance, representing
+the pixel intensities of 28x28 pixel images.
+And that’s it, we have our reconstructed
+images!
+We can now compute the reconstruction loss.
+This is just the squared difference between
+the input images and their reconstructions.
+Since the input images are 28x28x1, we first
+reshape them to one dimension per instance
+with 784 values each.
+Then we compute the squared difference.
+Now we can compute the final loss!
+It’s just the sum of the margin loss and
+the reconstruction loss, scaled down to let
+the margin loss dominate training.
+Pretty simple, as you can see.
+Now let’s add the training operation.
+The paper mentions they used TensorFlow’s
+implementation of the Adam optimizer, using
+the default parameters, so let’s do that.
+We create the optimizer, and call its minimize()
+method to get the training operation that
+will tweak the model parameters to minimize
+the loss.
+We’re almost done, but there’s one last
+detail I didn’t mention in the first video.
+The paper indicates that the outputs of the
+digit capsules should all be masked out except
+for the ones corresponding to the target digit.
+So instead of sending the digit capsules’
+outputs directly to the decoder, we want to
+apply a mask first, like this.
+The mask will have the same shape as the digit
+capsules output array, and it will be equal
+to 0 everywhere except for 1s at the location
+of the target digits.
+By multiplying the digit capsules’ output
+and the mask, we get the input to the decoder.
+But there’s one catch.
+This picture is good for training, but at
+test time, we won’t have the labels.
+So instead, we will mask the output vectors
+using the predicted classes rather than the
+labels, like this.
+Now we could build a different graph for training
+and for testing, but it wouldn’t be very
+convenient.
+So instead, let’s build a condition operation.
+We will add a boolean placeholder called mask_with_labels.
+If it is true, then we use the labels to build
+the mask.
+If it is False, then we use the prediction.
+Note the difference.
+Okay.
+And here’s the code.
+We build the mask_with_labels placeholder,
+which will default to False so that we only
+need to set it during training.
+And then we define the reconstruction targets
+using TensorFlow’s cond() function.
+It takes 3 arguments: the first one is a tensor
+representing the condition, in this case simply
+the mask_with_labels placeholder.
+The second parameter is a function that returns
+the tensor to use if the condition is True,
+and the third parameter is a function that
+returns the tensor to use if the condition
+if False.
+Then to build the mask, we simply use the
+one_hot() function.
+Now there actually one slight problem with
+this implementation, and to explain it, I
+need to step back for a second and talk about
+how TensorFlow evaluates a tensor.
+Suppose we built this graph, these are all
+tensorflow operations, and we want to evaluate
+the output of operation A.
+The first thing TensorFlow will do is resolve
+the dependencies.
+It will find all the operations that A depends
+on, directly or indirectly, by traversing
+the graph backwards.
+In this case it will find C, D and F.
+Next, it will run any operation that has no
+inputs.
+These are called root nodes.
+In this case F.
+Once F is evaluated, operations C and D now
+have all the inputs they need, so they can
+be evaluated, and TensorFlow will actually
+try to run them in parallel.
+Say D finishes first, A still has one unevaluated
+input so it can’t run yet.
+But as soon as C is finished, A can be evaluated.
+And once it’s done, the eval() method returns
+the result, and we’re good.
+You can actually evaluate multiple operations
+at once, for example A and E, and the process
+is really the same.
+It finds all the dependencies, runs the root
+operations, and then, you know, goes upward
+running every operation whose inputs are satisfied.
+And once it's got both the values for both
+A and E, it returns the results.
+So let’s apply this to our reconstruction
+targets.
+This tensor is the output of the cond() operation,
+which has 3 parameters, mask_with_labels,
+a function that returns y, and a function
+that returns y_pred.
+And when we evaluate the reconstruction_targets,
+or any tensor that depends on it, such as
+the final loss, which depends on the reconstruction
+loss, which eventually depends on the reconstruction_targets.
+Well, what happens it, as earlier, TensorFlow
+starts by resolving the dependencies.
+It finds all three bottom nodes.
+And it evaluates them all!
+So y_pred may finish first.
+Since these operations are run in parallel,
+there’s no way to know in which order they
+will finish.
+So, you know, y may finish next.
+And finally mask_with_labels finishes.
+So suppose it evaluates to True.
+Now the reconstruction_targets has all the
+inputs it needs, so it can be evaluated.
+And of course it does the right thing, since
+mask_with_labels is True, it returns the value
+of y.
+Which is good.
+But notice that y_pred was evaluated for nothing,
+we’re not using its output.
+It’s not a big deal since during training
+we need to evaluate the margin loss, which
+depends on the estimated class probabilities,
+which is just one step away from the predictions,
+so computing the predictions won’t add much
+overhead.
+But still, it’s a bit unfortunate.
+Now suppose mask_with_labels evaluates to
+False.
+Then, again, the reconstruction_targets will
+do the right thing, it will output the value
+of y_pred.
+But this time, we evaluated y for nothing.
+It’s just a placeholder, so it won’t add
+much computation time, but it means that we
+must feed y, even if mask_with_labels is False.
+Well actually we can just pass an empty array,
+that's fine.
+So it will work, but it's kind of ugly.
+So this unfortunate situation is due to the
+fact that the functions we passed to the cond()
+function, do not actually create any tensor,
+they just return tensors that were created
+outside of these functions.
+If you build tensors within these functions,
+then TensorFlow will do what you expect.
+It will stitch together the partial graphs
+created by these functions into a graph that
+will properly handle the dependencies.
+So you might be able to modify my code and
+fix this ugliness.
+I tried, but I ended up with pretty convoluted
+code, so I decided to stick with this implementation.
+I hope it won’t keep you awake at night.
+Sooo!
+We’ve actually finished!
+Here’s the full picture again.
+The construction phase is over, our graph
+is built, now on to the execution phase, let’s
+run this graph.
+First, let’s look at the training code.
+It’s really really completely standard.
+We create a session, if a checkpoint file
+exists, load it, or else initialize all the
+variables.
+Then run the main training loop, for a number
+of epochs, and for each epoch, run enough
+iterations to go through the full training
+set.
+And inside this loop, we simply evaluate the
+training operation, and the loss, on the next
+batch.
+We feed the images and the labels of the current
+training batch, and we set mask_with_labels
+to True.
+That’s pretty much all there is to it.
+In the notebook, I also added a simple implementation
+of early stopping, and I print out the progress,
+plus I evaluate the model on the validation
+set at the end of each epoch.
+But the most important part is here.
+After training, I just run a few test images
+through the network and get the predictions
+and reconstructions.
+As you can see, the predictions are all correct,
+and the reconstructions are pretty good, they're
+pretty close to the original images, except
+that they’re slightly fuzzier, as you can
+see.
+Here’s the code, there’s really nothing
+special about it: I take a few test images,
+I start a session and load the model, then
+I just evaluate the predictions and the decoder’s
+output (and I also get the capsules’ outputs
+so I can tweak them later).
+The ugliness I mentionned earlier is right
+here.
+I'm forced to pass an empty array.
+This value will be ignored anyway.
+And finally, the code tweaks the output vectors
+and passes the result to the decoder.
+So we can see what each of of the 16 dimensions
+represent in the digit capsule’s output
+vector.
+For example, this image shows the reconstructions
+we get by tweaking the first parameter (the
+notebook produces one such image for each
+of the 16 parameters).
+And as you can see, in the first, second and
+last rows, we see that the digits become thinner
+and thinner, going to the right, or thicker
+and thicker to the left, so it holds information
+about thickness.
+And in the middle row, you can see that the
+bottom part of the number 5 gets lifted towards
+the top, so probably that's what this parameter
+does for this digit.
+Before I finish, I’d like to thank everyone
+who shared and commented on my first video,
+I really had no idea it would receive such
+an enthusiastic response, and I’m very very
+grateful to all of you, it definitely motivates
+me to create more videos.
+If you want to learn more about Machine Learning
+and support this channel, check out my O’Reilly
+book Hands-on Machine Learning with Scikit-Learn
+and TensorFlow, I’ll leave the links in
+the video description.
+If you speak German, there’s actually a
+German translation coming up for Christmas.
+And if you speak French, the translation is
+already available.
+It was split in two books but it’s really
+the same content.
+And that’s all I had for today, I hope you
+enjoyed this video and that you learned a
+thing or two about TensorFlow and capsule
+networks.
+If you did, please, like, share, comment,
+subscribe, and click on the bell icon next
+to the subscribe button, to receive notifications
+when I upload new videos.
+See you next time!

@@ -1,0 +1,343 @@
+Hey everyone, Ivan here! In this video we'll 
+be talking about data collection and labelling.
+This video covers everything you need 
+to know about preparing a dataset  
+to train a custom YOLOv5 model. We'll actually 
+start by asking if object detection is right  
+for the problem you're working on. If it is, 
+we'll move on to collecting training images,  
+labelling tools, and, finally, using Weights 
+& Biases to store a dataset in the cloud  
+before downloading it when we start 
+training on a virtual machine.
+---
+You're watching Part 2 of the YOLOv5 series.  
+Watch Part 0 to learn more about the YOLOv5 and 
+Weights & Biases integration, and watch Part 1  
+to learn how to install YOLOv5 for real-time 
+object detection on Windows and Google Colab.
+If you have any questions feel free to drop 
+them in the comment section down below,  
+and let's get started!
+---
+Everything starts with determining 
+if object detection is the right  
+approach for your problem in the first place.
+You see, object detection is 
+powerful but has its limitations.  
+By definition, object detection is all about 
+detecting whether a given object is present in  
+the image and drawing a rectangular bounding 
+box around it. Instead of just saying that an  
+image has a dog in it, we say the image has 
+a dog present at the following coordinates.
+So, if you're looking for a level of precision 
+beyond a rectangular box, you may want to use  
+other approaches. For example, image segmentation 
+aims to assign a label to every pixel in the  
+image. If you care about the orientation of an 
+object in space, you may want to look into 3D  
+object detection, since normal object detection 
+gives you a flat, two-dimensional bounding box.
+You might find that your 
+problem has multiple parts.  
+In this case, you can combine object 
+detection with other techniques.
+For example, you could break a 3D orientation 
+estimation problem into smaller parts. In one  
+of the projects my friend Carlo Lepelaars was a 
+part of, they isolated a stuffed animal inside a  
+bounding box, cropped the results, and then passed 
+it through another model to estimate its rotation.
+One of my projects was building an app for 
+visually impaired people to detect buses  
+and identify their route number.  
+Object detection was a perfect fit for part of 
+this task because I cared about the location  
+of the buses and the bus numbers, so that I 
+could attribute the number to the bus it's on.
+However, while object detection is perfect for 
+detecting bus numbers, it's not so perfect for  
+reading them. It's not practical to have tens 
+of thousands of classes for all the possible  
+bus number combinations. So, I used object 
+detection just for what it does best: detecting  
+the bus numbers. Then I cropped the images and 
+used another model to read the cropped numbers.
+---
+If you've determined that object detection 
+will be useful and relevant to the problem  
+you're trying to solve, now we'll talk 
+about the next step, which is data.
+Training an object detector is a supervised 
+learning problem, meaning that we need examples  
+and the correct answers to those examples. 
+One very important question for almost all  
+supervised machine learning problems 
+is "How are you going to get the data?"
+You might already have a dataset in mind.  
+In that case, then you might be interested 
+in supplementing your existing dataset.  
+The fundamental rule of ML still applies 
+here: the more quality data, the better.
+If you don't have a dataset, you could create 
+one! If you're creating your own dataset,  
+you want to think about where 
+the model will be deployed.  
+For example, since I was working on an app that 
+would be used at a bus stop to detect buses, I  
+filmed buses approaching bus stops. I split those 
+videos into frames that became part of my dataset.
+Another thing you can do is to look at public 
+datasets and dataset platforms. COCO, or Common  
+Objects in Context, is a very popular object 
+detection and segmentation dataset with over 120k  
+images and 80 different classes. Here's a link 
+to my video on the YOLO format for COCO dataset.
+You can also look at Kaggle, Roboflow, and 
+other platforms hosting public datasets. Or,  
+try running a quick google search of "dataset 
+type you're looking for + yolo format". A  
+dataset in yolo format means that the 
+images are already labeled, so you can  
+save a lot of time by not having 
+to label the images yourself.
+A fourth way of collecting data is 
+using the free images on the Internet.  
+There are many tools that can help automate 
+the process of downloading these images.  
+Just make sure that you're allowed 
+to use the images you're downloading.
+---
+I want to emphasize the important of 
+having true negatives in your data.  
+In the case of object detection, this means having 
+images without the object you're looking for.
+For example, I added images with no buses 
+into my dataset, so that the model could learn  
+when not to detect buses. I also added images of 
+trucks, because they might look similar to buses.  
+That way the model learns what's NOT a bus, and we 
+can avoid potential misdetections in the future.  
+The easiest way for me to get many 
+images of trucks also was COCO dataset.
+In my case, I ended up with 7000 bus images 
+which allowed the model to produce good results.  
+However, you don't necessarily 
+need that many images to start  
+training. A good number to start 
+with can be just a thousand.  
+YOLOv5 also has some data-augmentation built-in 
+which could help with smaller datasets.
+If the results look promising, you can 
+continue adding more images while tracking the  
+accuracies of your models. We'll use Weights 
+& Biases for that in part 3 of the series.
+---
+Now that we have our images, how do we label them?
+Different object detectors 
+have different label formats.  
+YOLOv5 and many other YOLO-type networks 
+use two files with the same name,  
+but a different file extension. One file is a 
+jpeg image file and the other is a .txt text file.
+The image is just a normal image - that's pretty 
+simple. The .txt file is used to store the labels:  
+the types of objects present in the image 
+and the coordinates of their bounding boxes.
+---
+The number of rows indicates the 
+number of objects in the image.  
+Each row has 5 parameters: the index of 
+an object's class, the x and y coordinates  
+of the bounding box center, and the 
+width and height of the bounding box.  
+The coordinates and bounding box dimensions 
+are normalized to a value between zero and one  
+as a percentage of the image dimensions.
+---
+For example, I'll draw a very elongated bounding 
+box at the bottom of the image.  In the  
+.txt file we see that the x and y coordinates of 
+the bounding box center are about 0.5 and 0.93.  
+These values are normalized to a 
+percentage of the image dimensions,  
+so the x coordinate is located 
+about 50% across the image  
+(left to right) and the y coordinate 
+is 93% down the image (top to bottom).
+The width of the bounding box is 
+97% of the entire image width,  
+and the height of the bounding box 
+is 10% of the entire image height.
+Obviously we can't just go count every 
+pixel and type out this information by hand!  
+We're gonna need to run some code.
+Labelling software really comes in 
+all different sizes and flavors.  
+When I asked people on Twitter what they use 
+to label images, I received the following  
+recommendations. (plan to show on screen 
+a list of names here: LabelImg,Labelme,  
+semi-autonomous DarkLabel,Labelbox, SuperAnnotate, 
+VIA from VGG Oxford that runs in the browser).
+My favorite labelling tool is an 
+open-source repo called OpenLabelling  
+by João Cartucho. It's powered by 
+OpenCV, which I'm very familiar with,  
+so it was easy to add extra features 
+that made it perfect for my needs.
+I'll show the labelling process using 
+a modified version of OpenLabelling,  
+but feel free to use any labelling 
+tool that supports the YOLOv5 format.  
+I'll link to OpenLabelling and the 
+modified version in the description.
+First thing we need to do, as usual, is 
+download and unzip the labelling repo.  
+We'll put the images we want to label into the 
+images folder. According to the YOLO format,  
+.txt files with the same filenames 
+will be created in the bbox_txt folder.
+We need to make sure that we have 
+these Python modules installed  
+in order to run ModifiedOpenLabelling.
+We need to run the run.py
+file to launch the labelling tool.  
+I'll open it as a Python file and 
+then press F5 to run the code.  
+A window that we can resize or make 
+fullscreen will pop up and display the image.
+There's a sliding bar at the top to 
+switch the image we're currently on  
+and the class we're currently drawing a 
+bounding box for. We can also use the "A"  
+and "D" keys to switch between images and the 
+"W" and "S" keys to switch between classes.
+The first left mouse click defines the top left 
+corner of a bounding box, and the second click  
+defines the bottom right corner. A right click 
+inside a bounding box deletes it. All of the  
+bounding boxes we draw get automatically added 
+to the .txt file that corresponds to the image.
+We can specify the number of classes 
+and their names in the class_list.txt  
+file. In my case class closed_door has the 
+index 0, opened_door 1, bus 2, and number 3
+You want the classes to be specific enough 
+for the model to be able to generalize well,  
+but not so specific that there 
+isn't enough data to support it.  
+Remember: the class bus_number 
+is better than bus_number_86
+Now, I'll describe how I 
+modified the OpenLabelling tool.  
+First, I added the ability to switch 
+classes with the digit keys on the keyboard.  
+This comes in handy when there are many classes. 
+For example, I press 1 to use switch to the class  
+with index 0, and I press 2 to switch 
+to the class with index 1, and so on.
+I also added the ability to move an image and its 
+label directly to the local recycle bin inside of  
+OpenLabelling by pressing the R key. It helps 
+when you encounter a confusing image that you  
+don't want to include in the dataset , so you 
+can quickly remove it and continue labelling.
+Labelling is a pretty tedious 
+process but it can be quite  
+rewarding when it helps your model perform better.  
+Now, let's learn about taking our labelled 
+data and backing it up in the cloud.  
+Then we can use it for training in the future.
+We want to use the data that we've 
+just labelled to train in the cloud:  
+on Google Colab or on whatever cloud platform that 
+you prefer. For that we'll use Weights & Biases  
+Artifacts, which allows us to version our 
+datasets and models. You can watch Part 0 of  
+the series to learn more about Artifacts and 
+the YOLOv5 and Weights & Biases integration.
+First, I will run a script inside 
+the ModifiedOpenLabelling folder  
+in order to randomly split the data into 
+the training and validation sets. We can  
+specify the ratio of the split here, and run the 
+script to copy the images into the new folders.
+The script creates a custom_dataset directory, 
+and the images and labels for the training and  
+validation sets are in the appropriate folders. 
+Next up, we can copy the custom_dataset folder  
+into the YOLOv5 folder, which we installed 
+locally in the first part of this series.
+After that, we'll need a 
+.yaml file for our dataset.  
+YOLOv5 uses this file to understand where to 
+take the images and labels for training, what  
+the names of the classes are, how many classes 
+there are, and so on. Let's make a copy of the  
+voc.yaml file that came with the YOLOv5 repo, name 
+it custom_dataset.yaml, and edit it a little bit.
+Let's delete all the lines we don't need, 
+and change the paths , number of classes,  
+and class names. The result 
+should look something like this:
+Now, let's save it and upload 
+our dataset as an Artifact.
+We'll open the console inside the YOLOv5 folder  
+and run `pip install wandb` to install 
+the Weights & Biases Python client.
+Next, we'll run this command to upload 
+our dataset as Artifact into a W&B  
+project named custom_yolov5. It may 
+prompt you to log into Weights & Biases  
+(or quickly create a new account) if it's 
+your first using the wandb Python client.
+Notice that the custom_dataset_wandb.yaml file 
+appears in the yolov5 folder. We’ll use this  
+file in the future to start training on the 
+dataset that we uploaded as a W&B Artifact.
+We can follow this link to open our W&B project.
+This data is now stored in the cloud. We can  
+access it no matter which machine 
+we plan on using for training!
+If we navigate into the Artifacts tab, 
+we'll see two new dataset Artifacts appear:  
+one for the training and 
+one for the validation data.
+If we click on one of the Artifacts and go into 
+the Files tab, we can open it as a Wandb Table!  
+WandB Tables are a way of 
+interactively exploring data.  
+We can visualize, query, and analyze 
+tabular data right in the browser!
+Weights & Biases Artifacts is a 
+tool for model & dataset versioning,  
+aka keeping track of the changes 
+to your models and datasets.
+I will now add a random bounding box to this 
+image just by editing the labels .txt file.  
+Then I’ll upload the dataset as an Artifact again.  
+W&B Artifacts scans every file and 
+creates a new version of the dataset  
+if it detects any change in 
+a file’s name or contents.
+Here we can see the random bounding box.  
+We can also compare different versions of 
+datasets side-by-side and see the difference.
+You can see that the old version 
+has three bounding boxes,  
+and that the new version has four of them.
+Most importantly, W&B Artifacts only saves the new  
+or changed files and just references the unchanged 
+ones, meaning that we’re not wasting any storage.
+That's it for this video. Stay tuned for 
+the next one where we'll cover training a  
+YOLOv5 model while leveraging Weights & Biases 
+experiment tracking tools to their full power!
+If you have any questions or comments 
+please feel free leave them down below,  
+and I'll be happy to answer them! And consider 
+subscribing to our channel to see the upcoming  
+parts of the series. Thank you for watching, 
+I hope you enjoyed it and found it useful!

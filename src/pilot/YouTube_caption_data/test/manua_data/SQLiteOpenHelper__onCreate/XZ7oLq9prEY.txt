@@ -1,0 +1,129 @@
+Now that's a contract.
+But we still don't have a database.
+Our database class 
+will extend an Android class.
+SQLiteOpenHelper.
+SQLiteOpenHelper contains cool stuff
+to help us handle database versioning.
+As we make changes
+to our database in the future,
+it will help us modify our tables.
+For many apps, being able to upgrade
+to a new version
+without data loss is critical.
+Let's create a WeatherDBHelper class
+within the data package
+and have it extend SQLiteOpenHelper.
+We can add the required methods 
+by hitting Ctrl+I,
+and we can override the constructor 
+by hitting Ctrl+O.
+Now we can hard code 
+these variables to constructor.
+Hard coding name to database name,
+our factory to null,
+and our version to database version.
+Now, you'll note I have made 
+the database name public,
+and that's because we're going to use it
+in our tests in the future.
+Now you see we've got it onCreate
+and an onUpgrade method.
+In the onCreate method,
+we're going to start by creating a string
+to build the weather entry table
+using data defined
+within the weather entry contract.
+Now I'm just going to add this comment
+so you know where to go back
+and add the location entry stuff later.
+Since weather entry 
+depends on location entry,
+I would normally write 
+location entry first,
+but weather entry is pretty complicated.
+So I'd rather explain what we've done
+and leave location entry up to you.
+We're going to use raw SQL 
+for our create table query,
+beginning with the table name 
+from our contract.
+At this point, it's helpful to import 
+WeatherContract.locationentry
+and weather entry.
+It makes our query 
+so much easier to read.
+We'll start with our ID field,
+which we'll set as our primary key 
+in an auto increment field.
+Note that integer is actually 
+a signed value
+up to eight bytes long in SQLite.
+Using the auto increment feature 
+doesn't do precisely what one might think.
+Setting up the ID 
+is an integer primary key
+actually makes the value unique
+whenever you do an insert,
+but it may not always increment.
+It may reuse existing ID values 
+if the records have been deleted.
+What auto-increment is really useful for,
+is if you're synchronizing data 
+two ways with the server.
+But, we'll take advantage of it here 
+because it makes data from our queries
+sort a bit more naturally 
+because we insert them in the right order
+coming from the server.
+In general, we're using constraints 
+on fields. In this case, not null.
+We do this because it allows 
+the database to do much
+of our parameter validation for us.
+The tricky part about doing it this way,
+is that we don't get useful errors 
+when these constraints fail,
+so it can be challenging to debug.
+We're using a human readable string 
+for the date.
+There's no strong reason for 
+or against this choice.
+We wanted to normalize the date 
+to simplify our queries,
+and human readability 
+simplifies debugging.
+The date comes from open weather 
+in Unix time stamp format
+with some time information 
+that we need to get rid of.
+I'm not going to cover every field.
+Real means floating point in SQL.
+It would have been fine 
+to have used integer
+with fixed point math as well
+and some would argue
+that this would be faster,
+but real is more straight forward 
+since we're storing floating point values.
+Now for the fun stuff, 
+we're going to set up a loc key.
+It's a foreign key 
+to the location entry table
+that you will be building.
+This causes SQLite to enforce 
+the relationship between the tables.
+We cannot insert a weather entry
+when there is no corresponding 
+location entry.
+And we cannot delete a location entry
+if there are still weather entries
+that depend on it.
+Cool stuff, right?
+One last constraint. Our date text 
+plus location must be unique.
+On conflict, replace the data.
+This allows us to insert new data 
+from the open weather EPI easily.
+Preserving existing keys and updating 
+the value as the forecast changes.

@@ -1,0 +1,1578 @@
+IULIA TURC: Hi, everyone.
+My name is Iulia, and I
+work at Google Research
+on natural language processing.
+In this presentation, we'll
+walk through the recent history
+of natural language processing,
+including the current
+state-of-the-art architecture,
+the transformers.
+And we'll also discuss
+how transformers
+became particularly
+successful when
+used in the context of
+transfer learning, which
+is a technique that leverages
+massive amounts of text.
+This tutorial is structured
+in three sections.
+First, we're going to
+talk about encoding text
+into a numerical representation
+that can be manipulated
+by machine learning models.
+Second, we'll discuss one
+of the most important tasks
+in natural language processing--
+namely, language modeling.
+Among other architectures,
+we'll see how transformers
+solve this particular task.
+And third, we'll dive
+into transfer learning,
+which is the mechanism that
+enabled transformers to be
+the state-of-the-art in
+natural language processing.
+And finally, we'll look at
+BERT, one of the most popular
+transformer models.
+So let's start by answering
+the following question.
+How do we encode text
+in a numerical format?
+Well, currently, natural
+language processing
+is heavily machine
+learning-driven.
+Most NLP systems follow
+this high-level contract,
+where a piece of
+natural language text
+is input into a machine
+learning model, which
+produces a prediction that
+qualifies or describes
+the input in some way.
+This could be a discrete class,
+a real value, another piece
+of text, and so on.
+Let's look at sentiment
+classification,
+which is one of the
+most common NLP tasks.
+The input could be
+something like a TV show
+review from Rotten Tomatoes,
+like this positive review
+for "BoJack Horseman."
+The expected output is a
+probability distribution
+over two classes,
+positive and negative,
+indicating how the author of the
+review perceived the TV show.
+In this section, we'll
+discuss the first part
+of this contract-- namely,
+how to encode a TV show
+review into a numerical
+representation that
+can be handled by the
+machine learning model.
+We can start with a naive
+view and just assume
+that words are discrete
+and independent tokens.
+One way forward
+would be to gather
+all of the unique tokens
+in a training corpus
+and build a dictionary of tokens
+by sorting them alphabetically.
+Here, our first
+word is aardvark,
+and king and queen are
+somewhere in the dictionary.
+Remember, we want to
+convert text into numbers.
+So the first thing
+we could do is just
+to assign an index
+to each token,
+reflecting its order
+in alphabetical order.
+The problem is these
+very high numbers
+are not very amenable to machine
+learning, and gradient descent,
+in particular.
+So another thing we could do
+is use one-hot embeddings.
+These are vectors that have
+the same dimensionality
+as the dictionary.
+So if the dictionary
+has size 100,000,
+then a one-hot vector would
+have the same size, 100,000,
+where only one of the
+entries would be 1
+and all of the others will be 0.
+So for instance,
+aardvark has a 1
+on the very first position
+and a 0 for all of the others.
+While one-hot embeddings
+do use values that
+are amenable to
+machine learning,
+they have two main
+disadvantages.
+First, when stored
+as the inspectors,
+have very high
+dimensionality, since they
+have one dimension for every
+entry in the vocabulary.
+And second, they fail to capture
+any world knowledge whatsoever
+about the tokens.
+In this particular
+case, king and queen
+have more in common
+with each other
+than they have with aardvark.
+Yet, all of these vectors have
+90-degree angles between them.
+To see this more clearly,
+let's limit the vocabulary
+to only three tokens.
+In this case, the size of
+the vocabulary is three.
+The dimensionality of the
+one-hot vectors is three.
+So the words are vectors in
+a three-dimensional space.
+With this one-hot
+embedding, words
+are unit vectors aligned
+against the axes.
+And there's an
+opportunity cost here.
+Why not allow the
+words to occupy
+the entire space, as opposed
+to being perfectly aligned
+to the axes?
+A more practical view
+would be that words
+are continuous vectors in
+an n-dimensional space.
+So we'll allow queen,
+king, and aardvark
+to flow anywhere in this
+three-dimensional space.
+So their representation
+contains real values
+like 0.3, 1.9, and minus 0.4.
+Before we move on, just a
+quick note on terminology.
+This way of embedding tokens
+comes under different names.
+It's known as continuous,
+or distributed, embeddings,
+vectors, representations,
+and so on.
+So I will use these
+terms interchangeably
+throughout the presentation.
+Now what sort of
+properties would
+be like these word tokens to
+reflect as we aim for them
+to encompass world knowledge?
+We can enumerate certain
+aspects that we'd
+like them to capture, such
+as gender or part of speech.
+Conceptually, various
+dimensions of the vector
+could be dedicated to
+each of these aspects.
+So for instance, the first three
+dimensions could encode gender
+and the next three could
+encode the part of speech.
+Of course, we will not enforce
+this particular attribution
+of meaning to the
+dimensions, but we
+can hope that the
+model discovers
+something of the sort.
+The mechanism that we use to
+express desired relationships
+is relative vector distance.
+For instance, on the
+gender dimension,
+king and queen should be as
+far apart as men and women.
+However, on the part-of-speech
+dimension, all of these words
+should be clustered
+together at a distance
+virtually 0, since
+they are all nouns.
+In contrast, play, which is
+a verb, and playful, which
+is an adjective, should
+be at the same distance
+as joy and joyful.
+So we've now enumerated
+the desirable properties
+of our embeddings and
+what sort of relationships
+we want to encode.
+But how exactly can we
+learn useful embeddings?
+Well, luckily, the
+internet is free
+and contains a massive
+amount of information,
+and a good chunk of it is text.
+Even better, there's Wikipedia,
+which currently contains
+28 billion words in
+309 languages, which
+is a reasonably controlled and
+reliable source of information.
+Looking at the Wikipedia
+pages for king and queen,
+we can see a lot of commonality.
+They both reference
+each other and they also
+include common
+words like monarch.
+Surely, there's quite
+a bit of word knowledge
+that we can extract from here.
+Now you might know that
+machine learning operates
+on pairs of inputs and outputs.
+A machine learning model
+is given some input, x,
+and it has to produce
+a prediction that
+describes the input
+in one way or another.
+But Wikipedia comes
+in freeform text.
+So how can we gamify
+this text in order
+to have the model learn
+something from it?
+A common practice is to
+turn unsupervised text data
+into a supervised task.
+For instance, we could ask
+the model to fill in the gaps
+and predict the next
+word after a sentence
+like, king is the
+title given to a male.
+The model could then produce
+a probability distribution
+over the words in
+the vocabulary,
+indicating which ones are more
+likely to follow the words so
+far.
+In this case, monarch
+would be a good candidate
+to fill in the gap.
+We'll now move on to
+discuss language modeling,
+or this gamification of
+unstructured text, that
+allows us to learn
+from text, even
+in the absence of
+explicit labels.
+Traditionally, language
+model is defined
+as the task of predicting
+the next word in a sentence.
+Given words 0 through n
+minus 1, the challenge
+is to predict the nth word.
+There are some variations on
+this traditional formulation.
+For instance, the
+context could be
+limited to the previous
+three words only.
+Or instead of
+making a prediction
+based on the previous
+words, we could
+make a prediction based on
+all of the surrounding words,
+not just the ones to the left.
+So generally, language
+modeling refers
+to predicting a piece of text
+given some textual context.
+We'll discuss three
+main turning points
+in the history of
+language modeling--
+Word2vec, introduced in 2013;
+recurring neural networks,
+introduced in 2014;
+and the transformers,
+published in 2017.
+Transformers are currently the
+state-of-the-art architecture
+for language modeling.
+Let's start with
+Word2vec, the model
+that introduced distributed
+representations for language
+modeling.
+We'll now build a very
+simple language model
+that is inspired by Word2vec.
+Let's start with a simple
+input, like on the river,
+hoping that the model will
+guess the missing word,
+which is bank.
+Just for simplicity,
+we'll limit our dictionary
+to only five tokens--
+bank, fish, on,
+river, and "the."
+For now, we're going to start
+with randomly initialized
+embeddings.
+That's the best we can do
+with no world knowledge
+at this point.
+The first step is to
+look up every word
+in the token-embedding matrix.
+So now we've pulled out these
+two-dimensional vectors.
+The next step is to embed or
+aggregate all of these tokens
+into a wholesome view
+over the entire sentence.
+In order to predict what
+follows after three words,
+we need to understand
+them together.
+The most simple
+thing that we can do
+is to average all of
+these embedding together.
+Remember, this is a dummy
+model, so for now, we're
+going to ignore the fact that
+it's not even capable of taking
+word order into account.
+OK, so we've averaged
+these embeddings
+into a single sentence
+representation.
+Our end goal is to produce
+a score for every word
+in the vocabulary
+indicating how likely it
+is for it to follow the sentence
+or the piece of sentence,
+on the river.
+How can we turn a
+two-dimensional vector
+into a five-dimensional vector?
+Well, the simplest option is a
+linear transformation using a 2
+by 5 matrix.
+This is the role of
+the softmax parameters,
+which will be trained together
+with the rest of the model.
+Now remember that the
+weights of the model
+are arbitrary at this point and
+so are the scores it assigns
+to the five vocabulary tokens.
+The next step would be to
+normalize them in such a way
+that all of them sum to 1,
+so they form a probability
+distribution.
+A common way to do that is
+to use logistic regression.
+In this expression, the
+red dots would correspond
+to the x in the formula.
+So now we have a
+probability distribution,
+produced by the
+model guessing what
+should come after on the river.
+It seems like the model
+is giving high probability
+to bank, and for some
+reason, also to "on."
+How do we teach the
+model or tell it
+whether it made a
+good prediction?
+Well, we can peek
+at the word that
+should have been
+predicted, which is bank,
+and turn it into a
+probability distribution.
+So the true distribution, the
+one represented on the right,
+will assign probably 1
+to bank and probability 0
+to all of the other words.
+Having two
+distributions, we can now
+compute some sort of
+distance between these two
+distributions, and that can
+be done by cross entropy.
+Once we have the distance
+between the two distributions,
+we can now
+backpropagate this error
+and tell the model
+how it can adjust
+the weights in a
+way that would have
+led to the correct prediction.
+This, in a nutshell, is how
+a language model is trained,
+and these principles will apply
+for all of the other language
+models that we're
+going to discuss.
+So while Word2vec is
+an admirable effort
+and it really revolutionized
+the field when it came out,
+there are some disadvantages
+to this paradigm.
+One of them is that when
+associating a fixed embedding
+to a word, we cannot handle
+cases in which words have
+multiple meanings.
+So for instance, the word
+bank in "open a bank account"
+and "on the river bank" would
+map to the same embedding.
+Ideally, we'd want
+these embeddings
+to be more contextualized
+to reflect the surrounding
+words around them, so
+"open a bank account"
+would have a different embedding
+from "on the river bank."
+We'll now move on to Recurring
+Neural Networks, or RNNs,
+which provide a way
+of contextualizing
+the embeddings so that
+words can be disambiguated
+based on their context.
+Let's trace the behavior of
+RNNs for an input sentence,
+like on the river bank they
+sat, where the task of the model
+is to predict the
+missing word sat.
+When building an
+RNN, we start off
+with noncontextual
+embeddings, like Word2vec,
+that are looked up in a
+regular embedding table.
+In a sequential manner, we feed
+every noncontextual embedding
+into an RNN cell.
+The RNN cell has an internal
+state that it continuously
+updates as it progresses
+through the sentence, denoted
+by H on the slide.
+You can think of it as an
+encoding of the sentence
+so far.
+The cell produces a
+contextualized embedding, Y,
+based on its internal
+representation,
+H, which captures the
+left-hand side context
+and the noncontextual
+embedding of the current token,
+X. For the word
+bank, this mechanism
+is particularly helpful.
+By the time the
+RNN reaches bank,
+it will have already
+seen the word river
+and encoded it in
+its internal state,
+so it's in a better
+position to disambiguate it
+from its other meaning of
+a financial institution.
+Once the final contextual
+embedding is computed,
+we can use the final
+internal state of the RNN
+to make a prediction
+for the next word.
+Just as before, we can
+add a linear classifier
+that maps the
+hidden state vector
+H5 into a vector with
+the same dimensionality
+as the vocabulary.
+After we get a score
+per vocabulary token,
+we can train the model using
+cross entropy as before.
+While RNN encoders are great
+because they contextualize
+the word embeddings, there
+are certain disadvantages.
+The first one is that they
+are quite slow because
+of their sequential manner.
+If the embedding
+of a word N depends
+on the embeddings of all
+of the previous words,
+it means it has to wait
+for them to be computed.
+So that's why the speed is O
+of N in the number of tokens.
+Another problem is the
+problem of vanishing gradient.
+This is another way of
+saying that, by the time
+we arrive at the
+end of the sentence,
+we might have forgotten what
+the start of the sentence
+looked like.
+Because of this
+sequential processing,
+there's no way of revisiting
+very early tokens.
+And the effect of
+this structure might
+be that we learn very
+little from early tokens.
+A third disadvantage
+is that RNNs--
+most of them-- are
+unidirectional,
+which means they
+process text from left
+to right, unlike humans.
+This is sometimes a problem
+when the relevant context
+is to the right.
+So we were lucky with a
+sentence like on the river bank,
+because river happened
+to occur before bank.
+But if we were to parse
+on the bank of the river,
+by the time we process bank,
+there's no information--
+there's no river, so we
+cannot disambiguate it from
+the financial institution.
+The third language
+modeling technique,
+which is currently
+the state-of-the-art,
+are the transformers.
+And they address this
+problem of unidirectionality
+by teaching the model to
+take into account context
+both from the left-hand side
+and from the right-hand side
+of the sentence.
+Now just for
+simplicity, in order
+to be consistent with
+the other models,
+I'm going to go through the
+transformer left to right.
+So let's see how the
+transformer works.
+As before, we're going
+to start with a sentence,
+like on the river bank
+they, hoping that the model
+will fill in the blank.
+Note that this time,
+for the missing token,
+I'm passing a special
+token called the MASK.
+And this is part
+of the vocabulary,
+so it's just like
+a regular token.
+The first step is to look up
+these words in an embedding
+table and get some
+noncontextual embeddings, Xi.
+These could be, for
+instance, Word2vec.
+And then we're going to feed
+every token into a box that
+is called self-attention.
+Self-attention is one
+of the main building
+blocks for transformers.
+Self-attention works
+by taking into account
+or paying attention to
+all of the other tokens.
+So when embedding
+position 0, we do
+take into account all of the
+other positions 1 through 5.
+And the output-- for
+now, we can see it
+as a weighted
+average of the tokens
+that we paid attention to.
+Self-attention comes
+with some terminology
+that will become easier
+to understand a bit later.
+The token that's
+currently being embedded
+is called the query token.
+And the tokens that
+we pay attention to
+are called the key tokens.
+The key tokens don't need
+to span the entire sentence.
+They could just span the next
+three words, for instance.
+But in general,
+most transformers
+do use the entire
+sentence for context.
+When we embed the word
+"the," the word "the"
+becomes the query token
+and all of the others
+are the key tokens.
+Same for river and bank.
+Let's take a step
+back and explain where
+the terminology comes from.
+To get some intuition about
+this naming convention,
+we can think of a attention
+as a soft dictionary lookup.
+Say we have a dictionary, dict,
+mapping tokens to some value.
+When looking up the word
+bank in this dictionary,
+well, bank becomes a query.
+We'd like to retrieve not
+just the value of bank--
+that would be v3.
+But we'd like to get a
+weighing of all of the values,
+reflecting how similar
+their keys are to bank.
+Of course, the most
+similar word to bank
+is probably the
+word bank itself.
+That's why its
+weight will be 0.6.
+The next most relevant
+word is river,
+because it disambiguates
+the meaning of bank.
+So it gets a pretty high
+score, which is 0.3.
+And all of the other words--
+on, the, and they--
+get some non-zero
+score, but pretty low.
+And finally, the mask
+itself has weight 0,
+because it carries
+no information.
+So this is just an
+aside to justify
+why the current token is
+called the query token
+and all of the others are
+called the key tokens.
+Now we're ready to open
+up the self-attention box
+and get some more clarity on
+what exactly happens inside.
+Self-attention has
+three model parameters.
+These are two-dimensional
+matrices--
+the key parameters,
+the query parameters,
+and the value parameters.
+The terminology should
+already be familiar.
+Unsurprisingly, what
+the key parameters do
+is apply a transformation
+to the key tokens.
+So by multiplying a vector,
+like x0, by a matrix, K,
+we obtain another vector, Key0.
+Remember, these can be viewed
+as the keys into a dictionary.
+So we're going to put
+these aside for now.
+Let's move on to the
+query parameters.
+Let's see what they do.
+Well, also unsurprisingly,
+the query parameters
+transform the query token.
+So we multiply the
+noncontextual embedding of bank
+by this matrix in order to
+obtain some other embedding
+for the query.
+Let's put this one
+aside, as well.
+I hinted a bit
+earlier at the fact
+that self-attention works as
+a weighted sum, conceptually.
+Basically, we want to assign
+a weight to every single token
+in the sentence.
+And this weight should
+reflect the usefulness
+of a particular token in
+embedding the query token.
+We can do that by measuring
+the similarity between keys
+and queries.
+There are multiple similarity
+measures between two vectors.
+But most commonly,
+self-attention
+uses the dot product.
+So by applying the dot product
+between a key and the query,
+we get a scaler, which
+is the attention score,
+and reflects how relevant
+a key is to the query.
+Let's put the attention
+scores to the side for now.
+The only remaining parameter
+that we haven't talked about
+is the values matrix.
+We're going to multiply the
+input tokens by this value
+matrix and obtain
+another set of vectors
+that's called the values.
+Referencing back to
+the previous slide
+with the analogy
+of a dictionary,
+you can think of these values
+as being the values stored
+in the dictionary.
+So each key has a value.
+Finally, what the
+self-attention box returns
+is a sum of these
+weighted values.
+Remember, the attention
+scores show the similarity
+between the key and the
+query and they get multiplied
+by the values themselves.
+So the output is, indeed,
+a weighted sum of values.
+One implementation
+detail is that there
+might be multiple sets of keys,
+query, and value parameters.
+These are called
+attention heads.
+In this illustration, there
+are three attention heads.
+And having multiple
+attention heads
+is equivalent to having multiple
+kernels in computer vision.
+When processing an image,
+it's common to apply
+multiple effects, like blurring,
+sharpening, or outlining,
+in order to understand
+various aspects of the input.
+Language is a lot more
+abstract, so it's not
+trivial to describe what each
+transformation of each head
+is expected to do.
+But you could see how focusing
+on various linguistic aspects
+one at a time might
+be beneficial.
+For instance, one head might pay
+attention to parts of speech,
+while another head could
+focus on verb tenses.
+In other words, everything that
+we saw on the previous slide,
+we just perform three times.
+So we apply those
+transformations three times.
+We're going to end up
+with three outputs.
+What do we do with
+these three outputs?
+How exactly do we combine
+into just one output?
+Well, we can put a
+feed forward network
+on top of the three inputs
+to just combine them back
+into one single output.
+And this is multiheaded
+self-attention.
+So let's zoom out of the box.
+I should have mentioned earlier
+that, even though there's
+multiple self-attention boxes
+on this slide, all of them
+represent or are
+copies of the same box.
+So in this illustration,
+we would have
+only one set of parameters.
+You might have noticed
+already that self-attention
+is somewhat expensive.
+Since every token attends
+to every other token,
+that is O of N
+square complexity.
+The good news, though, is
+that because this is not
+a recurrent neural network,
+processing input N does not
+need to wait on processing
+input N minus 1, N minus 2,
+and so on.
+All the dependencies refer
+to the previous layer.
+There's no arrows going in
+between the boxes, which
+means if we only depend
+on the previous layer,
+the only sequence that
+we need to respect
+is to compute things
+layer by layer.
+But within one
+layer, we can compute
+all of the token embeddings.
+So with the right
+hardware, even though we
+see O of N square
+connections here,
+we could, in theory, compute
+all of them in parallel.
+So what's a transformer?
+We've only talked about
+self-attention so far.
+Well, self-attention is
+the main building block
+for a transformer,
+and a transformer
+is nothing more than a stack
+of self-attention layers.
+Each layer gets its own
+separate set of parameters.
+The transformer is also the
+first architecture to advocate
+for extremely deep networks.
+It's not uncommon for models
+to have 24 layers or more.
+So far, we've talked
+about how transformers
+turn noncontextual embeddings
+into contextual embeddings.
+The remaining question is, how
+exactly do we build a language
+model out of transformers?
+Well, one possibility is to
+pick one embedding output
+by the transformer-- for
+instance, the first one.
+Remember that the
+transformer outputs
+one contextual embedding
+for every single input
+in the sentence.
+But by the time we've
+reached the top of the stack,
+all of these embeddings are
+so contextualized that they
+understand the entire sentence.
+So we can just arbitrarily
+pick the very first embedding
+and build on top of it.
+Previously, for
+Word2vec and for RNN,
+we just used a
+linear transformation
+to map an embedding into
+scores for every word
+in the dictionary.
+That's exactly what we're
+going to do here, and produce
+one score for every word.
+Now the transformer encoder is a
+complicated piece of machinery,
+and we've talked about it from
+a very high level perspective.
+There are some
+implementation details
+that are crucial
+to making it work,
+but they were not
+included in the slides.
+These include residual
+and skip connections,
+layer normalization
+and dropout, and so on.
+I invite you to read the
+original papers if you're
+interested in that much detail.
+While transformers are the
+state-of-the-art for language
+modeling, they come with
+their disadvantages.
+Of course, there's this
+computationally intensive
+work--
+number of layers multiplied
+by N squared, where N
+is the number of input tokens.
+This could be
+alleviated by hardware
+that can perform
+certain operations
+in parallel, like TPUs.
+But on normal hardware,
+this is very expensive.
+Another downside is that
+transformers require
+a fixed number of tokens.
+In other words, the
+length of a sentence
+needs to be set when
+designing the model.
+It's very common for all of the
+inputs to be set to 512 tokens.
+So if the input sentence
+is longer than that,
+it has to be truncated.
+And if it's shorter than
+that, it has to be padded.
+This concludes our discussion
+about language models.
+We visited three
+different approaches
+to language modeling.
+Word2vec brings the
+innovation of continuous word
+representations, which are
+superior to one-hot encodings,
+because they can
+encode world knowledge
+and also have lower
+dimensionality.
+RNNs made these embeddings
+contextual-- that is,
+aware of their
+left-hand side context--
+so that a
+brick-and-mortar bank is
+assigned a different
+embedding from a riverbank.
+And finally, transformers
+ensure that embeddings
+are bidirectional and
+they're aware of both
+the left-hand side and
+right-hand side of the context.
+So for instance, in
+the phrase, the bank
+of the river, the
+meaning of bank
+is determined by river,
+even though river
+is to its right-hand side.
+In the final section,
+we'll discuss
+the concept of transfer
+learning and one
+of its most successful
+applications, the BERT model.
+There's a wide
+range of NLP tasks,
+from sentiment
+classification, named
+entity recognition, question
+answering, machine translation,
+and so on.
+The common thread
+across all tasks
+is that they require
+some general knowledge
+about language.
+For instance, knowing
+when something
+is a verb or a proper
+name is useful,
+regardless of the
+exact application.
+Transfer learning was born based
+on the observation that it's
+a lot more effective to acquire
+this knowledge once and reuse
+it in all of these applications.
+This is similar to
+how humans behave.
+We learn to speak in
+childhood, and then we
+carry this knowledge
+throughout our lives,
+adapting how we speak
+to various situations.
+In machine learning,
+in particular, we also
+face the challenge of
+a limited label data.
+Labels are, most of the
+time, produced by humans,
+and human labor is
+time-consuming and expensive.
+If your goal is to build
+a sentiment classification
+system for movie
+reviews, having someone
+sift through every
+review and decide
+whether it's positive or
+negative is very laborious.
+Not to mention that, in certain
+cases, a lot of expertise
+is required.
+For instance, if you want to
+build a system that translates
+natural language
+into executable code,
+you need a programmer to
+produce training examples.
+The philosophy of
+transfer learning
+is to leverage very
+cheap, unstructured
+data that is readily
+available online to pretrain
+a model so that
+when it's presented
+with the scarce labeled data,
+it hits the ground running.
+The most popular paradigm
+for transferred learning
+is pretaining and
+followed by fine-tuning.
+It consists of two training
+stages applied sequentially.
+First, we train a
+general purpose model
+using unstructured
+data from the internet,
+usually with a language
+model objective.
+And then we continue
+training it on the label data
+and specialize it for our
+particular target task.
+This technique is currently
+the state-of-the-art across
+the majority of natural
+language applications.
+Let's revisit our initial task
+of automatically detecting
+whether this TV show
+review from Rotten Tomatoes
+is positive or negative.
+When we initially
+asked the question
+of how to encode
+the text in a way
+that a machine learning
+model can process it,
+we agreed that using continuous
+vector representations
+for each token was
+the way forward.
+The next challenge was
+to learn these embeddings
+in a way that captures
+meaningful semantic
+relationships
+between words, and we
+agreed that Wikipedia was a good
+source of linguistic and world
+knowledge.
+We then discussed
+three language models
+that gamify unstructured
+text by predicting
+the next word in a sentence.
+So the remaining
+piece of mystery
+is, once we've trained
+a language model,
+how exactly do we
+leverage it in order
+to solve our original task?
+How do we do this
+transfer of knowledge?
+A potential answer is
+the sequential paradigm
+of pretraining followed
+by fine-tuning.
+Next, we're going to talk
+about how exactly this arrow is
+implemented.
+We're going to start off
+with a transformer stack.
+This transformer
+learns a language model
+when inputted inputs
+like, the king
+is the title given
+to a male blank.
+So its goal is to
+figure out what exactly
+is hiding behind the mask.
+The stack contains
+an embedding table
+with noncontextual
+continuous representations,
+followed by a transformer
+encoder that contextualizes
+these embeddings.
+And at the end, the model
+will predict a token.
+Hopefully, monarch.
+What do we do in the
+pretraining and fine-tuning
+paradigm is take a
+copy of the model
+that we just learned using
+a language model objective.
+So we've just copied
+over the embedding table
+and the transformer encoder.
+How exactly do we
+use this model, which
+only knows how to do
+language modeling,
+to do sentiment classification?
+Well, we add a classifier
+on top, which could just
+be a linear transformation.
+And these are newly
+added parameters.
+This classifier
+is able to ingest
+some contextual embeddings,
+produced by the transformer
+encoder, and output
+the desired label.
+When training on the
+label data, now we
+fine-tune the entire stack.
+So remember that the embedding
+table and the transformer
+encoder were already in
+pretty good positions.
+We just copied them from a model
+that can do language modeling.
+The only randomly
+initialized bit of the model
+is the classifier.
+When we do training on the
+sentiment classification task,
+we update all three
+components of the model--
+the classifier, the
+transformer encoder,
+and the embedding table.
+The hope is that because
+the embedding table
+and the transformer
+encoder, which
+contain most of the
+parameters, are already
+in a pretty good state,
+this fine-tuning process
+is relatively lightweight,
+compared to full pretraining.
+Finally, we'll talk
+about BERT, which
+stands for Bidirectional
+Encoded Representations
+for Transformers,
+which is just one
+instantiation of the
+transformer architecture.
+BERT was trained at
+Google on Wikipedia data
+with a language
+modeling objective.
+BERT is readily available for
+download on multiple platforms,
+including Github,
+TF-Hub, and Hugging Face.
+There's multiple models.
+The ones in English
+come in different sizes.
+The smallest model has only two
+layers and embedding size 128,
+and the biggest one has 24
+layers and embedding size
+1,024.
+So there's quite a
+huge range of models.
+There's also a model
+in Chinese and a model
+that is multilingual and
+supports 104 languages.
+The multilingual model
+is pretty impressive,
+because you can feed an input
+in any of the 104 languages,
+not even specify what
+language you are inputting
+or what language the input
+has, and it will probably
+do the right thing.
+How do we use BERT
+in a downstream task?
+Well, there is multiple classes
+of tasks, and each of them
+comes with its own
+special use case.
+The simplest class of
+tasks is a single sentence
+classification--
+for instance, sentiment
+classification.
+Given a movie review, we
+have to output a label,
+either positive or negative.
+Here's how we can
+use the BERT stack.
+So remember, the first step
+was just you copy BERT,
+download it, as it was made
+readily available by Google,
+and then add a
+classifier on top.
+There are some
+implementation details
+that come with BERT that
+I want to dive into.
+If we look at the
+bottom of the diagram,
+you'll see that, in addition
+to the input tokens,
+that single sentence that
+we're inputting to the model,
+there's a special
+token called CLS.
+It stands for Classification.
+This is a special
+artificial token
+that we add to our
+vocabulary to mark
+the beginning of a sentence.
+The rest of the stack works just
+as a normal transformer encoder
+would do.
+At the bottom, we have the
+noncontextual embeddings,
+and at the top, we have the
+contextualized embeddings.
+What exactly do we feed
+into the classifier?
+Well, in all honesty, we could
+feed any of the top embeddings,
+because all of them are
+fully contextualized
+and they're aware of
+the entire sentence.
+But they might be
+localized to the meaning
+of a particular token.
+So to get around
+that artifact, we
+can simply take the embedding
+of the CLS token, which
+remember, it does know about the
+meaning of the entire sentence,
+because at the top
+of the network,
+everything is fully
+contextualized.
+But it doesn't
+particularly focus
+on one word of the sentence.
+So if we feed the
+embedding of the CLS token
+into a classifier, we can then
+get a prediction for our end
+sentiment classification task.
+Another class of natural
+language processing tasks
+is classification
+where the inputs
+are a pair of sentences, as
+opposed to a single sentence.
+Paraphrased classification
+is one example.
+You're given two sentences,
+like she accepted immediately
+and the woman did not
+hesitate to accept.
+And the task is to decide
+whether these two sentences are
+paraphrases of each other.
+As before, we just make a
+copy of the BERT model that's
+readily available online and
+we add a classifier on top.
+The detail that I
+want to emphasize
+is the fact that there's
+a special separator
+token that is added in between
+the two input sentences.
+Just like CLS, this
+is a special token
+that's added to the dictionary
+with the purpose of marking
+the end of one sentence and the
+beginning of the other sentence
+so that the model
+knows what tokens fall
+into the first sentence
+and what tokens
+fall into the other sentence.
+And finally, another class of
+natural language processing
+tasks is span annotation.
+This refers to the
+fact that we need
+to make a classification
+or a decision
+at every point in the sentence.
+Part of speech tagging
+is one example.
+For a sentence like she
+accepted immediately,
+we want to tag every single
+word with its part of speech.
+So she is a pronoun.
+Accepted is a verb.
+Immediately is an adverb.
+Same story-- we copy
+the model, as it's
+readily available to download.
+And of course, we're going
+to need a classifier.
+But how do we use this
+classifier in a way
+that it makes
+multiple predictions?
+Well, we're just going
+to pass every embedding
+in the sentence, one by
+one, through the classifier.
+Let's say that T1
+corresponds to she.
+We pass the contextualized
+embedding of she
+through the classifier
+and produce a label.
+Similarly, let's say T2
+corresponds to accepted.
+We pass the contextual
+embedding of accepted
+through the classifier
+and hopefully get
+a verb label, and so on
+for the entire sentence.
+So now we've visited three main
+categories of downstream tasks
+that can be solved by
+simply fine-tuning BERT.
+Here's a piece of
+code that shows you
+how to do that in practice.
+BERT is available on
+multiple platforms,
+TF-Hub being one of them.
+TF-Hub is particularly
+easy to use,
+because everything
+you have to do
+is provide a URL with the model
+that you want to download.
+So we're going to
+use the hub library,
+and we're going to ask
+TF-Hub to download the model
+from this specific location.
+In my case, I'm choosing a very
+small model, because I don't
+want to wait a long time
+for it to get downloaded
+and it has sequence length 128.
+The API of this
+library requires me
+to define what the inputs
+to the model look like,
+or what are the
+placeholders where I'm going
+to feed in the input text?
+And these can be
+defined as Keras inputs.
+The next step is to
+extract the CLS embedding
+from the BERT outputs.
+Remember that if I want to
+do sentiment classification,
+I need to take the contextual
+embedding of the CLS token
+and pass it through
+a classifier.
+Once I take the CLS embedding,
+I can define my own classifier.
+In this case, the classifier
+is a dense KerasLayer
+with two units, because the
+sentiment classification
+task has two possible classes.
+And finally, I pass the
+contextual CLS embedding
+through the classifier.
+And I define a model that
+takes as inputs whatever
+I feed into BERT, and it
+takes as outputs whatever
+the classifier outputs.
+At this point, I'm ready to
+just call model.fit() and train
+my model.
+Because BERT was
+quite a success story,
+it inspired quite a
+bit of follow-up work.
+There are models that
+revisit the training process
+and make it more
+robust, like RoBERTa.
+There's a lot of
+research that has
+gone into preserving
+the accuracy of BERT,
+but shrinking it or making
+it faster for inference.
+And this is the case for
+ALBERT, MobileBERT, TInyBERT,
+and a lot of other models.
+There's also language-specific
+models trained specifically
+for French, Chinese, and so on.
+Most of these are,
+again, readily
+available to be downloaded.
+And you can build your own model
+by simply fine-tuning them.
+This concludes our journey
+through the recent history
+of natural language processing.
+As of today, transformers remain
+the preferred architecture
+for most NLP tasks.
+And pretraining
+and fine-tuning--
+the paradigm itself
+is ubiquitous.
+The biggest roadblock
+that we're facing today
+is that transformers require
+a fixed input length.
+And because of their
+computational complexity,
+they cannot be effectively
+scaled beyond a few hundreds
+of tokens.
+The solution might come either
+from specialized hardware
+or from innovations
+on the modeling side.
+Either way, natural
+language processing
+remains a very interesting
+field for research
+and for industry applications.
+Thanks for your attention,
+and make sure to check out
+the other videos in the series.
+[MUSIC PLAYING]

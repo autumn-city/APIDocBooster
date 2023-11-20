@@ -1,0 +1,327 @@
+THIS is the python code needed to create and train 
+a neural network that detects handwritten digits  
+with over 90% accuracy. No worries, I’ll 
+explain and animate everything in detail,  
+so you’ll understand the code by the end 
+of this video! A neural network consists  
+of a bunch of neurons that are connected 
+through weights. One column of neurons  
+is also called a layer. There 
+are three different types:
+The first type is called input layer and is used  
+to represent the input values that 
+are passed on to the neural network.
+The second type is called hidden layer. A hidden 
+layer receives values from a preceding layer,  
+does some magic and passes its neuron 
+values to the subsequent layer.  
+A neural network can have zero to … 
+well, basically unlimited hidden layers.
+The third type is called output layer and 
+is used to represent the output values.  
+It is basically the same as a hidden layer except  
+that its neuron values are used as output 
+and are not passed on to a subsequent layer.
+When each neuron in a layer is connected 
+with each neuron in the next layer,  
+as shown here, the layers are fully connected. In 
+this example, the input layer is fully connected  
+with the hidden layer. And the hidden layer 
+is fully connected with the output layer.  
+There are other ways to connect two layers, 
+but fully connected layers are most used.
+Okay and what exactly do neurons represent?
+Just numbers. In our case the input neurons  
+are represented by pixel values of an 
+image and the hidden and output neurons  
+are calculated using the input values 
+and weights. But more about that later.
+For now, just remember that a neuron is just 
+a value. What are the weights then? Well,  
+as the name suggests, just numbers that are 
+randomly initialized. A good practice to do  
+this is using a range of small random values with 
+a median close to 0. For example, -0.5 to 0.5.
+To initialize the weights, we also need to 
+know the number of neurons in each layer,  
+which are 5, 4 and 3. Therefore, the weight matrix 
+connecting the input layer with the hidden layer  
+has a shape of 4 by 5 while the weight matrix 
+connecting the hidden layer with the output layer  
+has a shape of 3 by 4. Defining the matrix 
+from the right layer to the left layer  
+is not quite intuitive at first, but 
+it is the recommended way and results  
+in cleaner and faster computations later. 
+So, I’d recommend sticking to this order.
+There is one more thing to do 
+when creating a neural network.  
+Let me introduce the bias neuron. This 
+is a special neuron that is always  
+1 and only has outgoing weights. Remember that 
+the other neurons also have incoming weights.
+Initializing the bias weights is like 
+initializing the weights for the other  
+neurons with the difference that the 
+initial values for the weights are  
+0. This is because we want to start 
+with an unbiased neural network.
+But why exactly do we need the bias?
+The idea behind it can be shown when looking at  
+a graph. Think about a very simple neural network 
+with one neuron and no hidden layer. This network  
+can only learn a linear function. While the normal 
+weight determines the slope of the function, the  
+bias weight allows the function to shift up and 
+down. This means that the neural network is only  
+able to accurately distinguish the circles from 
+the crosses when it makes use of the bias neuron.
+Now that we know how a 
+neural network is structured,  
+we can take a closer look at 
+the images used for training.
+The images itself are of size 28 by 28,  
+which means they consist of 784 values. This 
+means that our neural network is way too small.  
+So, for the animations, we’ll just use 5 instead 
+of all 784 values. To train it on all values,  
+we basically just need to increase 
+the number of weights in the code.
+To later train the neural network, 
+each image needs a so-called  
+label that specifies which number the image 
+represents. In this example the label is zero.
+You’re probably wondering, where 
+the images and labels are from  
+and how many images we have for training.
+Well, classifying images has been a 
+challenging problem a few decades ago.  
+To figure out how good an algorithm is compared to 
+other algorithms, some researchers collected 60000  
+handwritten images, converted them into 28 by 
+28 grayscale images and paid some fellow humans  
+to label them. They gave it the name MNIST 
+database which stands for “Modified National  
+Institute of Standards and Technology database” 
+and published it online where it became wildly  
+popular. Today, it can be thought of as the 
+‘Hello World’ dataset for machine learning.
+To get the images and labels into our python 
+program, we need to execute this line of code.  
+It fills the first variable with 60000 images, 
+each of which consisting of 784 values. Therefore,  
+it has a shape of 60000 by 784. The second 
+variable is filled with the labels which we expect  
+to be of size 60000 by 1 but if we were to execute 
+this line, we’d see that the shape is 60000 by 10.
+This is because as soon as we have a 
+classification problem with more than  
+two possible outputs, we need to represent the 
+labels in a binary format, also called one-hot  
+encoded. To illustrate this, let’s assume we 
+want to classify an image which has the label  
+3. Since we have 10 possible labels in general, 
+we need 10 output neurons in our neural network  
+and if our neural network is trained perfectly, 
+we’d expect all output neurons to be zero,  
+except the fourth one which should be one. But 
+because the untrained neural network just puts  
+out some random values, we need to tell it what 
+output we expected. So, our 3 is transformed  
+to this binary vector which is then used to 
+calculate the difference towards the output.  
+But more about that later. Just remember that 
+the label is represented in a binary format.
+With this in place, we can now look 
+at how to train the neural network.  
+The training occurs inside two loops. The inner 
+loop iterates through all image-label pairs,  
+while the outer loop specifies how often 
+we iterate through all images. This means,  
+if the variable ‘epochs’ is set to 3, we go 
+through all images three times. So, everything  
+I explain while we’re inside these loops occurs 
+three times for each of the 60000 images.
+If we take a look at the shape information for the 
+variables “img” and “l” we can see that both are  
+vectors. This is a problem, because we’re doing 
+matrix multiplications with the weight matrices  
+later on and the operation fails if one operand 
+is a matrix and the other a vector. That’s why we  
+need to reshape both vectors with the following 
+two lines. The first line changes the shape of  
+the variable “img” from a vector of size 784 
+to a 784 by 1 matrix while the second line  
+changes the shape of the variable “l” from 
+a vector of size 10 to a 10 by 1 matrix.
+This brings us to the first 
+training step called Forward  
+Propagation. It is used to transform 
+the input values into output values.
+To show this on the small network, 
+let’s take five pixel-values as input.  
+The values are normalized into a range of 0 to 1, 
+meaning that a white pixel has the value one, a  
+black pixel has the value zero and a gray pixel is 
+somewhere in between depending on its grayscale.
+To get the hidden layer values, we need to take 
+the input values and the weight matrix that  
+connects both layers, then multiply them through 
+a matrix multiplication and add the bias weights.
+Let’s illustrate this in detail 
+for the first hidden neuron: 
+Each input value is multiplied with its weight 
+connection that goes to the first hidden neuron.  
+The resulting five values are then summed 
+up. Last, the bias weight is added and voila,  
+we have the hidden neuron value. Note that 
+the bias neuron is not directly present in  
+the implementation because ‘one times the bias 
+weight values’ equals the bias weight values.  
+But its more tangible to think that there 
+is also a bias neuron as shown here.
+You might wonder why the variable is named h_pre. 
+That’s because we’re not done with the hidden  
+layer yet. The value in one of the hidden neurons 
+could be extremely large compared to the values  
+in the other hidden neurons. To prevent this, 
+we want to normalize the values into a specific  
+range like we did for the input values. This can 
+be done by applying an activation function to it.  
+A commonly used one is the sigmoid function. 
+It is defined as follows, looks like this  
+and normalizes its input, which is ‘h_pre’ 
+in our case, into a range between 0  
+and 1. That’s exactly what we want.
+We then repeat the same procedure to  
+get the output values and therefore 
+finish the first training step.
+The second step is to compare the output values 
+with the label which is zero. Please remember that  
+we use a smaller network for the visualizations 
+meaning that the network shown here can only learn  
+to differentiate the numbers zero, one and two.
+To compare the output values with the label,  
+we need some sort of function again, 
+this time called cost or error function.  
+Like for the activation function, there are many 
+possible functions. We’ll stick with the most  
+commonly used one which is the mean-squared-error. 
+It works by calculating the difference between  
+each output and the corresponding label 
+value, then squaring each difference  
+followed by summing the resulting values together 
+and dividing it by the number of output neurons.  
+The resulting value is our cost or error, 
+depending on which word you prefer.
+The second code line checks whether our 
+network classified the input correctly.  
+For this, we check which neuron has the 
+highest value. Here it is the first neuron so,  
+our neural network classified the input as zero.
+Because this matches the label, we increase our  
+counter by 1. If the label would’ve been 
+1 or 2 we would not increase the counter. 
+Please note that this line is not important 
+for the training itself, but we do it because  
+we would like to know how many images are 
+classified correctly after each epoch.
+Now that we have the error value, we need to 
+know how strong each weight participated towards  
+it and how we can adjust the weights to have a 
+smaller error when we see the same inputs again.  
+This is the most crucial and complicated 
+part about training neural networks.  
+The underlying algorithm is 
+called ‘Backpropagation’.  
+You’ve probably already seen it mathematically 
+written somewhere. If not, there you go,  
+but please don’t panic. Rather look at 
+the code, it’s actually just 6 lines.
+Backpropagation works by propagating the error 
+from the end back to the start. We start with  
+our weights that connect the hidden layer 
+with the output layer. In the first step,  
+we need to calculate the delta for each neuron.  
+Normally, we’d need the derivate of the cost 
+function. But thanks to a few mathematical tricks  
+that can be used for the mean squared error 
+cost function, we can just write “o – l”. So,  
+the delta for an output neuron is basically just 
+the difference between its output and the label.  
+So what’s with the error value we calculated in 
+the last step then? Well, we don’t need it! But  
+I still wanted to show it to you because it is 
+required when having a different cost function.
+In the next step, the delta values are used in 
+a matrix multiplication with the hidden layer  
+outputs to get an update value for each weight 
+connecting both layers. Since the update values  
+just represent how to improve the weights 
+with respect to the current input, we want  
+to adjust the weights carefully. Therefore, 
+we multiply them with a small learning rate.  
+But why is there a minus in front of it? Well, 
+I won’t go into detail about it in this video,  
+but you can think about the update values 
+as values representing how to maximize  
+the error for the input. So, we need to 
+negate them to have the opposite effect.
+Alright, so now we have updated the weights 
+between the hidden and output layer except  
+for the bias weights. The idea is basically 
+the same with the difference that the bias  
+neuron value is always one. Since there 
+is no need to multiply something with 1,  
+we can just multiply the delta values with 
+the learning rate and negate the result.
+If we look at the update for the weights 
+connecting the input layer with the hidden layer,  
+we can see that nearly everything looks the same 
+except for the delta calculation. That’s because  
+this time, we can’t use some mathematical tricks 
+to simplify the equation. So, we need the derivate  
+of the sigmoid function ‘h’ which is sigmoid times 
+1 – sigmoid. So, we can write it as h * (1 - h).  
+Then we need our updated weight matrix, 
+transpose it, matrix multiply it with  
+the delta values and finally multiply 
+that result with the derivative values.
+The resulting delta values show how strong each 
+hidden neuron participated towards the error.  
+Those values can then be used to calculate the 
+update values for weights connecting the input  
+with the hidden layer. And if we would have a few 
+more hidden layers with the sigmoid activation  
+function, we’d just have to repeat those steps 
+over and over till all weights are updated.
+That’s it! You now know how to 
+train a neural network from scratch!
+Let’s run it and see what accuracy we can achieve.
+While its running, I’d like to 
+let you know that any additional  
+information and corrections that might 
+come up after publishing this video  
+will be added to the description. So, if 
+there is anything you’re wondering about,  
+I’ve probably already added it in there. If 
+not, feel free to ask in the comment section!
+Wow over 93%! That’s quite good!
+But there is one part left. What is it for?
+Well, using the neural 
+network in action of course. 
+Let me quickly go through what’s happening here.
+Then we show the plot and can see that the 
+neural network correctly identified the three. 
+So we scroll down, hit the subscribe button and 
+ignore the notification bell – which is a huge  
+mistake because then we cannot be the dude writing 
+‘first’ or ‘second’ in the comment section.
+The code explained here will be available 
+for everyone. Link in the description.  
+The video is animated using python. A 
+second video about how I created this  
+video, as well as the python 
+source code for all animations, can be accessed  
+by becoming a patron. Link in the description. 
+Thanks, and I hope to see you in the next video!

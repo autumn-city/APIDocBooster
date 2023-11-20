@@ -1,0 +1,281 @@
+The first step in working with SQLite in Android
+is to define your database and table structure,
+and the best practice for this is to create
+a Java class that extends a class called SQLiteOpenHelper.
+I'll describe how to do this in this project
+named CreateDatabase.
+In this version of my project, I moved my
+XML parser classes to a new package that ends
+with .xml, and I've created another new package
+that ends with .db.
+This is where I'll place my java classes that
+manage my database.
+I'll right-click on the new package and create
+a new Java class.
+This database will contain tours data.
+So I'll name it ToursDBOpenHelper.
+I'll set its superclass, I'll click Browse,
+and I'll type sqliteo, and I'll select the
+first class that appears, SQLiteOpenHelper,
+and click OK.
+I'll make sure I have the option to create
+method stubs for Inherited abstract methods
+and click Finish.
+That will generate the Java class and add
+two methods named onCreate and onUpgrade.
+I'll come back to these methods in a moment.
+When you create the class, you'll automatically
+see a warning.
+I'll move the cursor over the warning icon
+on the left, and I'll see that it's telling
+me that I must define an explicit constructor
+method.
+I'll click on the icon and I'll choose the
+first quick fix to add a constructor method
+with four arguments.
+I'll come back to that constructor method
+in a moment, too, but for the moment, I'll
+just save my changes and make sure that the
+errors go away.
+You need a lot of bits of information to create
+a database and its table structures.
+That includes the name of the database, the
+names of the tables, and the names of columns.
+It's a common practice to define all of these
+as constants, and it takes a good bit of typing.
+So to make it go a little bit more quickly,
+I've included a file called typinghelp.txt
+in this project.
+I'll open the file and I'll select all of
+it's contents and copy it to the clipboard.
+Then I'll come back to my class, ToursDBOpenHelper,
+I'll expand it to full screen, I'll place
+the cursor inside the class declaration and
+before my new constructor, and I'll paste
+my constants into place.
+Let's do a quick review of all of these constants.
+First, there's a LOGTAG that I'll use to output
+to the LogCat console.
+Then there's the name of the database.
+You can name your database file anything you
+want.
+It's common to use a file extension of .db,
+but it's not required.
+The database version is required.
+It's an integer value and it always starts
+at 1.
+Each time you change the structure of the
+database, you should increment this value
+by 1.
+You can't decrement it.
+The rest of the constants define the names
+of the table and the columns I'll be creating.
+And finally, there's a constant named Table
+Create that defines an SQL statement that
+will create my table.
+The name of the table will be Tours.
+It'll have five columns.
+The primary key column will be an integer
+and it will auto-increment and then there
+are three text columns and one numeric column.
+For more information about the available data
+types in SQLite, see the SQLite documentation
+and other information that's included in the
+Android API docs documentation.
+Now let's go to that constructor method.
+When I generated it, it was given four arguments,
+but that's more than it really needed.
+The explicit constructor method will only
+be called by my own code so I can determine
+how I structure it and I'd like to simplify
+it.
+I'm going to remove the last three arguments
+so this constructor method only receives the
+context.
+That's how this class will be connected to
+the current activity, but when I called the
+super class' constructor method, I do need
+to pass those four values in.
+I'll still pass in the context argument, but
+the next value is the database name.
+And I'll use this constant, the database name
+that I defined up here.
+I'll select it and copy it and then paste
+it into the constructor method.
+I don't need to pass in a factory value, so
+I'll set that to null, but I do need to pass
+in a version.
+Once again, I'll use one of my constants.
+This time I'll use DATABASE_VERSION.
+Each time I want to work with the database
+in my code, I'll create an instance of this
+open helper class, and I'll call this constructor
+method.
+I'll pass in the context, but the values for
+the database name and the database version
+will come from the constants that are defined
+in this class.
+That's all the work I need to do on the constructor
+method.
+So I'll get rid of the TODO comment.
+Now let's go to the onCreate and onUpgrade
+methods.
+These methods will be called automatically
+by the Android SDK.
+Each time I say to the Android SDK I want
+to get a connection to my database, Android
+will determine whether the database exists
+or not.
+If it doesn't exist yet, Android will call
+the onCreate method.
+If the database already exists, but I've indicated
+through the database version value that I'm
+changing the version, that is that I've incremented
+it, then the onUpgrade method will be called.
+I will never call these two methods directly.
+They'll only be called by the SDK.
+In the onCreate method, you should add code
+that creates your database tables and if you
+like, you can also add code to add data.
+I'm just going to create the table and its
+structure.
+To do that, I'll remove the TODO comment,
+and I'll use the database argument that's
+being passed in.
+It's named db, and I'll call a method called
+execute SQL or execSQL for short, and I'll
+pass in my constant that contains the SQL
+command that will create the table, that'll
+be TABLE_CREATE.
+So, that command is called and my table is
+created.
+Then I'll give myself a little bit of LogCat
+output.
+I'll call the Log class, and I'll make sure
+I've included the import.
+I'll use the I method.
+I'll pass in my LOGTAG constant and a literal
+string as a message, Table has been created,
+and that's all I need to do in the onCreate
+method.
+When the onUpgrade method is called, I'll
+receive arguments named oldVersion and newVersion,
+and I might want to write some very finely-tuned
+code that examines those values and upgrades
+the database in some complex way, but again,
+I'm going to keep this simple.
+I'm just going to drop the existing table,
+the tours table, and then I'll recreate it.
+So I'll move the cursor into the onCreate
+method.
+I'll call db.execSQL and I'll pass in this
+explicit SQL Command, DROP TABLE IF EXISTS,
+and then I'll append to that the name of the
+table, TABLE_TOURS.
+Then once I've dropped the table, in order
+to recreate it, I'll simply call my onCreate
+method.
+This is the one exception to what I just said
+that I wouldn't call the onCreate method directly.
+I'll call it within this class but not from
+the rest of the application.
+I'll call the onCreate method.
+I'll pass in the db argument, and now I've
+recreated the table structure.
+So, that's what a basic open helper class
+looks like.
+It typically defines the name of the database
+and the version and then assigns constants
+for all the tables and column names and also
+useful SQL commands to create the tables.
+This open helper class only defines a single
+table, but in a complete application, you
+can define as many tables as you want.
+Now I have one warning which I see here.
+So I'll go to my Problems tab and I'll see
+that I have an import statement left over
+from my original constructor method signature.
+So I'll delete that and save those changes.
+I'm going to add some code to my MainActivity
+to use this code that I've just created.
+I'll go to my MainActivity class.
+Now, eventually I'm going to have a special
+class called a data source that deals directly
+with the database Open Helper and I'll show
+you that in the next video, but to keep things
+a little bit simpler, I'll call the database
+open helper class directly from my activity
+in this exercise.
+So I'll go to my MainActivity, and first I'll
+add a field that will represent an instance
+of my open helper class.
+I'll declare it using the Superclass data
+type, SQLiteOpenHelper, and I'll name it dbhelper.
+Then I'll also create a reference to a database
+object.
+That database type will be SQLiteDatabase,
+and I'll name that database.
+Now I'll go down to my onCreate method, and
+I'll place the cursor right here before I
+call the ArrayAdapter code and I'll instantiate
+the dbhelper object.
+I'll say dbhelper = new, and then I'll use
+my new class constructor method and I'll pass
+in this as the context, and then I'll get
+a reference to the database.
+I'll call database = dbhelper.
+And then I'll call a method that this class
+has inherited from SQLite database.
+The name of the method will be getWritableDatabase.
+This returns a reference to the connection
+to the database, and I'll be able to use that
+connection to do things like inserting data,
+retrieving data, updating, and deleting.
+Simply by calling the method, that will trigger
+the onCreate method of my database open helper
+class, and in turn that will create the table
+structure.
+I'll save my changes, and now I'm ready to
+test.
+Before I test, I'll go to my LogCat window.
+I'll reset my perspective to bring back the
+LogCat window.
+Then I'll expand it to full screen.
+Notice that I've added a tag filter, so that
+I'll only be seeing messages that come in
+with that tag.
+Now, I'll run the application in the emulator.
+As the application comes to the screen, it
+executes the code that opens my database open
+helper class, the onCreate method is called,
+and the result is that the database and the
+table have been created.
+To prove that the database is there, let's
+look at it in the File Explorer.
+I'll go to my DDMS perspective, and in the
+File Explorer tab, I'll go to the data folder
+and then from there, to the sub-folder named
+data.
+Then I'll go to the package that represents
+my application, com.exploreca.tourfinder.
+I'll open that and I have a new databases
+folder that didn't exist before, and there's
+the database that's been created.
+This is where your databases will be automatically
+placed, in internal storage, inside the same
+parent folder that contains any internal files.
+You can see it easily when you're working
+with the emulator, but just as with any other
+files that are stored in internal storage,
+you won't be able to easily reach them with
+a real device.
+If you root the device and you change the
+permissions, then you should be able to see
+them.
+But to keep it simple, use the emulator when
+you're testing this.
+So, now we have a database open helper class
+and we're ready to go to the next step in
+following best practices in working with SQLite
+and that's creating a class called a data
+source.

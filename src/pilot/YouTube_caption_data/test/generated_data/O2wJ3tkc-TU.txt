@@ -1,0 +1,560 @@
+in this video i will show you how to
+save so much time when training neural
+nets
+they've even been under karpati approved
+so
+you want to become a neural net god yes
+then watch this video
+number one didn't overfit a single batch
+first
+all right so let's just say you're done
+setting up your network the training
+loop hyper parameters etc
+it's time to just start training right
+no
+don't do it it's very tempting but just
+don't
+trust me so let me show you what to do
+instead where you've set up your
+training loader
+you're going to want to take out a
+single batch right so
+how we can do that is we can do data
+comma target
+equals next of iter of the training
+loader right now we have a single
+batch and then where we have our
+our loop going through the training
+loader we'll just uncomment that
+all right we'll we will comment that and
+then we'll dedent everything here
+right and so what we're going to do is
+we're going to run this single batch for
+a number of epochs right now we're
+having number of ebooks equal three
+and so we can have a batch size of 64
+but
+it might be better just to check can it
+overfit a single example right
+if it can do that then then perhaps we
+can try
+larger batch size but let's just do uh
+that and let's try and run this first
+so we ran for three bucks that's
+obviously not enough
+it's it's decreasing but it's not very
+uh
+very low so let's just change this to a
+thousand
+and rerun it
+all right so as we can see now the loss
+is very very low
+so it's overfitting a single example now
+let's increase this let's have a batch
+size of 64
+and let's rerun it
+all right so it's becoming very close to
+zero meaning we can overfit
+the single batch right now we're
+confident that our neural network has
+the capability and there are no bugs
+this is a very quick sanity check to see
+if the network is actually working
+trust me this will save you so much time
+every time you implement in your network
+when you set up your training everything
+just overfit a single batch first just
+do it all right so we're going to remove
+this thing right here
+and now we can bring everything back
+as it was in the beginning
+like that all right number two forgot to
+set
+training or evaluation mode so the next
+thing
+is when you're actually checking the
+accuracy
+you want to toggle the evaluation mode
+of the network
+so if we're just doing check accuracy
+like this and we're not
+doing model.eval inside of this check
+accuracy function
+then we're going to get a lot worse
+performance so what we want to do well
+actually let's compare the two so let's
+do
+a model.eval
+and then we'll do check accuracy
+test loader and model and then we'll do
+model.train
+uh so we'll toggle it back and let's
+just run this and let's
+see what the difference is so i think
+now we're just training for uh
+yeah three epochs yeah so as you can see
+just by toggling the model.eval will get
+i mean uh greater than four percent
+improvement
+that's a lot okay so that's a big big
+difference
+now why is it so important to do
+model.eval well if we check
+in our model here our smaller network
+we're using dropout and when we're
+converting
+when we're toggling the evaluation mode
+of our network we're actually removing
+the dropout
+and we're doing the appropriate scaling
+that's needed
+for the weights etc so when we're
+actually evaluating
+our model we don't want to use dropout
+right or
+and for example we don't want to use
+batch norm either
+so or let's see we want to use the
+um the computed averages during training
+when we're doing evaluation for batch
+norm but anyways
+what's important to know is that when
+you're testing when you're
+checking on test data et cetera you want
+to always do model.eval
+before and then you need to toggle it
+back on do model.train so you can
+continue
+uh training so this is a quick one but
+it does a
+big big difference so always remember to
+do this
+number three forgot to zero grad
+this one is quite simple but it's also
+gonna do
+a big difference all right and it can be
+kind of hard to debug
+right this is a sneaky one that you
+might not notice
+so what we're going to do is let's just
+uh remove this
+optimize.zerograd and let's just run it
+and we'll see what kind of accuracy
+we'll get
+and remember now we're using the
+model.eval and the model.train as we
+should
+when we're testing our model not using
+optimize.zerograd after three bucks we
+get
+64 accuracy or almost 65
+all right so let's put this
+back we'll do optimize at zero grad and
+then we'll see what we get
+you see so that's about 30 difference in
+the test accuracy which is
+insanely um like that's that's so
+huge okay so if you forget this you're
+basically screwed
+don't forget to use this and uh why it's
+so important to use this
+is because you want the gradient step
+right the optimizer step to be done on
+the current batch
+if you're not doing optimizer zero grad
+you're using all of the accumulated
+gradients of all the previous batches
+so that's not what you want to do you
+wanted to zero grad
+there are no accumulated gradients you
+want to compute the loss for this
+current batch
+and then you want to do a step a
+gradient step for this current batch
+all right so zero grad backward and then
+step
+four using softmax with cross entropy
+loss
+so a very common mistake is doing
+something like self.softmax and then
+we'll do nn
+softmax and we'll specify the dimension
+in this case it's dimension one
+and then we'll use the softmax on the
+output
+right because you you always see that
+people use
+softmax on as their output layer right
+now the problem here is when you're
+using softmax as your output
+but you're using cross entropy loss and
+this is because cross entropy loss is
+essentially two things it's
+first softmax and then it's negative log
+likelihood
+and then you don't want to do softmax as
+your output because it's already
+including the cross entropy loss
+so you would essentially then be doing
+softmax on softmax
+which and that might be a problem
+because you you might get vanishing
+gradients problem
+uh because uh because of this so you
+don't want to use two softmax if you're
+using carcentropy loss
+and uh we can see let's see how big of a
+difference this gets and i'm gonna just
+gonna pay something here
+all right so don't bother about this
+right here but this is essentially just
+so that we get uh deterministic behavior
+i'm gonna go
+into this in a separate video actually
+so don't bother about this this is just
+so we can compare
+using softmax and not using softmax so
+i'm going to run this
+and we'll see what we get so using
+softmax
+and then another softmax i guess we get
+about nine we get 92.78
+and uh i mean that's pretty good so this
+is it doesn't
+do that let's see how much it actually
+impacts but it's not going to be like
+the
+uh like the zero grad uh that was like
+30
+so let's rerun it now and let's see what
+we get
+so the difference is about 1.2 percent
+that's
+pretty good right and it's also going to
+be faster training not using the softmax
+so this is a quick one that's going to
+you know
+give you a better some better
+performance number five
+using bias when using batch norm so
+let's say we have some
+convolutional neural network a very
+basic one we just have
+a comp layer we have a max pool another
+complaint and then the linear layer to
+the number of classes at the end
+and let's say we want to add a batch
+norm so we're going to do self batch
+norm 1
+and then dot batch norm to d
+and we're going to use it after con 1 so
+com1
+has a out channels of 8 so we're just
+going to set 8
+right there and then we're gonna do uh
+self dot bn1 after the com1
+and uh let's run that and
+actually to get a good comparison let's
+also set the uh
+the seeds for deterministic behavior so
+we can actually see if there's a
+difference
+but yeah so let's run this all right so
+we get 98.25
+and the the thing is here that when
+we're using a batch norm after a comp
+layer or
+or a linear layer anything like that we
+and we have a bias term
+that's actually a an unnecessary
+parameter it's not going to cause any
+anything that's horribly wrong but it's
+just
+it's unnecessary so we can set bias
+equals to false here and that should be
+uh equivalent uh and let's let's see if
+it is so it's 98.25 so let's run this
+all right it actually it was slightly
+worse for some reason but
+98.22 this should be equivalent
+so so this example might not show that
+but
+anyways when you're using batch norm
+after a complainer or anything with a
+bias term
+you can actually set the bias term equal
+to false you don't need it because
+that's included
+in the batch norm number six using view
+as permute so the next thing is the
+difference between
+view and permute so what we're gonna do
+is
+we're just gonna create some tensor uh
+towards the tensor
+and we're just gonna do i don't know one
+two three and uh
+four five six so we're doing a two by
+three tensor
+and uh oh and then we're just gonna do
+print
+um x and then we're just gonna i don't
+know let's say you wanted to actually
+permit
+you want to do transpose so you want it
+to be um
+you know you want to have the first
+column as one two three and the second
+is four five six
+you might think that vue does this so
+you could for example do x dot view
+and then you're gonna set the shapes
+you're gonna do three and two and you're
+thinking that this
+is actually a pre like a transpose or a
+permutation yeah so you're actually
+permuting the
+the dimensions but you're not so this
+is not the same as doing x dot permute
+and then
+one and zero and so this is
+transpose right transpose is a
+special case of permute but anyways if
+we run this
+we get so we get one two three four five
+six that's the just a tensor and then we
+get one two
+three four five six that's not the same
+as one
+two three and then four five six right
+that's this is permute this is pretty
+making the
+uh taking transpose and this right here
+is uh
+using view so what view does is it's
+just gonna do whatever is most
+i guess convenient you could say it's
+just gonna take one two
+that's the first two elements and then
+three four and five six
+right it's just gonna take the the
+elements and then just
+make them into that shape in the way
+that's most convenient
+um yeah that was kind of a bad
+explanation but hopefully you get
+what this does um and i've made another
+video where i explain these two
+in more detail but anyways when you're
+using view as a way of
+like a permuting the axis or dimensions
+then
+remember that that might be a flawed way
+of doing it and you might actually want
+to use
+permute number seven using bad
+data augmentation all right so this
+mistake is one that i've made multiple
+times and hopefully i can save you the
+trouble of doing the same
+so you know you're you're doing some
+network and you're training on the mnist
+data set because you're just trying to
+learn
+and then you're googling and you see
+that people are using uh cool data
+augmentation and
+you know that improves the performance
+so we're gonna do the same we're gonna
+do my transforms
+we can do uh transforms dot compose
+and we're just gonna i don't know use uh
+transforms dot
+random vertical flip and we're
+just gonna set the probability to 1.0
+we're always going to vertically flip
+you wouldn't want to do this right you
+would set to
+set this to a 0.5 or something
+but then we're going to do transforms
+that random
+horizontal flip and we're just going to
+set the probability 1.0 as well
+this is just because it's for this
+example but
+anyways then we're just going to do
+transforms.2 tensor
+right and you might even use more uh but
+i'm just using this because this
+is going to showcase my point in that
+when you're using multiple
+uh when you're using these data
+augmentations this is not doing anything
+good to your data set
+right the data the augmentation you're
+using must be you must consider what the
+data set is
+i'm going to show you an example if we
+do this we're going to get something
+that looks like this
+right this is now vertically flipped and
+horizontally flipped
+and when you see this i have no clue
+what digit this is
+right this is completely changed the
+digit so when you're using when you're
+doing the data augmentation you need to
+make sure that you're not
+actually modifying the target output
+because if for example if you have a
+nine and you're
+vertically flipping that that would act
+that would change
+the target output for that digit so
+in the end our network will just be
+horrible if this is what we're training
+it on
+so uh yeah be careful with this uh you
+want data augmentation is good but not
+all data augmentation is good
+you need to make sure that what it the
+data augmentation is doing is actually
+what you want it to do
+number eight not shuffling the data so
+another common mistake that can
+screw up your training is you're not
+shuffling the data
+so um i mean well it's i guess it's
+nuanced
+so in most cases you want to shuffle
+your data for example if you're using
+the mnist data set
+and we don't want you know the in
+i mean 10 batches of only ones and then
+10 batches of only twos etc right
+we want the batch to be mixed of all the
+digits
+so what we can do is we can do shuffle
+yeah for our so this is wrong
+we're not going to do it on the data set
+this should be on the
+on the loader so here we're going to do
+shuffle equals
+true um and
+also on the test we're going to shuffle
+equals true
+but also this is one thing that can be
+as i said it's nuanced if you're using
+time series data or anything like that
+where the
+order is actually important then you
+don't want to shuffle it
+right so be careful with this as well
+but in most cases
+you would want to shuffle it so keep
+that in mind
+number nine not normalizing the data all
+right so for this next
+thing i've copied in the uh the seed so
+that we get deterministic behavior again
+and we're not going gonna do soft max so
+remove this and then so the
+thing is here um is that people forget
+to normalize the data
+so when you're doing uh perhaps you're
+ignoring this part right
+so this is the amnes data set where we
+only have one channel that's why it's
+only one value here
+but anyways you you want the data to
+become
+centered with mean zero and standard
+deviation one
+so for that you would need to figure out
+first
+so first of all two tensor divides
+everything by 255.
+so everything is between zero and one
+and then you
+after two tens you want to normalize and
+for that you would need to
+first go through the data set and then
+check what is the mean of the data set
+right now
+what is the standard deviation of the
+data set right now and then you would do
+this
+right you would do transform that
+normalize and then mean
+equal to that value you checked standard
+deviation equal to that value that you
+that you got when you check the data set
+um
+and uh you would have to do this for
+each channel if it's rgb
+so for the mnist data set you just need
+one value
+and so let me just run this and we're
+just going to run it for one epoch
+so that we can see what the difference
+is so without the normalization you get
+92.24
+right that's pretty good if we rerun
+this
+now using the normalization we now get
+93.04 so yeah that's
+0.6 percent no more right yeah oh 0.8
+that's that's a decent improvement just
+by
+doing this line right here uh so keep
+that in mind this is something that you
+want to do
+it's it's less important when you're
+using batch norm
+but still it's it's important so
+remember to normalize your data
+number 10 not clipping gradients when
+using rnns gru's or lstms
+so when you're using rnns gru's or lstms
+and now we have a fully connected right
+here but pretend this is in
+lstm then you would want to do gradient
+clipping so you're going to get i mean
+if you don't do gradient clipping you
+might get exploding gradient problems
+and you would notice that so you would
+see that there's an error but
+this might be hard to debug and might
+you know
+take you some time to figure out so what
+you want to do
+is uh you want to go down to your
+training loop and and uh
+after doing the last dot backward right
+when you've computed the gradients
+you want to do torch.nn.utils.clip
+grad norm there are a couple of
+different ways of clipping the gradients
+this is a one way that's
+convenient i guess so you would do
+model.parameters
+and you would set some max norm here max
+norm and we'll set it equal to one
+so uh it's just one
+one line but it can make a big
+difference and uh
+save you some time so uh that was
+ten uh common mistakes uh let me know in
+the comments
+which one you which one did i miss right
+there are many more mistakes so
+if you think that that's one that's
+important uh write it in the comments
+and uh
+i might do an updated version this in
+the future where i include
+some more so uh yeah thank you so much
+for watching the video
+and i hope to see you in the next one
+[Music]
+you

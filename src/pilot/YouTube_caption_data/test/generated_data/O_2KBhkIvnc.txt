@@ -1,0 +1,164 @@
+hello and welcome to the PI torch summer
+hack 2020 I'm Brad Hinds and I'm a
+partner engineer with the PI torch team
+we're not sure where to partner engineer
+is it means that my day job is making
+sure that developers like yourselves get
+the absolute most they can out of Pi
+torture related tools in this video I'm
+going to give you a walkthrough of
+setting up the PI torch mobile runtime
+in an android project to follow along
+you'll need Android studio 3.5 or higher
+and you'll need to have Gradle installed
+you should also be using PI torch 1.5 or
+higher PI torch offers native runtimes
+for ios and android allowing you to
+bring your machine learning app to
+mobile devices including the library in
+your project is a one-liner but there is
+more to do getting your model set up for
+best performance on mobile in this video
+I'm going to show you how to set up your
+project to include the PI torch runtime
+how to export your model to torch script
+by torches optimized model
+representation how to add your model to
+your Android studio project and how to
+call the model from your code let's get
+to it
+for this demonstration we're going to
+build an image classifier into an
+Android app first we'll create the
+project I'm going to create an empty
+activity app I'll set the target
+language to Java and the minimum SDK
+version to 28
+in the build but Gradle for your project
+make sure that J Center is listed near
+repositories
+now we'll add pi torch to the
+build.gradle for the app this will bring
+in versions of the PI torch Android
+library for all of the Android a B is
+for a RM and x86 it will also bring in a
+library from torch vision that contains
+helper functions for converting android
+in memory image types to pi torch
+tensors next I'll show you how to
+optimize your model for use on mobile
+so first things first we'll import PI
+torch and torch vision and this is a
+good place to point out that you should
+be using PI torch 1.5 or higher for this
+example in the next cell we're going to
+create a PI torch model object now for
+the actual app I have a pre trained
+optimized model ready to go but for the
+optimization process I wanted to show
+you this on a custom model so that you
+could duplicate the process with your
+own models this model happens to contain
+some very common layer types A to D
+convolutional layer a to D batch norming
+layer and a rectified linear unit for
+activation and the forward function just
+strings those three operations together
+so now that we have our model how do we
+optimize it first thing let's get an
+instance of the model in my get model
+helper you'll notice that besides just
+instantiating the model I call m dot
+eval
+so eval turns off things in the model
+that you don't want on during inference
+time training only layers like dropout
+automated gradient tracking all this
+training related stuff meets up CPU
+cycles and we don't need it for
+inference so we're gonna make sure the
+model is in eval mode the second thing
+we're going to do is some layer fusion
+are fusing layers means taking multiple
+operations and combining them together
+into a single operation this improves
+performance in memory footprint now with
+diffuse modules method that I'm going to
+show you there are only certain
+combinations of layers that you can fuse
+together I'm going to refer you to the
+documentation for the latest information
+on that but here we're going to try to
+get fuse together convolution
+bachelor-man Terrell you once modules
+are fused the next thing we're going to
+do is quantize the model pi torch
+tensors default to using 32-bit
+floating-point numbers as their
+underlying type when we quantize we're
+going to change that to an 8-bit integer
+this will perform faster and reduce the
+model's footprint both on disk and in
+the final thing we're going to do is
+save the model as torch script torch
+script is an optimized format for your
+model including both your computation
+graph and you're learning weights it's
+meant to be consumed by the PI torch
+just-in-time compiler or JIT which is
+included with the PI torch mobile
+runtime so once it's exported we'll save
+now there are subtleties to layer fusion
+into quantizing your model that you'll
+want to be familiar with when you're
+optimizing your own model for use with
+PI torch mobile all of this is covered
+in the PI torch documentation for
+quantization which I encourage you to
+check out
+we'll need to add some resources I'm
+going to add my model file of course you
+should use your model exported the torch
+script and an image for the model to
+classify I'll put them in a new assets
+folder I'm also going to add one source
+file that just contains a string array
+of the human readable labels for the
+classes my model is trained against
+next we'll put together a UI I'll have
+an image of you to show the image we're
+classifying a button to start the
+inference process and a textview to show
+the result now watching me set up UI
+constraints is not very educational so
+let's speed through this bit now let's
+fill in the code for our activity we'll
+make a couple of private member's for
+our image and our model
+next I'll add a helper function that
+gets the absolute path for an asset pi
+torch mobile expects a file in the file
+system for the model next we'll fill in
+the oncreate it's a bunch of code so
+let's take it a piece at a time
+first we get the bitmap and model
+objects we wrapped these in a try block
+because if there's an issue with either
+we can't run the app really next we'll
+fill the image view with the image and
+we'll set up an onclicklistener for our
+button inside the onclick listener we're
+going to convert our image to a PI torch
+tensor we're going to pass that tensor
+to the model for classification and
+receive the output we'll find the models
+most likely class for this image and
+it's human readable label and finally
+we'll report that label in the text view
+so let's run it now and see it work
+and there's our cat we press the infer
+button and sure enough our model thinks
+our cat is a cat success
+thanks for watching and thanks for
+participating in the PI torch summer
+hackathon 2020

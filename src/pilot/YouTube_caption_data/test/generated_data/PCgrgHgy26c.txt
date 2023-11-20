@@ -1,0 +1,911 @@
+hey guys in this video we are going to
+do some time series classification
+using pytorch whitening by torch and
+python of course
+i'm going to show you how you can
+convert some csv files
+into sequences wrap everything into
+pytorch
+data sets and data waters create the
+necessary pi torch whitening
+code that you need to do to run a whole
+model
+and train an lstm based neural net
+at the end we are going to do some
+evaluations and
+going to have a look at how well the
+model does let's get started
+the data that we are going to have a
+look at is
+uh this career com 2019 health navigate
+robots
+competition that is probably very much
+over
+yeah it is and uh for this competition
+they had to
+basically create some robot
+or collect some robot sensor data
+and from them that data they want to
+classify the type
+of word that the robot is on and they
+have
+nine four types so the kind of data that
+they have been collecting is something
+from
+acceleration and velocity using various
+sensors
+and to look at the data itself
+uh it basically contains the orientation
+of the robot
+angular velocity over the three axis
+then the acceleration and for
+another csv file right here we have
+series id which
+we are going to use to
+merge or join with the train
+data and then we have the surface which
+is the target or the
+target variable that we want to predict
+and here we have
+some examples of the data and then
+here is the example of the
+y train data here you can see that we
+have
+basically strings for the surfaces
+and to better understand what the
+the data is we are going to start with
+the notebook
+okay so let's open up a brand new
+notebook on google coop
+and here i want to change the runtime
+type
+to a gpu because yes we are going to use
+gpu from the start and the first thing
+that i want to do is
+check the gpu that we have
+and we have a t4 which is going to be
+just perfect for us next i want to make
+sure that we have
+the correct version of torch and i'm
+going to use
+1 0 1 8 1
+this should be the current version of
+pytorch at the time of
+this tutorial and then i want to install
+pytorch lightning
+at this version which is again the
+current version
+of pytorch lightning and it should take
+some time
+next i want to download the zip
+from the kegel competition for the robot
+sensor data and i have this on
+my personal google drive and i'm going
+to download this
+this is exactly the zip file that you
+can download from
+the cable competition by pressing
+download all right here from the kegel
+website and this gives us
+this gives us this zip file which is
+around 35 megabytes
+megabytes and to
+unzip this i'm going to use the
+unzip command
+yeah so now we should have
+the x test x train and y train files
+we are not really going to use the x
+test because we are not going to submit
+for the competition some of the results
+that we have
+but we are going to read the files
+for the training data and next i want to
+basically do a bulking port of many
+stuff that we are going to use
+and this will be pretty ugly but we will
+need
+most of those so these are the
+huge number of imports next i want to
+set up my proflip
+yep this should work and finally i want
+to see
+everything using pytorch whitening
+so this should hopefully make all of
+this reproducible
+all right so we have the basic setup of
+our notebook
+and then i want to what
+the training data
+and the these are the features
+and i want to download or vote
+in the labels so this should do the
+trick
+and if we look at the head
+of the training data we have this series
+id
+measurement number which basically we
+are not really interested
+in both of those columns but we are
+going to
+need the series id and then we have
+the measurements from the various
+sensors
+as described into the data explanations
+on kegel
+next i'm going to look at the
+y train data frame
+and here again you can see the series id
+then this group id which we are not
+going to use and the surface
+itself which is the variable that we are
+interested in predicting
+or classifying in all of those series
+so uh next i want to have a look at
+the distribution of the different
+surfaces that we have
+and to do that i'm going to use the
+value counts
+from pandas and basically put
+a bar chart from that i want to
+rotate the ticks because of course
+this should be some of the four
+types or surfaces have a large number of
+characters
+and you'll see what i mean in a second
+and if we run this
+uh you can see that the concrete and
+soft pvc
+the wood etc are like the majority of
+the
+surfaces that we have and actually the
+distribution
+is not in any way perfect
+so what you might want to do is use some
+sort of
+resampling or some other technique for
+balancing this data set
+but we are just going to continue around
+from here all right so what we need to
+do next is do some pre-pro sync
+and the first thing that we need to do
+is to convert all those strings into
+integers because we are required
+to do classification and of course
+neural nets doesn't work uh neural nets
+don't work
+really with anything else than numbers
+so for the purposes of converting all
+those
+strings or labels into integers we are
+going to use the label encoder
+from sk1 and
+we are going to encode the labels
+from the surfaces and what we have here
+are the representations of the labels as
+integers and the actual
+names
+of the labels are stored
+into the classes property classes
+underscore property
+in the label encoder so we can
+basically reverse the transformation if
+and when we need this
+and next i'm going to store
+the labels into the white data frame
+and then have a look at it
+and you can see that we have the uh the
+surface
+name and then the label representation
+of the surface
+as an integer right here so uh
+next we are going to have a look at the
+x strain again
+and recall that we are going to
+basically skip
+all those columns and then take
+everything else
+so i want to create
+feature columns which is going to be the
+columns
+and this should return
+of the columns that we are interested in
+when
+building the sequences themselves all
+right
+so next we need to convert
+those data this data frame and the
+labels themselves into sequences that we
+are going to use
+for our data sets and to do that i want
+to basically check one thing
+uh so to show you what
+the contest creators did
+is that basically they added this
+series id which has done the
+segmentation of the sequences for you
+already so if we do the series id
+and check the val accounts
+really quickly you see that the
+examples are kind of maybe
+all of those are stored into 128
+so to check my hypothesis i did
+basically this
+i took the series ids
+i calculated the vol counts
+check all those
+that are 128 and created
+get got the sum from this one and this
+matches this
+so this is a pretty strong
+indicator that we are on the right track
+here so
+all the series or sequences are
+basically split
+into 128 and just to check
+i want to make sure that we have a label
+for each of those series and it appears
+that
+this is the case so i'm pretty certain
+that
+all of the sequences have been
+previously
+splitted for us and using this knowledge
+i want to create the sequences
+themselves
+i want to group the series
+by series id
+i want to take the sequence features
+from here
+i want to take the label which is going
+to be
+from the which we are going to take from
+the white train
+and i want to make sure that the series
+id is the same
+as the series id from the current group
+and i'm going to just take
+the label which is the integer
+representation
+of the surface that we've already
+encoded
+and then i want to append the result to
+the sequences
+and the label of course so
+what we have here at the end i'm going
+to
+show you what a single sequence is con
+single sequence contains
+so it should be this data frame with 128
+rows
+and 10 columns and then this is the
+label itself
+all right so this is pretty much the
+structure of the
+sequences that we have next i want to
+split
+the sequences into training and test
+sequences
+and i want to have a test size of
+20
+i want to check the number of training
+sequences
+and the number of test sequences
+and here we have around 3k examples
+for those training sequences and about
+70
+750 for test
+so we are going to now create the date
+sets
+for those and to do the to basically
+create the date set
+i am going to extend the date set from
+pytorch
+so let me just mark this
+and the dataset requires two methods the
+lend method and the get item method
+but first i want this
+to take the sequences for the date set
+and the length for this data set
+is going to be the length of the
+sequences
+and get
+item
+in here we're going to take the sequence
+and the label recall that this is
+actually a tuple
+and i'm going to return a dictionary
+from two tensors the first is going to
+be
+the sequence itself
+and the sequence currently contains
+uh pandas data frame and i want to
+convert this to numpy
+and wrap it into pytorch
+tensor next i want to create the
+label using again another tensor
+and i want to convert this into a long
+tensor because yeah we are going to do
+classification
+all right so now that we have this
+uh we are going to create the data
+module that is required
+for python tightening
+and this is going to extend from python
+threatening whitening
+data module so here i'm going to pass
+a lot of uh i'm going to pass
+a couple of parameters
+but first we need to start with the
+constructor
+and this should take training sequences
+the test sequences
+and unpatch size
+the first thing that we need to do is
+call the parent constructor
+and then i'm going to assign
+fields for the sequences themselves
+and for the batch size we want to store
+those
+next i'm going to overwrite the setup
+method
+and this takes as a parameter the
+current stage that we're
+in and pythoning actually thanks to a
+subscriber or
+a comment a comment from a user that is
+or from somebody who is watching the
+videos he said that
+i don't need to call the date module
+setup method on my own
+and python threatening will actually
+call the setup method
+for me so thank you for that and
+we are just going to create the date
+sets
+here using the train sequences
+test sequences for the test data set
+next we need to create the three data
+waters
+for training validation and testing
+and this will return the data water from
+pytorch
+pretty standard stuff
+i want this to have a part size equal to
+the
+passage that we've passed in i want this
+to be shuffled
+just in case and i want the number of
+workers
+to be equal to the cpu count that we
+have on the current machine
+[Music]
+all right so the saving is complete next
+i want to do
+basically the same thing for the
+validation data waller
+and yeah let's just
+return this create the test
+data set and i don't want to shuffle
+this because
+we are validating or testing
+but i'm going to
+use the same batch size because this
+will speed up the process significantly
+alright so this will basically
+complete the whole data module stuff
+we are basically creating those three
+data orders
+based on the data set that we've already
+created
+uh next i want to initiate in initialize
+the data module but first i'm going to
+create the number of epoch switch for
+which we are going to train
+and the batch size
+yeah and we are going to train for a
+wall of epochs i'm going to show you the
+training works from
+model that we are going to build uh you
+might
+have other options to do it but at least
+i had to do a lot of training to get to
+the results that we are going to see
+and the data module here is going to be
+initialized
+with the training sequences test
+sequences
+and the process
+all right all right so let's build the
+model
+and if you've watched the previous video
+from the time series forecasting that we
+did
+uh in the the model itself is pretty
+much
+the same thing except that we are going
+to do classification
+instead of uh regression basically
+so let's create the model
+and it will extend from nn module from
+pytorch
+and this should take the number of
+features that we have
+then the number of classes because we're
+doing the classification
+the number of hidden units which is
+going to be
+2.256 and the number of
+layers for the ostm i'm going to
+call the super constructor on this
+and then i'm going to
+store the number of hidden units
+next i'm going to initialize the lstm
+net or layers
+that we are going to get and here i want
+to specify the input size which is going
+to be the number of features
+then the hidden size which is going to
+be the number of neurons per each
+layer i want to
+have a batch first equal to true
+because this will be basically the
+format that we are going to
+take and then i want to specify the
+number of players
+and finally i want to specify after
+about
+0.75 uh
+yeah how did i end up with this um
+essentially i did retrain this thing
+for like maybe six or seven hours
+with a lot of hidden uh with water hyper
+parameters
+and it looks like it benefits a lot from
+heavy regularization and of course you
+might
+find that other parameters are better
+but
+this worked kind of right for me
+and finally we're going to create this
+classifier layer
+and this will be just a linear layer
+that is taking the output of the last
+hidden layer from the ostm and
+converting this
+into a classification based on the
+number
+of classes that we have next i'm going
+to overwrite the forward method
+and here just for multi gpu
+purposes i'm going to flatten the
+parameters
+next i'm going to pass
+the hidden units or the output of the
+hidden layers
+from the lstm of the last
+layer of course and
+since this is multi-layer net probably
+i'm going to take the last the output of
+the
+wash state of the last layer
+if that makes any sense and i'm going to
+convert this
+i'm going to pass the result basically
+through our classifier
+so we are going to get uh
+this right here uh i can see that i'm
+not actually going to need this
+so i'm going to remove it yeah i don't
+think i'm going
+to need it all right
+so this is basically the model that we
+have
+and i miss a comma right here
+all right so next
+we are going to create a po
+whitening module which is going to wrap
+our
+model right here
+and here again we need a constructor
+we're going to take number of features
+which is going to be an integer
+and the number of classes which again is
+going to be an integer
+i'm going to call again the super
+constructor
+and i'm going to initialize the model
+we're going to take the number of
+features and the number of classes
+and i want to specify the worst function
+or the crit criteria for
+the optimization and again of course
+we are going to use cross entropy
+was
+all right so we need to define a forward
+method here
+and i'm going to take optional labels
+i'm going to pass the input through our
+model
+and initialize the words to zero and if
+we have labels
+i want to calculate the loss
+and then i want to return the loss and
+output
+right here all right next we
+need to define a couple of more methods
+and i'm going to start with the training
+step
+this is going to be called every time a
+training step
+has been has it needs to be done
+and this will pass a bunch of sequences
+and labels
+and the id of the batch which we are not
+going to use
+i'm going to take the sequences from the
+batch
+and this sequence is based
+on the sequence that we did here
+into this dictionary next i'm going to
+do the same thing for the labels
+i'm going to create
+to pass this batch data through this
+forward method
+and now that we have the outputs uh
+recall that we have
+kind of uh it's not really like
+really probability distribution but some
+form of distribution
+for each class based on the cross
+entropy was
+and just to take the predictions from
+here i'm going to use
+to get the maximum value
+from those outputs and this will
+essentially be the
+the the cost that has the most
+probability based on the r model beliefs
+and i want to do this along the first
+dimension
+then i'm going to calculate the accuracy
+using the accuracy that is provided from
+pytorch whitening
+and i'm going to pass in the predictions
+and the labels
+and
+let me just
+show you
+this is the the accuracy measure
+and we have a functional accuracy right
+here
+and uh in pi torch whitening maybe this
+is not a good example yeah
+but it takes basically
+two tensors and based on the
+input of this it calculates the accuracy
+you need to pass in first the
+predictions
+and then the actual values again you can
+calculate
+top k accuracy if you are interested
+in this so for example in our case we
+might
+want to let's say that you want to be
+either
+the first or the second surface type
+is going to be all right for you so then
+you can calculate
+top to accuracy or something like that
+but in our case we are interested in top
+one accuracy
+so we're going to calculate this and
+next since we have the accuracy now i'm
+going to
+walk the training class which
+is return from the forward
+method and i want
+to save this to the progress bar and the
+worker
+i'm going to do the pretty much the same
+thing
+for the accuracy
+and i want to return a dictionary
+with the was and accuracy
+so we are going to lock all of this into
+uh tensorboard so this is pretty much
+the training step i'm going to
+essentially do the same thing
+for the validation step
+but instead of this i'm going to write
+validation right here
+uh yep and then essentially the same
+thing
+for the testing
+which we are not really doing because we
+are not
+preserving any data in particular
+for testing but yeah you might
+want to skip all this
+and the final method that we need to
+overwrite
+is the configure
+optimizers where you can specify
+the optimizer and the warning
+reschedulers and again
+i'm probably going to make a deep dive
+video on pytorch whitening
+some of the stuff right here are pretty
+tricky to implement
+when you have like a more complex
+warning rate scheduler but in our case
+i'm not going to use any
+uh warning rate scheduler which might be
+of
+benefit it might be of benefit if you do
+use some
+wording rate schedule for this problem
+in particular but you have to be
+to try it on your own or go through the
+pie torch writing documentation
+and here i'm going to use just adam
+and a warning rate of this very small
+number
+alright so this should pretty much be
+everything that we need i'm going to
+initialize the surface predictor
+with the number of features and this
+will be the
+length of the feature columns and the
+number of classes
+we're going to take from the label
+encoder
+classes let me just make this a bit
+prettier
+okay so this is the model
+i am going to initialize
+tensorboard
+and this should start the tensorboard
+window
+or embedding right here
+and while this is starting i want to
+create a checkpoint callback
+which is going to be the model
+checkpoint that is provided
+by python whitening and this one
+pretty much says that there are there is
+no data
+which is of course correct because we
+haven't started the experiment
+and i'm going to save the checkpoints
+into checkpoints
+the file name is going to be best
+checkpoint i want to save the top
+one so only the best model
+i want this to be variables i want to
+monitor
+the validation was because we are
+interested in that
+and we want to minimize it
+then i'm going to initialize the
+tensorboard
+logger which is going to look at
+whitening works folder
+and the name of the experiment is going
+to be surface
+i'm going to create a trainer
+which i'm going to pass the logger the
+checkpoint callback
+here i want to
+specify the number epochs
+the number of gpus and the progress
+bar refresh rate just
+because we're using this google co-op
+notebook and this should tell you that
+there is a gpu available and that we are
+going to use it
+then i'm going to call just trainer fit
+pass in the method the model and the
+data module
+and run this and hopefully it should
+start training
+let's wait and see how it goes
+all right it's telling us
+that we have 1.3 million parameters
+and the validation was is
+decreasing at least at the start of this
+training
+and i recall that we're training for 250
+epochs
+so i'm going to let the training
+complete
+and we're going to have to go back to
+this
+at the end of the training so the
+training has complete
+and as you can see at least the wasp
+of the epochs there wasn't any
+improvement
+but i've just let it drain and
+yeah let me just show you what
+is the final result for this run the
+test
+on it and go through the
+examples and we have uh 78
+accuracy actually on the model that i've
+trained
+with pretty much exactly the same
+parameters i got
+around the same thing 80 percent and
+couple points and if we refresh this
+you can see that the training accuracy
+has been steadily increasing
+but it kind of plateau it right here
+and pretty much the same thing for the
+validation accuracy
+so maybe if we had more data here
+or maybe you can try other parameters
+or other models but i believe that
+another
+maybe 10x in the data would
+improve the quality of the
+the performance of the model or the
+predictions much better than
+anything else but yeah we are stuck with
+this we don't have any more data
+and i want to basically next look
+through the predictions a bit more and
+evaluate the results
+and to do that i'm going to train
+to load the trained model
+and load it from the checkpoint from the
+trainer
+which is checkpoint callback and then
+the best
+model path i want to
+specify the number of features which are
+going to be the number of feature
+columns
+and then i want
+to specify the classes
+the number of classes that we have which
+is nine
+and then i want to create uh sorry
+after loading the model i want to freeze
+it
+because yeah we need this model to be
+running
+just for inference disable dropout insta
+in the gradient calculations i'm going
+to create a date set
+from the test sequences and i'm going to
+get the predictions
+in the labels right here
+and iterate over it
+get the sequence
+get the label
+and i want to take
+the predictions from this from our
+trained model
+but i need to basically add a dimension
+here because the model is working with
+batches
+and i'm just passing in a single
+sequence
+this unsqueeze will convert it into a
+batch of
+one element and i want to take the
+output
+the prediction is going to be again the
+arcmax value from here
+and i'm going to append
+the prediction just the number from here
+and i'm going to append the label
+just the number again from here
+so this should take about 20 or 30
+seconds
+and when i have the data for this
+i want to basically print out a
+classification
+report that is given from sk1
+i want to pass in the labels the
+predictions
+and the target names which are going to
+be
+the class names for the labeling color
+and if i print this uh you see
+that we have different precision and
+recalls values
+for the different classes that we have
+and recall that we have nine classes
+right here you can see that
+we have very good precision but whoa
+recall for the hard tiles
+for example and uh if you recall that
+the date set is quite heavily unbalanced
+really so we have uh not
+much examples in the hard tiles
+and uh honestly this didn't give me
+a good understanding of where the model
+is
+screwing up but another thing that
+is really helpful in those kind of kinds
+of situations
+is to just plot a confusion matrix
+and i'm going to just paste a function
+that i've already shown in previous
+videos
+this will basically take the confusion
+matrix and
+create some
+kicks and then put the labels right here
+and just put the the seabourn heat map
+so to get a confusion matrix i'm going
+to call the confusion matrix
+function from sk1 i'm going to pass in
+the labels and the predictions
+then i'm going to convert this into a
+data frame
+which is going to take the confusion
+matrix it's going to have
+an index with the class names
+and columns with the class names
+and i'm going to show you what this
+looks like
+so this is pretty much the
+data frame that we're going to pass in
+to our
+show confusion matrix function and this
+will just
+make it a bit better to look at
+and here is the confusion matrix
+so let me just unzoom this
+probably rerun it
+yeah okay so as you can see
+the model is doing quite all right i
+believe
+in what of the cases it's messing up
+diode surface with concrete which is
+kind of to be expected other
+errors is making a soft
+pvc or mistaking soft pvc with wood
+and another is
+probably here we have the hot tiles
+right here
+and let's see the soft tiles
+with soft pvc again but
+yeah again the model is doing a quite of
+all right
+i think that if you train it for a bit
+longer or with other parameters
+you might get even better results but
+this is a very simple way to evaluate
+what is happening in this case i would
+probably go ahead and just
+if possible of course collect more and
+more data for the
+me for the minority classes the classes
+that
+hasn't been very well represented here
+there we have it this was an example of
+how you can take some
+time series data and convert it into
+sequences
+use by torch and by torch whitening
+create
+an ostm based neural net
+use the datasets from pytorch
+get everything together train it and
+evaluate
+the quality of the classifications if
+you like this video
+please like share and subscribe also
+comment down below
+what you might want to see next or
+probably if you have any questions on
+this
+i'm going to write out a full text
+tutorial based on the
+example that you've seen in this video
+and i'm going to pin it down
+in a comment thanks for watching guys
+bye

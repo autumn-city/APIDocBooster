@@ -1,0 +1,266 @@
+ So in this video, I want to talk about a small modification that
+ we can make to improve the GAN training. In particular, we are
+ looking at improving stochastic gradient descent for the
+ generator. But yeah, before we get to that, let me highlight or
+ just list some of the problems with GAN training. In a future
+ video, I will show you some tricks and tips for addressing
+ some of the problems or at least for improving GAN training. But
+ here, let's just take a look at this list of problems. So one
+ problem is the constant oscillation between the generator
+ and discriminator loss. So things never converge, things
+ might just keep oscillating. Another very common problem is
+ mode collapse, which essentially means that the generator will
+ learn how to generate a particular type of data that is
+ particularly good at fooling the discriminator. So that is also
+ one problem usually when you see that the generator is only
+ producing one kind of image, then this is usually due to this
+ type of mode collapse, whether a generator, it just exploits a
+ weakness in the discriminator, just producing a particular type
+ of image. One common problem with a traditional or
+ conventional GAN training that I showed you before, or that I
+ that we discussed when we had this min max setup is that the
+ discriminator would be too strong, usually, or what can
+ happen is that the discriminator is too strong, which is a common
+ problem, because classification is simpler than generating data.
+ So it can easily be that the discriminator is too strong. And
+ if this happens in the very beginning that the discriminator
+ starts on very strong and using the loss gradient that I showed
+ you earlier, what happens is that the gradient for the
+ generator will vanish, it will be too small, and the generator
+ can keep up with the discriminator. And then, yeah,
+ things won't train at all. Another problem could be that
+ the discriminator is too weak. And the generator produces
+ non realistic images that fool it too easily. So the difference
+ here between one is that the discriminator is too strong. And
+ here, it's too weak. In practice, it's usually that the
+ discriminator is too strong, because the classification is
+ easier than data generation. So there is a little trick that we
+ can apply to at least address this problem to some extent. And
+ that is something I will explain in the next couple of slides.
+ Okay, let's now focus in on the problem related to the
+ discriminator being too strong, such that the gradient for the
+ generator vanishes and the generator can't keep up, which
+ can be fixed, or at least mitigated as follows. So here,
+ what I have is the original can formulation that I showed you
+ from the paper earlier from the algorithm one screenshot. And
+ what we had is here the update for the generator. So this is
+ the gradient of the loss with respect to the generator weights.
+ And yeah, if you recall, the generator wants the discriminator
+ to output something close to one for these generated images. So
+ here, these are the generated images, and it wants the
+ discriminator to think the they are real. And then if we have
+ something close to one, then we'll be lock one minus one,
+ which will be minus infinity. And this is where we then
+ maximize, sorry, minimize this loss function. And it is
+ maximized if this is somewhat close to zero, because then we
+ have lock one minus zero, which is zero, right. So in this case,
+ what we want is something close to one. But it might happen in
+ the beginning, especially that in the beginning that the output
+ of the discriminator is close to zero. Because in the beginning,
+ it is kind of hard to generate new images from scratch if the
+ generator hasn't learned anything yet. So in the first
+ few iterations, so in the beginning, it will be very easy
+ for the discriminator to tell a part real and fake. So in the
+ beginning, it will output something close to zero. This
+ will maximize this loss. And we want to minimize it. So that's
+ actually good. But the problem is that the gradient signal will
+ be relatively small. And it will be kind of hard this way for the
+ generator to learn efficiently. I mean, it will be able to learn
+ but not very efficiently, because the gradient will be
+ relatively small. And it can be improved, like shown at the
+ bottom. So but yeah, let me maybe outline the problem first
+ with a gradient here. So what we have is a lock one minus
+ something, let's call this generated image, or not
+ generated image, the inside is a generated image. But let's just
+ call this whole thing x prime. Or maybe maybe something like y,
+ y hat, let's call it y hat. So what we have is lock one minus y
+ hat here. What is the derivative of that? So for that, we would
+ need the chain rule. So you know that the derivative of something
+ like log x would be one over x. So here, we have to use the
+ chain rule, the outer times the inner derivative. So what we
+ have is for let's do the inner derivative first. So it's one
+ minus y hat. So we are looking at the derivative with respect
+ to y hat, of course. So the inner derivative here would be
+ one minus so the derivative of one minus y hat would be minus
+ one, right? Because with respect to y hat, then this vanishes and
+ this becomes a one. So we have minus one times the outer
+ derivative, like I said before, the outer derivative is as
+ follows. So for log x, it would be one over x. So here, the
+ outer derivative would be one over one minus y hat, right? So
+ the derivative then is minus one. Or just let's write it like
+ this, minus one, one over y hat, y. I'm doing prime here, but I
+ mean, head, of course. Okay, so this is our derivative. So if
+ something is close to a zero here, our derivative will be
+ around minus one, if this is close to zero. And I mean, this
+ is okay, but it's not like the strongest derivative. So it
+ won't be the best, let's say for learning the generator in the
+ beginning. So a trick is to turn this greater descent problem into
+ the following gradient ascent problem. So now, what I'm doing
+ here is I'm dropping this one minus here. So then if the
+ discriminator outputs zero here, the loss would be infinity. And
+ if the generator outputs, sorry, if the discriminator outputs a
+ one, which is what we want, the loss would be zero. So now we
+ have the loss between zero and infinity. And before we had it
+ between minus infinity and zero. So before we wanted to minimize
+ it, so before we wanted to minimize the loss, now it's
+ green ascent, we want to maximize this term. And this
+ will give us here a stronger gradients if the initial
+ prediction of the discriminator is that it can detect the
+ generated images. So if in the worst case scenario, what we
+ have is that the discriminator outputs something close to a
+ zero, right. And now if you look at this term here, the whole
+ term, that's on lock x term and the derivative lock x is
+ is one over x, right. So in the worst case, now we have something
+ close to zero. And let's say we have one over a very small
+ number, then what will happen is that the gradient will be what
+ the derivative will be much larger here for the discriminator
+ that can successfully detect the generated images. So here, using
+ this formulation at the bottom, the generator will burn more
+ effectively in the beginning. Yeah, so by now, we have seen a
+ lot of gradient ascent and descent and flipping between the
+ two and so forth. So it might look super complicated. But in
+ practice, actually, it's not as complicated as you might think.
+ It's actually pretty straightforward to implement the
+ GAN loss function with your regular gradient descent. So we
+ will be using regular gradient descent for both the
+ discriminator and the generator. And it will probably be more
+ clear when you see that implemented in code in the next
+ video. But yeah, let me briefly just finish the section on this
+ trick, or just in general, how we can turn everything into a
+ gradient descent problem. So in an earlier video, on the
+ original, again, we have seen in the paper that they mentioned
+ gradient ascent for training the discriminator. So previously, in
+ the paper, they mentioned that they are maximizing the
+ prediction probability of classifying real is real, and
+ fake is fake for the discriminator. But as you
+ remember, from the logistic regression lecture, long time
+ ago, lecture eight, I think, what we said is that maximizing
+ the log likelihood is the same as minimizing the negative log
+ likelihood. So the negative log likelihood, we can also think of
+ it as the cross entropy. So in that way, we can actually get
+ just use our regular cross entropy binary cross entropy in
+ pytorch to optimize the discriminator, we don't have to
+ do gradient ascent. So the same for the generator. So for the
+ generator, we first in the original paper, they first said,
+ it's about minimizing the likelihood of the discriminator
+ making correct predictions. And minimizing the likelihood is the
+ same as maximizing the cross entropy. In that sense, it's
+ similar to here, maximizing the log likelihood and minimizing
+ the cross entropy here, it's now flipped, minimizing likelihood
+ and maximizing cross entropy. But we just talked in the
+ previous slide, that this is actually not ideal, because the
+ gradient small gradient issues. So we said that it doesn't work
+ well in practice because of these small gradient issues. So
+ what we did is we flipped on we didn't flip, but we modified the
+ loss first, so that we can use gradient ascent. But in
+ practice, it's even better to just flip the labels and
+ minimize the cross entropy. So what we are doing is we are
+ forcing the discriminator to output high probabilities for a
+ real image, if an image is fake, so a high probability for the
+ real label, given that the image is fake. If this all is very
+ dense and complicated here on the slide is a lot of
+ information here, let me go through the next couple of
+ slides where I will get this entangled this a little bit only
+ two more slides. And then we will see a code example in the
+ code example, you will see it's actually pretty straightforward.
+ Okay, so now I will just step by step illustrate how everything
+ relates back to our binary cross entropy or minimizing the
+ negative log likelihood. So here, this is the gradient ascent
+ step from the original paper from the GAN paper. So again,
+ this is for the discriminator. And we want the discriminator
+ for the real images to output something close to one here. And
+ on the right hand side, for the fake images, we want to output
+ something close to zero. So this is the original GAN objective
+ for the discriminator. And it's with the gradient ascent
+ described in the paper, but we can turn this into a gradient
+ descent problem by just using our negative log likelihood
+ function, the loss function that we have seen from the logistic
+ regression lecture. So here, this whole thing is I just use
+ that from the logistic regression lecture, this is our
+ loss function we use there. And here, I'm just highlighting how
+ the GAN objective maps to this loss function. So again, we had
+ these two parts, we had a minus y, and then we had minus one
+ minus y. So let's just focus on the y here. So if the true label
+ is one, then we use this term, right. And if the true label is
+ one here, also, then this will become zero. So we don't do
+ anything with this one. So if the true label is one, we don't
+ do anything with the right hand side, we only do something with
+ the left hand side. If the true label of the class label is zero,
+ then this whole thing will become zero. So we don't use
+ this one. And this one becomes zero. So one minus zero, this
+ one becomes one. So we are using only this right part if the class
+ label is zero. So there are these two parts to the loss
+ function. This is just from the logistic regression lecture. So
+ now let's focus on on this part here. Right. So we want this to
+ be close to one. And this is for the real images. And we said for
+ the real images, we have class label one. So for the real
+ images, we are looking at, at this part here. And we want the
+ prediction also be close to one. So that is how our objective
+ maps here to a gradient descent problem, because here we have
+ also the minus for the negative log likelihood, this is a
+ negative log likelihood, we have minus and minus. So we are
+ minimizing, trying to minimize this term, right. And for fake
+ images, we are looking now at the right hand side, right?
+ Because for fake images, we have the label zero, so this will
+ become zero cancel. So the whole thing will cancel, we only look
+ at the right hand side here. So then this one will be one. And
+ then we look at lock one minus y hat. So again, we have a
+ negative log likelihood, it's a minimization here. So we want
+ to, when we do the gradient descent, what happens, we will
+ learn how to output a y hat here, this is the ideal case,
+ this is what minimizes our loss here. Right, because otherwise,
+ minus if this would be a one, then the whole thing will be
+ oops, the whole thing will become zero and minus log of
+ zero will be minus minus infinity, it will be infinity.
+ Right. So this is highlighting how this one, the gradient
+ ascent becomes a gradient descent in practice when we use
+ our negative log likelihood. Yeah, let's now look at the
+ generator objective. So at the top, this is from the original
+ paper, the gradient descent part of the original GAN paper. And
+ we can also transfer this to our negative log likelihood
+ context. So because now we are having the fake images from the
+ generator, so we have the fake labels, which are zero. So this
+ part is zero. So this whole thing cancels, we can ignore
+ this part, only focusing on the right hand part. But if we use
+ a regular negative likelihood, if we optimize this, what will
+ happen, it will wants to optimize the prediction to zero
+ right. However, we want the opposite, we want to fool the
+ discriminator, right, we don't want to encourage it to detect
+ the fake images, we want to fool it so that it thinks these are
+ real. So how can we do that, we can flip this sign here to a
+ positive sign. So then, instead of this being maximized to y
+ hat zero, it will be maximized to y hat equals one. Okay, so
+ but we said, actually, this is bad, bad, because flipping the
+ sign, okay, it will correctly achieve our objective, but the
+ gradients will be very small, if our discriminator is successful
+ in predicting that the generated images are generated. So we
+ said, Okay, this is actually not a good idea. We want to modify
+ this loss function where we don't have the one minus here,
+ right. So that is what we spent a couple of minutes about
+ talking in the previous slides. So what we can do instead,
+ instead of modifying this label, sorry, in instead of modifying
+ this sign here to a plus sign, instead of doing that, we can
+ just flip the labels. So flipping the labels. So instead
+ of doing the gradient descent before, so before we had this
+ gradient descent here with this one minus, and we said this is
+ bad. So we are removing the one minus here, we do a gradient
+ descent. And we can just flip the labels to turn this into a
+ gradient descent problem. Okay, so the modified loss function
+ now is, or what we're doing is, we have usually for the fake
+ images, we have the label zero, right? Now we are flipping this
+ now, instead of using label zero, we are using label one for
+ the fake images, this is for the generator. And then we can use
+ this part of the loss function, because yeah, this one will be
+ one, this one will be one here. So this whole thing cancels. And
+ we're looking at this one. And then what will happen is, if we
+ have a one, it will also try the prediction to make it similar to
+ the one. And then, because we provided as one, but in reality,
+ it's actually still the zero, I mean, it's a fake image, what
+ will happen is that the screen data will be trained to make
+ the wrong prediction. So the generator trains to fool the
+ discriminator to make wrong predictions. Okay, so this was
+ probably super complicated, lots of stuff happening. So in the
+ next video, I will show you a code example. And you will see,
+ we are just using regular binary cross entropy for everything.
+ And the other regular stochastic gradient descent or Adam
+ optimizer, and it will be pretty clear then afterwards, I hope.

@@ -1,0 +1,254 @@
+Hi there!
+Today we  
+are discussing the Swin Transformer.
+Swin stands here for Shifted WINdows  
+and is basically a vision transformer variant but 
+with a hierarchical way of processing the image.
+So, if you are curious about 
+this vision transformer beast,  
+reportedly beating many benchmarks,
+grab a cup of coffee because it 
+is time for an AI Coffee Break!
+Speaking of motivation for the Swin Transformer: 
+Reading this part of the abstract 
+triggered me a little bit: 
+It is about the “Challenges in adapting 
+Transformer from language to vision".
+And the authors say, they "arise from 
+differences between the two domains,  
+such as large variations in the scale  
+of visual entities and the high resolution of 
+pixels in images compared to words in text.”
+This is such a computer vision 
+researcher thing to say!  
+Everything is big data if you are brave enough.
+Words in text can become too many too if one wants  
+to handle a complete Dostoyevsky 
+novel as one single data point.
+But yes, point taken from the authors here, that 
+there are more images in this world than novels,
+so funnily, while transformers with linearly 
+scaling attention can handle entire novels as  
+one sequence, there are not enough novels written 
+to create significant datasets in this way,
+so yeah... text transformers usually 
+work with smaller sequences and text  
+is usually processed at a sentence-level.
+Anyway, back to the Swin Transformer here.
+It is based on ViT and to remember 
+how the Vision Transformer works,  
+you can check out our video on this.
+Because here, we are going 
+to put it into a nutshell:  
+the image is decomposed into 16x16 pixel patches, 
+then these patches are transformed into 
+patch vectors by a linear transformation.
+These patch vectors combined 
+with positional embeddings, 
+are processed by a transformer in the same 
+way in which the transformer processes  
+word vectors, which we also 
+discussed in a previous video.
+But, there is a problem with the 
+vision transformer that the authors  
+here try to alleviate with the Swin Transfomer:
+the problem is related to 
+the extraction of patches;  
+a step which is particular to images, not to text.
+If the image is let’s say… 256x256 pixels,
+then extracting 16x16 pixel patches  
+would lead to 16 patches, thus 16 
+image vectors would form a sequence.
+But an image of 1920x1920 pixels would 
+already lead to 120 image vectors,  
+which is still ok with bigger 
+and bigger GPUs, of course.
+And if we do this to solve tasks 
+where looking at 16x16 pixel patches  
+is not too coarse, then ViT is still ok.
+And this is the case for tasks that are, in 
+a sense, summarizing the image, like it’s the  
+case with image classification, where the goal 
+is to predict one label for the entire image.
+Analyzing the image through big 
+patches is not that problematic here.
+But there are tasks, where one really needs 
+detailed information at pixel-level, not patches.
+Such a task is semantic segmentation where 
+the algorithm needs to decide for each  
+single pixel in the image, 
+what class this belongs to.
+In this case, 16 by 16 pixel patches are way 
+to big. So ideally, we would like to handle  
+every pixel as a token, but this 
+would quickly become infeasible:
+For example, a 256 by 256 pixel 
+image would already require a  
+transformer handling sequence 
+lengths of over 63,000 tokens;
+a Full HD image of 1920x1080 would require 
+already a sequence length of over 2 million!
+This is not scalable, and we 
+can completely forget scaling up  
+native deep learning processing to 4K images 
+– who is crazy enough to even want to do that?
+Anyway, so now we’ve seen that ViT 
+first splits up the image into patches,  
+in order to keep the sequence 
+length within computational bounds.
+But this is problematic for tasks that 
+require detailed processing of every pixel.
+So, let’s look at how the Swin 
+Transformer wants to tackle this problem:
+The Swin Transformer still relies on patches,
+but instead of choosing one size and sticking  
+with it, the Swin Transformer first starts with 
+small patches for the first Transformer layer,
+then merges them into bigger ones 
+in the deeper Transformer layers.
+This reminds us of something, Ms. Coffee Bean…
+Yeah, of U-Net and convolutions. 
+Now, let’s not get distracted here.
+So the Swin Transformer takes in the image
+And splits the image into 4x4 patches.
+Each patch is still a colored image,  
+with three channels. So a patch has a 
+4x4x3 equals 48 feature dimensionality,
+which is then linearly transformed 
+to a dimensionality C of your choice.
+So the only difference to ViT so 
+far is that the patches are smaller.
+But what about this size C, and what does it mean?
+Well, C determines the capacity, or 
+the size of your Transformer model.
+So you maybe know that there is a BERT-base  
+text model, which has a dimensionality 
+of 768 for the vector representations?
+Well, in that case, C is 768.
+There is also a BERT large with C=1024.
+C is the capacity of the 
+model because it determines 
+the parameter size or the amount of hidden 
+units in the fully connected layers over here.
+Just to get an impression about the 
+Swin Transformer, for Swin-Tiny,  
+C is 96 and 192 for Swin-Large.
+But where were we? At the Swin Transformer that  
+has divided the image into 
+initial 4 by 4 pixel patches
+and a linear transformation converting 
+each patch into a C-dimensional vector.
+Transformer blocks process these patch vectors but
+not with the usual quadratically scaling  
+attention, but with the Shifted Window based 
+Self-Attention introduced by the authors.
+This is just a fancy name for 
+saying that the attention span is  
+limited over M patches (here two).
+So now in self attention, one patch does 
+not communicate with all other patches,  
+but only with M neighbors.
+I am so sure that I saw this 
+window limited self-attention  
+before in another paper under a different name.
+Ms. Coffee Bean, do you remember where? 
+No. Oh, I’ll ask the audience then.
+If you saw this kind of attention before,  
+or something very similar to it, then 
+please let us know in the comments where.
+It was probably an NLP paper. Ok, in any case,  
+the limited attention window basically simulates 
+for let’s say, this first image patch token here,
+that the rest of the sequence that is not in 
+its M neighborhood, basically disappeared.
+This means that instead a quadratically scaling 
+attention computation with the sequence length, 
+we now have something linear for small M.
+Great, so now it is time to move further 
+to the next layer in the hierarchy here:
+The output of a sequence of N patch vectors  
+is of course again N vectors because the 
+transformer is sort-of an autoencoder.
+Now the output is merged by 
+a so-called “merging layer”. 
+This concatenates the vectors of 
+groups of 2x2 neighboring patches  
+(in the image, not in the sequence as it 
+is quite simplistically visualized here),
+so from 4 of these C-dimensional vectors,  
+we now have one 4xC dimensional vector
+and this is passed through  
+a linear layer which is basically a linear 
+dimensionality reducer from 4C to 2C dimensions.
+Ok, let’s simplify here a bit: If in the beginning 
+we had 4 patches, now we would have 1 patch,
+but note that the hidden representation has been  
+doubled in order to increase the capacity 
+to capture information from a larger region.
+And then again, the whole process repeats: 
+a limited attention-span transformer module is 
+processing the output and this goes on and on.
+But each time the attention window is 
+shifted with respect to the previous layer.
+So if in the first layer, the attention was 
+limited to neighborhoods of these regions,  
+in the next layer the regions are 
+shifted (like in strided convolution)
+such that patches that landed into 
+separate windows in layer one and could  
+not communicate, can now communicate at layer two.
+Then the resulting patch vectors are 
+again merged by the merging layer 
+and the whole hierarchical procedure is repeated 
+depending on the chosen number of layers 
+or until no merging is possible 
+anymore, and this was basically it.
+Ms. Coffee Bean has two more comments.
+First, regarding the positional embeddings for the 
+Swin Transformer, we should say that in principle, 
+all kinds of positional embeddings are applicable.
+But the authors found that positional 
+embeddings which are directly added to  
+the vector representation of the tokens 
+are not working as well as the relative  
+position bias in self-attention, a method very 
+similar to what we presented in this video.
+And secondly: how good is the Swin Transformer?
+Well, it outperforms ViT and 
+DeiT on image classification,  
+object detection and semantic segmentation.
+It’s small objects in object detection where 
+we would expect to see improvements with the  
+Swin Transformer and of course, in semantic 
+segmentation where every pixel must be labelled.
+However, make up your own mind about the 
+comparisons with the state-of-the art,  
+because, you know, like 
+most of the papers nowadays,  
+the baselines are not necessarily 
+tuned to be the strongest.
+Look at semantic segmentation in Table 3: The 
+Swin Transformer implementation is compared  
+to the DeiT transformer counterpart 
+but only in it’s smallest version.
+A single measurement for one configuration of DeiT  
+is not enough to see how this all 
+behaves when scaling the model,  
+especially when in terms of number of parameters, 
+DeiT small is even smaller than Swin Tiny.
+Not really a worthy opponent 
+for Swin-Large here, right?  
+Make up your own mind about this and let 
+us know in the comments what you think.
+Which vision transformer variant is the one that 
+determined you to leave the ViT model and use  
+another variant (if any)? Ms. Coffee 
+Bean would be curious about that.
+If you liked this content, do not forget 
+to leave a like to help with the YouTube  
+algorithm. Ms. Coffee Bean, I am curious to know 
+if THE YT Algorithm is transformer-based or not.
+Ms. Coffee Bean?
+Where are you going, I did not end the video yet.
+Well, I guess it ended now.
+Okay bye!.

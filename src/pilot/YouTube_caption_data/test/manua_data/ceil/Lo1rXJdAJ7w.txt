@@ -1,0 +1,1969 @@
+Hi everyone, my name is Peter.
+Really glad to be here.
+Really glad to bring the
+latest buzz word to CppCon.
+So this talk is part of a series.
+Next year, I might give a talk
+about log training with C++.
+Maybe the year after we do HTML5 with C++,
+but this year we'll do deep learning.
+So if you read the description of my talk,
+you saw that I generally
+want to convey both
+machine learning from the
+researcher's perspective
+as well as from the engineering
+backing perspective.
+And the body of knowledge I
+want to cover is quite large.
+So we need some kind of strategy.
+And you probably all know
+the OSI model for networking,
+which splits the networking
+stack into various layers.
+So I've taken the freedom of defining
+a similar model for machine learning
+which we'll use as a
+guide as we step through
+the different layers of
+abstraction of machine learning.
+And the goal of the whole talk
+is actually just to show you that
+machine learning is not this Python thing.
+It's actually, machine learning and C++
+can appear in the same sentence.
+And that's what I'll show
+you as we go down this stack.
+So we begin at the task layer.
+The task layer I defined
+as the level of abstraction
+where we think in terms
+of the high level goal
+or end goal that we want to achieve
+with a machine learning system.
+So we usually define such a task
+in terms of its input and its output.
+A very common task
+might be classification.
+In classification, we have
+some data distribution,
+say a set of images that we want
+to bend into a finite set of bends.
+So a finite set of classes, for example,
+mapping images of animals
+into a finite set of classes,
+a hundred different kinds of animals.
+Another kind of task that I've been doing
+a lot of research with are
+called generative models.
+And generative models don't
+immediately appear useful,
+but I'll give you an example
+of how they might be useful.
+Imagine you're working
+on an open world game,
+like Sky Room, and you want to generate
+lots of realistic looking sky.
+So you don't want the sky to look similar,
+you want make it look different
+in different parts of the world.
+So what you could do, you could go outside
+and take a thousand pictures of a sky
+throughout the course of a day,
+and then you can use a generative model
+to simply generate more of that sky.
+Or the important detail is that
+a generative model will
+not just copy paste
+the input to the output,
+it will actually generate
+more of its input with variation.
+So you could feed in your
+1000 images of the sky,
+and it will generate infinite
+or however many images
+of the sky your want and you
+can tile that over your world,
+and have a very realistic sky.
+One level below that, if we actually
+pin a particular task
+that we want to solve,
+will usually have various
+model architectures
+that solve the same
+machine learning problem.
+And for the task of generative models,
+there's one kind of architecture
+that I like very much that's quite recent,
+and these are called generative
+adversarial networks,
+or GANs for short.
+And these are actually one
+of the few machine learning
+models where I think you could
+probably walk up to any
+random person on the street
+and explain it to them in a high level,
+and they would probably
+understand how a system like that
+could learn from data over time
+without any of the fancy math behind it.
+So the way they work is
+that they have a generator,
+which gets a variable zed,
+which is a vector of say 100 values.
+So imagine an array of
+100 floating point values,
+that's the input.
+And it massages that and
+transforms that into an image.
+So initially, everything
+is initialized randomly
+so that image will be garbage.
+But then there's a second
+component called the discriminator
+and its task is to take an image
+and emit a probability of
+that image being real or fake.
+So we want it to emit a high probability
+for the images from our data distribution,
+so the images of the sky that we took.
+And we want it to emit a low probability
+for the images that we
+generate with the generator.
+So we train the
+discriminator to optimality,
+and then the learning comes in
+where the output of the discriminator
+from the generated images
+is used as feedback
+for the generator to
+tell it how well or badly
+it's generating images.
+So you can image the generator being
+some kind of art counter feeder
+who gets a bunch of numbers
+and uses his imagination
+to generate an image.
+And the discriminator
+is a kind of art critic
+who tells how realistic or how fake,
+or not fake, that image is.
+And the feedback from the art critic
+is given to that artist to tell him
+how to change his strategy
+to generate more realistic images.
+And the end goal or the result of that
+is actually that the generator learns
+to generate really
+realistic looking images.
+I have some examples here.
+So these faces here, and
+I hope you can appreciate
+to some extent even though
+it's quite abstract,
+but these faces here were generated
+by taking 100 random
+floating point numbers
+and transforming them
+in some magical ways.
+And you can see the images
+themselves are quite realistic,
+I mean, there are some artifacts.
+So for example, this guy here,
+there's like this black
+blob, can you see my mouse?
+That the person on the lower left,
+you can see some artifacts on the faces.
+But nevertheless, these are
+really realistic looking images
+given that they were generated
+from random floating point numbers.
+And what's also really
+interesting about these models
+is that because you have the space,
+this vector space, where
+you can sample numbers from.
+You can do really, really interesting
+things with that space.
+So for example here, we can
+take the images on the very left
+and we can find the corresponding vector,
+the corresponding code for those images.
+And we can do the same thing
+for the images on the very right,
+and then you can essentially
+have two points in space,
+and then you can simply
+linearly interpolate
+between those two points in space.
+And you can see that we can actually
+interpolate between these faces.
+On the bottom you can
+even see how the smile
+of the person becomes larger
+as we move from left to right.
+So we have quite a lot
+of control about how
+or about what images we
+generate with these models.
+So that's quite interesting.
+Now moving one level below
+that we have the layer layer,
+for lack of a better
+name, and the layer layer
+is actually very important because that's
+one of the most important
+levels of the stack
+in which researchers
+communicate with each other.
+So in a deep neural network,
+or any kind of neural network,
+you can think of a layer similar
+to an optimization pass on a compiler.
+So on a compiler you have
+different optimization passes
+like function and lining, loop unrolling,
+constant propagation that
+are each kind of stand alone
+functions or transformations that taken
+in program producing other program.
+And similarly in a neural network,
+you have layers which perform
+some kind of stand alone transformation
+of some input, say an image,
+and produce some kind of other image
+that is transformed in an important way.
+And stacking together those layers
+leads to some output that we want.
+For example, for the
+discriminator we want to
+transform the image into a
+single probability value.
+So let's zoom into the discriminator here,
+and we can disassemble it into the layers
+that make up this discriminator model.
+And we can see lots of
+convolutional layers,
+I'll go into that in a bit.
+And also a flatten layer which
+is more of a utility layer
+that takes a 2D or 3D image
+and just flattens it
+out into a long vector.
+And also a dense layer which is
+what you would usually
+expect from a neural network.
+Has like an input layer
+of lots of neurons,
+and an output layer of lots of neurons,
+and those are connected
+with weighted edges.
+But let's look more at
+the convolutional layer,
+and later on we'll actually
+see how to implement that.
+So I just want to go about into
+the mechanics of convolution
+Convolutions themselves
+are a very general term
+from sigma processing that generally take
+two signals and combine
+them in a very special way.
+But let's just look at
+the mechanics for now.
+So we have this very exciting image
+with nine grayscale pixels,
+and because they're grayscale,
+we can look at them as
+floating point values
+between zero and one, right?
+So for convolution we need
+another thing which is a kernel,
+and a kernel is just
+another small kind of patch,
+with very important floating point values
+which are actually learned
+by the neural network.
+So this kernel, the kernel
+values are very important.
+But the act of convolution
+itself is quite simple.
+We've simply plop this
+kernel onto the image,
+and for each configuration
+of the image on the kernel
+we simply do a weighted sum
+of the values on the kernel
+and the values on the patch of the image.
+And we multiply those and sum them up
+and get a single output value.
+And then we slide the
+kernel over by one step
+or actually the amount by
+which we slide the kernel
+is called the stride, so we
+might want to change that.
+But again, we just produce a weighted sum,
+and we do that for every configuration
+of the image on the kernel.
+And that's a convolution.
+I want to give you an idea of, sorry,
+first of all in 3D this looks very similar
+just that now we have a depth dimension.
+So for RGB images we have a
+red, green, and blue channel.
+So it's a three-dimensional value, volume.
+But still we'd have a kernel,
+and we would just slide it across
+and produce a weighted sum
+and a single output pixel
+for each configuration of
+the image and the kernel.
+Now I want to give you a slight intuition
+about what these kernels actually do
+and why they're able to pick up
+very important information about images.
+So on the left you have a kernel
+that would represent
+very simply a pattern.
+So you can imagine if you
+have a grayscale image
+and you slide this
+kernel across the image.
+At any point where you
+have a vertical line
+with high pixel intensity,
+the output of this
+weighted sum would be high.
+So you would essentially,
+you could say that
+the kernel activates at this point.
+Whereas in other parts of the image,
+where you don't have
+such a vertical pattern,
+you would get a low value.
+On the right is a
+different kind of kernel.
+I'm wondering if maybe anyone has an idea
+what that kernel on the right
+might pick up in an image.
+Heard some things didn't sound very right.
+It's actually an edge, so
+it's quite interesting to me.
+It's a very simple kernel,
+but it picks up something
+quite interesting.
+So imagine you have a
+surface with the same color,
+because the pixel on the left
+is the negative of the one on the right.
+Those same color values
+will actually cancel out.
+But there's one point in an image
+where these values would not be similar
+and that is at an edge
+of some surface, right?
+If you have a different color on the left
+than the color on the right,
+this output value will be non-zero.
+So this kind of kernel
+would pick up an edge.
+And we'll look at actual
+code to do that later on.
+Before that, let's move
+down to the graph layer.
+The graph layer is very important
+because it's actually the
+most essential abstraction
+we have over an machine learning model
+from an engineering perspective.
+So now we're really getting,
+we've kind of left the
+domain of the researcher
+and looking more and more
+into the engineering.
+So if we take these
+last three layers here,
+I'll show you what the
+graph abstraction means.
+In a computation graph,
+we essentially think
+of very primitive operations
+such as addition, some multiplications,
+and we connect different operations
+which are the nodes of
+the computation graph
+together with the inputs of that operation
+then chain the output of each operation
+with further nodes for the operations.
+For example here, even though
+the convolution operation
+itself consist of smaller operations
+like addition, some multiplications,
+because it's so important
+lots of libraries
+like Intel MKL and other libraries
+actually have them
+implemented very efficiently
+as basic routine, so
+we can think of it also
+as a primitive operation.
+And you can see here, this convolution
+or Conv2D, Conv2D because
+it's a 2D convolution,
+takes as input an image,
+also takes as input weight matrix Wc,
+which is this kernel
+that I mentioned earlier.
+And it also takes in a variable s,
+which is the stride by
+which we slide the kernel.
+And we would perform this operation,
+then the output of the convolution
+would go further into this
+other layer I mentioned,
+which is the flatten operation,
+the operative that would
+go create a dense layer,
+which is essentially just
+a matrix of multiplication.
+So again a matrix of multiplication
+is actually a more complex operation
+which consist of lots of
+additions and multiplications,
+but because it's so simple we also have it
+usually as a very basic operation.
+And again, it takes its input,
+another matrix we multiply with,
+which is another weight matrix.
+And then at the end we
+have one final operate,
+one final output which is
+the probability in our case.
+So this a computation graph.
+It's something very abstract,
+and because it's so abstract,
+it's the basis for lots of frameworks,
+well implementation of
+machine learning models.
+And one ting we can do with
+this level of abstraction,
+for example, is actually
+solve the scheduling problem.
+So imagine we have lots of devices,
+or maybe even multiple
+machines in a cluster,
+then at this level of abstraction,
+we can think of how to
+place these operations
+onto different CPUs or
+JPUs on a single machine,
+and maybe even on multiple machines.
+So that's why this level of
+abstraction is very important.
+At this point, we can also talk
+about something different
+which is parallelism.
+So now we're really getting
+more into the engineering.
+There's two kinds of basic
+parallelism we can achieve
+with a machine learning model.
+The first kind is called data parallelism.
+And it's actually quite straightforward.
+What we do here is if we
+have multiple machines,
+we simply copy paste our
+computation graph onto each machine
+and then we split our input
+data into multiple subsets.
+And we simply evaluate the model
+for each subset on separate machines.
+Of course, at the end then when we
+have our optimization process,
+and we need to pass back the feedback
+from the evaluation to the models,
+we need some kind of
+synchronization barrier.
+So we usually have a separate
+dedicated parameter server
+in our cluster which would take the output
+of each model and do
+some kind of averaging
+and pass the feedback back
+to every single instance
+of the model on the various machines.
+The other kind of parallelism
+is called model parallelism.
+And in this case, we actually really split
+the computation graph
+across different devices,
+across different machines.
+And this is different
+because in this case now,
+usually we have for each layer,
+every input is connected to
+every output of the next layer.
+So in this case because
+the computation is about,
+graph is split, we would
+actually have to do
+synchronization on every
+layer of our neural network.
+And this might seem like
+more of an overhead,
+but there's actually various benefits
+to this kind of parallelism.
+The first is that if
+your model is so large
+that it doesn't even
+fit on a single machine,
+then model parallelism is the only way
+to even parallelize it at all.
+The other way in which
+this kind of parallelism
+actually is interesting is
+that in the previous case,
+here after every evaluation we
+have to pass all the weights
+of our machinery model
+to the parameter server.
+And to give you some rough numbers,
+a popular machinery model
+for image classification
+is called AlexNet and it has about
+130 million trainable parameters.
+So that's 130 million
+floating point values
+on each machine for each
+of these model copies.
+And of course transmitting
+that from each machine
+to the parameter server
+takes a large amount of time.
+Whereas in this case here,
+on each particular layer,
+we might only have, say, a
+million to 10 million parameters.
+So the latency of each
+transmission will actually be lower
+even though we have more
+synchronization points.
+So these are the kinds of consideration
+we would have to make if we
+want to parallelize our model.
+There's another very important distinction
+between various computation graphs
+in various machine learning frameworks
+that you would encounter out in the world.
+And that is between static and
+dynamic computation graphs.
+Now in the static computation graph model,
+you define your graph once.
+And what this means
+for your programming is
+if you look at this fictional
+programming language here,
+which is like half C++, half
+Python, and a third of Go,
+then the first thing you
+should notice of the matrix,
+the matrices have to
+have fixed status shapes.
+So you need to define them ahead of time.
+And the other really
+important part is that
+if you imagine this would be
+an interpretative language,
+then if the interpreter
+runs through the lines
+saying d := s * a + b;
+this would not actually produce a value.
+Instead, d would be a handle
+to the computation graph
+for presenting its value.
+So that's why we could actually say
+that this kind of
+programming is declarative.
+We're actually not computing anything,
+we're just describing a graph.
+Similarly, e would not
+be an actual matrix,
+it would just be the computation graph
+that will lead to the
+value of that matrix.
+And what this means is
+actually two things.
+The first thing is that
+we usually cannot use
+the programming language
+as native control flow.
+So you have weird things like
+this if clause operation.
+Because you can't actually
+use normal control flow,
+you have to add operations
+to the computation graph
+that does the control flow for you.
+So in this case you would have
+this kind of if clause operation
+which takes a condition computation graph,
+and then two other computation graphs
+and then during the
+evaluation of the graph
+would return either the
+one or the other result.
+And the other thing that this means
+is that you usually have
+kind of evaluate function,
+which takes a computation graph, and then,
+for example, distributes
+it across lots of machines,
+across lots of devices.
+And then actually
+computes the output value.
+So this is the first time you actually
+get a real output value.
+The other kind of graph
+are dynamic graphs.
+If I wouldn't have
+mentioned the word graph,
+you wouldn't even think
+of this as a graph at all.
+But in this case, the graph
+is more less defined by run.
+This means that the matrices don't have
+to be fixed size anymore.
+It also means that we can use
+the program languages native control flow.
+And it means that when the
+interpreter run through,
+it is an interpretive language,
+if the interpreter runs
+through d := s * a + b
+we get an actual output value.
+And this also means
+that we don't have to do
+any kind of evaluation of the
+computation graph at the end.
+The reason why it is a graph is that
+usually these frameworks
+have to still trace
+the inputs to the outputs mainly because
+at the end you have to
+compute some kind of feedback
+and then use the optimizer's
+output to update your graph.
+So you still need some
+kind of graph structure
+just that now it's actually computed
+at each evaluation of the graph.
+Alright, now moving onto the next layer.
+The op layer I would say is
+the last level of abstraction
+before we move into actual code.
+So the idea of an op
+is that you would have
+some kind of abstraction
+over the implementation
+of some operation for multiple devices.
+So imagine you have a CPU and a GPU,
+then for some kind of
+operation like the convolution
+you would have different implementations
+for CPU than for GPU.
+And the op might be some
+kind of abstraction over that
+where the framework would then
+use whatever implementation is
+most efficient for your setup
+Here I want to talk more
+about the algorithms
+that we usually use for
+machine learning operations.
+And this very much about one
+thing which is getting to Bob.
+So this is Bob, and Bob is the guy
+who works at Intel, or nVidia, or A&D.
+And for the past 20 years, Bob
+has been doing nothing else
+than optimizing 128x128 matrix addition.
+So Bob is not a lot of fun at parties,
+but he definitely knows a
+lot about matrix addition.
+And actually not joking, I've been told
+there are guys who really
+for the past 20 years
+have been optimizing one addition.
+But my point is that we have these
+very primitive and often used operations
+which have been hyperoptimized
+for a very long time.
+And so a basic strategy we
+have in machine learning
+is that very often we'll want to
+kind of reduce our operation to something
+for which we already have one
+of these efficient solutions.
+For example, matrix multiplication.
+And I'll give you an example of that,
+Going back to convolution,
+there is a way to actually reduce
+the convolution problem down
+to a matrix multiplication.
+And then just hand it over to Bob
+who has this efficient and limitation
+in like Intel MKL or another library.
+So the way we can do this
+is essentially just by,
+for each configuration of
+the image on the kernel,
+kind of take all the values of the image
+and just flatten them out into a long row,
+into a long row vector like that.
+And for the next configuration,
+we can do the same thing.
+We just flatten it out and just put it
+into another row of the matrix.
+One thing you should notice here is that,
+between the first row
+and via the second row,
+we will actually be sharing
+two-thirds of the values,
+which is one consideration,
+but it actually turns out
+that because matrix
+multiplication is so efficient,
+and if we have enough memory,
+this is actually still a
+very efficient limitation.
+But let me just continue.
+So we would do this for every
+configuration of the model,
+of the image on a kernel
+and now we have a matrix.
+So that's a first part,
+now we need another matrix.
+And so, what we can do now is also
+simply flatten out the kernel
+and put that into a column.
+And if we have multiple kernels,
+we can simply do that for all the kernels
+that we have and put
+them into the columns.
+And now we can simply put a cross here
+and we have a matrix multiplication.
+And this is actually very similar
+for lots and lots of operations
+where we want to simply reduce them
+to one of these basic
+linear algebra operations
+that we usually have very
+efficient solutions to.
+Right, now moving on the kernel layer.
+Here we're actually talking a
+lot more about implementations
+So in general, what a kernel
+really is an implementation
+of an operation for a specific device.
+So if we have both CPUs
+and GPUs in our system
+then we'll have one kernel for the CPU
+and one kernel for GPU
+for the same operation.
+So here is one kind of function
+that we would want a kernel for.
+This is called a Sigmoid
+Activation Function.
+And in general, what an
+activation function is,
+going back to the mathematical
+model of neurons in the brain
+you have neurons which are
+connected to other neurons
+via synapses and synapses
+essentially have a kind of weight.
+That's where the idea of
+weighted edges come from.
+And the input neurons would effectively
+have some kind of signal and
+the weights of the synapses
+would be multiplied with those signals.
+And when you have a weighted sum,
+that produces some kind of activation.
+And the activation function
+in this mathematical model
+of a neuron would be modeling the rate
+at which the neuron itself
+would fire given these inputs.
+Firing means sending off its own signal.
+And so that is what
+activation functions do.
+You also have other purposes, for example,
+in our case of the discriminator,
+this particular kernel, this
+particular activation function
+has a nice property of mapping functions
+into a range of zero and one,
+which we can then
+interpret as probabilities.
+That's what we also need.
+But I just want to actually use this
+as an example of a kernel.
+And there's two things you need
+for the implementation of a kernel.
+First, is a forward pass which is actually
+just the definition of the kernel.
+In this case, the
+sigmoid denoted as sigma,
+and the input is usually zed.
+And so sigma of zed would be,
+this is the definition of the function,
+is simply one over one
+plus e to the minus zed.
+And then what we also need for
+a kernel is a backward pass.
+A backward pass is the derivative,
+and we need this for the
+optimization process.
+So for the sigmoid in this case
+is actually quite convenient
+The derivative is defined in
+terms of the function itself.
+The sigmoid at zed times
+one minus sigma at zed.
+And in this case, I can
+actually very quickly give you
+a look into, wait this looks small,
+what a kernel would look like.
+This is igen, igen is a
+matrix manipulation library
+that's used by TensorFlow.
+And I just want to give
+you a very quick look
+at what a forward pass of
+a kernel would look like.
+We'll look at a lot more code later on.
+So here is the scalar sigmoid op,
+and this is what TensorFlow, for example,
+uses for the sigmoid
+operation, it's very simple.
+It's one over one plus e to the minus x.
+And if we wanna look at the backward pass,
+this is now in TensorFlow itself,
+just again to give you a taste,
+usually for the optimization we need
+to define the chain rule which has,
+which multiplies two derivatives.
+So the output gradient would
+be one of the derivatives,
+and here is the one we're
+calculating ourselves,
+which is sigma at zed times
+one minus sigma at zed.
+This is a taste of a forward
+and backward pass of a kernel.
+I want to talk about something
+very important at this point,
+which is actually one of
+the most important aspects,
+and maybe secrets, of
+machine learning engineering
+all together, and that is quantization.
+For this I want to first tell you that,
+well in various kinds of
+machine learning models,
+one of our goals is to
+create robust architectures.
+And that means, for example,
+if you're creating an image
+classifiers for species of cats,
+then for a particular species,
+you can't always expect
+to have perfect images, right?
+On some images you'll have
+different lighting behaviors,
+you'll have different objects
+in the foreground and background.
+Sometimes the cats will look friendly
+or that's probably not the case.
+Sometimes they look like they hate you,
+sometimes they look like
+they hate you a lot.
+So generally you want your
+machine learning models
+to be robust against known variations
+of the input, robust against noise.
+Now, we can do a kind
+of thought experiment.
+If you think of a 64-bit
+floating point value,
+with 20 significant digits,
+imagine we're modeling some kind of noise,
+which is simply additive white noise,
+random value that's added to
+that floating point value.
+And imagine now that's the noise
+just so happens to be the negative
+of the last 15 digits of
+that floating point value.
+Then the result of that is
+the same floating point value,
+but with only five significant digits.
+And so if our machine learning
+model is robust against noise
+this means that the output
+should still be the same.
+And in turn that means
+that, if that is the case,
+we can simply always use reduce
+floating point precision for all our
+floating point values in
+a machine learning model.
+And so quantization
+actually happens to be,
+or has turned out to be, one
+of the most important factors
+of machine learning hardware and
+machine learning frameworks at all.
+And so the way quantization
+works, in some cases,
+that we can even go from
+64-bits down to 8-bits.
+And what this means is that we can use
+eight times less memory,
+and if you have 130 million
+floating point values,
+dividing that by eight is a huge thing.
+And also means we can send
+more things across the network.
+And it also means, of
+course that doing math
+with 8-bit floating point values
+is a lot faster than with
+64-bit floating point values.
+And the way quantization
+could work, for example,
+is that if you have the sigmoid here,
+we know that a sigmoid has an
+output range of zero and one.
+Which means that we can add
+a kind of quantize op
+to our computation graph
+which will simply linearly
+quantize that value,
+that 64-bit floating point value
+into a single 8-bit character or chart.
+Which would for example,
+map the value of 0.25
+to 64 and values between zero and 64,
+zero and 0.25 to some value in between.
+And now we have a 8-bit care,
+which we can send to some
+hardware accelerator,
+which knows how to, for example,
+do matrix multiplication
+with these quantized
+floating point values.
+And those are really fast.
+And for example, if you're interested,
+there's this library called gemmlowp.
+So GEMM stands for General
+Matrix to Matrix multiply
+which can actually operate
+on these low precision
+floating point values really efficiently.
+Right, now moving on to the lowest layer
+of our stack, which is hardware.
+I want to give a general
+idea of the kind of hardware
+we use in machine learning,
+there's three basic kinds.
+Or three kinds of processor architecture.
+The firsts are kind of
+obvious, the first one is CPU.
+And I wanna kind of make
+a metaphor with fish.
+So we all know that CPU is our
+kind of very strong processor
+we usually get a few of them
+as they're usually very few sharks.
+I mean hopefully, I've
+never encountered them.
+But there's usually very few of them.
+But they're very strong,
+they're very general,
+they can do lots of things.
+And in contrast GPUs would be more like
+a swarm or a school of piranhas,
+where each individual processor
+itself is not very powerful,
+but in their masses they're
+still extremely powerful.
+And it has actually has
+turned out that GPUs
+are one of the core factors of
+why I'm even up here
+talking about deep learning.
+Probably why you even
+know about deep learning.
+So GPUs have been the most
+important hardware innovation
+for machine learning in recent years.
+And the reason why is that,
+well what GPUs are really good at
+is doing lots and lots
+of small computations
+for each pixel of your screen.
+And as you saw earlier,
+for neural networks,
+we often have to do lots and lots of small
+operations for very many
+small units, small neurons.
+And that's why GPUs are actually just
+really, really well suited to
+a neural network computation.
+I'll show some examples of GPUs later on.
+And the last kind of processors
+are ASICs which are weird.
+The thing about ASICs,
+or Application Specific
+Integrated Circuits,
+is that they're really,
+really good at one thing usually.
+And that thing is for machine learning,
+often matrix multiplication.
+So they're really good at one thing,
+they're not very general,
+they can't do everything like a CPU,
+and they're even less
+general than single GPU core,
+but they're really good at
+the one thing that they do.
+And that's ASICs and I'll give
+an example of them in a bit.
+Alright, now we're
+moving back up the stack
+and I want to show more practical aspects
+of machine learning.
+Alright, so here is an example of a GPU,
+and I want to give some typical examples
+of machine learning devices.
+So this a Titan X from nVidia,
+and this is the kind of GPU
+you would often find in
+machine learning labs.
+We have four of these in my lab,
+and they are reasonably cheap.
+They cost between a thousand
+and two thousand dollars.
+They can nevertheless speed up
+your computation by a large factor.
+So to give you an idea,
+I'm training on a particular
+data set called ImageNet,
+which has around 1.5 million images,
+on an Intel CM5 takes around 43 days.
+And on this Titan X, takes six days.
+So that is quite a reasonable difference,
+and of course there's lot
+of optimizations afterwards.
+Just a few weeks ago Facebook research
+released a paper on
+training the same data set.
+In one hour, 256 GPUs, so we're definitely
+making progress in this area.
+Nevertheless, this is a
+good example of a GPU.
+It has 3840 cores, and
+because it's kudacores,
+each of those run 32 threads.
+And it has 12 gigabytes
+for on-chip memory.
+And I also want to quickly
+clarify what GPUs have little of
+because I think that's
+maybe sometimes unclear.
+What GPUs have little of
+is first of all memory,
+on-chip memory, so if you
+have a strong CPU node,
+you'd have something between
+64 and 128 gigs of RAM.
+So strong GPU nodes would
+only have 12 gigs of RAM.
+And what they also have
+little of is bandwidth
+on the PCIexpress between
+the CPU and the GPU.
+But the one thing that
+they do have very much of,
+and which is sometimes unclear,
+is bandwidth on the chip itself.
+So the Intel CM5 which is Intel's
+kind of flagship parallel processor,
+has around 200 gigs per second bandwidth.
+So this GPU has more than twice that.
+So they do have very high bandwidth.
+And the other thing they
+have a lot of is TFLOPS.
+So this Titan X can do 12 TFLOPS,
+the Intel CM5, I believe,
+can do around two.
+Right, another example here I want to give
+is of a typical machine learning server.
+This one is called Big Basin.
+It's designed and deployed by Facebook,
+but it's actually part of
+the open compute project,
+which mean it's open source.
+Doesn't quite mean you can
+get clear on the server
+and it will just appear in front of you,
+but you can get the clones of the plans
+and build it in your garage.
+And it has eight nVidia Tesla P100 GPUs,
+which gives it about 10.6 TFLOPS/GPU.
+It also has 16 gigs of RAM,
+and has NVLinks between the GPUs,
+which are faster than PCIexpress.
+And they also have
+support for 16 good flows,
+which I mentioned quantization
+and reduced floating point precision
+is one of the most important factors
+for machine learning hardware.
+So that's a typical server.
+Now this a typical, or one of many ASICs
+for machine learning.
+It's called a TPU, the Tensor
+Processing Unit from Google.
+And somethings I'm going to
+say here are not quite right
+because Google just released TPU2,
+but they also didn't release
+the specs for it yet.
+So I can't be more right than I am.
+But the original TPU released last year
+was a coprocessor, that's
+why I highlighted it,
+because it's not a
+general piece of compute
+like a GPU or CPU.
+It's a coprocessor, you
+attach it to another device.
+And that also means that it
+only has 24 megabytes for on chip memory.
+But one thing it's really
+good at is computation
+of matrix multiplications and you can see
+for these 8-bit quantized
+operations, it can do 92 TOPS.
+Which if you compare
+that to the equivalent,
+Titan X, is very little, is a lot more.
+So those are TOPS for 8-bit
+ints and even for TFLOPS,
+it can do 42 TFLOPS compared to 12 TFLOPS.
+So that's a typical ASIC, and
+there's lots of other devices,
+lots of startups coming up
+with exciting architectures
+to solve this entirely
+new way of computing.
+So I mean neural networks are
+really extremely parallel.
+GPUs are really parallel, but
+we need more parallel hardware
+so there's, as for
+example, a startup called
+RafCore from Bristol in the UK,
+which is developing a
+new kind of architecture
+where the thousand core is and a very
+different kind of computing architecture.
+So we're no longer talking for Harvard,
+we're talking a completely
+new way of computing.
+Now I'm going to show code in a bit.
+First of all on the kernel layer,
+there is two very important libraries
+that lots of frameworks
+like TensorFlow or Caffe
+or other frameworks use to
+implement their operations.
+And those are cuDNN and Intel MKL.
+cuDNN is from nVidia and
+it's a very low level
+primitive library for, in case of cuDNN,
+for things like convolutions
+or activation functions
+or other kinds of neural network layers.
+And in the case of cuBLAS,
+for things like matrix multiplications.
+And on the other side you have Intel MKL,
+which is quite general, so
+who here has used MKL before?
+Alright, so quite a
+few people who probably
+maybe have not done a few neural networks,
+but just for general linear
+algebra or other purposes.
+So these two libraries
+are used by frameworks
+like TensorFlow or other frameworks
+to do their lower level grunt work.
+And at this point, I'm
+going to switch over
+and show you the implementation
+of a convolution with cuDNN.
+Is that big enough, alright.
+So let's look at some code,
+and we can actually run it afterwards.
+So this here first of all is just code
+to load and save an image with open C,
+so I'm just gonna skip that.
+The one thing I want to say is that
+both cuDNN and MKL, these
+are C/C++ libraries.
+And we all know that when it says C/C++
+it's gonna be really bad,
+and it's going to involve
+a lot of pointers.
+It's a C/C++ library, but
+it's not really about them
+because these are supposed
+to be low level libraries
+wrapped by other frameworks
+so they don't really
+need to have a very pretty user interface.
+They just have to be portable essentially.
+And also because it C can be
+wrapped to other libraries
+or other languages like
+Python, or Ruby, or whatever.
+So the way cuDNN works is
+that it has descriptors
+for the various operants
+to its operations.
+So here we have, for
+example, a tensor descriptor.
+So first of all, tensor is
+simply a multi-dimensional array.
+So for example an image
+would be, a 3D image would be
+a 3D tensor, and if we stacked
+multiple of those 3D tensors
+together we get a 4D tensor and so on.
+And so cuDNN operates with those tensors
+and what we need for
+a tensor, essentially,
+is to describe the way
+it's laid out in memory.
+In this case, for example,
+we would say that it has,
+how many rows it has,
+how many columns it has,
+how many channels it has,
+and also because cuDNN
+usually operates on batches,
+we can also say how many images
+we have in a single tensor.
+And what we also specify
+here is the layout,
+and that's actually
+one of the great things
+about cuDNN is because
+different frameworks
+like TensorFlow or other frameworks,
+will have different
+ways in which they like
+to lay out their tensors in memory.
+And cuDNN has quite a lot of support
+for different kinds of layouts.
+So for example, in this case,
+the end would be the images,
+then we would have the
+height and the width.
+And then finally we
+would have the channels,
+whereas other libraries might like
+to prefer this one one down here,
+which is first the images
+and then the channels,
+and then the height and the
+width, so switching that around.
+So cuDNN has support for that.
+In this case, we would define
+a descriptor for the inputs.
+And then another descriptor for the kernel
+which we convolve the image with.
+So the input is the image,
+and then we have another descriptor
+for the convolution algorithm that we use.
+In this case, we're
+specifying a few things.
+We're specifying the
+amount of zero padding
+we add around the image.
+We specify how much, what the stride is,
+so the amount that which we slide
+the kernel across the image.
+The convolution algorithm and
+also the of a convolution.
+Then skipping down a bit here,
+what's also interesting at this point
+is that we can specify different
+kind of convolution algorithms.
+So here's what you want
+to specify, this fastest.
+But you might also want to specify one
+that uses lower memory or also
+you might have an explicit choice.
+So for example, you can
+pass, cuDNN convolution
+forward algo explicit gemm.
+And that would actually use the algorithm
+that I described earlier
+where you actually
+explicitly model the convolution
+as a matrix multiplication.
+The problem with that, I
+also outline that earlier
+is that you have lots of copies of data
+between individual patches of the image,
+so the implicit version
+which be a bit more smart
+about that and how it
+does the actual operation.
+Nevertheless, here workspace is something
+that cuDNN uses to know how much memory
+it needs for operations.
+And the actual kernel that
+we're using is this one here.
+And this essentially along the same lines
+as the kernel I showed
+earlier for the edges.
+So on a single color patch,
+this would still be zero
+because it will all be the same color.
+But on edges it'll be a non-zero value.
+And you'll see that in a bit.
+The actual convolution
+itself happens down here
+so you can see all the good
+stuff the actual malicks.
+That's C/C++, but here's the
+actual convolution operation.
+Because it's C, the function
+taken in parameters of course.
+But the actual convolution happens here,
+then we copy it to the output.
+We're using cuDNN, this
+is cuDNN by the way, this,
+I put all my code to open source,
+but it won't run on your CPU,
+if you don't have nVidia GPU.
+But then we save the image,
+and now I'm going to switch over here.
+And I can log into my lab cluster.
+Alright, here is all the stuff.
+I already made it earlier anyway.
+We can apply it, we can use this code
+to apply convolution using CppCon logo.
+This looks like this.
+So that's the image that
+we're convolving down there,
+and now we can apply the
+convolution operation.
+It's actually happening.
+We can copy over the image
+and that should open up.
+Right, and so I mentioned this
+was an edge detection kernel
+and as you can see using
+that particular kernel
+for the convolution we picked up
+exactly the edges of the image.
+And so in a neural network you would hope
+that the optimization process
+would lead to the neural network
+actually learning this
+kernel on its own and pick up
+these edges and then do more
+interesting stuff with it.
+So that was a convolution with cuDNN.
+I have an equivalent version using MKL
+in my repo that you can check out yourself
+later on if you want to.
+So that was that, I think we,
+how much time we have left?
+More than enough, alright.
+Another sample I want to
+give is actually implementing
+your own kernel for TensorFlow.
+That's the next sample,
+so let's look at that.
+Alright, so TensorFlow, I'll
+talk more about it in a bit.
+But it's essentially one of the biggest
+deep learning libraries, I'm
+going to show you how you would
+implement your own kernel for it.
+So we're going to implement
+the sigmoid operation
+which I talked about earlier.
+Just that we're gonna
+call it CppConSigmoid.
+So it's far superior of course.
+So essentially it boils
+down to very little code.
+So that's the entire file.
+You register an operation that you call,
+that we call CppConSigmoid,
+and you specify the types that you want
+to use it for, floating double.
+So TensorFlow has its own type system.
+And you describe the input and the output.
+This thing here just checks
+that the output shape is
+equal to the input shape.
+And then on here is the actual
+magic, it's very little,
+and as I mentioned earlier,
+TensorFlow uses igen.
+So you'll be dealing a lot with igen,
+which is a very nice library for tensor,
+oh sorry, matrix manipulation in general.
+And down here we perform this operation
+that I mentioned earlier.
+It's one over one plus e to the minus zed.
+And the nice thing about
+igen is that you can use
+tensors or matrices just as
+if they were single values.
+So this means that if we do minus input,
+so input is entire matrix,
+that will do an element wise negation
+and doing that dot x would do
+an element wise explanation.
+And one plus that will do
+element wise addition of one.
+And then we do dot inverse
+which computes the inverse of that,
+and that is the final output value.
+And now we can try that out.
+Close this, is this big enough, yeah.
+Alright, so let's go up here.
+Alright, so I'm making it,
+I'm actually just compiling
+up to this file with a make.
+And now we can go into TensorFlow,
+or actually into Python.
+So this is not Python this is C++ 49.
+Just looks very much like Python,
+we've made a lot of progress since then.
+So first of all, I just want
+to very quickly show you,
+demonstrate this idea of setting graphs,
+what that actually means.
+So if I define a constant
+with TensorFlow like this,
+this A thing is not actual a value,
+it's just an operation that
+is a handle to that value.
+So it represents the computation
+graph leading to that value
+and if I define B, and C
+as a + b, C is not a value,
+it's just an operation representing
+this computation graph.
+And then you usually have to do something
+like define a session, that's
+what TensorFlow calls it.
+And then you can pass to the
+run method of that session
+your tensor, or your computation graph,
+and it would map it to devices,
+map it to multiple machines
+if you multiple machines,
+but ultimately produce
+the actual output value.
+So that's what static graphs
+mean, static graph means.
+In our case we're more interested in
+actually loading our
+own kernel which we got.
+We do this with TF load up kernel.
+So we compile our kernel
+into a shared library
+and then TensorFlow has a nice mechanism
+for just loading that into
+its frameworks, framework.
+So we can load that and we can get it.
+Let's just call it m dot,
+I think it should be here.
+So this is the kernel, this
+is the thing we define.
+And now we can actually just run that.
+Now let me do s dot,
+so this is the function that we have
+and we can pass it something like 0.5.
+And if this works, then as
+you remember I made earlier
+the sigmoid at as zero, it's equal to 0.5.
+So if it works it should
+hopefully be equal to 0.5.
+And now we need to create a new session to
+evaluate it, okay, it worked.
+So as you can see with just
+like around 50 lines of code
+we added a kernel to TensorFlow.
+The one thing that we aren't doing here,
+which I mentioned earlier is
+defining the backward pass,
+which creates the derivative.
+The reason why is that
+most of the derivative
+in TensorFlow actually
+define a Python, and that's,
+I'll talk about that more later,
+but that's actually one of the flaws,
+or not flaws but one of the
+problems with TensorFlow
+that other libraries
+solve in a better way.
+Okay, so the one thing that
+I didn't want this talk to be exclusively
+is a comparison of frameworks.
+Nevertheless, I do want to
+very briefly give you an idea
+of the different kinds
+of frameworks we have
+in the deep learning space.
+The first one is TensorFlow,
+you've probably already heard
+it, already heard about it.
+And you'll see that
+most of these frameworks
+have some kind of corporate
+name attached to it.
+Whether you like it or not.
+So this TensorFlow was released
+by Google in 2015, so quite recently.
+It uses a static graph
+model, which you just saw,
+so you're not actually
+computing anything yet,
+you're just defining a
+graph in a declarative way,
+and passing it on to other machines,
+and then evaluating the graph.
+And it has support for GPUs,
+it can distribute your model
+automatically for you which is quite nice.
+It does not have very stable C++ API.
+And the reason why is that,
+well a lot in TensorFlow
+is actually defined in Python.
+And for example, the derivatives,
+so lots of the backward
+passes are defined in Python,
+and that is actually something
+the TensorFlow team is
+currently trying to solve.
+So they're kind of working backwards now
+because they define so much in Python
+but notice that people actually want to,
+for example, wrap TensorFlow
+in other languages
+or just programming from C++ themselves,
+they're now kind of working backwards
+to move more into plain C or into C++.
+And so that they can have more
+APIs based on top of that.
+But it's actually, the
+one thing that's nice
+about TensorFlow is that it's like,
+batteries and lunchbox included.
+So you can simply define your model,
+it will distribute it
+automatically for you.
+There's also parts inside TensorFlow to,
+for example, create a
+rest API for your model
+or help you with your training data.
+There's lots and lots of
+stuff inside the library.
+The one thing that I, so
+I use TensorFlow myself,
+but the one thing I don't
+like about it is that
+it's solo level, so you really define
+these basic additions and multiplications.
+And it's solo level that
+there's around 10 different
+competing higher level libraries
+based on top of TensorFlow,
+that all define the same dense layer,
+all the same convolution.
+And so can happen is that
+you read 10 different papers,
+and look at the code for
+different, for all of those papers
+and each of those implementation
+will use a different
+higher level library on top of TensorFlow.
+So that can be quite annoying.
+The other two I want to talk
+about are PyTorch and Caffe
+and I put them on the same slide
+because they're kind of complementary
+so they're both developed by Facebook.
+And Facebook took a bit
+of a different approach.
+They kind of actually
+split the responsibilities
+between research and deployment.
+So PyTorch on the left
+uses dynamic graphs.
+And I'll tell you that dynamic graphs
+are actually a lot, lot,
+lot nicer to work with
+from a research perspective
+because you can actually use
+Python or C++, or whatever,
+Python's native control flow.
+You can actually use if
+clauses and actual while loops,
+and that makes a huge difference
+especially in terms of debug
+ability because your while loop
+is not in a graph somewhere
+on a distant device.
+So that makes a big difference.
+At the same time, it's still very fast.
+So the one thing that's
+good about static graphs
+usually is that you can actually
+do things like compile them
+For example, if you have
+the operation x times x,
+in a computation graph you
+can imagine this as having
+an input x and the output x squared,
+and then two edges going
+from x to x squared.
+And then you can run a compiler
+which would for example,
+fuse those two edges into a
+single x squared operation,
+which means you only have to transfer
+the data once to that operation.
+And because the graph
+is defined ahead of time
+you can do things like
+optimizations and compilation.
+But you can't do that with dynamic graphs.
+But in this case, PyTorch
+is still very fast.
+But it's in pure Python.
+On the other side then, you have Caffe2,
+which is based on Caffe.
+Which first highlight,
+it actually has a C++ API
+that is quite usable, not
+very usable, but it exists.
+And the idea is usually you would define,
+you would do your research in PyTorch
+and then export your code into
+a format understood by Caffe2
+and Caffe2 uses static graphs
+and then can do things like
+compilation and optimization,
+and distribute your model
+across many machines.
+But it's a lot less nice to work with,
+but you have to split the
+responsibilities which is nice.
+The last framework I want
+to talk about is MXNet.
+MXNet used to be a
+community driven project,
+so not affiliated with any company,
+but then Amazon thought it would
+need a deep learning framework too,
+and it was a lot easier to take this one
+than to argue with Google
+about accepting pull requests.
+So MXNet is now developed by Amazon,
+which is actually great
+because it's a great framework,
+and Amazon puts a lot of effort
+into making it even better.
+And it's actually going
+into Apache right now,
+so very soon it'll be Apache MXNet.
+Now it's just MXNet.
+And the one thing I like
+very much about MXNet
+is that it's actually very modular.
+So they for example, they've
+abstracted the entire
+scheduling engine outside of the framework
+into a separate library that you could use
+for other kind of scheduling
+problems for example.
+So it's very modular which is nice.
+And it also has the only
+really nice C++ API with which
+you could actually define
+a proper model yourself.
+And I think we actually have time
+to show you how that would look like.
+So let's look at that,
+we're going to define
+a very simple machine learning model.
+Actually it's not simple,
+I'm not going to go
+into very much detail with it,
+but I just want to show you that MXNet
+has actually very usable
+research API and C++.
+So this is C++, as we all love it.
+And we're defining a static
+graph with MXNet using C++.
+So as you can see MXNet has these symbols.
+A symbol is a node in
+the computation graph.
+And we can simply use, would be nice,
+user facing API, for example,
+deal with convolution.
+And the convolution would be
+computation graph node itself,
+and we're passing that
+through these functions
+and to create a neural network.
+In this case, this is an image classifier.
+But we can use, it has very nice API,
+that's what I'm trying to show.
+At the bottom here, down here,
+I can show you how to actually train it
+which is also very straightforward
+so it's not very much code.
+Here we're defining the
+nodes of a computation graph.
+Here I'm initializing
+them with a value sample
+from a normal distribution,
+and the actual training itself
+happens down here where we're
+just calling that forward,
+which does the forward
+passes on the kernels,
+and now backward which does the
+backward passes on the kernels.
+That's essentially it, it's
+around 250 lines of code
+to create a full fledged neural network
+using this pretty nice C++ API.
+And now we can do something
+here, let's go up.
+Okay, so can try this out.
+I think I need to remake this.
+I have some variables here.
+This should hopefully be fast.
+Okay, this is actually going to live.
+This is gonna take six days so
+I'll see you back next week.
+No, it actually just
+takes around a minute.
+But also, I'm still going to move on.
+I think this is actually the last part.
+So we can actually just
+start taking questions now,
+and this should be finished
+in a minute or two,
+and I'll show you the demo
+using a real neural network and C++.
+Alright, so any questions.
+(applause)
+- [Man] Hi, you showed performance
+with nVidia's best GPU,
+can you try running
+with Volta architecture
+and did you get any
+performance improvements?
+No I have not run it with Volta,
+and getting access to GPUs
+at all is a nice thing,
+and I don't have that amount
+of hardware in our lab.
+I imagine it's a lot more efficient
+using those more modern GPUs.
+I mean, nVidia has also
+a lot better hardware
+than the one I showed, it
+was just more of an example
+of a typical GPU you would find in a lab.
+But I haven't used the Volta.
+- [Man] Yeah, I'm very interested
+how it compares with the Google stuff.
+And I've seen like impressive numbers,
+so I want to know if it
+actually performs that well,
+you know, for real in this case.
+Right.
+Okay, thank you.
+Alright, yes?
+- [Man] So you said you can
+reduce your precision of the variables
+to 8-bit but it doesn't really matter,
+but the neural net is
+supposed to be robust
+against the fluctuations.
+Yeah.
+- [Man] But there must be some trade offs
+because you can't reduce
+it to like one-bit, right?
+Like what is the trade off that
+you're doing at this point?
+Well, I mean, you're not
+getting the same accuracy
+for sure, and then what's
+also important to know
+is that the training itself
+would still happen with 64-bit floats,
+but once the node is trained,
+once it's robust against noise,
+it can use, reduce
+floating point precision.
+You can't scale it to 1-bit.
+Actually there are no networks
+that use a single bit
+and they work quite well.
+But the trade off you're
+making is accuracy.
+So with 8-bit floats,
+you might not get 99%,
+you might get 97%.
+So you'll have reduced accuracy
+because you'll have reduced precision.
+But the point is that you
+have much more performance
+that is actually a good trade off.
+- [Man] Alright, thank you.
+Yeah, alright so if everyone,
+anyone still around,
+this is now trained, and I made a cute.
+So anyone with half a
+mind would tell you that
+doing a live demo with
+a stochastic program
+was the worse idea ever,
+but I'll risk my neck.
+See if this classifier that
+I showed you actually works.
+So this is a handwritten digit classifier
+and if this works, then
+maybe this will, yes.
+Actually do something.
+So the code I showed you
+with 250 lines of code
+actually trained a very nice,
+cute little neural network
+that predicts the digit
+that I am drawing here,
+reasonably well I believe.
+At least 50% of the time
+it works every time.
+Alright, yeah, that's it for my talk.
+(applause)
+- [Man] So my question is you showed
+a lot of neural network frameworks.
+Are there any other sort
+of general classifier
+frameworks for learning
+models, such as SVM,
+or basic networks, stuff like that?
+You mean more like higher level networks,
+or you mean for more
+general machine learning?
+- [Man] I mean in like C++ for example,
+are there other frameworks
+that you're aware of
+that can do these other kind of learning?
+Do you mean higher level tasks
+or do you mean other
+kind of machine language
+except for neural networks?
+- [Man] Other machine learning, sorry.
+Yeah, there's one called DLIB.
+DLIB is quite old and it's quite mature
+and it's been used for a long time
+for other things like SVMs
+or other kinds of machine learning models.
+They have pretty nice
+neural network API as well,
+but it's very useful for a lot older
+and more and more mature stuff, yeah.
+- [Man] Thanks.
+Sure.
+- [Man] So what would you
+say is the main benefit
+of doing deep learning
+C++ compared to Python?
+Does it train any faster,
+operate any faster?
+No, no there's actually, the only reason
+why you would want
+actually define your model
+in C++ is because you
+have a pure C++ code base.
+The a lot, if it's possible,
+the much smarter way of
+doing it is to use Python,
+which is just a lot
+faster to iterate with,
+and then train your model and export it,
+and load it in C++ using for example,
+the TensorFlow API, which
+has a very sweet API
+to just load a trained model
+and then you can integrate
+into your C++ service,
+and just use predictions from C++.
+So that's actually the better way.
+But sometimes you just
+might prefer C++ for fun
+or sometimes you don't have
+choice of using an external code
+- [Man] Thank you.
+- [Man] Coming back to
+that resolution question,
+is it possible to do a couple,
+like the bulk of the training passes
+with low resolution and then at the end
+just continue training
+with a higher resolution?
+Once it's like sort of
+good, stop in that position?
+You could probably do that.
+People have generally found
+that doing the reduced
+precision during training
+is not a good idea, but
+at the same time I think,
+yeah, I mean, doing reduced precision
+would probably reduce the training time,
+but I imagine the idea is that
+if it takes two weeks to train
+then it's trained and your done,
+and then afterward the
+performance really counts
+once you run your service.
+But that might be an
+interesting idea, yeah.
+Alright, looks like we're done, thanks.
+(applause)

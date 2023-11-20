@@ -1,0 +1,214 @@
+ All right, in this video, let's now talk about Alex net trained
+ on cipher 10. So just to recap how Alex net looks like it's
+ this architecture where we have as input 96 channels, then 256
+ going from 90s. So the input images, first of all, are 224
+ times 224 times three. The first after the first convolution,
+ it's 96 channels, then 256 channels, 386, I think it should
+ be 384. Like I mentioned, I think this was a typo, then
+ another 384 256. And then these fully connected layers, and you
+ can see, these fully connected layers are really huge. So
+ there's 4096 4096, and then 1000 class labels, I shortened the
+ first layer a little bit from 96 to 64. But overall, I try to
+ keep the same architecture that I implemented. Notice that we are
+ not training it on image net, we are training it only on cipher
+ 10 images, which are smaller. So that way, I made some small
+ adjustments to account for the smaller size of the input
+ images. So here, everything should be the same as before.
+ I'm actually not rerunning this now, because this might take a
+ while, I will show you at the end how long it took to train
+ this architecture. So I ran this on a GPU also. So first of all,
+ I let me only go through the changes that are different from
+ the net that I showed you before. One change is that we
+ now have cipher 10 images instead of MNIST images. So what
+ I'm doing here also is I'm making the cipher 10 images
+ larger than they really are. So cipher 10 is 32 times 32. But
+ I'm making them larger, like 70 times 70, because otherwise, I
+ get problems with the dimensions. Because otherwise,
+ we go back to the overview here. Otherwise, here at this point,
+ the height and width will be too small, essentially, they will
+ be non existent, basically. So in that way, I have to resize
+ the input images to make this network architecture work on
+ cipher 10. And what I'm doing is also to make the network a
+ little bit more robust towards overfitting. What I'm doing is
+ I'm doing a random crop. So I'm randomly clock dropping a 64 by
+ 64 region from the 70 times 70 input that's during training and
+ every time a really different random crop. Then, yeah, the
+ regular to tensor thing. And then here, I'm normalizing the
+ channels, the color channels to be a center, the pixels to be
+ centered at zero, you could technically also compute the
+ standard deviation and mean from the actual image data. But here,
+ what I'm doing is I'm just normalizing them in a very
+ simple way, that the pixels are centered at zero, and have mine
+ in the range between minus one and one. That is the same as I
+ did with MNIST before, but now I have three color channels. So
+ that's why I'm doing it like this. If I just go back to my
+ MNIST one, I only had one color channel. So I only had point
+ five here. All right. Notice that I'm only doing this random
+ crop for the training. I don't want any randomness when I apply
+ my model to, let's say new data during prediction, and validation
+ and test data. I'm mimicking new data, because I use that data to
+ evaluate how well my model might perform on new data. And it
+ wouldn't make sense to have some random cropping for new data. If
+ you have, let's say, customer, let's say at the airport, or you
+ want to do face recognition to see whether the person at the
+ airport is the same as on the passport or something like that,
+ you do don't want to just do random crops and predictions, you
+ just want to do center crop. So the random crop is just to make
+ the model more robust towards small perturbations. Yes. So here
+ we use then the center crop instead of this random crop. The
+ rest is all the same as before. I have my images, my batches are
+ 256 in size, three color channels, 64 pixels high and 64
+ pixels wide. And I also have 10 classes. Here's the Alex net
+ architecture now. So can maybe highlight the blocks. So this is
+ one convolutional block. And there's another one, just
+ separating them out here. So these are the convolutional
+ blocks. Yeah, I only have max pooling, essentially. Oh, sorry,
+ what I did was not ideal. I should have done it like this
+ max pooling, come to me, or I do max pooling. Okay. Notice here
+ is no pooling in between. So yeah, just separated them into
+ blocks. Can't see it here might be might be visible here. So you
+ can see, max pooling, max pooling, max pooling, but no
+ pooling here. Try to implement that here. So that is how the
+ Alex net looks like that is now the feature extractor part. So
+ this whole part here is the feature extractor parts, I call
+ it again features. So it's essentially that part up to up
+ to here. And then the right side here is the multi layer
+ perception part. So yeah, I call it again, classifier. I also
+ have an adaptive average pooling here. So what that will do is
+ it will take whatever size that is, whatever size comes out of
+ here, and pulls it such by averaging such that the output
+ feature met will be six by six. So in that way, I can rely on
+ that that what comes in here in the linear is 256 times six
+ times six, because here, I know that the number of channels that
+ comes out of here is 2256. So if I go back here, that's 256. And
+ I know the size is six by six. That's I'm saying it by average
+ pooling. So if I give it larger images, if I give it images that
+ are 150 times 150, it will also work the same way, I don't have
+ to adjust my code. However, if I have images that are smaller
+ than whatever I have as input, like the original cipher 10,
+ 10, this will not work because at this stage, we may have a
+ three by three or something like that. And this doesn't upscale
+ it only downscales, but doesn't upscale. So what I'm saying is,
+ if I would change it to 30 times 30, everything on it, I have to
+ also change that to something like smaller than 30. You get
+ the idea. If this is smaller than 70 times 70, this will
+ fail. Because what comes out of here is not three, six by six,
+ it might be three by three, for instance. So adaptive average
+ pooling will downsize something to a common size. And this will
+ allow me then also to receive larger inputs. So in that way,
+ the architecture is not so picky towards the exact resolution.
+ If I wanted to train, let's say on a different data set. Okay,
+ so here, that's my fully connected part. So I'm using
+ dropout in between that they use dropout, actually, or did I think
+ I just added it because I had the overfitting? Yeah, I think
+ so. That's, I don't think they had it in the paper, but I would
+ have to double check. I can't see it here. I would have to
+ double check in the paper. But I'm pretty sure that's something
+ added because I was having massive issues with overfitting.
+ I will show you next. Alright, so here we have the features.
+ Then we have this average pooling that brings everything
+ down to six by six. And then here, this is my fully connected
+ one, I could have used a flattening actually, could have
+ used the where's it could have used the flatten. But well, I
+ didn't think the flatten is also relatively new. So I sometimes
+ forget to use it because it's just recently added. And then
+ I'm calling my classifier, which gives me my predictions. And
+ that is, then here, everything is the same as before. I'm
+ using again, the same SGD with momentum, running rate
+ scheduler. Same thing. But now it takes much longer to train.
+ So it took I was running it for 200 epochs. And it took a long
+ time. Took approximately three hours almost. And what was also
+ interesting is, so usually what I do is when I train a network,
+ I take a look at, at this output here. So it's maybe also as a
+ tip for your homework three, when you train the network, you
+ want to see that the validation goes up. And you want to see
+ that the loss goes down. Here, it's going up, I would give it
+ maybe sometimes a bit more time, sometimes it goes a little bit
+ up. But you want to see at least maybe four or five, six epochs
+ that the loss decreases, if you see that does not increase, or
+ it even increases, I would actually stop the training
+ because then it's usually that you have a learning rate that is
+ too large, or other issues. So but yeah, here I saw, okay, it's
+ training well. And then I saw, okay, what's going on? 686667.
+ No, it's something's weird here. And somehow, I honestly almost
+ wanted to stop it here. But I was busy with other things. And
+ I just let it continue training. It goes even down to 62. I
+ didn't stare at it the whole time, because it was like 25
+ minutes, I was doing something else in the meantime. And then I
+ was quite surprised when I looked at the plot. I had
+ actually this double descent phenomenon that I talked about
+ in a previous lecture. So first of all, the loss went down, and
+ then when went up again, and then with this double descent
+ over the epoch, so the epoch wise double descent, I saw it
+ went down again. And then it stayed here. So you can also see
+ the same thing for the training validation accuracy improves,
+ then it comes worse and then improves again. But overall, you
+ can also see the huge degree of overfitting 20%. That's I had
+ already dropped out, but I didn't help that much. And
+ that's still overfitting. So one thing that might help is maybe
+ adding more dropout, or also adding more data augmentation.
+ So if you go here, if you go here, instead of just random
+ cropping, you could also do something with a color jitter
+ and rotation and things like that, that might also help with
+ the overfitting. So in practice, if you find overfitting like
+ that, but yeah, I was a little bit under time pressure to get
+ this code finished for the lecture. And it already took a
+ long time. So I didn't want to rerun everything to reduce
+ overfitting might be an interesting exercise if you're
+ interested to try this out. Okay, so then I'm just looking at
+ some results. I visualize them. So notice here, I'm doing I'm
+ using this unnormalized function that I implemented somewhere in
+ my helper function, I think I have it here. See, let me maybe
+ double check where I implemented that. Let me scroll up on
+ normalized data sets. Yep.
+ All right here. So here, the unnormalizing is essentially
+ undoing my normalization with this point five. So here, I do
+ the normalization. And here, I'm undoing my normalization so that
+ I can plot the images. So I'm essentially multiplying by the
+ standard deviation, and then adding the mean, and I do that
+ for every channel. That's just a very compact way of writing
+ this, you don't have to understand this in detail. It's
+ just very efficient. I mean, I wanted to just write this in one
+ line itself, writing too much code here. Alright, so
+ essentially, this will unnormalize. So I have to
+ provide the information that I used for normalizing. So I
+ provide them the same way and just as the same thing as the
+ normalizing, but inverse, like reversing it. Alright, so then
+ I give it also the class dictionary with the names so
+ that in my plot here, my show examples, but I can actually see
+ the names, the predictions can see actually, and this looks
+ cool. Here, that's funny. It actually, it gets docs and cats
+ wrong. So the predicted label is dark and the true label is a
+ cat, which I think justifies the fact that so many people work on
+ cats versus dog classifiers, because it's actually a
+ challenging problem. Okay. And then again, my confusion matrix
+ here, just to look at what they get currently wrong, you can see
+ it's kind of interesting, the dog versus cats is a category
+ that is often almost often wrong in this data set. It's kind of
+ funny. Also ship an airplane here. And frog and cat or frog
+ and cat. I mean, you're not that similar. But okay. Yeah, so that
+ is how Alex networks. And it's essentially, overall, it's the
+ same as the net, except that we have no color channels. And the
+ network architecture is of course, bigger. So if I just
+ grow up again, takes longer to train. And it's Yeah, you can
+ see it's it's much bigger than our the net before, which was
+ just, yeah, smaller network. All right, that's it then for the
+ next I mean, okay, let me just briefly go to this one, because
+ I have it. So yeah, I trained another CNN, if you're
+ interested, try to get better accuracy. But it's just a CNN
+ with batch norm and leaky relu and to drop out trying to reduce
+ the overfitting. Um, but yeah, you can see, it was not that
+ much better. It gets some somewhat better accuracy. It
+ trains only 3030 minutes instead of three hours, which is also an
+ improvement. Doesn't have this double descent, but it's still
+ overfitting by a lot. It gets 100% training accuracy, which
+ is quite surprising. So okay, yeah, it's another network gets
+ confuses a deal with an airplane. It's also interesting.
+ Also, the cat was a stock is wrong here again. Yeah, also cat
+ was a stock. It's apparently a challenging, challenging
+ category. All right. So that's it then for this lecture. In the
+ next lecture, we will take a more detailed look into
+ different neural network architectures. I mean, these two
+ Lynette and Alex net are really like beginner architectures.
+ They are quite old, but there are more powerful architectures.
+ And yeah, that's the topic of the next lecture.

@@ -1,0 +1,2017 @@
+[MUSIC PLAYING]
+Hello, Free Code Campers.
+Welcome to this workshop
+on declarative gestures
+and animations in React Native.
+I'm William, maker of the "Can
+it be done in React Native" YouTube series
+In this workshop, I would
+like us to do five things.
+First, to discuss why the topic
+of gestures and animations
+is so peculiar in React Native,
+and what kinds of strategies
+and APIs we are going
+to use, in order
+to implement user interactions
+that run smooth as butter.
+From there, we can
+look at transitions.
+Transitions as the easiest
+way to animate components
+in React Native.
+And we're going to build a
+component with two states.
+One state-- the cards are
+overlaid on top of each other.
+Second state-- they
+are nicely fanned out.
+And we are going to
+declare a transition
+to animate nicely from
+one state to the other.
+And then, we're going to build
+the simple timing animation
+that we can loop, pause, resume,
+pause, resume, using Bare Metal
+animation APIs.
+Getting to know
+these low level APIs
+would be the key to
+success for us to harness
+gestures and animations
+in React Native.
+And then, it will be time to
+add gestures into the mix.
+And we are going to build this
+nice wallet user experience.
+So we can swipe
+for cards nicely.
+And they animate very nicely
+depending on their position.
+Finally, I would
+like to show you
+what these gestures and
+animations integrate very
+nicely with SVG, and
+we're going to build
+this really cool circular
+slider using gestures and SVG
+animations.
+This workshop will
+only be scratching
+the surface of the exciting
+wall of gestures and animation
+in React Native.
+And to conclude,
+I would give you
+all the resources
+that I know of,
+in case you are interested to
+go further with this topic.
+In the video description, you
+will find the GitHub repository
+with all the code examples as
+well as the boilerplate files,
+in case you want to
+code along in the video.
+And also available in
+the video description
+are all the timestamps for
+each of the different chapters
+of the workshop.
+So Free Code Campers,
+are you ready to discover
+the powerful world of
+declarative gestures
+and animations in React Native?
+Let's get started.
+[UPBEAT MUSIC]
+When building gestures and
+animations, the key to success
+is to avoid frame drops.
+We want the user
+interaction to run
+at 60 frames per second,
+which means that we only
+have 16 milliseconds
+to compute everything.
+And this is a very simple
+diagram of the React
+Native architecture.
+We have the JavaScript Thread,
+which runs the react code,
+and the UI Thread
+which interacts
+with all the native components.
+And they talk to
+each other using
+what we call the async bridge.
+They asynchronously send
+each other JSON messages.
+So if your gesture or animation
+relies on communication
+between these two
+threads, it is very hard
+to guarantee that the
+animation frame can
+be computed within
+16 milliseconds,
+and you are likely
+to draw up frame.
+There are a couple
+of reasons for that.
+First, because of these
+asynchronous messages
+that needs to be
+passed and serialized,
+you might drop a frame
+on the low end device,
+and the JavaScript Thread might
+be busy doing something else.
+For instance, processing the
+response of an HTTP request.
+So maybe you have a gesture.
+So the UI Thread says to
+the JavaScript Thread,
+should I grant the gesture?
+And the JavaScript
+Thread might be busy
+processing the response
+of an HTTP request.
+So is not able to reply
+within these 16 milliseconds.
+And you're going
+to drop a frame,
+and the user experience is
+not going to feel very smooth.
+So the way we are going
+to circumvent this problem
+is by declaring all of our
+gestures and animations
+before hand, which
+means that there
+is no communication between the
+JavaScript Thread and the UI
+Thread.
+So it doesn't matter if the
+JavaScript Thread is busy
+doing something else,
+because the UI Thread is
+going to be able to
+do all the tasks he
+needs to do for each frame.
+And plus, because there is no
+communication between the two
+Threads, we are sure that we are
+able to compute the animation
+frame within these
+16 milliseconds.
+And I would like to
+show you an example
+of what this means concretely.
+So here I am dragging
+around this component.
+And we implemented this example
+using the default gesture
+and animation API
+provided by React Native.
+I call it a vanilla
+animation APIs.
+And as you can see here,
+the gesture depends--
+relies on communication
+between the JavaScript
+Thread and the UI Thread.
+So to grant as a gesture, we
+need to execute some JavaScript
+Thread.
+When we move the
+view around here,
+everything is done on the--
+because we use these
+animated events,
+everything is done
+on the UI Thread.
+So there is no communication
+between the JavaScript
+and the Native side.
+And when we reduce
+the gesture, we also
+rely on JavaScript code.
+And so because we have
+this mix of imperative code
+and declarative code, if the
+JavaScript Thread is busy,
+this user interaction is
+not going to run smoothly.
+And in fact, what I can
+do is to modify the code,
+so that we observe
+JavaScript Thread--
+we make the JavaScript
+Thread busy.
+So I'm going to loop
+5,000 time and maybe
+like print something like
+[? JS ?] Thread busy.
+And now, you see I cannot
+move the ball around
+because the JavaScript
+Thread is busy.
+And so we are not going
+to use these APIs,
+because these APIs
+rely on communication
+between the UI Thread and
+the JavaScript Thread.
+And what we're
+going to use instead
+is two libraries, React Native
+Reanimated for animations
+and React Native Gesture
+Handler for gestures.
+And what these libraries
+do is that they
+enable you to implement all
+of the gestures and animations
+declaratively on
+the UI Thread, which
+means that when you have your
+gesture and animation running,
+there is no communication
+between the two Threads
+that is involved.
+So here, if I make the
+JavaScript Thread busy,
+it doesn't matter
+because there are
+no communications between the
+UI Thread and the JavaScript
+Thread.
+So this is the
+same implementation
+but using declarative
+gestures and animations
+using React Native Gesture
+Handler and React Native
+Reanimated.
+And now, so everything
+is done declaratively.
+And now I can make the
+JavaScript Thread busy.
+So [? JS ?] Thread busy.
+So now the loop is
+running, but because I
+don't rely on the
+JavaScript Thread,
+you see I can still move the
+ball around the smoothly.
+And so this is the heart
+of the matter declaring
+all the gestures and
+animations before.
+And this will
+guarantee us to build
+user experiences that will
+run at 60 FPS even on low end
+devices.
+[UPBEAT MUSIC]
+In this example, I
+would like to show
+you the power of
+transitions in React Native.
+Transitions are the easiest
+way to animate components
+in React Native,
+and the way it works
+is that we can attach an
+animation value to a change
+of state in a component.
+So here, I have a
+very simple component
+with a very simple state,
+toggled is true or false.
+If the toggle is
+true, we apply here
+a rotation, which is
+index minus 1 times alpha.
+So alpha is [? 30 ?] degrees.
+Pi is 180 degrees divided by 6.
+And here I do index minus
+1, minus 1 times alpha.
+So if index is 0, 0 minus 1 is
+minus 1 times [? 30 ?] degrees.
+So we'll have a minus
+[? 30 ?] degrees.
+If index is 1, so the
+count in the middle,
+we would have 1 minus 1, 0
+times [? 30 ?] degrees, 0.
+So there won't be any rotation.
+If it's the [? third ?] card,
+we will have index [? 2 ?]
+[? to ?] minus 1 is 1.
+So we'll have [? 30 ?] degrees.
+So we see here.
+Here we have the
+cards constants,
+which contains six cards.
+We select 3.
+And we calculate the rotation.
+When pressing this button,
+we toggle the state--
+so to its opposite value.
+And so if toggled is false,
+we have a rotation of 0.
+And what we can
+do here is to use
+a hook called useTransition.
+That will give us an animation
+value that will go from 0 to 1
+when toggled changes.
+So if toggled is false, the
+animation value will be 0.
+If toggled is 1, the
+animation value will be 1.
+And the way the transition
+from 0 to 1, 1 to 0 [? goes ?]
+can be a timing function,
+can be a spring function,
+and can be any configuration
+of the animation functions
+that you want.
+So let's get this
+animation value.
+Here we're going to
+call it transition.
+And we're going to use a
+function called useTransition.
+useTransition comes
+from a package
+called react-native-redash.
+So we are going to use
+react-native-reanimated
+and React Native Gesture Handler
+for the declarative gestures
+and animations.
+And I created an
+open source package
+called react-native-redash.
+I see it as being the
+[INAUDIBLE] of Reanimated that
+provides us with a lot
+of utility functions,
+such as this useTransition hook.
+But you don't have to be
+intimidated by [? it. ?]
+These are just helper
+functions on top of Reanimated
+and Gesture Handler.
+You can look at the source
+code of some of these functions
+to see how it works
+behind the scene.
+But these are usually very
+simple helper functions.
+So this function
+takes two arguments.
+The first is the state
+we want to transition on.
+And here it's toggled.
+And then we can pass an
+animation configuration.
+So for instance, by
+default, useTransition
+is using a timing function.
+And maybe I want the
+duration to be [INAUDIBLE]..
+You can set some easing.
+You can have a spring
+function instead.
+So here we have our transition.
+And what we want to do is
+to interpolate the rotation
+based on the transition.
+So here, you see we
+have the View component.
+Here we use Animated.View.
+Animated.View is an
+animation wrapper around view
+so that in these
+style properties
+we can use animation values.
+So here we pass a string, which
+is a rotation value in radians.
+But now because we
+use Animated.View,
+this style property can also
+accept animation values.
+So here, rotate is going to
+become an animation value.
+And we are going to interpolate
+it using transition.
+So we can write it
+using interpolate
+from react-native-reanimated.
+So the animation value
+is [? a ?] transition.
+Input range is 0, 1.
+And output range is if toggled
+is 0, the rotation is 0.
+If toggled is 1, the rotation
+is index minus 1 times alpha.
+So I need to import interpolate.
+Let's have a look.
+So you see here it nicely
+transitions from one state
+to the other.
+It looks very cool.
+Again, speaking of helper
+functions in redash,
+we are going to have a lot
+of these animation values
+that go from 0 to 1.
+And we're going to interpolate
+always from 0 to 1.
+There is a helper function
+called mix in redash.
+So here we import
+mix from redash.
+And it's the same
+implementation as mix
+in [? OpenGL. ?] So
+we can pass directly
+the output range like this.
+So from 0 to index
+minus 1 times alpha.
+So just a nice shortcut.
+And here it is.
+And the last thing we
+can do is to change
+the transformation of origin.
+So here you see by default
+is the center of the card.
+And the way we transform the
+origin in react-native using
+the transform API is that we are
+going to translate to where--
+so from the center of origin
+to where we want the new origin
+to be, do the transformation.
+And translate back.
+So, here we want to translate
+so the default origin is
+half of the width of the card,
+half of the height of the card.
+We want to translate to minus
+half of the width of the card.
+Do the transformation.
+Translate back to half
+of the width of the card.
+So we're going to
+write translate x is
+minus card width divided by 2.
+We do the transformation,
+which is rotate.
+And translate back.
+So translate x is card
+width divided by 2.
+And so here you see
+it nicely changes
+the transformation of origin.
+And here again, we have a nice
+utility function in Redash
+to perform such a
+transformation of origin.
+And it's called
+transform origin.
+And the first parameter is
+the new transformation origin.
+So here we have x, which
+is minus card divided by 2.
+Y is 0.
+We don't change it.
+And the transformation
+is rotate.
+And so here it is.
+So transitions are a great
+way to animate components
+in react-native with little
+to zero knowledge of gestures
+and animations.
+So just a great way to animate
+changes in your component
+states.
+[MUSIC PLAYING]
+In this example, we are going to
+build a simple timing function
+using some bare metal
+APIs from Reanimated,
+and getting to know
+these low level APIs
+will enable us to build
+incredible user experiences.
+So here, I have a
+chat bubble component
+that takes a progress property,
+which goes from 0 to 1.
+So this is the state at 0.
+We can look at the
+state at 0.5, 1.
+And so we're going to
+go from 0 to 1, 1 to 0.
+And there is a state play,
+which is true or false.
+So we want this
+looping timing function
+to be pausable and
+resumable nicely.
+And in order to implement
+this timing function,
+we are going to use
+all the concepts
+that react-native-reanimated
+has to offer, or almost all
+of the concepts.
+And one of these
+concepts are clocks.
+So clocks are
+animation values which
+update themselves across time.
+So by default, the
+value of a clock is 0.
+You can invoke a function
+called start clock on it.
+And every frame, the
+clock animation value
+will update itself
+with a timestamp.
+And this will enable us to
+build animations across time.
+Then there is a stop clock
+function to stop the clock.
+So the clock animation value
+will stop updating itself.
+And there is a
+function called clock
+running to check if the
+clock is running or not.
+And so the way you can
+create a clock is like this.
+So it's clock from Reanimated.
+We want here because we're going
+to have many [? re-renders ?]
+when the state changes.
+We don't want to recreate
+a new clock every time.
+We want the clock
+identity to match
+the lifecycle of the component.
+So we want to always have the
+same clock for every instance
+of our timing component.
+And so we can use a
+helper function for that.
+Again, from Redash,
+which is useClock.
+And here for progress we
+can use an animation value.
+So you would do new value
+[? is 0 ?] from again,
+React Native Reanimated.
+But we also want the identity
+to be preserved across
+[? re-renders. ?] So we're going
+to use useValue from Redash.
+And these are simple wrappers
+using [? a lazy ?] [? useRef ?]
+to have--
+sorry.
+I need to import from Redash.
+So what we are going
+to do is that we're
+going to use a hook
+called useCode, which
+allows us to declare
+animation nodes to be
+run for every frame
+on the UI Thread.
+So the function signature--
+the hook signature-- is very
+similar to use [? effect. ?]
+The first argument is a
+callback that returns here
+an array of animation node.
+The second parameter
+are the dependencies.
+Here we have none.
+We want these animation nodes
+to have also the same lifecycle
+[INAUDIBLE] timing component.
+And so what we're going
+to do is use the clock
+to control the animation.
+If the clock is not running,
+the animation is paused.
+If the clock is running,
+the animation is running.
+And so by default,
+here, we're going
+to want the animation to run.
+So we're going to
+use startClock.
+And what we're going to do is
+assign to the progress value
+some timing function.
+So some function
+that we are going
+to call runTiming and pass
+the clock as parameter.
+So let's create it here.
+So runTiming is a function that
+receives a clock as parameter.
+And we're going to return
+some progress value.
+Execute also a bunch
+of animation nodes.
+So you can use block
+in order to do that.
+Takes an array of animation
+nodes as parameter
+and will execute these
+animation nodes sequentially.
+So maybe I return 0.
+So the last node in the array's
+value [? that is ?] returned.
+And so you know--
+you see here I'm
+not writing progress
+equals runTiming.
+Because these are not
+imperative instructions
+that are run on the
+JavaScript Thread,
+but declarative
+animation nodes to be
+executed on the UI Thread.
+So this is-- here it's not
+a code that is executed,
+but it's a declaration
+for code to be
+executed on the UI Thread.
+So we're not going to use the
+if else syntax from JavaScript.
+We are going to use the
+condition animation node.
+We're not going to use equal,
+but set animation node.
+And so on.
+So Reanimated provides us
+with all the animation nodes
+we need in order to declare
+complex animation states
+and interactions
+on the UI Thread.
+So lets write our
+runTiming function.
+So I need to import this
+one from Reanimated.
+So if we look at the
+timing function from
+react-native-reanimated,
+we see that it takes three
+parameters-- the clock, so
+to you know, see where--
+how we evolved across
+time, the animation state.
+So finished position.
+[INAUDIBLE] position will
+be from 0 to 1, right?
+Time, and frame time.
+[? So ?] [INAUDIBLE]
+last clock values for the
+last evaluation and 0 to 1
+if the animation
+is finished or not.
+And then the animation
+configuration.
+So the target value
+duration easing.
+So you see, if you are familiar
+to the vanilla animated
+API from React Native, it's
+a bit more complex to execute
+a simple timing function.
+But this-- so the barrier
+to entry is higher,
+but this is way more
+powerful functions.
+So this is why I really want us
+to look at the low level of how
+these functions work.
+Because this will enable us,
+down the road, to go much,
+much further.
+Because these functions
+are incredibly powerful.
+So let me copy paste
+here, the function.
+So timing from React
+Native Reanimated.
+And so the clock we
+get as parameter.
+Let's create the state.
+So I'm going to create it here.
+State.
+So I'm going to assign an
+animation value for each state.
+Position, frame time, time.
+And we have the config.
+So toValue, we're
+going to update it,
+depending-- toValue is
+if the position is 0,
+the position is going to
+be our starting value.
+If the starting value is 0,
+the destination value is 1.
+And if the position is
+1, the destination value
+is going to be 0.
+Duration, I don't know.
+Let's put 3 seconds.
+And easing we can put
+whatever, I think.
+In, out.
+And it does not like
+the configuration.
+So I have [? how ?] is
+the syntax of the easing.
+Here I'm importing easing
+from vanilla react-native.
+But I need to import
+the one from Reanimated.
+So that should be good.
+This is where [INAUDIBLE]
+[? script ?] is so useful.
+So here we execute the timing
+function for every frame.
+And what we want to
+return is the position.
+So state.position.
+So we see it animates
+nicely from 0 to 1.
+At 1, nothing happens.
+So at 1, what we need to do--
+so if state.finish equals 1--
+so you see here, we are
+not [? write-- ?] again,
+we are not writing if else,
+because this is not just code
+that is executed imperatively.
+This is a declaration.
+So we use a condition
+animation node.
+That is a declaration
+to run on the UI Thread.
+So if the state of the
+animation is finished,
+we want to reset these
+animation values.
+Position we will leave.
+But we need to update
+the [? toValue. ?]
+So let me reset the state.
+So is finished is 0.
+We want to loop.
+FrameTime time we reset as well.
+Because we are
+restarting the animation.
+Position we keep.
+If it's 1, it's still 1.
+We want to continue
+where we were.
+So state.time.
+But what we want to change
+is the destination value.
+So config toValue is going to be
+the opposite of state.position.
+If position is 0, the
+[? toValue ?] is 1.
+If position is 1, the
+[? toValue ?] is 0.
+So here I need to
+import these nodes.
+So you see it loops nicely from
+1 to 0 and now from 0 to 1.
+Now let's make the
+animation interruptible.
+So you see here, you might
+be under the impression
+that this is a lot
+of boilerplate code
+to write a simple
+looping animation.
+There are utility animation
+functions in Redash
+that allows you to do these
+in a few lines of code.
+Because all this boilerplate
+can be done for you.
+But I find it to be extremely
+important to understand
+how these clocks and
+animation evaluation work.
+Because this can
+really unlock the power
+of complex declarative
+gestures and animations
+as we run at 60 FPS.
+So this is why here we are doing
+all the boilerplate manually.
+So here we have the state play
+which becomes true or false.
+And the first thing
+I want to do is
+to have an animation value
+that matches the state of play.
+So if play is true, I want
+my animation value to be 1.
+If play is false, my
+animation value to be 0.
+So here, we're going
+to create an animation
+value called isPlaying.
+So default value is 0.
+[INAUDIBLE] default
+state is false.
+So that's good.
+And we're going
+to create a hook.
+Again, a useCode hook.
+That we set the
+animation value isPlaying
+to match the state
+of the play variable.
+And you see here, I could
+write it here, in useCode.
+But I'm having different
+dependencies now.
+So let me show you.
+So I do isPlaying.
+So if play is true it's 1.
+If not, 0.
+And here the
+dependencies is play.
+So when play changes,
+this instruction changes.
+Because it depends
+on the play variable.
+And this is why I'm putting it
+into a separate useCode block.
+Because I don't want to have a
+dependency on the play variable
+here.
+What I'm going to write
+the instructions--
+I'm going to declare here are
+valid for the whole lifetime
+of the component.
+So I don't want to
+recreate these animation
+nodes if the play variable
+has changed, only isPlaying.
+So now, we should have the
+isPlaying variable that matches
+the state of the component.
+And so we're going to
+[INAUDIBLE] actually.
+So we're going to
+write two conditions.
+So the first condition is if
+the state of the animation
+is playing and the
+clock is not running.
+So not clockRunning.
+And here you see you have
+to count the parentheses.
+We want to start the clock.
+We want to start the animation.
+And the other way around.
+If the animation is not playing,
+and the clock is running,
+we want to stop the clock.
+So I need to import
+stopClock and [? the and. ?]
+Let's have a look.
+So [INAUDIBLE] play.
+And I can pause.
+Resume.
+And you see, it doesn't
+resume at the proper state.
+But I can pause.
+And I can start the animation.
+But when I restart
+the animation,
+the state of the animation is
+screwed up, pardon my French.
+So here if the clock
+is not running.
+So if we pause the
+animation, we want
+to reset the time
+variable of the state,
+so that when it resumes, it
+resumes the animation properly.
+And if not, we run
+the timing function.
+So let's pause.
+And now it resumes exactly where
+it was [? paused. ?] Super.
+And it loops nicely.
+So a really cool timing function
+[? that-- ?] so, very low
+level APIs, clocks and all
+these complex animation states.
+But these are really--
+these low level primitives
+are really worth it
+in order to build complex
+user interactions.
+And we've seen how we don't
+write imperative JavaScript
+code, but [INAUDIBLE]
+animation nodes,
+which are declarations
+on the UI Thread.
+And so all the primitives
+we have in JavaScript, if,
+and, not--
+we can-- the semicolon to
+have sequential instructions.
+So we have the block here.
+So we have an equivalent
+for all the JavaScript
+constructs as animation nodes.
+And the only construct that is--
+so you can have variable
+assignments, sequentials,
+executions, conditional nodes.
+The only primitive that is
+not available are loops.
+But here-- but that's OK.
+Because here it's [? code ?] to
+be evaluated for every frame.
+So I hope you
+enjoyed this example.
+If this makes sense to
+you, then you really
+have unlocked the power
+of declarative gestures
+and animations.
+If you are able to switch
+from the imperative mindset
+to the declarative
+mindset, and understand
+how you can use clocks and
+animation states in order
+to build different
+user interactions,
+then the world of animations
+and gestures in React Native
+is your oyster.
+I think you can really go very
+far with these primitives.
+[MUSIC PLAYING]
+So we have looked at
+transitions, animations.
+Now let us play
+around with gestures.
+We have a bunch of cards here.
+And let's assign some gesture
+handler to these cards.
+And play around,
+see what we can do.
+And so here I am looping
+over all my cards.
+And maybe what I
+can do here is wrap
+a PanGestureHandler from
+React Native Gesture Handler.
+So we can maybe move
+these cards around.
+And we need to pass two
+properties for the gesture
+handler to work.
+And we're going to
+use again [INAUDIBLE]..
+So it's quite some boilerplate.
+There is a lot of
+animation values
+to be created [? to ?]
+properties to be
+assigned in PanGestureHandler.
+So we are going to use utility
+function, again from Redash
+in order to have all this
+boilerplate done for us.
+But you know, again,
+don't be intimidated.
+You can look at the
+Redash source code
+or at the react-native
+gesture handler source code
+to see what kind of boilerplate
+is required for these gesture
+handlers to work.
+But we're going to get the
+gesture handler from a function
+called usePanGestureHandler.
+And it gives us a couple of
+variables, a gesture handler
+that we can assign here.
+And the translation vector
+of the card, the velocity.
+So when we release the gesture--
+[INAUDIBLE] velocity
+of the gesture,
+and the state of the gesture.
+Is the gesture active?
+Is the gesture [INAUDIBLE] and--
+so here we assign the
+PanGestureHandler.
+I probably need
+to move key here.
+And the PanGestureHandler
+takes a single [? children ?]
+which needs to be an
+Animated.View from Reanimated.
+So here we use Animated.View
+from react-native-reanimated.
+So we get the
+translation vector here.
+I think we can assign it
+to this transformation
+to see if we can
+move the card around.
+So we're going to
+use a transform.
+And there is a utility function
+in Redash called translate
+where we can give it a vector.
+And it will apply
+translate x, translate y.
+A simple shortcut.
+So here I can move
+the cards around.
+But I should create
+one PanGestureHandler
+for each gesture handler.
+So I'm just going
+to move it here.
+Ah-ha.
+So you see I can move the card.
+But now if I start
+the gesture again,
+it starts from the
+original position.
+So we need to save the
+position in an offset value
+when the gesture ends.
+And again in Redash, we have
+a utility function for that.
+So I'm going to create
+translate x equals withOffset.
+And the first parameter
+is animation value.
+And the second parameter is
+the state of the gesture.
+So that we know when
+to save the offset.
+So translate x.
+We're going to do
+the same for y.
+And here we're going
+to apply the transform.
+So translate x.
+Translate y.
+It's translation.
+So here I can move
+the card around.
+And it remembers its
+position across time.
+And you see, when I stop the
+gesture, it's kind of abrupt.
+There is no like
+physical momentum.
+So what we can do here
+instead of using withOffset,
+we can use withDecay, which
+will add some nice decay.
+And this is where the
+velocity comes into play.
+Because the decay is calculated
+according to the velocity.
+So value is translation x.
+Velocity is velocity dot--
+oops.
+velocity.x.
+State is [? the ?] state.
+So same for y.
+So now you see you have
+this nice momentum when
+moving the card.
+And you see it is
+interruptable as well.
+So now let's have a nice wallet
+animation using these concepts
+of PanGestureHandler and decay.
+So I'm going to move
+this outside the loop.
+And we're going to move
+the PanGestureHandler to be
+unique to [INAUDIBLE]
+[? view. ?]
+And we want to translate
+only on the x-axis, actually.
+So we just want to scroll.
+Oops.
+We just want to nicely
+scroll [? our ?] cards.
+So something is not working.
+Because we forgot,
+as I mentioned,
+the single child needs to
+be an animated [INAUDIBLE]..
+But what I'm going
+to do, because I
+want to keep this one, I think
+I'm going to wrap it here.
+And put an Animated.View.
+Let's see how it looks.
+[LAUGHING] It's not
+translate x, but translate y.
+OK.
+So it translates nicely.
+And we have the nice
+momentum effect from decay.
+So now we want to
+clamp the values.
+We're going to use a
+function called diffClamp.
+So it clamps-- diffClamp
+clamps of value with a min max.
+But we call it diffClamp,
+meaning that, you know,
+if we go to minus
+[? 100 ?] pixels,
+just a delta of one pixel
+will be taken into account.
+So it's much more
+responsive if you want--
+if you scrolled far back in
+one of the lower or upper bound
+and want to go back
+to one of the--
+within the bounds of the
+[INAUDIBLE] clamping.
+So we're going to
+add diffClamp here.
+And here there is a trick.
+So there's currently a bug in
+the diffClamp implementation
+of Reanimated.
+So we're going to use
+diffClamp from Redash.
+So in order to
+not have this bug.
+So the maximum value is 0.
+Right.
+When we are at this state here.
+And the minimum value
+is going to be so--
+the length-- so the
+height of all these cards
+minus this height here.
+So this would be minus
+cards.length times card height,
+which we have defined
+here, perfect--
+minus the container
+height, which
+we calculate using onLayout.
+So let's have a look.
+So here, so you see this is
+where diffClamp comes in.
+If I use only
+clamps, so here I'm
+scrolling, scrolling,
+scrolling, scrolling, scrolling.
+Then if I want to
+scroll back like this,
+I would have to do all the
+opposite scrolling that I did.
+But even [INAUDIBLE] maybe
+I'm like 500 pixels right now.
+I can just immediately
+go back up.
+And this is what diffClamp does.
+I mean, I can show you
+quickly with clamp.
+So I'm here I'm scrolling down,
+scrolling down, scrolling down,
+scrolling down, scrolling down.
+If I want to scroll
+up again, I need
+to scroll up, scroll up, scroll
+up, scroll up, scroll up.
+And now it scrolls up.
+With diffClamps, it's
+going to be automatic.
+Scroll down, scroll
+down, scroll down.
+But you see
+immediately scroll up.
+And let's look.
+So the lower bound
+is not correct.
+It's plus container height.
+Sorry.
+So 0 and perfect.
+And very cool.
+So now let's animate our cards.
+So maybe we want to add--
+so we want, actually, now--
+we're going to clamp.
+So I'm going to call this y.
+So if the card has
+reached the top,
+I don't want it to go above.
+I want to clamp its value.
+So translate y.
+We're going to interpolate
+from the y animation value.
+So the input range goes from
+0 and if we translate to--
+so for the card to be at
+the top, if it's 0, it's 0.
+If it's-- minus card width,
+so that would be minus card--
+so card height, sorry--
+times index.
+So this would be
+our clamping value.
+So the output range
+would be the same value.
+But we're going to use
+extrapolate clamp, meaning--
+so this should be the maximum
+value the card can go.
+So do not go outside the screen.
+And so by using--
+so here we use linear
+interpolation. [? These ?]
+values match one to one.
+But when we have a
+value, for instance,
+that is lower than minus
+card height times index,
+we want to be at minus
+card height times
+index, not a lower value.
+So we are going to
+write extrapolate--
+extrapolate.clamp.
+Let's have a look.
+So we see the card moves
+on top of each other.
+You can even add,
+maybe, just, you know,
+if you want to build
+some effects, here.
+Maybe it's minus
+card height plus 16.
+Or minus 16, sorry.
+You [? see here-- ?]
+24 [INAUDIBLE]..
+So you already have here
+a nice wallet animation.
+So now we want to calculate
+the position of each card.
+And so the position y is y plus
+the index times card height.
+And we're going
+to use this value
+to do a couple of
+interpolations.
+So if the card is
+disappearing, its position
+is at least minus height.
+So from minus 0 to minus height.
+Minus card height.
+Sorry.
+Right.
+So here, the card,
+its position is 0.
+So if the card is on
+top, its position is 0.
+If the card is at
+the bottom here--
+so what is the
+position on bottom?
+It's the number of visible
+cards in the screen
+times the height of the card.
+So that would be visible
+cards times card height.
+What are the number
+of visible cards?
+So visible cards-- we do a
+math floor of the container
+height divided by card height.
+And so this is the
+number of visible cards.
+So this is-- so
+minus 1 for the range
+and is appearing is the number
+of visible cards times card
+height.
+So is bottom, is appearing.
+So now we can create some
+scale transformation.
+So the scale of the card--
+so we interpolate
+from position y.
+So the input range is
+disappearing is on top,
+is on bottom, and is appearing.
+And the animation values are--
+so 0, 5, it's disappearing.
+1, 1 if it's in
+the visible range.
+And 0, 5, when it's appearing.
+Let's try that.
+So here you see it disappears
+nicely in the background.
+And it appears nicely here.
+What we can do is
+add some clamping.
+That looks good.
+Let's add some opacity.
+So same story for opacity.
+So I can just add it here.
+And here, 1-- oh,
+actually, the same value.
+No.
+What we want to do here
+is to not clamp, I think.
+So we see here it
+disappears nicely.
+And so one thing we can fix is,
+you see when the card appears,
+it's too far away
+from the top card.
+It's not super smooth.
+So we can add some
+extra translation here.
+So here we can add.
+So you see here,
+we don't do a plus.
+Again, we use [INAUDIBLE]
+[? add ?] animation node.
+So let's call it
+extra translation y.
+So which we're going to
+interpolate from position y.
+So actually let
+me move these up.
+So we interpolate
+from position y.
+Oops.
+So input range.
+So we go from isOnBottom
+on bottom to isAppearing.
+Output range.
+So at bottom, the
+translation is 0.
+At isAppearing, we know that
+at isAppearing, the size is--
+scale 0, 5.
+So the height is card
+height divided by 2.
+And we want to move it by
+half of the card height.
+So it's going to be card
+height divided by 4.
+And of course, here
+we want to clamp.
+So we don't want to go
+outside these values.
+Extrapolate clamp.
+Let's have a look.
+No.
+It's not.
+It's minus card
+height divided by 4.
+And you see now it
+looks very cool.
+And one thing we can
+do here [INAUDIBLE]
+the scroll is not
+completely over.
+So we don't want to
+stop the scroll on--
+I'm being very picky here.
+But it doesn't feel
+nice that the end scroll
+position is this.
+So the last card should be at
+least as the full position.
+So here, maybe
+instead of container,
+we can do visible cards.
+Now what do we need to do?
+So we container height.
+Let's try visible cards
+times card height.
+Yes.
+So that looks good.
+So here our end scroll
+position looks much nicer.
+So you see a pretty
+cool user interaction
+using the PanGestureHandler from
+react-native GestureHandler.
+But there of course are tons
+of different user interactions
+you can build using these APIs.
+But I hope that this nice
+[INAUDIBLE] user interactions
+really gave you some inspiration
+on the kind of gestures
+and animations you can
+build using these APIs.
+[MUSIC PLAYING]
+These gestures and
+animations we just looked at
+integrate seamlessly
+with react-native-svg.
+And this allows for
+an interesting range
+of fun and creative user
+experiences and components.
+And this is thanks to
+an incredible community
+and open source work.
+Right?
+So we looked at react-native
+gesture handler,
+react-native-reanimated,
+which allows
+us to declare our
+animations on the UI Thread.
+And then there has been
+a tremendous amount
+of open source and
+community work which
+has been spent in order
+for these libraries
+to nicely integrate
+with react-native-svg.
+And so I would like to show
+you a simple example, which is
+going to be a circular slider.
+So here we have a svg circle.
+Here the circular progress.
+And so we have the
+white one here.
+And we're going to animate
+the stroke of this one
+to show some progress.
+And here we have a
+cursor component,
+which we are going to
+be able to move around.
+And its value will always
+fit the bounds of the circle.
+So here we have a
+theta animation value.
+And we are going to
+move the cursor around
+to update this value.
+So theta goes from 0.
+This is the position at 0.
+Or actually, here we have a
+rotate of minus 90 degrees.
+So 0 is going to be here.
+Let me remove this one for now.
+So we're going to have 0 here.
+We move pi minus pi 0.
+And so maybe here we're
+going to normalize.
+Because this goes from
+0 to pi minus pi 0.
+We're going to normalize
+it to go from 0 to 2 pi.
+360 degrees.
+And the way we're
+going to do it--
+we are going to set--
+so we have a theta value, 0.
+This will set the position of
+the cursor on to the circle.
+How are we going to do it?
+Well, we have three
+coordinate systems
+to work with in react-native.
+There is a [INAUDIBLE]
+coordinate system.
+So there is an x-axis which
+goes from the left to right,
+and the y-axis, which
+goes from top to bottom.
+This is [INAUDIBLE]
+coordinate system.
+Then there is a Cartesian
+coordinate system,
+where we have a center
+of origin somewhere.
+Here our center is going to
+be the middle of the circle.
+And the y-axis goes from
+0 from bottom to top.
+So the opposite
+of the [INAUDIBLE]
+axis, which goes
+from top to bottom.
+And then we have the
+x-axis, which is identical.
+It goes from left to right.
+This is our Cartesian
+coordinate system.
+The third coordinate system
+is a polar coordinate system.
+So here we also have an origin.
+And given an x and y value
+in the Cartesian coordinate
+system, we are going to get
+an angle in a theta value
+in radians and a radius.
+So we take the angle.
+We convert it to the-- so
+we have a polar coordinate.
+So we have a radius
+and an angle.
+We can convert it to a
+[INAUDIBLE] coordinate,
+which would give us x and
+y positions [INAUDIBLE]..
+So that will position the
+cursor on to the circle.
+Then we move the circle around.
+So we have an x and
+y-coordinate which
+we can transform to
+a polar coordinate
+in order to know
+the angle theta.
+And so we can assign
+the theta value,
+which will drive the
+animations of the stroke value.
+And also maybe we can animate
+the color of the progress.
+So maybe you want green at
+the beginning, red at the end.
+And so if you go on
+my YouTube channel,
+I will put the links in
+the video description.
+I have videos on how we can
+convert from one coordinate
+system to the other.
+Here we're going to use again
+utility functions from Redash
+to seamlessly go from
+one to the other.
+So let's get started.
+So we are going to
+start with our cursor.
+And once we have--
+so the cursor is going to
+[? write ?] the data value.
+And once we have it working,
+we will look into animate
+the circular progress
+component that we have here.
+So let's look at the cursor.
+So the first thing
+we're going to do
+is to wrap a PanGestureHandler
+so we can move it around.
+So PanGestureHandler from
+react-native gesture handler.
+And we need the gesture handler.
+We're going to use the
+helper function from Redash.
+So we have gesture handler.
+usePanGestureHandler.
+And we're going to get
+a translation vector
+and the state of the gesture.
+Oops.
+Some [? typo ?] here.
+And so here we're going
+to add some translate.
+But what-- so what
+we want to do--
+OK.
+Let's add some translate.
+So translate x,
+we're going to use--
+so we want to
+remember the position
+across different gestures.
+So we're going to
+use withOffset.
+So translate x state
+and translate y.
+Translate y.
+[INAUDIBLE] translation.
+Let me apply the transformation.
+Translate x.
+Translate y.
+So I can move the cursor around.
+Super.
+But now it needs
+to be, you know,
+whatever is the position within
+the bounds of the circle.
+So this is where we need
+to convert these values
+into polar coordinates.
+So I'm going to create x, y.
+And we have a
+center vector, which
+is the middle of the screen.
+So let me create a vector.
+So center is x is width
+divided by 2. y is height
+divided by 2, which we need to
+import from the dimensions API.
+So we have width, height
+from dimension get window.
+So let's convert these
+into polar coordinates.
+So we have polar equals--
+so these are Cartesian.
+So we're going to use
+Cartesian to polar.
+The math behind this function
+is super interesting.
+I have some videos
+on this topic.
+So if you're
+interested, I definitely
+recommend you check it out.
+The first argument is a point.
+So we have x, y.
+And we probably need
+to [INAUDIBLE] polar--
+no, Cartesian to polar.
+That's correct.
+And so we get the theta
+angle, which we can
+assign to this animation value.
+The radius-- here the
+radius doesn't matter.
+What we need to do
+is to set the radius
+to be the radius of our
+circle and convert back
+these coordinates to
+Cartesian coordinates.
+So we are going to have x
+translate x, y translate y.
+So we are going to convert
+polar to Cartesian.
+Theta is polar.theta.
+theta.
+No problem.
+But radius is not the
+radius of our cursor,
+but the radius of the circle.
+So that will bound the cursor
+to only move around the circle.
+And the second
+parameter should be
+polar to coordinate
+to Cartesian.
+It looks good.
+Is this radius--
+radius [INAUDIBLE]..
+So you see we have an issue.
+So translate x with the center.
+The origin of-- so I think
+I should set center here.
+Sorry.
+OK.
+It's not Cartesian to polar.
+But [INAUDIBLE] to polar.
+My mistake.
+So [INAUDIBLE] to polar.
+And we can set the center
+[? of ?] origin here.
+So the center.
+And here it's convert
+to polar to [INAUDIBLE]..
+I was confused
+why it didn't need
+to use the center of origin--
+the origin-- that
+didn't make any sense.
+So now still actually,
+it doesn't work.
+We have a weird--
+so actually here, it's the
+center because it's not--
+the container, so
+it's not the window,
+but the content, which is the
+size here of this container,
+of the circle [INAUDIBLE]
+I put background color red.
+So you see our
+center is not height
+of the screen divided by 2,
+but radius and the radius.
+So let me update this.
+So center is radius.
+And so now it animates nicely.
+So now we need to
+set the theta value.
+And so you could set the value
+to be polar.theta directly.
+But polar.theta goes from 0
+to pi and minus pi to minus 0.
+So here the value would
+be minus pi divided by 2.
+And not 3/4 of 2 pi.
+So we want to normalize the
+value to go from 0 to 2 pi.
+So we're going to
+create useCode and we're
+going to assign
+[INAUDIBLE] and we're
+going to assign theta
+to be polar dot theta.
+But we need to normalize theta.
+So normalize theta.
+Or we take theta--
+so as an animated node.
+So if theta is less than 0,
+so it's minus 0 minus pi,
+we need to add 2 pi.
+So theta is less than 0.
+It's theta plus 2 pi.
+If not, it's the theta value.
+So from 0 to pi theta is OK.
+And now if let's say we have
+minus pi minus pi plus 2 pi,
+would be 2 pi 3/4 of 2 pi.
+So it's going to be 2
+pi minus half of 1 pi.
+So this should give us
+proper values for theta.
+And here, let's see.
+We're going to interpolate
+the [? color ?] on theta
+to see what we get.
+So let's use interpolate.
+So colors are numbers.
+And we have a interpolate
+color function in Redash.
+So we can interpolate on theta.
+And so input range--
+so theta goes from 0 to 2 pi.
+So we have 0.
+Let's say pi and 2 pi.
+We're going to use three colors.
+Output range-- we can use style
+guide, palette, secondary,
+primary, and primary.
+And tertiary.
+Let's have a look.
+So we see here the
+color updates nicely.
+So now let's animate
+our svg circle.
+And we're going to use a
+dash stroke array to animate
+the progress of the circle.
+So we want dash stroke array to
+be circumference of the circle.
+So we want one empty stroke
+to be the circumference
+of the circle.
+One full stroke to be the
+circumference of the circle--
+so we can animate,
+really, from 0
+completely empty to
+1 completely full.
+So the circumference
+of the circle
+is 2 pi times the radius.
+And the length of
+the arc of circle
+is going to be radius
+times the theta, right?
+And so this is going
+to be the offset--
+the dash stroke offset.
+So let's-- so we need to
+calculate the circumference.
+Which is going to be
+2 pi times the radius.
+Which we get--
+[INAUDIBLE] as property.
+So we can assign dash
+stroke array to be--
+so circumference, circumference.
+And we can calculate the--
+so here, OK.
+So it's dash stroke offset.
+And here-- so
+we're going to have
+a couple of animation values.
+It's not a circle, but
+an animated circle.
+An animated circle.
+We use create
+animated components
+in order to have the animated
+wrapper that can accept
+animation values as property.
+So now we need to calculate
+stroke dash offset.
+Which is actually the same
+formula [INAUDIBLE] here.
+But instead of having the
+full angle, which is 2 pi,
+we use theta.
+So it's going to be
+multiply theta by radius.
+Let's have a look.
+Looks good.
+But also very strange.
+So the stroke color
+appears to be good.
+Background color.
+We need to add stroke width.
+And now there is a
+strange offset value here.
+So here it looks like
+at 0, it's correct.
+And then there is-- you
+see some offset value
+that goes further and further.
+And I think here I
+wrote it down because I
+wrote radius is the radius minus
+the stroke width divided by 2.
+That makes sense.
+Because we want the
+center to be here.
+So I should probably
+replace radius here.
+Yeah.
+Now that looks good.
+It's fun, isn't it?
+I could play with this
+always [INAUDIBLE]..
+But really a nice example of
+how gestures and animations
+seamlessly integrate
+with each other.
+[MUSIC PLAYING]
+Free Code Campers, I hope
+you enjoyed this workshop
+on declarative gestures and
+animations in react-native.
+Let me know what you think
+in the comments below.
+If you're interested to go
+further with this topic,
+I will link to resources
+in the video description.
+We discussed the
+heart of the matter.
+Why is this topic so [INAUDIBLE]
+in React Native and the APIs
+and strategies to use in order
+to build these very smooth user
+experiences.
+We looked at transitions,
+the easiest way
+to animate react-native
+components.
+And then we implemented a
+simple timing function using
+the bare metal reanimated API.
+And we've built this timing
+function to be interruptable,
+so we can pause, resume.
+But also we can also loop
+the function across time.
+Then we built our first gesture.
+So we had these cards and
+we could move them around
+and swipe them.
+And we've used the gesture API
+to build a nice wallet user
+interaction.
+And finally, we've
+looked at how svg
+can be used to seamlessly
+integrate with these gestures
+and animations.
+And that allows for a range of
+really fun and creative user
+interactions to be built.
+If you go on my
+YouTube channel, I
+have dozens of
+videos on this topic.
+For instance, in the
+case of the svg example,
+we used functions which leverage
+trigonometry behind the scene,
+right, where we converted
+from polar coordinate system
+to [INAUDIBLE] and vice versa.
+I have videos where
+I really explain
+the math behind the scene.
+And trigonometry is very
+important in animations,
+because as soon as
+you have something
+that has some sort
+of rotation, it's
+going to involve trigonometry.
+And I have quite some
+videos about this topic.
+And I have also
+more advanced videos
+on the topic of svg animation.
+For instance, you can
+use svg animations
+to morph from one svg
+path to the other.
+And there is also really
+interesting examples
+with Bezier curves.
+That is really-- we only
+scratched the surface.
+There is really
+tons of great things
+you can build using
+svg animations.
+We looked at the
+PanGestureHandler.
+But there are, of
+course, different kinds
+of gestures in React Native--
+the tap gesture handler,
+the pinch gesture handler,
+the rotate gesture handler.
+And I also have videos
+on these topics.
+I will link to these resources
+in the video description.
+And we used the transform
+API to move things around.
+And we even did
+transformation of origin.
+The transform API
+from react-native
+is incredibly powerful.
+And we've not even looked at
+all the things it has to offer.
+And I also have
+videos on this topic,
+on how to build advanced
+2D transformations,
+how to save the state of
+complex transformations
+across gestures.
+And I even have a video where
+we go to the third dimension.
+So if you are interested, I
+hope that you will check it out.
+So I'm really looking
+forward to talk to you soon.
+And in the meantime,
+happy hacking.

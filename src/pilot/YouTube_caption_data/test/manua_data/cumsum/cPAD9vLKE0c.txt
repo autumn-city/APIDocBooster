@@ -1,0 +1,760 @@
+GEORGE KARPENKOV: Hi.
+My name is George.
+I'm an engineer on
+the XLA Compiler team,
+and today, I would
+like to tell you
+how to make your TensorFlow
+models run faster
+on the GPU using
+the XLA Compiler.
+I'll start with a brief
+TensorFlow overview, followed
+by an overview of
+the XLA Compiler,
+in particular for GPUs.
+Then we'll go through the usage
+detail of XLA and TensorFlow
+using JIT compiler
+code and how you
+can leverage to get great
+performance in your models.
+We'll also cover the common
+use cases and the issues
+you might run into.
+Finally, we'll go through
+the benchmark results
+to see what kind of
+speedups you can expect.
+TensorFlow is a complicated
+system with many features,
+but we will focus on the
+ability to write simple,
+NumPy-like Python code which can
+then run with data parallelism
+and good performance in
+many different devices,
+be it CPU, GPU, or TPU.
+This is a running example we
+shall use throughout the talk.
+We are computing a mean of
+the sum of the vectors, where
+the first vector was
+squared and multiplied by 3.
+And then we run this computation
+with two random inputs.
+When we run this code
+snippet in TensorFlow 2
+in Eager mode on GPU, and if
+you open a profiler after run,
+we see four separate
+CUDA kernel launches,
+one for each operation
+TensorFlow runs.
+Each launched with a
+kernel as parallel.
+It spawns many threads,
+and each thread
+will run the computation on
+some part of the vector we
+are operating on.
+For better performance, we
+can wrap the whole computation
+with @tf.function.
+When we wrap the computation
+with @tf.function,
+TensorFlow will generate
+a TensorFlow graph
+from the Python code,
+which allows two things.
+First, the graph
+can be serialized.
+So it can be run even
+without the Python runtime--
+for example, If you are
+doing production serving.
+The serialization of the
+computation as a graph
+is shown on the
+right of this slide.
+But secondly, what we
+care more, in this case,
+performance-wise-- using the
+graph representation allows
+TensorFlow to perform a
+number of organizations,
+such as constant
+propagation or fusing
+some interations together.
+However, the optimizations
+performed by @tf.function
+alone are driven
+by pattern-matching
+and limited to a set of
+kernels found in TensorFlow.
+No new kernels will be generated
+during the optimization.
+But what if we could generate
+new kernels on the fly,
+specifically optimized for the
+task at hand we're using now?
+And that's exactly what
+the XLA Compiler can do.
+XLA, which stands for
+Accelerated Linear Algebra,
+is a domain-specific compiler
+for linear algebra, which
+can emit code for
+multiple backends,
+including GPUs, CPUs, and TPUs.
+The compiler creates some
+high-level operations,
+intermediate representation,
+or simply the HLO IR.
+XLA gets HLO IR as an
+input, performs optimization
+as a sequence of
+rewrites of HLO to HLO,
+and then emits executable code
+specific to a given backend.
+The HLO IR is a mostly
+functional language
+used for modeling linear
+algebra computations.
+It is designed to contain
+a relatively small number
+of operations.
+Unlike about 1,500
+operations for TensorFlow,
+HLO has only about 50.
+The HLO operations are less
+domain-specific than TensorFlow
+ones, and they're designed to
+be composed with each other.
+The IR is strongly typed, with
+the exact data type, its shape
+and layout, encoded
+into that duration type.
+And that strong typing allows
+it to be so optimizable.
+In this slide, we've given
+additional computations
+as an example of an HLO program.
+We get two inputs of size 100
+by 100, with data type f32,
+and we compute their sum, which
+is the root of the computation.
+And the root of the
+computation is simply
+what the computation returns.
+And since, as we've mentioned,
+the IR is mostly functional,
+it can be shown as
+a dataflow graph,
+as seen on the
+right of the slide.
+The XLA Compiler
+performs a number
+of optimizations on HLOs.
+One of the most important
+optimizations it does on a GPU
+is fusion, which is combining
+multiple computations together
+and not write intermediate
+results to memory.
+It drastically reduces memory
+bandwidth requirements.
+Let's show fusion
+in this example.
+So here, we want to multiply a
+vector by a constant and then
+another vector.
+On a GPU, we can do so by
+launching two kernels one
+after another--
+one which multiplies the vector
+by a constant and another one
+which has a second vector.
+However, this is
+not very efficient,
+as we are writing the
+intermediate result to memory
+and thus wasting a lot
+of memory bandwidth.
+It would be a lot
+more efficient if we
+could hold intermediate result
+directly in the registers
+and never have to
+materialize it.
+The fusion optimization
+does exactly that.
+As seen in the
+kernel on the right,
+we can combine
+multiplication and addition
+into a single kernel, which
+only has a single memory read
+and a single memory
+write, effectively
+halving the required
+memory bandwidth.
+Moreover, not only the
+fusion optimization
+reduces the pressure on
+the memory bandwidth.
+It also reduces the
+number of kernels
+which have to be launched,
+minimizing the kernel
+launch by half.
+Now let's go back to
+our running example,
+and let's see how
+the XLA Compiler
+can optimize it using fusion.
+On the left, this is an initial
+HLO for the running example,
+with no optimizations applied.
+On the right, the compiler
+has applied the fusion
+optimization, as
+shown by the red box.
+All operations within
+the red box are fused.
+They all run within
+a single kernel.
+No intermediate results
+are materialized,
+and only the input and output
+memory allocations exist.
+After the HLO to HLO
+optimizations are applied,
+the backend-specific
+lowering takes place.
+Specifically, for
+XLA GPU lowering,
+there's executable code which
+requires the following step.
+We start with an HLO IR.
+Then, there are largely
+two possible code paths.
+Either the compiler generates
+a new kernel, the new code
+kernel.
+Then the emitters
+generates an LLVM IR,
+which is then converted
+by the LLVM back
+into the PTX, which is
+compiled to the CUDA binary
+using the NVidia
+PTXAS Assembler.
+Or alternatively,
+the compiler might
+decide not to make
+the code at all
+and to call the cuBLAS
+or cuDNN libraries,
+if such an implementation
+is available.
+So far, we have seen
+how the XLA GPU compiler
+can be used to generate
+fast, optimized kernels
+for your models.
+Now let's see how to use
+it from within TensorFlow.
+Revisiting our
+running example, we
+have seen how adding the
+@tf.function to create
+or can be used to serialize
+the computation to a graph.
+The serialized graph can be
+compiled with XLA GPU by simply
+adding the jit.compile=True
+attribute to the function,
+as seen in the running
+example on the slide,
+which will use XLA as a JIT
+compiler from TensorFlow.
+Let's see how the compilation
+pipeline is structured.
+First, the TensorFlow
+graph is converted
+to HLO using the
+TensorFlow-to-XLA bridge.
+The conversion and the
+confirmation process
+is cached so the results
+can be stored or retrieved
+from the compilation cache,
+also shown in this graph.
+Once the HLO is generated,
+these optimizations are applied,
+and the resulting
+kernel is finally
+run by the TensorFlow runtime.
+As we have seen before from
+the optimized HLO graph,
+we would expect only
+one large CUDA kernel
+to run, with a
+reduction later on.
+That's what we can
+verify dynamically
+with the profiler at runtime.
+We only got a single large
+kernel and nearly a 4x speed-up
+compared to the Eager example.
+Compiling a single line
+of Python is great,
+but how do we go about
+optimizing a larger model?
+Let's go through some
+more interesting examples,
+including expensive
+computations,
+entire training loops,
+multi-device training loops,
+and multi-device training
+loops where we cannot compile
+the collectives.
+In a simple case, we have
+a single computationally
+expensive function we need to
+run, either in your program
+or in the library
+you are writing.
+Adding jit_compile=True will
+compile the code inside,
+usually resulting in much
+better performance for all users
+of this function.
+However, most of
+the time, we are
+doing some kind of
+machine learning,
+and we are optimizing for some
+objective using some variation
+of gradient descent.
+In that case, it is usually best
+to compile the entire training
+loop, including the gradient
+calculation updates.
+This is what is done on the
+slide, where the entire code
+block to train the
+[INAUDIBLE] model is compiled.
+Note that the code
+taking the derivative
+and applying the gradient
+is also compiled.
+If it is outside, if it was
+outside of the compiled block,
+it could lead to worse
+performance, as many fusion
+opportunities could be lost.
+In TensorFlow 2.5, you can even
+compile the entire training
+step running with this
+distribution strategy.
+Currently, it only
+supports a mirror strategy.
+In that case, you can annotate
+the entire training step with
+jit.compile=True and
+pass it to strategy.run.
+There are some caveats.
+We currently do
+not support SPMD,
+so multi-device calculation will
+require as many calculations
+as you have devices,
+potentially resulting
+in slower compile times.
+Alternatively, if you use
+collectives in operations which
+are not currently
+compilable, such as Horovod,
+you can refactor your code
+to separate the train.stop
+into a compilable part--
+a compile step in this case--
+and leave the apply_gradient
+function uncompiled.
+Then the train step, which calls
+the compiled step function,
+is passed to strategy.run.
+In these four examples, we have
+seen where jit.compile=True can
+be applied to improve the
+performance of your model.
+To find good
+annotation spots, we
+recommend using the GPU
+profiler to figure out
+which sections of the
+model contain many smaller
+kernels that can benefit
+from the optimizations.
+Usually, the larger the
+annotated compiled block is,
+the better the performance.
+Changing and
+refactoring the model
+you have may not
+always be feasible.
+For these cases,
+we have developed
+the autoclustering mode,
+which automatically identifies
+parts or clusters of the
+code inside tf.function,
+which can be compiled.
+Then, the autoclustering
+mode outlines its clusters
+and replaces them
+with TensorFlow Ops,
+invoking the XLA compilation.
+To activate autoclustering mode,
+either use environment variable
+TF_XLA_FLAGS set to
+tf_xla_aut_jit=2,
+or use the
+tf.config.optimizer.set_jit
+API.
+Even though using autoclustering
+is fully automatic
+and does not require
+any model changes,
+it can lead to bizarre
+performance cliffs
+where seemingly small and
+inconsequential changes
+in the model lead to large
+changes in clustering
+decisions, completely
+changing the performance
+characteristics.
+For these reasons, we
+recommended jit_compile=True
+usage, as it has a simpler,
+understandable mental model.
+Everything inside the
+jit_compile=True block is
+always compiled if it run.
+Now that we've
+covered the use cases,
+let's go through the
+limitations of jit_compile=True.
+We've briefly discussed
+already that not all operations
+are compilable.
+Well, let's cover that
+in a bit more detail.
+Furthermore, we have previously
+mentioned that the XLA Compiler
+required shapes to be static.
+Let's see how that interacts
+with dynamic inputs
+in TensorFlow.
+As we said before, TensorFlow
+has roughly 1,500 operations.
+Only about a third of
+them are compatible.
+While for some ops this
+represents future work,
+in many cases, the op is
+inherently uncompilable--
+for instance, if it's a heavy
+image-decoding op which could
+also perform some I/O. When
+an uncomfortable op is found
+inside the
+jit_compile=True block,
+an exception is thrown to the
+user, indicating an error.
+Moreover, the
+exception will contain
+a stack trace indicating exactly
+where the uncompiled op was
+defined so you can
+refactor your code.
+So let's see that
+in the example.
+In this case, the function
+load invokes an operation
+to read the file, which is not
+inherently compilable with XLA.
+If you attempt to run such a
+function with jit_compile=True,
+you will get an invalid
+argument error exception,
+with the attached stack trace
+pointing out the definition
+of the uncompilable op.
+This information will
+help you to refactor
+this function in
+order not to try
+to compile the
+uncompilable op, as was
+done in the previous
+example, avoiding
+the uncompilable collective.
+The second limitation of XLA
+is the requirement of shapes
+to be static at compile time.
+So TensorFlow
+inputs as a function
+have different shapes
+from run to run,
+which is not something
+representable by a single HLO
+program.
+However, since XLA
+is a JIT compiler,
+it can just recompile every
+time it encounters a new shape.
+In practice, this
+tends to work well,
+especially for batched inputs
+with a constant batch size.
+However, if the shape
+changes very often,
+the recompilations can add up,
+causing unexpected latency.
+For instance, an
+example on the slide--
+if you run this example multiple
+times with a shape of 10
+by 10, only the first
+time you run it,
+recompilation is necessary.
+But then, if we change the shape
+to be a matrix of 100 by 100,
+we would need to recompile.
+And all calculations are
+essentially cached forever
+while your process is running.
+In addition to
+constant shapes, XLA
+requires certain arguments
+to be fixed at the HLO level.
+For instance, the axis
+argument of argmax.
+Changes to such arguments
+at runtime results
+in recompilations.
+When such must be constant
+arguments are computed
+inside the function,
+all parameters
+potentially influencing
+the computation
+are marked as must be constant.
+Changes to such parameters
+will require recompilation.
+For instance, in the
+example on this slide,
+if we change the second argument
+to f, each time we change it,
+we would need to recompile it.
+And if the second
+argument was computed
+using multiple
+parameters, any change
+to any of those parameters
+would require recompilation.
+Shifting gears a bit
+from the limitations
+of XLA, let's talk
+about the ways
+you can look under the
+hood of the TF XLA stack
+by inspecting the
+generated HLOs.
+There are a number
+of reasons you
+might want to look at the
+generated HLOs of PTX files--
+to see what fusions
+have taken place,
+to verify that the
+aliasing has happened,
+or to simply file bugs when
+you see some weird behavior
+or unexpected performance.
+For the compiled
+code, you can also
+look into generated PTX files
+to understand their performance
+characteristics.
+We offer twice to
+inspect such files.
+First, you can run your model
+with XLA_FLAGS environment
+variable containing the
+--xla_dump_to flag pointing
+to the directory where the
+generated files will be dumped.
+Alternatively, you can use the
+experimental_get_compiler_ir
+API on the JIT
+compiled functions.
+Let's see a few examples
+of usage of this API.
+Using the
+get_compiler_ir API, you
+can expect the
+hlo, optimized_hlo,
+or the graph in Graphviz
+format for a compiled function.
+To plot the graph returned by
+the optimized_hlo_dot format,
+you can invoke the
+Graphviz binary on it,
+and you will get the
+HLO graph rendering
+in the same format we have
+seen throughout this talk.
+Note that in order
+to generate the HLO,
+the input arguments
+to the function
+need to be fixed, as
+change in certain arguments
+might require recompilations.
+Now let's go through
+some benchmark results
+to see what kind of speedups
+you can get from XLA.
+We are reporting our results
+on the TensorFlow Model Garden
+repository, which you
+can find on GitHub
+under tensorflow/models.
+All the models we report are
+run on 8xV100 NVidia GPU cards,
+with data types set to FP16,
+which is most often used
+while training.
+In order to benchmark
+with jit_compile=True,
+we are making only a single
+code change to the model,
+which is simply adding the
+jit_compile=True to the step
+function.
+And often-- due
+to fusion, we were
+able to decrease mem
+requirements-- we
+were bumping up the batch
+size, which we could not
+do with our XLA.
+And for autoclustering,
+no changes at all
+were applied, except of adding
+the environment variable.
+So those are the data
+points that we got,
+and we can see that
+the jit_compile=True,
+we could get a speed-up from
+1.3x to 1.9x on a variety
+of models, including
+Bert, Transformer, Resnet,
+and MaskRCNN.
+The increase in performances
+with autoclustering was
+slightly lower,
+from 1.2x to 1.5x,
+and no changes to the
+model were required.
+You can see that in one case,
+the performance actually
+got slightly slower
+with autoclustering,
+which can actually happen.
+So since it's a fully automatic
+process which it's hard to see
+exactly what it is doing, so
+that's why another reason why
+we promote the usage
+of jit_compile=True.
+Independently from
+the Model Garden,
+NVidia maintains their
+own repository of models,
+and they kindly have given
+us their data which--
+for the speedup they got when
+running with autoclustering
+and without it.
+All NVidia benchmarks are
+done on 8xA100 NVidia GPUs,
+again using the FP16 data type.
+In these benchmarks, we
+see a similar speed-up,
+in the range from 1.3x to
+1.7x, on the variety of models.
+That's all for the
+benchmark results.
+Now let's go through
+some future improvements
+to the stack we are
+planning, and the conclusion
+of this talk.
+We always work on many different
+areas of TensorFlow and XLA,
+and here are some
+sample projects.
+And of course, this
+list is very incomplete.
+We're in the process of rebasing
+the XLA:GPU compiler stack
+on top of MLIR, which is a
+reusable open-source compiler
+infrastructure project.
+With that product, we aim to get
+more complex reusable emitters
+for the compiler, as well as
+true dynamic shape support
+and many other improvements.
+On the TensorFlow side, we
+are looking at the automatic
+handling of uncompilable ops so
+that jit_compile=True could be
+added to more functions,
+including those containing
+compatible operations.
+Additionally, we are
+collaborating with NVidia
+to deliver Horovod
+calculation with XLA
+so that the entire
+training step can be
+compiled when Horovod is used.
+In conclusion, as you have
+seen, using the compiler
+can greatly improve the
+performance of your models.
+We recommend using the profiler
+to find the set of kernels
+which can benefit from fusions
+and other optimizations
+and annotating the
+corresponding code block with
+jit_compile=True.
+Usually, the larger the block
+is, the better the performance.
+After the model is annotated, it
+has shown that the performance
+boost is usually in the
+range of 1.1x to 2x.
+With that, I thank you
+for your attention.
+[MUSIC PLAYING]

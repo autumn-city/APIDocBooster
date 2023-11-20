@@ -1,0 +1,269 @@
+YUFENG GUO: NumPy is fast, but
+how can we make it even faster?
+Stay tuned to find out.
+[MUSIC PLAYING]
+Welcome to "AI
+Adventures," where
+we explore the art, science,
+and tools of machine learning.
+My name is Yufeng Guo,
+and on this episode,
+we're going to look
+at a new library
+from Google Research called
+JAX and see how it can speed up
+machine learning.
+JAX can automatically
+differentiate native Python
+and NumPy functions.
+It can differentiate through
+loops, branches, recursion,
+and closures.
+And it can take derivatives
+of derivatives of derivatives.
+It supports reverse mode
+differentiation, also known
+as back-propagation, using
+the grad function, as well as
+forward mode differentiation.
+And the two can be
+composed arbitrarily
+in any order you want.
+It can seem like every other
+library these days supports
+auto-differentiation.
+So what else can JAX do?
+Well, it's also able to speed
+up your code, sometimes really
+significantly, by using
+a special compiler
+under the hood.
+Accelerated Linear
+Algebra, or XLA,
+is a domain-specific
+compiler for linear algebra.
+It can perform optimizations,
+like fusing operations together
+so intermediate
+results don't need
+to be written out to memory.
+Instead of this
+time-consuming process,
+this data gets streamed right
+into the next operation.
+And this enables faster and
+more efficient processing.
+JAX uses XLA to compile
+and run your NumPy programs
+on GPUs and TPUs.
+Compilation happens
+transparently,
+with NumPy library
+calls getting sped up.
+But JAX takes it a step
+further than XLA alone,
+as it lets you just-in-time
+compile your very own Python
+functions into
+XLA-optimized kernels,
+using a single function
+API called jit.
+Compilation and
+automatic differentiation
+can be composed
+arbitrarily, so you
+can express
+sophisticated algorithms
+and get maximum performance,
+all without leaving Python.
+What else is there
+other than jit?
+There's also pmap.
+Applying pmap means that
+the function you write
+gets compiled by
+XLA, just like jit,
+and replicated and then executed
+in parallel across devices.
+That's what the p
+in pmap stands for.
+This means you can do
+compilations on multiple GPUs
+or TPU cores all
+at once using pmap,
+and then differentiate
+through them all.
+JAX boils down to an extensible
+system for composable function
+transformations.
+The main ones today are grad,
+jit, pmap, and also vmap.
+vmap is used for
+automatic vectorization,
+allowing you to turn a function
+that can handle only one data
+point into a function that can
+handle a batch of these data
+points of any size with just
+a single wrapper function.
+Let's take a look
+at how this all
+comes together using
+a familiar example,
+training a deep neural network
+on the [? MNIST ?] data set.
+This notebook starts out by
+creating two utility functions
+to make a neural network
+with just randomly
+initialized parameters.
+I printed out the dimensions
+of each layer for convenience.
+We can see here that it
+takes a 784-unit-wide input
+and passes through two hidden
+layers whose size is 512 each.
+And the outputs are
+the usual 10 classes,
+since we're predicting
+what digit is
+supposed to be in that image.
+Next, we have a
+function that takes
+care of running an image
+through our predict function.
+Our predict function only
+handles one image at a time.
+And we can confirm
+this by passing
+in a single random image of
+the correct dimensions, which
+gives us a vector of
+size 10, representing
+the 10 logit values coming
+out of the final layer
+of the network.
+But when we try a whole batch
+of images-- say of length 10--
+also, it fails, since the array
+dimensions no longer line up.
+But we're in luck, because
+wrapping our predict function
+in a vmap will allow us to
+take advantage of matrix
+multiplication and
+run all 10 images
+through the model in a single
+pass, rather than doing them
+one by one.
+The resultant
+function can handle
+a batch of arbitrary
+size, and we don't have
+to modify our function one bit.
+Notice that the output is now
+10 by 10, representing the 10
+logit values coming out of the
+final layer for each of the 10
+examples in that batch.
+Now let's see how we can use
+the grad and jit functions
+to build out the
+remainder of our model,
+as well as our training code.
+We'll add in a
+function to one_hot
+encode our data, and a
+couple more functions
+to calculate accuracy and loss.
+Finally, we'll put together
+our update function,
+which will take the result
+of the loss function
+and run grad on it,
+which will take care
+of the back-propagation for
+us and return the updated
+parameters of the model.
+Now we're almost ready
+to run our model.
+We just need to add
+in some code using
+TensorFlow data sets to bring
+in our [? MNIST ?] data set.
+JAX purposely does not include
+data set loading functionality,
+as it's focused on
+program transformations
+and accelerator-backed NumPy.
+So now we're ready
+to train our model.
+Our training loop is
+set for 10 epochs.
+And we have a timer
+added in as well,
+because we want to
+see how it performs.
+So let's run this.
+And we can see that
+across 10 epochs,
+we ended up spending about
+22 seconds per epoch.
+Now, you might be
+thinking, wait, wait,
+didn't Yufeng
+mentioned something
+about using the jit function?
+Did we ever add that?
+Good catch.
+Let's add in the @jit decorator
+at the top of our update
+function, and we'll
+rename it jit_update.
+Now we'll have a before
+and after comparison.
+Let's re-initialize
+our parameters
+using the same
+init_network_params function
+we used earlier, and then
+run our new training loop.
+And we'll see how
+the timing works out.
+So this is looking like
+it's taking way less time--
+only 8 seconds per epoch.
+And all we had to do
+was add four characters
+to the top of the update loop.
+Now that's "le-jit."
+Before I close this out,
+I want to remind viewers
+that as of this
+recording, JAX is still
+just a research project and
+not an official Google product.
+So it's likely you may
+encounter bugs and sharp edges.
+The team has even made a list of
+gotchas and a gotchas notebook
+to help you out.
+Since this list will
+be constantly evolving,
+be sure to see what
+the state of things
+are if you plan on using
+jit for your project.
+Thanks for watching this episode
+of "Cloud AI Adventures."
+And if you enjoyed it,
+click that Like button,
+and be sure to subscribe to get
+all the latest updates right
+when you come out.
+For now, head on over to
+GitHub and try out JAX.
+Send over some bug
+reports, and let
+the team know what you think.
+[MUSIC PLAYING]

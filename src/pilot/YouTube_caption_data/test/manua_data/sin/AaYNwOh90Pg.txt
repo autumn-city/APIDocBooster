@@ -1,0 +1,2676 @@
+[music playing]
+Please welcome the Senior VP
+of AWS Infrastructure and Support,
+Infrastructure Leadership,
+Peter DeSantis.
+[music playing]
+Good morning.
+Thank you for joining me.
+For those of you who have not
+watched this keynote before,
+we like to go a little deeper
+on how AWS thinks about
+and builds infrastructure.
+This morning I have some
+pretty cool things to share.
+Hopefully by now,
+you’ve heard about Graviton2
+as customers are reporting
+some fabulous results
+both improving their performance
+and lowering their cost.
+Today, I’m going to show you
+how we designed Graviton2
+and why it performed so well.
+And I’m excited to give you an update
+on our progress on sustainability.
+We’ve made a ton of progress
+since last year
+and I can’t wait to share
+that with you either.
+Of course, I have some
+really great customers here
+to talk about how they’re using
+AWS infrastructure
+to do amazing things
+for their customers,
+but I want to start off
+this morning
+by talking to you about something
+a bit different – how we operate.
+Can you tell me how AWS operates?
+This is a question
+that I often get from customers.
+And they usually ask the question
+for a couple of reasons.
+First, they want to understand
+our operational practices
+because if you’re going to run
+your critical workloads in the cloud,
+you want to know that you can depend
+upon the operational practices
+of your cloud provider.
+But customers
+also ask this question
+because they want to see
+what they can learn from AWS
+and apply those learnings
+to their own business.
+At Amazon, we pride ourselves
+on being a little bit peculiar
+and one of the ways
+this comes across
+is in the way some leaders
+express their ideas.
+I’ve been collecting these
+peculiar quotes for over a decade.
+You see, it’s part
+of my retirement plan
+to write a book
+on Amazon culture.
+Unfortunately that book is not
+coming along that quickly,
+so I thought it might be fun
+to use a few of these quotes
+to help us along in this discussion.
+Let me start with
+one of our favorites.
+When it comes to being a great
+operator, there’s no shortcuts.
+Great operational performance is
+the result of a long-term commitment
+and an accrual of small decisions
+and investments
+compounding on top of one another.
+But I do think there are
+a few things different
+about the way we approach
+availability at AWS.
+And I think it starts with AWS
+growing out of Amazon.
+Amazon is at its heart
+a technology company
+that’s uniquely tied
+to the physical world
+operating warehouses
+and customer support centers,
+running a complex
+international supply chain
+and keeping a website up
+24 hours a day,
+seven days a week for decades.
+These are all real-world
+operational challenges
+that benefit from
+technological invention.
+And these problems
+have inspired us
+to be both great technologists
+and great operators.
+Here’s an interesting quote
+from a leader
+that must have been
+a big fan of Columbo
+or perhaps the board game Clue.
+But what’s interesting
+about this quote is the context.
+This leader was patiently
+sifting through the details
+to find the root cause of a problem.
+Now when I interview senior leaders
+from other companies
+they often ask me,
+“Is there common challenges that are
+faced by new leaders at Amazon?”
+And I tell them
+the most common reason
+that I see new leaders
+at Amazon struggle
+is not getting in the details
+the way we would expect.
+We expect all our leaders,
+however senior,
+to spend a considerable amount of
+their time working in the details.
+If you’re an engineer,
+it’s nearly impossible
+to build a high availability system
+without understanding
+the operational challenges
+encountered by the current systems.
+And if you’re a manager,
+it’s difficult to make informed
+decisions about things like roadmap
+without understanding
+these same details.
+Setting the right culture
+and being in the details matters.
+But if you want to provide
+your customers
+with differentiated
+operational performance,
+you need to design it in.
+You may have heard Werner Vogels say,
+“Everything fails,”
+and that idea that anything can
+and will fail influences
+everything we build at AWS.
+The idea is simple.
+Anticipate failure
+and design your products
+to protect your customers.
+To illustrate this idea, we’ll look
+at how we build our infrastructure,
+specifically our data center
+power infrastructure.
+Let’s start with the basics.
+These are the usual suspects involved
+in high availability power design.
+There’s a utility feed
+coming into the data center.
+Power from the utility goes
+into what’s called switch gear.
+This is really just a set
+of interlock breakers
+with some monitoring logic
+and control logic.
+Our switch gear here
+is responsible for detecting
+when there’s a utility power issue
+and when it sees this,
+it disconnects the utility power
+and it activates a backup generator.
+The power from the switch gear
+is fed into what’s called
+an uninterruptable power
+supply or UPS.
+A UPS is essentially
+an energy storage device
+that supports the critical load
+while the switch gear switches
+between the utility
+and the backup generator.
+Now, while this is a simple design
+and it works for utility failures,
+this comes up far short of what
+you need to run a data center.
+Let’s take a look at that.
+We’ll start with a generator.
+Generators are big mechanical systems
+and they sit idle most of the time.
+But for the handful of minutes
+you need them every few years,
+they really need to work.
+Now with the right
+preventative maintenance
+they’re remarkably reliable.
+But remarkably reliable
+isn’t good enough.
+At scale, everything fails
+and to keep your equipment
+running at its best,
+you need to do
+preventative maintenance
+and to do this maintenance you have
+to take the generator offline.
+And while it’s offline, it’s not
+there to protect your critical load.
+So you have to add
+a backup generator.
+This concept called concurrent
+maintainability with redundancy
+is important for
+all of our critical gear.
+So what can we do?
+Well we add another generator.
+That’s a fairly easy change,
+but we still have problems
+with the simple design.
+What happens if the UPS
+or the switch gear fail?
+And how do we do maintenance
+on those components?
+Let me show you how we think about
+different components in a system
+and their potential
+impact on availability.
+When you look at the components
+of a system,
+whether the system’s
+in a software system
+or a physical system
+like the one we’re looking at here,
+it’s useful to think about them
+along with a couple of dimensions.
+The first is what is the blast radius
+of the component if it has a failure?
+If the impact is really small, then
+the failure may be less of a concern,
+but as the blast radius gets bigger,
+things get much more concerning.
+In the case of our power design,
+the blast radius of both components
+is big, really big.
+Data center UPSs these days tend
+to be around 1 megawatt of power.
+To put that in perspective,
+you can power thousands of servers
+with 1 megawatt of power.
+And your switch gear, it needs to be
+at least as big as your UPS
+and it’s often much bigger.
+So both of these components
+have big blast radius.
+The other dimension
+that’s interesting
+when you’re evaluating components
+is complexity.
+The more complicated a component,
+the more likely it is
+to have an issue.
+And here the switch gear
+and the UPS are quite different.
+Let’s take a deeper look.
+As I mentioned switch gear
+is fairly uncomplicated equipment.
+It’s big and super-important
+but it’s really just a bunch
+of mechanical circuit breakers,
+some power sensing equipment
+and a simple software control system.
+Now, that control system is simple,
+but it is software.
+Most vendors will refer to it
+as firmware
+but that really just means
+it’s embedded software
+that gets saved
+to a persistent memory module.
+And software that you don’t own that
+is in your infrastructure
+can cause problems.
+First, if you find a bug, you can
+spend weeks working with the vendor
+to reproduce
+that bug in their environment
+and then you wait months
+for the vendor to produce a fix
+and apply and validate that fix.
+And in the infrastructure world,
+you have to take that fix
+and apply it to all these devices
+and you might have to send
+a technical to manually do that.
+And by the time you’re done,
+it can easily take a year
+to fix an issue
+and this just won’t work
+to operate the way we want.
+Another problem with third party
+embedded software
+is that it needs to support lots
+of different customer use cases.
+Vendors need to optimize
+their equipment
+for what most
+of their customers want,
+not what you need
+and this means added complexity
+which in turn increases
+the risk of a failure.
+Finally,
+small operational differences
+in how the different software behaves
+can make your operations different,
+more complex
+and this can lead to mistakes.
+So many years ago we developed
+our own switch gear control system.
+We call it AMCOP.
+You can see it pictured here.
+Now this may look fairly simple
+and indeed we’ve invested heavily
+in keeping it as simple as possible.
+We don’t add features
+to our controller.
+Instead we focus on ensuring it does
+its very important job perfectly.
+Today, we use dozens of different
+makes and models of switch gear
+from several partners,
+but they’re all controlled by AMCOP
+and this means that we can
+operate our global data center
+exactly the same way everywhere.
+Now let’s look at a UPS.
+There’s lots of ways
+to spot complexity.
+The first is to look at how many
+components are in the system.
+And you can see from this picture
+that UPSs have
+very complex electronics,
+but what you can’t see
+in this picture
+is the software that runs
+on these components
+and that’s where things
+get really complex.
+The UPS has a hard job to start with
+and vendors have jam-packed the UPS
+with features over the last 20 years.
+Now we often disable
+many of these features,
+but they still add complexity
+to the UPS.
+Beyond the complexity of
+the UPS itself, they’re batteries.
+UPSs need to store energy somewhere
+and they usually do that
+in lead acid batteries.
+There are other solutions, but lead
+acid batteries have an advantage
+of being an old,
+well understood technology.
+But they have disadvantages too.
+The batteries for a single 1
+megawatt UPS weigh 12,000lbs
+and they’re best stored
+in a dedicated room
+because they require
+special environmentals.
+All right, let’s go back
+to our chart.
+As we saw earlier, both the UPS
+and the switch gear are big,
+but the UPS is significantly more
+complex, so let’s update our chart.
+Okay, now you can clearly see
+what’s keeping us up at night
+and we’re not the only ones
+that have come to the conclusion
+that a single UPS
+is not reliable enough.
+Lots of smart people
+have worked on solutions.
+There’s no standard solution
+but the common approach
+is to throw more redundancy
+at your design,
+usually by adding a second UPS.
+And often this is done by using
+a feature of the UPS
+that allows it to be paralleled
+with other UPSs.
+The problem with this approach
+is that it doesn’t really change
+your position our graph.
+You still have a big, complicated
+component keeping you awake at night.
+You’ve just added one more and
+it’s connected to the other UPS.
+More interconnected
+complicated components
+is seldom a solution
+that yields increased availability.
+The approach we’ve taken
+for a long time
+is to power our servers
+with two independent power lineups.
+By independent I mean each lineup
+has its own switchgear,
+its own generator, its own UPS,
+even its own distribution wires.
+And by keeping these lineups
+completely independent
+all the way down to the rack,
+we’re able to provide
+very high availability
+and protect ourselves
+from issues with the UPS.
+And while we don’t love our UPSs
+for the reasons I mentioned earlier,
+this redundancy performs very well.
+In fact, our data centers running
+this design achieve availability
+of almost 7 9s.
+But if you want to be
+an amazing operator,
+you need to constantly
+push to improve.
+And as you can see
+in this peculiar quote,
+you can’t just ruminate about
+how to make things better,
+you need to act.
+So how do we improve
+our power design?
+Well, we need to address the big
+blast radius complicated component,
+the UPS.
+And let me show you how we did that.
+Rather than using a big third-party
+UPS,
+we now use small battery packs
+and custom power supplies
+that we integrate into every rack.
+You can think about this as a micro
+UPS, but it’s far less complicated.
+And because we designed it ourselves,
+we know everything about it
+and we control all the pieces
+of the software.
+And as we discussed earlier,
+this allows us to eliminate
+complexity
+from features we don’t need
+and we can iterate at Amazon speed
+to improve the design.
+Now the batteries can also be
+removed and replaced in seconds
+rather than hours and you can do this
+without turning off the system.
+So this allows us
+to drastically reduce
+the risk of maintenance we need
+to do to the battery shells.
+The end result, we eliminated
+a big blast radius high complexity,
+failure-prone UPS
+and we replaced it with a small blast
+radius, lower complexity component.
+Now this is exactly
+the sort of design
+that lets me sleep like a baby.
+And indeed, this new design is
+giving us even better availability
+than what I showed earlier.
+And better availability
+is not the only improvement
+we get from this new design.
+I’m going to come back to this later
+when we look at sustainability.
+But for now I want
+to stay on infrastructure.
+Like the example I showed you here
+today, we are continually investing
+and improving the availability
+of our infrastructure.
+But we are also aware that no matter
+how good our infrastructure
+design and operations,
+some level of failure is inevitable.
+Physical events like fires,
+floods, hurricanes,
+tornadoes are tangible proof
+that you cannot achieve
+extremely high reliability
+from any single server
+or even a single data center.
+After we launched Amazon EC2,
+Availability Zones
+were one of the very
+first features that we added.
+At the time the idea
+of an Availability Zone
+was a brand new concept
+to most users,
+but this idea was not new to Amazon
+because this was the way
+we had been running
+our infrastructure for a long time.
+About five years
+before we launched AWS
+we made a decision to expand
+the Amazon.com
+infrastructure
+beyond the single data centers
+that we were using in Seattle.
+Several operational near misses
+made it clear
+that we needed
+an infrastructure strategy
+that allowed us to run our critical
+systems out of several data centers.
+One of the leading ideas at the time
+was to move our system
+to two data centers,
+one on the west coast
+and one on the east coast.
+This is the availability model
+used by most of the world
+at that time
+and it’s still common today.
+And while this idea seems
+compelling at a high level,
+it loses its charm quickly
+when we get into the details.
+Amazon is a highly stateful,
+real-time application
+that needs to do things like keep
+inventory information
+up-to-date and consistent while all
+the users are accessing the website.
+And when you’re trying to keep data
+that changes
+this rapidly synchronized,
+with either strong or eventual
+consistency, latency matters.
+With a synchronous strategy
+the latency between your replicas
+will directly impact
+your maximum transaction rate.
+And with an asynchronous strategy,
+the higher the latency,
+the more out-of-date
+your replicas will be.
+And for Amazon
+where millions of customers
+are accessing real-time
+inventory information
+and making real-time changes
+to that information,
+neither a low transaction rate
+nor out-of-date information
+is acceptable.
+And this problem
+isn’t unique to Amazon.
+All modern high-scale applications
+need to support
+high transaction rates
+and seek to provide up-to-date
+information to their users.
+So the obvious solution is to run
+from multiple data centers
+located closer together.
+But how close?
+Like all good engineering challenges
+we have a trade-off.
+The further apart
+you put two data centers,
+the less likely they’ll be
+impacted by a single event.
+On one extreme, if you put two
+data centers across the street
+from one another, it’s pretty easy
+to think about things
+that might impact both data centers.
+Common things like utility failures
+to less common things like fires
+and floods to unlikely but really
+scary things like tornadoes.
+But as you get further apart,
+the probability of these sorts of
+natural disasters goes down quickly.
+And once you get
+to miles of separation,
+even natural disasters
+like hurricanes and earthquakes
+are unlikely to have a significant
+impact on both data centers.
+Now you can keep going,
+but after a while you need to start
+imagining some absurdly
+low probability disasters,
+things that haven’t happened
+in any of our lifetimes
+to imagine simultaneous impact.
+And of course, on the other side
+adding distance adds latency.
+The speed of light
+is a pesky little thing
+and no amount of innovation
+speeds it up.
+Here I’ve added some estimates for
+how much latency would be observed
+as we move
+our data centers further apart.
+The conclusion we came to is that
+for high availability applications
+there’s a Goldilocks zone
+for your infrastructure.
+When you look at the risk,
+the further away the better,
+but after a handful of miles,
+there’s diminishing returns.
+This isn’t an exact range.
+Too close varies a little
+based on geographic region.
+Things like seismic activity,
+hundred-year flood plains,
+probability of large hurricanes
+or typhoons
+can influence
+how we think about too close.
+But we want miles of separation.
+And what about too far?
+Here we look at the latency
+between all the Availability Zones
+in the region
+and we target a maximum latency
+roundtrip of about 1 millisecond.
+Now whether you’re
+setting up replication
+with a relational database
+or running a distributed system
+like Amazon S3 or DynamoDB,
+we’ve found that things
+get pretty challenging
+when latency goes much
+beyond 1 millisecond.
+I just spent a bunch of time
+giving you insight
+into how we think
+about Availability Zones,
+but really this is not news.
+You can read all about this
+in our documentation.
+Here you can see how we define
+Regions and Availability Zones.
+Of particular note
+you’ll see that each Region
+has multiple Availability Zones
+and we clearly state
+that every Availability Zone
+is physically separated
+by a meaningful distance.
+Seems pretty straightforward.
+But let’s see how
+some other cloud providers
+talk about
+their Availability Zones
+and more importantly let’s look
+at what they don’t say.
+Here's the way other
+US cloud providers
+talk about Availability Zones.
+Neither provider is clear
+and direct about what they mean.
+Words like ‘usually’
+and ‘generally’ are used
+throughout their documentation.
+And when you’re talking about
+protecting your application
+with meaningful separation,
+usually and generally
+just aren’t good enough.
+But the most concerning thing
+about this documentation
+is what it doesn’t say.
+Neither provider says anything
+about how far apart
+their Availability Zones are.
+Two rooms in the same house
+are separate locations,
+but that’s not what you want
+from your Availability Zones.
+And another challenge
+is the fine print.
+One provider says
+that Availability Zones
+are generally available
+in select Regions.
+Well what’s a select Region?
+I took a quick look to figure out
+how many Regions that might be
+and it looks like about 12 Regions
+have Availability Zones
+and another 40 Regions do not.
+And notably, none of the Regions
+in South America,
+Africa or the Middle East
+have Availability Zones.
+It also appears that countries
+like China and Korea
+lack Regions
+with Availability Zones entirely.
+For most customers, properly
+designed Availability Zones
+provide a powerful tool
+to cost effectively achieve
+very high availability.
+We believe that availability
+you can achieve from properly
+designed Availability Zones
+is sufficient for the vast
+majority of workloads.
+But some customers require
+even higher levels of assurance.
+For example,
+to meet regulatory requirements.
+And for these workloads AWS
+offers the option to run applications
+in multiple geographic regions
+to attain
+even higher fault-tolerance
+and disaster isolation.
+But here too we think
+about things a little differently.
+When thinking about things
+that can impact your services,
+we naturally think about fires,
+floods, tornadoes.
+But humans are the most
+likely source of a problem
+and it’s usually
+well-intentioned humans.
+As the quote here tells us,
+anything that a human can touch,
+a human can muck up.
+And that’s why AWS
+goes to extreme lengths
+to protect our infrastructure
+and our services
+from human and natural disasters.
+Anything that can impact them from
+a single event or a single change.
+We do this everywhere.
+But AWS Regions are special.
+Regions are designed to be entirely
+isolated from one another
+at the infrastructure level
+and also at the software
+and the services level.
+By default, all AWS services
+are built and deployed
+separately to every AWS Region
+to assure that we do not
+have operational issues
+across multiple Regions
+simultaneously.
+A small number of services
+provide cross-region capabilities.
+For example, you can use
+the same AWS credentials
+to log into two different regions.
+These capabilities are limited,
+highly scrutinized
+and carefully managed.
+As a result,
+in our 15 years of operation,
+services like Amazon S3,
+Amazon EC2 and Amazon DynamoDB
+have never had significant issues
+in multiple regions at the same time.
+AWS currently
+has 24 independent regions,
+each with multiple well-designed
+Availability Zones.
+This year, we’re delighted to launch
+AWS Regions in Cape Town,
+South Africa and Milan, Italy.
+We’ve also announced new Regions
+coming in Switzerland,
+Indonesia and Spain
+and will be adding our second Regions
+in India, Japan and Australia.
+That last one was just
+announced earlier this week.
+Of course, great availability
+is not just about
+keeping everything running.
+For a cloud provider,
+it also includes providing you
+with the capacity you need when you
+need it and where you need it.
+Just like a technical design,
+a supply chain
+is made up on components
+or in this case suppliers and each
+of these components can fail.
+These failures can be caused
+by short-term issues like labor
+strikes or fires or longer
+lasting issues like trade disputes.
+No year in recent memory
+has seen more disruption than 2020.
+Starting in March of this year,
+we saw varying degrees of disruption
+all over the world
+as local communities
+responding to the Coronavirus.
+The impact has been different
+based on location and time,
+but unexpected delays
+and closures were the norm
+and in many ways they continue to be.
+To deal with the real world,
+the best protection is engineering
+your supply chain
+with as much geographic
+and supplier diversity as you can.
+Like separation can protect
+your infrastructure,
+it can also protect
+your supply chain.
+And this has been an area
+of continued focus for us
+over the last decade.
+Here's a view of our supply chain
+for four critical components.
+Each dot represents
+one or more suppliers.
+A bigger dot represents
+more suppliers.
+At this time, we had a total
+of twenty-nine suppliers
+in four countries
+for these four components.
+Now, this is reasonable
+supplier diversity
+but we wanted to do much better.
+Here’s the global supply map for
+those same four components in 2020.
+Since 2015, we’ve nearly tripled
+the number of suppliers
+and increased our supply base
+to seven countries.
+And this added diversity
+was a big help
+in navigating the challenges of 2020.
+Our investments in a
+geographically diverse supply chain
+and our operational focus that we
+put on capacity planning meant that,
+despite all the challenges
+of this last year,
+our customers were able to keep
+scaling without interruption.
+It’s so satisfying to see
+how those investments allowed us
+to help our customers
+through this challenging time.
+Now, I want to introduce
+one of our customers
+that had to quickly reinvent
+how they did business
+when COVID hit the Spring.
+Here is Michelle McKenna,
+Chief Information Officer
+for the National Football League.
+Thank you, Peter.
+Our thirty-two teams
+and their passionate fans
+make the NFL America’s
+largest sports organization.
+Last season, we finished
+our one hundredth season
+with over fifteen
+million viewers per game,
+creating forty-one of the top
+fifty broadcasts in the US.
+As CIO, I oversee
+the League’s technology strategy
+which includes making sure
+we leverage the best and greatest
+and new technologies
+to evolve our game,
+engage our fans,
+and protect and develop our players.
+In early March of this year,
+we were preparing for the NFL draft.
+A live event where we welcome
+our newest players.
+The NFL draft is about conducting
+the business of football
+but it has now also grown into
+one of our marquee events enjoyed
+by hundreds of thousands of fans
+over three days in an NFL city
+and even watched by millions online
+and on television.
+The 2020 draft
+was to be in Las Vegas.
+But, like the rest of the world,
+we learned about COVID-19
+and we rapidly began to understand
+that the event would be
+much different in 2020.
+On March 13th, our offices shut down
+and the offices and facilities
+of our clubs soon followed suit.
+On March 24th, we had a meeting.
+I recently looked back at my calendar
+and it was aptly named
+“Draft Contingencies”.
+And my, what a contingency
+we ended up needing.
+By then we had learned
+that we would not be able
+to gather in our facilities at all.
+So, five weeks out,
+the League had to call an audible.
+The draft was officially
+going virtual.
+In the span of a few days,
+we went from a live broadcast
+in Las Vegas
+to hopefully being able to gather
+in our facilities coaches and staff
+to ultimately everyone,
+every player prospect,
+every coach, general manager, scout,
+and even our Commissioner would need
+to be remote from their homes.
+The challenge was immense.
+With hundreds of questions about
+how we were going to pull it off,
+would we really be able
+to do it remotely?
+Could it be done
+without technical interruption?
+I remember holding my breath
+when asked that question
+by our Commissioner
+because, typically,
+televised broadcasts
+require a production truck
+and the reliability of satellite,
+which rarely fails, transmitted back
+to studios for production.
+But this traditional route
+wouldn’t work
+for all the hundreds of remotes
+that we would need.
+So, we had to figure out a new plan.
+We quickly got together
+with our partners and events
+and one of the first companies
+we reached out to for help was AWS.
+The NFL and AWS have been
+strategic partners for many years now
+and as the CIO of the League,
+I have leaned on AWS
+many times to help me
+solve things and challenges
+that we haven’t done before.
+So, right away.
+I reached out to my partners.
+Our Head of Technology John Cave
+actually suggested to us all
+on a big video call
+that perhaps we could carry
+the broadcast
+over the internet
+using AWS and mobile phones
+instead of broadcast satellites
+and high-end broadcast cameras.
+At first, it seemed impossible.
+ESPN, I recall, told us,
+“We’ve never done anything
+like this before.”
+We had eighty-five draft picks to do,
+an even larger number of coaches,
+GMs, and staff, and we were scattered
+all over the country.
+How could this possibly work?
+Well, with ESPN,
+our broadcast partner, and AWS,
+we put our heads down
+and came up with a plan.
+Each player would receive
+two devices.
+One always on device that would show
+the emotion of the moment,
+the anticipation and the excitement.
+It was actually the “live from
+the living room” shot, so to speak.
+And the other interview camera
+was to be used for interviews
+so that a player could step aside
+and have one-to-one interactions
+with their new teams, fans,
+and our Commissioner.
+We created and shipped nearly two
+hundred at home production booths
+for top prospects,
+coaches, teams, and personnel,
+including everything from
+two mobile phones to lighting,
+to microphones and tripods.
+And even further than this,
+we went through a full tech analysis
+of each location
+to ensure that if connectivity
+needed upgrading,
+it could be done in advance.
+And we also had every internet
+service provider on speed dial.
+This is Jordan Love
+from Utah State University.
+Here at the house getting ready
+for the virtual draft.
+This morning,
+I received my draft kit.
+Got my whole setup.
+This is where I’ll be sitting.
+Hope everyone is staying home,
+staying strong.
+Can’t wait to see
+everyone on Thursday night.
+We were also able to implement
+a fundraising platform
+that raised over a hundred
+million dollars for COVID
+Relief. Knowing that this draft
+could have that kind of impact
+is really what pushed our teams
+to keep working forward
+through this technical challenge
+so that we could pull this off,
+ultimately leaving a legacy
+in the League’s history.
+AWS is a strategic partner
+and known to be a resilient Cloud.
+And we knew if any organization
+could help us pull this off,
+it would be AWS.
+AWS deployed several
+of their top engineers
+to help us think through how we could
+simultaneously manage
+thousands of feeds to flow
+over the internet
+and up to ESPN in Bristol,
+Connecticut, to put on the air.
+In order to make that successful,
+the IT team had to become
+somewhat of an air traffic
+controller for a live broadcast.
+But we also had to see problems
+in the broadcast
+ahead of them happening,
+utilizing the best
+in the crystal ball technology.
+You know, seeing the future.
+Something that I know
+you all have do.
+The always on video feeds
+were sent to EC2
+Instance’s running media gateways.
+ESPN pulled the feeds from EC2
+and produced the show live.
+The NFL on-premise systems
+also received the feeds
+via Direct Connect
+for our own internal use,
+which included monitoring
+and archiving.
+We used AWS Shield Advanced,
+a dedicated service
+to monitor traffic real time
+and mitigate attacks,
+to enhance protection
+of the NFL media gateways.
+We used multiple Availability Zones
+to minimize impact
+in the event of a failure
+and, just in case,
+even more contingencies,
+we had additional infrastructure
+ready to go in another region.
+AWS helped monitor and alert us
+when problems were around the corner,
+using that crystal ball,
+so that we could react in time
+for live television.
+It’s one thing to be resilient in
+your day-to-day technology operation
+and a totally different thing
+to be resilient when we were live.
+This was my first live
+television experience
+and I can tell you it is not
+for the faint of heart.
+The AWS Cloud infrastructure
+was the resilient backbone
+that helped us move
+thousands of feeds.
+Many people called
+these drafts special.
+And it was special indeed.
+Raising over
+a hundred million dollars,
+the draft also had
+a record number of viewers.
+Over fifteen million tuning in
+for the first-round picks,
+a thirty-seven percent
+increase from the prior year,
+and totaling
+fifty-five million viewers
+over the course
+of a three-day event.
+What resulted by chance
+was the personal connections
+to the Commissioner, prospects,
+owners, GMs, and head coaches.
+Social media was a testimony
+to our fans’ involvement.
+Platforms were buzzing
+everywhere about every topic.
+Even our Commissioner’s jar of M&Ms
+became a subject of discussion,
+something that
+we could never have imagined.
+But at the core of all this madness,
+what was so special was how our fans
+were able to connect with the NFL.
+You see, they were going through
+much the same thing
+we were all going through.
+They were able to relate
+to what they were watching.
+All the people at home were going
+through the same thing as we were.
+Coping with a pandemic,
+remote working with our families
+around, pets, and many distractions.
+This intimate interaction
+could not have been planned for
+and that’s what made it
+so special and real.
+The 2020 virtual draft
+will have long lasting effects.
+How we plan and produce our
+broadcasts is going to forever change
+and we will now always have,
+I believe,
+some virtual components to our draft.
+For example, our Commissioner
+was able to personally welcome
+almost every player to the NFL
+instead of a select few
+that get to attend a live event.
+Going forward, we will continue
+to push and use AWS’
+Cloud to enable and transform
+our broadcast and events.
+Thank you.
+Thank you, Michelle. It’s great
+to hear how the NFL and AWS
+worked together to deliver a special
+and successful NFL draft.
+The last couple of years,
+I’ve talked a lot
+about our investments in AWS Silicon.
+That’s because these investments
+have been allowing us
+to deliver differentiated
+performance, exciting new features,
+improved security, and better power
+efficiency for AWS customers.
+We’re going to look now
+at how we design our chips.
+But chips are only part
+of this story.
+What’s really exciting
+and transformative
+about deep investments in AWS
+Silicon is being able to work
+across custom hardware and software
+to deliver unique capabilities.
+And by working across
+this whole stack,
+we’re able to deliver these
+improvements faster than ever before.
+At AWS, we’ve been building custom
+hardware for a very long time.
+Our investments in AWS
+Custom Silicon all started in 2014
+when we began working with a company
+called Annapurna Labs
+to produce
+our first custom nitro chip.
+Shortly after this,
+Annapurna Labs became part of AWS
+and is now the team working on
+all of these exciting chips.
+Now, we use that nitro chip I just
+talked about to create specialized
+hardware which we call
+the Nitro Controller.
+We use the Nitro Controller to turn
+any server into an EC2 instance.
+The Nitro Controller runs all
+the code that we use to manage
+and secure the EC2
+instance and virtualize
+and secure our network and storage.
+And by running on the Nitro
+Controller rather than on the server,
+we’re able to improve
+customer instance performance,
+increase security,
+and innovate more quickly.
+Today, I have an example that
+I believe really brings this to life.
+Last week, we announced
+the Amazon EC2 Mac Instance.
+There was a ton of excitement
+about this launch.
+But how do you make a Mac
+into an EC2 instance?
+Well, here you can see
+an actual Mac EC2 server.
+You probably recognize the Mac Mini
+in the middle of the server tray.
+And if we pan out a bit,
+you’ll see the Nitro Controller.
+The first Mac EC2 Instance
+is the marriage of a Mac Mini
+and a Nitro Controller.
+And as you see, we did not need
+to make any changes
+to the Mac hardware.
+We simply connected
+a Nitro Controller
+via the Mac’s Thunderbolt
+connection.
+When you launch a Mac Instance,
+you’re Mac compatible AMI
+runs directly on the Mac Mini.
+No hypervisor.
+The Nitro Controller
+sets up the instance
+and provides secure access
+to the network
+and any storage you attach.
+And that Mac Mini can now
+natively use any AWS service.
+It can have multiple network E&Is.
+It can attach high performance
+encrypted EBS volumes.
+It can have instance firewalls.
+And the instance has low latency
+access to other AWS services,
+like Amazon S3 and Amazon Aurora.
+All the great stuff that comes
+with being an EC2 Instance.
+And because all of this
+happens outside the Mac Mini,
+you get all the resources of the Mac
+dedicated to your workload.
+Just as you would if that Mac
+was running on your desktop.
+Today, we’re on our fourth generation
+of custom Nitro chips.
+And each generation of Nitro chip
+has enabled improved performance.
+The most recent generation
+of our Nitro chip
+is powering the recently
+announced C6gn Instance.
+The C6gn is our highest performing
+network optimized EC2 instance.
+It’s specifically designed for
+the most demanding network workloads,
+including high performance computing.
+Now, there are lots of different ways
+to look at network performance
+and the C6gn improves performance
+on all of these dimensions.
+But as I’ve discussed a few times
+in past keynotes,
+achieving lower latency
+with reduced jitter
+is one of the hardest problems
+in engineering.
+Latency is one of those challenges
+that cannot be solved
+with more transistors,
+more engineers, more power.
+So, here you can see
+the C6gn instance
+and how it reduces
+round-trip latencies
+significantly compared to the C5n.
+The C5n was previously
+our best performing instance
+for network intensive workloads.
+And improvements like this
+aren’t just at the average.
+You can see the improvement
+in the tail latency as well.
+And this means reduced
+performance variability
+which, for scale out applications,
+means better overall performance.
+We’re going to look
+at this more in a minute.
+Now, while we’re very excited
+about the Nitro chips
+and our investments here,
+our investments in AWS
+Custom Silicon
+extend far beyond Nitro.
+Last year, we released our
+first machine learning chip, AWS
+Inferentia. We targeted inference
+with our first chip
+because most at scale workloads,
+machine learning workloads,
+the cost of the inference represents
+the vast majority of the cost,
+and for Inferentia provides
+the highest
+throughput at almost half the cost
+per inference when compared to GPUs
+which are commonly used for large
+scale inference infrastructure.
+Our AWS Neuron team developed
+a software to allow machine
+learning developers to use Inferentia
+as a target for popular frameworks,
+including TensorFlow,
+PyTorch, and MXNet.
+With Neuron, they can take advantage
+of the cost savings
+and performance of Inferentia
+with little
+or no change
+to their ML code,
+all while maintaining support
+for other ML processors.
+We’ve been delighted by the results
+customers have achieved
+in migrating their large-scale
+inference workloads to Inferentia.
+Amazon Alexa recently moved
+their inference workload
+from Nvidia GPU-based hardware
+to Inferentia based EC2 Instances
+and reduced costs by thirty percent
+while achieving a twenty-five percent
+improvement in their
+end-to-end latency.
+And as you can see,
+many other customers
+are reporting great results.
+And while we’re excited
+by the results customers
+are seeing with Inferentia,
+our investment in machine
+learning chips is just beginning.
+Last week, Andy announced AWS
+Trainium, our second machine
+learning chip.
+Like Inferentia
+has done for inference,
+Trainium will provide the lowest cost
+and highest performance
+way to run your training workloads.
+I’m looking forward to showing you
+more technical details about
+Trainium next year.
+But today, I want to talk to you
+about our third area
+of silicon investment, AWS
+Graviton.
+We introduced Graviton
+a couple of years ago
+with the Graviton based A1 Instance.
+Our purpose with that instance
+was to work with our customers
+and our ISV partners to understand
+what they needed
+to run their workloads
+on a modern 64-bit ARM processor.
+We learned a lot about how
+to make it easy for customers to port
+and run applications on Graviton.
+This year, we released Graviton2.
+I didn’t get a chance to tell you
+about it at last year’s keynote
+but the good news is I can now
+get into the details of Graviton2,
+how we designed it
+and, more importantly,
+show you some of the amazing results
+that our customers are seeing
+moving their workloads to Graviton2.
+With Graviton2,
+we set out to design the best
+performing general purpose processor.
+And while we wanted
+the best absolute performance,
+we also wanted the lowest cost.
+Faster and less expensive.
+Having lofty goals for a
+multi-hundred million project
+like a new chip isn’t unusual.
+What’s unusual
+is exceeding these goals.
+Graviton2 is the best performing
+general purpose processor
+in our Cloud by a wide margin.
+It also offers
+significantly lower cost.
+And as I will show you later
+when I update you on sustainability,
+it’s also the most power efficient
+processor we’ve ever deployed.
+Great results like this require
+amazing execution.
+But they also require a clever plan.
+Taking the same path as every other
+processor would not have delivered
+the type of performance
+we’re seeing here.
+Our plan was to build a processor
+that was optimized for AWS
+and modern Cloud workloads,
+taking full advantage
+of the Nitro architecture
+that I talked about earlier.
+So, what do modern
+Cloud workloads look like?
+Well, to understand that,
+let’s start by looking at
+what a modern processor looks like.
+Before about fifteen years ago,
+the main difference between
+one processor generation
+and the next was the speed
+of the processor.
+And this was great while it lasted.
+But about fifteen years ago,
+this all changed.
+New processors continued
+to improve their performance
+but not nearly as quickly
+as they had in the past.
+Instead, new processors
+started adding cores.
+And now, you can think of a core
+like a mini processor on the chip.
+Each core on the chip
+can work independently
+and at the same time
+as all the other cores.
+And this means that if you can divide
+your work up,
+you can get
+that work done in parallel.
+Processors went from one core to two
+and then four.
+The trend was obvious and exciting.
+So, how did workloads adapt
+to this new reality?
+Well, the easiest way
+to take advantage of cores
+is to run more independent
+applications on the server
+and modern operating systems
+have got very good at scheduling
+and managing multiple processes
+on high core systems.
+Another approach
+is multi-threaded applications.
+Multi-threaded applications
+allow builders
+to have the appearance of scaling up
+while taking advantage
+of parallel execution.
+Languages like Java make
+multi-threaded programming easier
+and safer than the C++
+I grew up with.
+But modern languages like Go, Erlang,
+and Rust have completely
+changed the game
+for high performance multi-threaded
+application development.
+To me, one of the most exciting
+trends is the move to services.
+Service based architectures move us
+from large monolithic applications
+to small, purpose built
+independent services.
+This is exactly the type of computing
+that containers and Lambda enable.
+Taken together, you can call
+these trends scale out computing.
+And while scale out computing
+has evolved to take advantage
+of higher core processors;
+processor designers have never
+really abandoned the old world.
+Modern processors have tried
+to have it both ways,
+catering to both legacy applications
+and modern scale out applications.
+And this makes sense
+if you think about it.
+As I mentioned,
+producing a new processor
+can cost hundreds
+of millions of dollars
+and the way you justify
+that sort of large upfront investment
+is by targeting
+the broadest option possible.
+The more processors you
+ultimately end up producing,
+the less significant
+that upfront cost
+is to each incremental
+processor produced.
+So, modern mini core processors
+have unsurprisingly tried
+to appeal to both legacy applications
+and modern scale out applications.
+Processor designers
+have been constantly
+adding functionality
+to their cores for decades.
+With legacy workloads,
+you need to assure
+that every core never stalls
+while waiting for resources
+so you end up adding more
+and more of everything
+and everything gets bigger.
+And somewhere along the way,
+a funny thing started happening.
+Cores got so big and complex that it
+was hard to keep everything utilized.
+And the last thing you want
+is transistors on your processor
+doing nothing.
+So, to work around
+this limitation,
+processor designers
+invented a new concept
+called simultaneous
+multi-threading or SMT.
+SMT allows a single core
+to work on multiple tasks.
+Each task is called a thread.
+Threads share the core so SMT
+doesn’t double your performance
+but it does allow you
+to take use of that big core
+and maybe improves your performance
+by twenty or thirty percent.
+But SMT also has drawbacks.
+The biggest drawback of SMT
+is it introduces overhead
+and performance variability.
+And because each core
+has to work on multiple tasks,
+each task’s performance
+is dependent
+on what the other tasks
+are doing around it.
+Workloads can contend for the same
+resources like cache space
+slowing down the other threads
+on the same core.
+In fact,
+workloads like video transcoding
+and high-performance computing
+which spend a lot of time
+optimizing their code for scale
+out workloads disable SMT entirely
+because the variability
+introduced by SMT
+makes their applications
+run less efficiently.
+And while you can turn off SMT,
+you can’t reclaim the transistors
+that you used to put it in there
+in the first place.
+And this means you’re paying
+for a lot of idle transistors.
+There are also
+security concerns with SMT.
+SMT is the main vector
+that researchers have focused on
+with
+so-called side channel attacks.
+These attacks try to use SMT
+to inappropriately share
+and access information
+from one thread to another.
+Now, we don’t share threads
+from the same processor core
+across multiple customers
+with EC2 to ensure customers
+are never exposed to these
+potential SMT side channel attacks.
+And SMT isn’t the only way processor
+designers have tried to compensate
+for overly large
+and complex cores.
+The only thing worse
+than idle transistors
+is idle transistors that use power.
+So, modern cores have complex
+power management functions
+that attempt to turn off
+or turn down parts of the processor
+to manage power usage.
+The problem is, these power
+management features introduce
+even more performance variability.
+Basically, all sort of things
+can happen to your application
+and you have no control over it.
+And if you’re a system engineer
+trying to focus on performance,
+this can be extremely difficult
+to cope with.
+And in this context,
+you can now understand
+how Graviton2 is different.
+The first thing we did with Graviton2
+was focus on making sure
+that each core delivered
+the most real-world performance
+for modern Cloud workloads.
+When I say real-world performance,
+I mean better performance
+on actual workloads.
+Not things that lead
+to better spec sheets stats
+like processor frequency
+or performance micro benchmarks
+which don’t capture
+real-world performance.
+We used our experience
+running real scale out applications
+to identify where we needed
+to add capabilities
+to assure optimal performance
+without making our cores too bloated.
+Second, we designed Graviton2
+with as many independent cores
+as possible.
+When I say independent,
+Graviton2 cores
+are designed
+to perform consistently.
+No overlapping SMT threads.
+No complex power state transitions.
+Therefore, you get
+no unexpected throttling,
+just consistent performance.
+And some of our design choices
+actually help us
+with both of these goals.
+Let me give you an example.
+Caches help your cores run fast
+by hiding the fact that system memory
+runs hundreds of times
+slower than the processor.
+Processors often use
+several layers of caches.
+Some are slower and shared
+by all the cores.
+And some are local to a core
+and run much faster.
+With Graviton2,
+one of the things we prioritized
+was large core local caches.
+In fact, the core local
+L1 caches on Graviton2
+are twice as large as the current
+generation x86 processors.
+And because we don’t have SMT,
+this whole cache is dedicated
+to a single execution thread
+and not shared by competing
+execution threads.
+And this means that each Graviton2
+core has four times the local
+L1 caching as
+SMT enabled x86 processors.
+All of this means each core
+can execute faster
+and with less variability.
+Okay.
+Now, hopefully you have a pretty
+good idea of what we focused on
+when we designed and built Graviton2.
+Let’s look at how things turned out.
+Here’s a view of how many
+execution threats were available
+when we built
+in our processors
+that we used to build
+RC instances over the years.
+On the left you see our C1 instance
+which was launched with the processor
+that had four threats.
+And on the right you see Graviton2
+with its 64 execution threats
+which is used in the C6g.
+Now, when you look at this graph,
+this looks like pretty
+incremental progress,
+but remember, this view
+is threads not cores.
+So, for most of these
+processers we’re looking at,
+those threads have been
+provided by SMT.
+Let me adjust the graph
+and let’s look at real cores.
+Okay, now you see how Graviton2
+really differentiates itself,
+that’s a significant
+non-linear improvement.
+So, let’s look at some benchmarks.
+Because Graviton2
+is an Arm processor,
+a lot of people will assume
+that Graviton2
+will perform good
+at front-end applications,
+but they doubt it can perform
+well enough
+for serious I/O intensive
+back-end applications.
+But this is not the case.
+So, let’s look at a Postgres database
+workload performing a standard
+database benchmark called HammerDB.
+First we’re going to look
+at the m5 instance.
+Now the smallest m5 instance
+has two execution threats.
+It’s one core but two threats.
+Remember, I mentioned we don’t
+share cores across customers.
+So, we can only scale
+down to two threats.
+And our largest m5 instance
+actually has 96 threats.
+But that’s actually two
+processors on the same system
+and that’s going to cause
+some problems.
+So, we’re going to start by
+looking at
+just how this benchmark performs
+on one m5 processor.
+Okay. Here you can see
+we get pretty good scaling.
+As we add more threads things
+improve almost lineally,
+not quite, but pretty close.
+Okay.
+Now I am going to add
+the larger m5 instance sizes.
+This is the threads
+from the other processor.
+Okay. You can see right away
+a scaling here isn’t nearly as good.
+And there’s a few reasons
+for this flattening.
+But it mostly comes down
+to sharing memory
+across two
+different processors,
+and that sharing adds latency
+and variability to the memory access.
+And like all variability,
+this makes it hard for scale-out
+applications to scale efficiently.
+Let’s add Graviton.
+Here we can see the M6g
+instance on the same benchmark.
+You can see that M6g delivers better
+absolute performance at every size.
+But that’s not all.
+First you see the M6g scales
+almost lineally all the way up
+to the 64 core
+largest instance size.
+And by the time you get to 48 cores,
+you have better absolute performance
+that even the largest m5 instance
+with twice as many threats.
+And you can see M6g
+offers a one core option.
+Because the M6g doesn’t have threads
+we can scale
+all the way down giving you
+an even more cost-effective option
+for your smallest workloads.
+And for your most demanding workloads
+the 64 core M6g
+instance provides over 20%
+better absolute performance
+than any m5 instance.
+But this isn’t the whole story.
+What we’re looking at here
+is absolute performance.
+Things get even better when we factor
+in the lower cost of the M6g.
+Let's look at that.
+Okay. Here you can see the biggest
+and smallest M6g instance
+compared to the corresponding
+m5 instance variance
+on the same cost per operation basis
+for the benchmark we just looked at.
+You can see the larger sized
+instances are nearly 60% lower cost.
+And because the M6g scales down
+better than a threaded processor,
+you can save even more
+with the small instance,
+over 80% on this workload.
+Of course,
+benchmarks are exciting
+but what’s really exciting
+is seeing customers
+having success
+using Graviton2.
+And the benchmarks
+that really matter,
+customer workloads are
+showing the performance
+in price benefits
+we expected.
+I got a chance to catch up
+with one of those customers,
+Jerry Hunter,
+who runs Engineering for Snap,
+about some of the benefits they are
+seeing from AWS and Graviton2.
+Jerry actually
+ran AWS infrastructure
+before he took his current job
+at Snap about four years ago.
+So, it was fun
+to catch up with Jerry.
+Let me share a little bit
+of our conversation.
+Jerry, great to see you.
+When we talked about doing this
+I thought we might be in Vegas
+and we might be able
+to have a beer afterwards.
+Don’t think
+that’s going to happen.
+But it’s still great
+to catch up with you.
+Nice to be here.
+Awesome, well today,
+I spent a little time
+talking about Amazon culture
+so let’s start there.
+You were at Amazon
+for almost ten years.
+Can you tell me is there
+anything you learned at Amazon
+that you took with you to Snap?
+Yes, you know, I actually
+think operational discipline,
+and I will call it
+operational discipline,
+is the leaders deepen
+the details both technology
+and operationally of the space
+that they are running.
+One of my favorite stories
+is like when I first started at Snap
+we were trying
+to understand cost.
+And as we grew,
+our costs were going up.
+There was a tactic
+that we used at AWS
+that I really liked
+and that was understanding
+how to take the cost and associate
+the unit of cost with the value
+you’re giving to your customer
+so that unit cost is associated
+with what the customer
+is buying.
+And it turns out that it not
+only works inside of AWS
+but it works for people
+that are using AWS.
+So, we look at the services
+that we’re offering to our customers
+in terms of the value they get
+and then scale it,
+aggregate all of those
+different services
+we’re using to describe
+the cost associated
+with the thing
+we’re delivering.
+And then I hand it over
+to the engineers
+and it gives
+the engineers observability
+into how costs are being spent
+and where there is
+an opportunity to tune costs.
+So that cost efficiency comes
+straight out of the metric.
+And that’s turned out
+to be a real help for us
+on our path to profitability.
+Awesome. Well, you were one
+of the best operators I know.
+So, it’s great to hear
+you’ve taken that with you.
+But while we’re talking
+about your time at Amazon,
+why don’t you tell us
+about something you did here
+that maybe not everybody knows
+about that you’re proud of.
+Yes, there’s a lot of stuff
+I was proud of.
+There’s a lot of firsts,
+but this one is really easy for me.
+When we worked
+on renewable power
+I just … I still am satisfied
+by the work that we did there.
+It was deeply satisfying
+and here’s why. It was complicated.
+Laws that you have
+to understand and follow
+for putting power
+on the grid are byzantine.
+And building wind farms
+and solar farms is new
+and it’s new technology and there’s
+all these different ways to do it.
+And so, there was a lot of firsts
+and it was really fun.
+I also think that there are things
+I learned about renewable power
+that I think AWS knows now that would
+be useful to the rest of the world,
+because it’s a powerful thing
+to be able to deliver power
+and know that
+it’s being done productively.
+Yes, well, we are definitely
+appreciative of that early work
+you did with renewable power.
+We’ve come a long way.
+But like anything you build
+on the success of the past.
+It’s actually a big part
+of what the Climate
+Pledge is all about for us.
+It’s how we can help other companies
+and work together
+and solve all of these problems
+that we have to solve.
+So, I’m looking forward
+to giving an update on that.
+But let’s get back to Snap.
+So, tell me about Snap..
+Sure. Snap is the company
+that built the Snapchat app.
+It’s the fastest and easiest way
+to communicate
+with friends
+and family through the camera.
+Every day 250 million people
+around the globe use Snapchat
+to send 4 billion snaps,
+that’s billion with a b,
+to either communicate, tell stories,
+or use our augmented reality.
+And we care deeply about
+our customers’ privacy.
+So, we have a privacy
+first engineering focus
+and we do things like messages
+in snaps that disappear by default.
+We have curated content
+that comes from trusted partners
+rather than an uncurated
+unmoderated newsfeed.
+And I think lastly,
+we care deeply about innovation.
+Very exciting. So, tell me about
+how Snap is using AWS.
+Well, we use tons… We use EC2
+and Dynamo and CloudFront and S3,
+and we tried just about everything.
+And we use it because
+it allows us to control costs
+and I don’t have to spend engineers
+on building infrastructure.
+I can spend them on doing features
+which is what allows us
+to provide value to our customers.
+And we get to use things
+new innovations from AWS
+like Graviton
+and reduce cost,
+create better performance
+for our customers
+with not a lot of energy.
+Awesome. Well, I am excited
+to hear you using Graviton.
+One of the things that customers
+always worry about
+is how difficult it’s going
+to be to move to Graviton.
+Can you tell what your experience
+was there?
+Yes, we found it
+pretty straightforward.
+The API’s are pretty similar
+to what we were using before.
+So, it didn’t take a lot for us
+to migrate our code over to test it out.
+We started trying it out with some of
+our customers to see how it worked.
+We liked the results.
+So, we rolled it out into the fleet
+and immediately got like a 20%
+savings which is fantastic
+because like we were able
+to switch this load over
+and immediately get that cost savings
+and get higher performance.
+Awesome, glad to hear you’re getting
+that value from Graviton.
+But what else besides cost and
+performance do you value about AWS?
+Well, like when I was at AWS
+I spent a lot of personal time
+thinking about how
+to make things more secure.
+And I know that everybody
+at AWS does that.
+It’s a huge point of value for us.
+As I’ve just said, we care deeply
+about privacy and security,
+and that allows us to spend our time,
+my security team which I love,
+they do a great job,
+focus on the part of the app
+that we own.
+We don’t have to spend time worrying
+about what’s happening in the Cloud
+because we know
+it’s being done for us
+by people who are really excellent.
+So, I personally appreciate that.
+It’s something that brings me comfort
+at night when I go to bed.
+The other thing that I really like
+is that AWS
+is in regions all over the world.
+You know, early days we had
+our back-end as a monolith
+in a single region
+in the middle of the country.
+And so, if you were in Frankfurt
+for instance
+and you were communicating with
+somebody that was also in Frankfurt,
+those communications had to travel
+all the way back to the US
+through undersea cable,
+blah, blah, blah,
+and make its way back to that person.
+Well, there’s a speed
+of light thing there
+and so it could be clunky and slow.
+And this is the conversation,
+if you’re not speaking quickly
+it’s doesn’t feel
+like a conversation.
+So, bringing all of that
+to a data center
+and say Frankfurt
+or in India or Sydney,
+gives us real-time access
+to that speedy tech
+that our customers expect.
+Awesome. Well, sounds like
+you’re making use of AWS,
+but what’s next for Snap?
+Well, there’s a ton of stuff
+that we’re working on,
+but there’s two things
+I care deeply about right now.
+The first is we’re on a path
+to profitability
+and we’re making good progress.
+I could never make that progress if I
+was building my own data centers.
+And so, it’s super-useful for me
+to try things like we did
+with Graviton, turn them on
+and find the immediate cost savings.
+So, I am pretty happy
+about the path we’re on.
+I’m happy about the partnership
+that we have and just getting there.
+And the second thing is AWS
+keeps innovating
+and that lets us keep innovating.
+And I can’t hire enough people
+to do all the innovation
+that I want which,
+by the way, I am hiring.
+[laughs]
+But we test just about everything
+that comes out from AWS
+and I look forward to continued
+innovation from AWS
+because there’s a lot of innovation
+you should expect
+to see coming out of our services
+in the first years,
+which I am not going to talk
+about what it is,
+but I am very excited about it.
+And I am really looking forward
+to our partnership together
+and deliver that.
+Well, I am disappointed that you
+didn’t give away any secrets, Jerry.
+But I will have to leave it at that.
+I really appreciated this chance
+to catch up and I am looking forward
+to when we can actually
+see each other in person.
+Me too, counting on it.
+It was really nice catching up
+with Jerry
+and hearing about the great work
+he’s doing at Snap.
+And you heard us talk
+about the early work
+that he did on renewable energy
+many years ago.
+And now I am really excited to give
+you an update on where we are now.
+Last year we announced
+The Climate Pledge,
+which commits Amazon
+and other signatories
+to achieve net zero carbon by 2040.
+Ten years ahead
+of the Paris Agreement.
+The climate pledge is not just
+one company’s climate commitments.
+It offers the opportunity to join
+a community of leading businesses
+committed to working together
+as a team
+to tackle the world’s
+greatest challenge, climate change.
+Including Amazon, 31 companies
+have now signed The Climate Pledge
+including Verizon, Rivian,
+Siemens and Unilever.
+Today I am going to give you
+an update on the investments
+we’re making in AWS
+to support the Climate
+Pledge, as well as some of
+our other sustainability efforts.
+Because power is such an important
+part of AWS’s path
+to zero net carbon,
+let’s start there.
+I’m going to give you an update
+on our path
+to 100% renewable energy here.
+But first I want to talk
+about efficiency.
+The greenest energy is
+the energy we don’t use.
+And that’s why AWS has been
+and remains laser
+focused on improving efficiency in
+every aspect of our infrastructure.
+From the highly available
+infrastructure, the powers,
+or servers to the techniques
+we use to cool our data centers,
+to the innovative server designs
+we used to power our customers
+workloads,
+energy efficiency is a key part
+of every part
+of our global infrastructure.
+We actually looked at
+two innovations earlier today.
+First, we talked about how we remove
+our essentially UPS
+from our data center design.
+What we didn’t talk about was how
+this improved our power efficiency.
+Every time you have to convert power
+from one voltage to another,
+or from AC to DC, or BC to AC,
+you lose some power in process.
+So, by eliminating the central UPS
+we were able to reduce
+these conversions.
+And additionally,
+we’ve spent time innovating
+and optimizing the power supplies
+on the racks
+to reduce energy loss
+in that final conversion.
+Combined, these changes reduced our
+energy conversion loss by about 35%.
+We also talked about Graviton2.
+And I mentioned it was
+our most power efficient processor.
+In fact, Graviton2 processors
+provide 2-3½ times
+better performance per watt or energy
+use than any other AWS processor.
+This is a remarkable improvement
+in power efficiency.
+With the world’s increasing need
+for compute
+and other IP infrastructures
+innovations like these
+are going to be critical to ensuring
+that we can sustainably power
+the workloads of the future.
+And AWS’s scale
+and focus on innovation
+allow us to improve efficiency
+faster than traditional
+enterprise data centers.
+According to a 451
+Research Infrastructure
+that AWS operates is 3.6 times
+more energy efficient
+than the median surveyed
+US enterprise data center.
+And this study was based
+on infrastructure
+before the innovations
+I just talked about.
+So, this gap is only going to widen.
+And when you combine AWS’s
+continuous focus on efficiency
+with our renewable energy progress,
+customers can achieve up
+to 88% reduction in carbon emissions
+compared to using
+an enterprise data center.
+So, let’s look at
+that renewable energy progress.
+During my keynote in 2018,
+I showed you the large-scale
+utility wind and solar projects
+that we were building
+to power our data centers.
+At the time, we had added over
+900 megawatts of new wind
+and solar in the United States.
+In addition, Amazon also
+deployed solar on our rooftops
+in our sort centers and distribution
+centers across the world.
+Last year we announced 14 new wind
+and solar projects
+adding approximately 1300 megawatts
+including our first
+renewable projects
+outside the United States,
+in Ireland, Sweden,
+the United Kingdom,
+Spain and Australia.
+But I also mentioned
+that we just getting started.
+So far this year we have announced
+700 megawatts of new wind
+and solar farms including our
+first renewable project in China.
+Even with the challenges of Covid-19
+our projects in Sweden and Spain
+went into operation.
+And today we have much more to show.
+We’re proud to announce
+more than 3400
+megawatts of additional
+renewable energy projects
+including our first projects
+in Italy, France,
+South Africa, and Germany.
+These projects will bring
+Amazon’s 2020 total buy to nearly
+4200 megawatts of renewable power
+across 35 wind and solar farms.
+Sound impressive?
+It is.
+Amazon’s renewable energy
+procurement in 2020
+is the largest by a corporation
+in a single year,
+exceeding the record by 50%.
+It’s also a 300% increase over
+the projects we announced last year.
+And this progress is a big part
+of why we now believe
+we’re on track to hit our 100%
+renewable energy goal by 2025.
+Five years ahead of our initial
+target of 2030
+that we shared last year.
+Our focus on energy efficiency
+and renewable power
+delivers significant progress
+on AWS’s sustainability journey.
+However, to meet Amazon’s Climate
+Pledge commitment to reach
+zero net carbon by 2040,
+we have to reduce
+a broad category of emissions.
+And these are known
+as Scope 3 indirect emissions.
+As that name implies
+these emission sources
+are not directly controlled by us,
+but they still result
+from our business operations.
+All businesses have
+these sorts of emissions.
+And they include things like employee
+travel and office expenses.
+For AWS, our largest source
+of indirect carbon emissions
+come from constructing
+our data center
+and manufacturing
+of our hardware.
+Our sustainability
+engineering construction
+and procurement teams are hard
+at work on these problems.
+For example, cement production
+is responsible
+for 7-8%
+of the world’s carbon emissions.
+Largely due to a process to make
+a cement ingredient called clinker.
+The process to make clinker
+was patented almost 200 years ago.
+And it’s still widely used
+because it’s cheap, it's reliable
+and it produces
+high quality concrete.
+Clinker is made by grinding limestone
+and combining it with other materials
+and the processing it
+at very high heat.
+This processing produces
+large amounts of carbon emissions
+both from the burning of fossil fuels
+to process it
+as well as the gasses released
+from the chemical reactions
+during the production
+process itself.
+And concrete is critical for
+so many different types of building
+and infrastructure in modern life.
+Things like buildings and highways,
+bridges, dams, schools,
+hospitals, concrete is everywhere.
+Most of the world’s
+concrete production
+is used to produce
+all of this infrastructure
+and only really has
+a very small fraction
+is used to produce data centers.
+To help you understand the scale,
+we estimate that all the concrete
+that AWS used to build data
+centers last year
+is far less than the concrete
+used to build the foundation
+of the Golden Gate Bridge.
+But while we’re a small part
+of global concrete usage,
+we believe we can have an outsized
+impact on solving a problem
+that the world
+so desperately needs to address.
+So, what are we doing?
+While we can’t eliminate concrete
+our scale
+enables us to help
+drive industry change
+by creating demand for
+more sustainable alternatives.
+In the near term, AWS
+plans to increase
+the use of supplementary
+cementitious materials
+in the cement
+that we use for our data centers.
+These supplementary materials
+replace the need
+for the carbon intensive clinker.
+One example would be using
+recycle biproducts
+from other industrial processes
+like manufacturing iron and steel.
+We expect that increasing the amount
+of these replacement materials
+can reduce the embodied carbon
+in a data center by about 25%.
+Longer term we’ll need solutions
+beyond these current substitutes.
+And we’re working with partners
+on alternative clinkers
+that are made
+with different processes
+that result in lower emissions.
+AWS is also evaluating
+and experimenting with technologies
+that produce lower carbon concrete
+by utilizing carbon dioxide
+during the manufacturing process.
+One example is CarbonCure
+which injects carbon dioxide
+into the concrete
+during production.
+This process sequesters or traps
+carbon dioxide in the concrete
+and it also reduces
+the cement concrete
+which further lowers the embodied
+carbon in the concrete.
+CarbonCure is also one of
+the first companies we invested
+in with The Climate Pledge Fund,
+which we announced this last year.
+This fund with an initial
+two billion in funding
+will invest in visionary companies
+whose products and solutions
+will facilitate the transition
+to a sustainable low-carbon economy.
+Amazon’s already
+incorporating CarbonCure
+into its construction process
+in HQ2 in Virginia.
+And this is just one example of how
+our commitment to be net zero carbon
+will drive us to innovate
+for a lower carbon future.
+For AWS running our operations
+sustainably means reducing the amount
+of water we use as well.
+Like concrete, data centers represent
+a tiny portion
+of the world’s water usage.
+But our view at Amazon
+is that we can punch above
+our weight class on these problems.
+In many regions AWS uses outside air
+for cooling much of the year.
+And on the hottest days
+when we do we need to use water
+to help with that cooling,
+we’ve optimized our systems
+to reduce this water usage.
+With our designs even on the largest
+data center running at full capacity,
+we use about the same water that
+25 average US households would use.
+So, as part of this water use,
+we would look for opportunities
+to return the water
+that we do use to the communities.
+And I want to share with you
+an example
+of how we partner to deliver water
+to farmers in our US West region.
+[music playing]
+My name is Dave Stockdale.
+I’m the City Manager
+for the city of Umatilla.
+We’re a small farm community
+out her in Eastern Oregon.
+Four years ago, as we were looking
+at the growth
+that AWS itself
+brought to the community,
+we realized pretty quickly
+we were going to exceed our capacity
+at our waste-water
+treatment facility.
+We started looking
+at other creative solutions.
+I’m Beau Schilz. I’m on the AWS
+Water Team.
+One of the things we do here
+is we treat the water
+before it runs
+through our data center
+and then we’re able to use it
+three or four times.
+And our cooling water is not dirty.
+It just didn’t make sense
+to have clean water
+run through a very expensive
+treatment process.
+Instead of it going
+to a waste-water treatment plant,
+we put it into this canal,
+where it then goes to reach
+the local community
+so it can be repurposed
+for irrigation.
+In our US West Region here in Oregon,
+we reuse 96% of all the waste-water
+we discharge from our data centers.
+I’m Vern Frederickson.
+I’ve been growing hay
+and other irrigated crops
+in this area for the last 35 years.
+Besides the land that we own water
+is one of the greatest assets
+that we have in this community.
+We’re glad to see businesses like AWS
+giving water back
+to the farming community.
+We’re very grateful to be able
+to work with the City of Umatilla
+and the Port of Morrow,
+to enable this and to be good
+water stewards in this community.
+Every time we reuse water it’s less
+water we’re pulling
+from our rivers and streams.
+It’s good for the environment.
+It’s good for the economy.
+It’s good for our community
+as a whole.
+In addition to the water
+we’re returning to communities,
+AWS is working on community water
+programs all over around the world.
+In 2018 many of you might know
+that Cape Town, South Africa,
+nearly ran out
+of fresh water.
+One of the problems
+in Cape Town
+is that invasive species that soak up
+vast quantities of fresh water.
+AWS is funding projects to remove
+these invasive species
+for a partnership led
+by the nature conservancy.
+In addition with data center,
+in addition to what data
+center design in Cape Town
+that reduces water use,
+these efforts assure
+that we are returning
+far more water to the Cape Town
+community that we use.
+We’re also working on watershed
+restoration projects
+in Sao Paulo, Brazil.
+And Amazon is funding
+water filtration,
+rainwater harvesting and ground
+water recharge projects
+that will bring 250 million gallons
+of water annually to a 165,
+000 people in India and Indonesia.
+I hope that what I have shared today
+gives you a sense of the depth
+and breadth of sustainability
+efforts at AWS.
+Teams across AWS are working
+to increase our efficiency,
+achieve 100% renewable energy
+and reduce carbon intensity
+in our infrastructure.
+New technologies,
+products and services
+are required to achieve our goal
+of net zero carbon by 2014.
+And we’re committed to working
+with companies
+across many industries
+to drive innovation,
+not just for Amazon
+and the signatories of the Climate
+Pledge but for the world.
+I want to end today
+with this exciting fact.
+As I mentioned earlier,
+Amazon has announced over 6.5
+gigawatts of new renewable energy.
+With nearly 4.2 gigawatts
+of this total coming in 2020.
+And as we announced this morning,
+this makes Amazon
+the largest corporate procurer
+of renewable energy in the world.
+And as, we like to say at Amazon,
+it’s still day one.
+With that, thank you
+for participating in this year’s
+very unique
+re:Invent, stay safe,
+and I look forward
+to seeing you in person soon.
+[music playing]

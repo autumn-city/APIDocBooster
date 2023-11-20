@@ -1,0 +1,1401 @@
+TOMMY MACWILLIAM: In
+this video, we're going
+to take a look at how to save data
+to the user's device from your app.
+And to do that, we're
+going to be building
+an app that lets you take notes.
+So you'll be able to browse a
+list of notes that you've taken,
+create new notes, type something out,
+and then persist that, or save it,
+to the user's phone.
+So if they quit your app and reopen it,
+they can have all of their data still
+there.
+So let's get started.
+To persist data to the
+user's device, we're
+going to use something called SQLite.
+So SQLite is a really
+simple database that
+works by saving everything into
+a file with a special format.
+And then from that file, you
+can run SQL queries on it,
+just like you could
+on any other database.
+So to start, let's quickly take a
+look at a few of the different types
+of queries that you might write.
+The first one is a create query.
+So a create query is used to
+create a new table in the database.
+So when you write a
+create query, you're going
+to specify the name of the
+database you're creating,
+the columns in that database,
+and the types of each column.
+So here's an example of a
+SQLite create statement.
+We're going to start
+by saying create table.
+Then we're going to say if not exists.
+And that just means, if
+there's already a table
+there called users, just
+don't bother executing this,
+because we're already done.
+Then the name of the table so, users.
+And then in these parentheses
+are the names of the columns.
+So we have one column
+here called id INTEGER,
+so that means that the name of the
+column is id, the type is INTEGER.
+It's our PRIMARY KEY, so that
+means it's the unique thing that
+identifies each of our rows.
+And it's AUTOINCREMENT.
+So that just means that every time a
+new row is inserted into the table,
+we're going to take the id of the
+most recent row and add 1 to that.
+So this will basically be sequential
+as you're adding rows to the database.
+Our other column is a text column.
+It's called name and
+because its type is TEXT,
+it allows you to insert any arbitrary
+length text and store that as a string.
+After you've created a table, you
+might want to run an insert query.
+So INSERT, as its name suggests, is
+going to add rows to a database table.
+To write an insert query, we're
+going to say INSERT INTO, followed
+by the name of our table,
+which is users, and then
+in parentheses, the names of the columns
+that you want to specify values for.
+So in this table, we just had one
+column called name, so we'll have that.
+Then we have the word VALUES.
+And then, again, a comma separated
+list of all of the values
+that we'd like to insert.
+So here we're inserting
+a single value of Tommy.
+After we've inserted rows, we might want
+to read them back from the database.
+So to do that, we're going
+to use a select query.
+So we can say SELECT *, which
+means select all of the columns
+from the table.
+If we wanted to, we also could
+have given a comma separated list
+of columns we wanted to read.
+Then we'll say FROM and
+the name of the table.
+So here the name of our table is users.
+And then we'll have a WHERE
+clause to filter down the rows.
+So we only want to select those
+rows where the name column is
+exactly equal to the string Tommy.
+And so if we just have that
+one row in our database,
+this will return us that one row.
+If there are multiple rows with the name
+of Tommy, it will return multiple rows.
+We also might want to
+update rows in our database.
+So we could say UPDATE followed
+by the name of that table.
+We could say SET name = value.
+So we're going to set the name column.
+We're going to use the
+value of Tommy M. And then
+we'll have another WHERE clause to
+filter down the rows we want to update,
+so we can say where the name
+column is equal to Tommy.
+So again this is not
+going to update all rows.
+It'll just update the
+rows where clause applies.
+So let's jump right into it.
+Now that we have some basics
+SQL queries ready to go,
+let's learn how we can
+use them in our app.
+So let's open up Android Studio.
+And just like we do every time, let's
+start a new Android Studio project,
+select empty activity, because
+we're going to be writing everything
+ourselves, click Next.
+And the name of our application, we'll
+be a little less clever this time
+and just call it notes.
+Remember package name is
+just whatever you want.
+We're using the CS50 domain backwards.
+Save location, wherever you want.
+Make sure language is Java.
+Choose your minimum API level.
+And make sure use AndroidX is checked.
+And now click Finish.
+All right, we've seen this
+a few times before now.
+We know the code that's generated.
+Move this over.
+And so now, as we did last time,
+let's start with the views.
+Let's sketch out the views
+that our app is going to have.
+Then let's take care of
+any necessary models.
+And then let's write the controller
+that wires everything up.
+So our app is going to have
+two screens, or two activities.
+The first one is going
+to be a list of all
+the notes the user has on their device.
+And the second one is going to be
+a screen that lets you edit a note
+and save it back to a database.
+So let's write that
+first activity first.
+Because it's a list of notes, that says
+we should probably use a RecyclerView.
+So let's do that.
+Let's open up our main activity XML.
+And just like we did last time,
+we're going to add a RecyclerView.
+But before we can do
+that, remember we have
+to add RecyclerView to our project.
+So let's open up build.gradle.
+Add as our implementation.
+We had androidx.recyclerview.
+Name is recyclerview.
+And the version was 1.0.0.
+And we'll sync this.
+So it looks like our
+sync was successful,
+so now we can use a
+RecyclerView in our layout.
+So let's come back here.
+And just like we did last time,
+let's replace this text view
+with a RecyclerView.
+So we can say androidx.
+RecyclerView is going
+to autocomplete for us.
+We can say match_parent,
+again, just like that.
+And now, just like before, we have
+this full screen RecyclerView.
+So now we've added a
+RecyclerView to our layout.
+Next, we want to create an adapter.
+Just like we did last
+time, the adapter was
+used to manage the data that's
+displayed in RecyclerView
+and define how that
+data could be displayed.
+So let's create a new class.
+We'll call it NotesAdapter.
+No need to specify anything for now.
+And we've created a new class.
+The other thing we need to
+do is create a new layout.
+And the layout is going to
+define what each row looks like.
+So we can actually use a layout that was
+pretty much identical to the last one,
+so we'll call this our note_row.
+Tap OK.
+Come over here to text.
+And let's just do exactly
+what we did last time.
+The first thing we did
+was we added an ID.
+And we called this our note_row.
+And then we added a text view.
+Again, we had match_parent on the
+width and wrap_content on the height.
+And then we gave it an ID so
+that we could access it later.
+And let's just call this note_row_text.
+And that's it.
+Hopefully, all this
+looks really familiar.
+It's pretty similar to
+what we did last time.
+Now let's open up our NoteAdapter class.
+And we want to extend
+our RecyclerView.Adapter.
+And then for the type, we're going to
+create a new class in just a minute
+called NotesAdapter.NoteViewHolder.
+All right, so let's create that class.
+public static class NoteViewHolder.
+And just like last time, we're going
+to extend the RecyclerView holder.
+We're going to give this a constructor.
+We're going to say NoteViewHolder.
+Constructor is going to take some
+generic view, call that view.
+And then, just like before,
+let's add in those fields
+for our container and our text view.
+So we had a linear layout to
+represent our container view.
+And a text view--
+whoops.
+A text view that
+represented our text view.
+We'll call super on the
+constructor to make sure that we
+use that super classes constructor.
+And then we'll save
+references to container view,
+so that's going to be view.findViewById.
+We had an id of note_row.
+And our text view was
+view.findById(note_row_text).
+So that's it for our view holder.
+And now remember there are three
+methods that we have to implement.
+We have to implement binding a view
+holder, creating a view holder,
+and getting the number
+of items in the list.
+So first, let's handle creating views.
+So we'll have onCreateViewHolder.
+Let autocomplete do a
+bunch of stuff here.
+And just like before, we're going
+to say our LayoutInflator.from
+that context object.
+Then we're going to
+call inflate and we're
+going to pass in that layout, R.layout.
+This time we called it note_row.
+It needs a parent.
+And we don't need to worry
+about this other behavior,
+so we'll just pass false.
+And now, we can just return that.
+So we're going to return our
+NoteViewHolder on that view.
+So that's the view that
+it's going to hold.
+So now we need to think about our data.
+The next two methods we need to
+implement are binding the view holder
+and getting the number of items.
+So it's a good time to
+think now about our model.
+So just like last time,
+we know that we want
+to create a model that
+represents a note.
+And each note will probably have
+some unique id that makes sense.
+And then the contents of a
+note can just be a string,
+since those can be arbitrarily long.
+So let's create a model for our note.
+But this time, we're not just going
+to create a regular Java object,
+we're going to take advantage
+of Android's SQLite library.
+So first, let's take a look
+at the documentation for that.
+Android's library for
+persistence is called Room.
+And it has a nice guide
+here on how to use it.
+So you can feel free
+to read through this
+and we're going to walk
+through it together.
+So the first thing we
+need to do is add Room
+to our project, which, as you probably
+guessed, is just using a Gradle file.
+So let's just copy
+these two things here.
+Again, you want these two
+lines to load in everything.
+So we'll jump back to our
+Gradle file, paste these in.
+So for a Room version
+here, I'm just going
+to use the latest stable
+version, which is 2.1.0,
+just got that number from
+looking at the documentation.
+You'll notice here that instead of
+implementation, this second line
+says annotation processor.
+What's going to happen is
+we're going to use something
+called Java annotations, which is
+just like that app override thing
+that we added before, that
+annotation before a method.
+Now these annotations are going to be
+used to map fields in some Java object
+to columns in a SQLite database.
+So basically, to get
+access to those annotations
+and to make sure the compiler can use
+those annotations to generate code,
+we just need to add in
+this annotation processor.
+But I didn't really need
+to do anything fancy there.
+I just copied that right
+from the documentation.
+So let's sync our Gradle project.
+Everything looks good
+there, so we're good to go.
+So let's start by creating
+a new model class.
+So we'll say new Java class.
+We'll call this Note.
+And press OK.
+Now here is what we're going to do a
+bunch of magic using the Room library.
+So let's define two
+fields on this Note class.
+Let's call one id.
+And that's just an integer.
+And let's call the other one contents,
+to be the contents of the note.
+So now we're going to
+add a few annotations
+provided to us from that Room library.
+So for this first field, we're going
+to add the annotation PrimaryKey.
+You can see this was imported
+by this Room library.
+And for the second field, we're going to
+add this annotation called ColumnInfo.
+And this specifies that this is
+another column in our database.
+Now annotations can also take arguments.
+And so this one takes
+an argument called name.
+And we're just going
+to name it contents.
+It's the same thing.
+If you had a column name that
+was different than this field,
+that's where you could
+specify that mapping.
+Now the last annotation we want
+to add is this entity annotation.
+And so this says that this class
+represents a table in my database
+and with its arguments I can specify
+the name of my table is notes.
+So this will create a SQLite table
+called the notes with two columns,
+a primary key integer
+autoincrement column called id,
+and a string column, which corresponds
+to a text column in SQLite3,
+called contents.
+And so now, this is really cool, we're
+just mapping each row in this database
+automatically to one
+of these model objects.
+And that's really going to
+simplify the amount of code
+we have to write in order to read
+and write from this database.
+So now that we have
+our model class done,
+let's go ahead and use
+that in the adapter.
+Just like we did last time,
+let's create a list of note.
+We'll call it notes.
+And initially, let's just
+have it be an empty list.
+So now we can implement that
+onBindViewHolder method.
+So just like we did before, we can use
+this position parameter to get a note.
+So we'll say Note current
+is notes.getPosition.
+And so now we just want to
+set the text of this text view
+to be the text of the note.
+So let's say I have my holder.textView.
+And we'll set the text
+to be current.contents.
+Pretty simple.
+Lastly, let's define a method to get the
+number of notes inside of the adapter.
+So that's going to be my getItemCount.
+And just like before, let's
+just return notes.size.
+OK, so this is a pretty
+simple version of the adapter.
+It doesn't do too much yet,
+but it's some good boilerplate.
+And I have this red line here.
+Forgot to say new.
+So that's going to fix
+that compilation error.
+So now, just like we did last time,
+let's add the necessary classes
+to our main activity.
+So we need a few things.
+The first thing we
+need is a RecyclerView.
+And we can just call that RecyclerView.
+The next thing we need is an adapter.
+So that can be our notes adapter.
+And the last thing we need
+is that layout manager.
+Now inside of onCreate, we're going
+to grab and instantiate these objects.
+So RecyclerView is going
+to be findViewById.
+Looks like we forgot to give
+that an id, so we can come back.
+Autocomplete let me know I forgot.
+And so I'll just say
+android: id is RecyclerView.
+So now autocomplete
+should be good and it is.
+That's our RecyclerView.
+Remember layout manager, we can
+just say is a linear layout manager.
+Give it access to some activity.
+And then our notes adapter, it didn't
+take any arguments in the constructor.
+So we can just say new NotesAdapter.
+Finally, we can set these values.
+So we can say
+recyclerView.setLayoutManager
+and recyclerView.setAdapter.
+And so all this should
+look really familiar.
+We're just grabbing that
+RecyclerView from the layout.
+And we're configuring its layout
+manager, just laying things out
+straight in the line.
+And we're configuring its adapter,
+which is a new instance of that adapter
+that we just wrote.
+So right now, if we were to run this, it
+wouldn't be a terribly interesting app,
+because we know our RecyclerView
+is going to be empty.
+So now, let's go ahead and take care
+of writing all of the model code
+that's necessary to do three things.
+The first is creating a new note.
+The second is getting all the notes
+that a user has already created.
+And the third is saving a note to disk.
+To do that, we're going to
+write a new class called a DAO,
+or it stands for data access object.
+And again, we're going to use this
+Room library that Android provides
+to really easily map methods
+to queries that we're
+going to run on the database.
+So let's do that.
+Let's create a new class to
+represent our data access object.
+So we're going to say a new Java class
+and we're going to call this a NoteDao.
+Click OK.
+So if you read through the Room
+documentation, what you'll find
+is the way that this works is
+we're going to write, not a class,
+but actually an interface.
+And we're just going
+to annotate the methods
+in this interface with some queries.
+And then under the hood, the Room
+library, while everything is compiling,
+is going to generate
+some classes for us.
+So essentially, the compiler is writing
+some code for us so we don't have to.
+So to start, let's change
+this class to an interface
+and add the first
+annotation, which is a DAO.
+So we've specified this is
+a Room data access object.
+And so now the Room library is going
+to do something with this interface.
+First, let's specify a
+method for creating a note.
+Now we don't need to pass
+any arguments to this method,
+because we're just going to create
+a note with some default values.
+So now to specify the
+SQL query that's going
+to be run when you have this create
+object, we're going to specify @query.
+Again, this is another
+annotation from the Room library.
+And here is where we're
+going to write our SQL.
+So we're going to say
+INSERT INTO notes--
+just need the contents--
+VALUES, we'll just say "new note."
+And that's the default
+value for one of our notes.
+So now what's happening here is
+we're going to generate some code.
+And whenever this
+create method is called,
+this SQL query is going
+to be run on our database.
+So let's do the same thing to
+implement those two other methods.
+The next one we can
+implement is the method
+to get all of the notes in the database.
+So that's going to
+return a list of notes.
+And we'll call this method getAllNotes.
+And again let's use
+this @Query annotation
+to specify the SQL query we want to run.
+So we want to say SELECT *, just
+grab everything, FROM notes.
+And that's it.
+That's a SQL query that's going to say,
+give me all of the rows in the database
+and grab all of the
+columns for those rows.
+So that was pretty easy.
+So last, let's write the method
+to save notes to our database.
+So return type will just be void,
+because we're not returning anything.
+We're just writing something to disk.
+And let's call this method save.
+Now this method, unlike the other
+two, requires a couple parameters.
+Let's call one contents.
+Let's call the other id.
+And this makes sense, because in order
+to save something to the database,
+we need to pass in the
+value to save, then also
+the id of the note that
+we want to save it to.
+So we can actually use the
+values of these parameters inside
+of our annotation.
+So we'll say @Query and then
+we'll write our update query.
+We're going to say UPDATE notes SET
+contents = :contents WHERE id = :id.
+So this is taking advantage of a SQLite
+feature called parameter binding.
+So this says, wherever
+I see that :contents,
+I'm going to replace that with the value
+of the variable that's inside of this
+method declaration.
+And same with id.
+So I don't really have to do any
+kind of fancy string interpolation.
+And this is also a much safer way of
+getting user input into the database.
+If you're just manually
+concatenating strings,
+you're opening yourself up to
+different types of attacks.
+And so this is just a really
+safe way of making sure
+that you take some user input,
+like the contents of a note,
+and use it in the context
+of a SQLite query.
+So this is it.
+This is actually our
+entire data access object.
+Interestingly, we didn't have
+to write any lines of code
+to manually save
+something to the database
+or open a file or anything like that.
+We also didn't need to write any code
+to convert some kind of row object
+to some kind of note object.
+All of that is taken care
+of by this Room library.
+What we did have to
+write, though, was the SQL
+that we want to be executed when
+you call these various methods.
+So that's it for our Note DOA.
+We have to write one more
+class in order to use this.
+And that class is
+called a database class.
+So just as we did before,
+let's create a new class.
+Let's call this our NoteDatabase.
+In here, as you probably
+guessed, we're going
+to use some more annotations
+provided to us by the Room library.
+So the annotation we're going to use for
+this class is the database annotation.
+So the database annotation
+specifies that this
+is the database, or sort of the entry
+point for all of the data access
+objects that your app is going to use.
+So we can see here from our
+autocomplete that this annotation
+takes one argument called entities.
+And here, we can specify a list
+of all of the data access objects
+that we need to use.
+So we just have one,
+which is our NoteDao,
+and we're going to use this
+.class syntax to indicate that
+we're specifying and passing in a class.
+Second argument.
+So this annotation is a version number.
+Let's say you release an app and you're
+sort of changing the database scheme
+and you want to version it, you
+can just specify a version here
+to let Room know when you have
+a different database schema.
+OK, so that looks pretty good.
+Now we're saying that
+inside of this database,
+we have this one data access object
+that we can use to get different values.
+So now let's move on to this class.
+The first thing we want to do is
+extend our Room database class.
+And so this is a base class that's going
+to specify a bunch of different methods
+for us.
+And one other thing we want to do is
+add this keyword abstract to this class.
+So an abstract class is somewhere
+between a class and an interface.
+In an abstract class,
+you can have some methods
+that have bodies and
+definitions, and you can also
+have some methods that
+don't have any bodies.
+And when you extend
+an abstract class, you
+have access to all of those methods
+that are defined and have a body,
+and you're required to implement
+these other methods that
+are marked as abstract.
+So you can think about it
+as sort of a combination.
+It's like an interface that
+requires you to sign this contract
+to implement some set of
+methods, but like a class,
+it also has some functionality already
+so you can call some other classes.
+So by saying abstract
+in front of the method,
+that's how you indicate
+that this isn't something
+that I'm going to implant myself.
+Instead, this is something that's going
+to be implemented by somebody else.
+So we're going to add one
+abstract method to this class.
+We're going to say public abstract
+NoteDao and we'll just call it noteDao.
+And so the reason that
+this is abstract is
+because, again, this Room library,
+when you're compiling these files,
+it's going to generate some code for us.
+And so the class that
+implements, or extends,
+this abstract class is going to
+be generated by the Room library.
+And with this @database
+annotation, that's
+what's going to tell the
+compiler, lets go and generate
+some code that can be used.
+So we're not actually going to have
+to implement any of this ourself.
+It's this Room library that's
+writing the code for us.
+So now, that's all of the model
+code we're going to have to write.
+Let's just quickly recap what we did.
+First, we defined our note class.
+In our note class is where we
+define what our data looks like.
+We said we have a table
+for notes and each entry
+in that table has two fields.
+One of it is a unique
+identifier that's an integer.
+And the other is a string that
+contains some contents about the note.
+So this defined our table.
+After we defined our
+table, we defined a way
+to access that table and sort
+of interact with the table.
+And we defined three methods to do that.
+We defined a method that runs in insert
+query to add values to the table.
+We defined a method that runs a select
+query to get data back from the table.
+And we defined an update method to
+save data that's inside of the table.
+Last, we created this database
+class that basically collects all
+of the data access objects together.
+In our case, we only have one and so
+we listed it here in our annotation.
+And then we created one abstract
+method that someone else
+is going to implement for us to get
+access to an instance of that data
+access object.
+So now that all of our
+model code is written,
+let's take a look at how we can use
+that model code in our application.
+So first, let's jump back
+to that main activity.
+So first, let's define an
+object that's going to represent
+a connection to this database.
+So I'm going to create a new
+static field on my main activity.
+Its type is NotesDatabase.
+And I'm going to call it database.
+And the reason I'm making this static
+is because I want all the different
+activities in my app-- in this
+case, there are only two--
+to use the same instance of a database.
+And rather than passing that
+around constructors everywhere,
+I can just make this static and then
+other classes in my app can use it.
+So once I've defined the field,
+let's set its value to something.
+So I'm going to say
+Room.databaseBuilder.
+And this takes a couple
+arguments, it looks like.
+The first argument is a context.
+And we saw before that there's just
+some global context object we can use.
+The next argument is going to be
+the class name for our database.
+And that's our NotesDatabase.class.
+And finally, we want a name.
+So that's sort of a string
+name for our database
+and that's the file that
+we're going to save on disk.
+Let's just call that notes.
+The next thing we want
+to do is just allow
+our database to run on the foreground.
+So normally, you'd want it to
+sort of do heavy database queries
+in some kind of background task.
+We're not going to worry about that.
+So let's just, say, allow this to happen
+on this sort of main foreground task.
+And finally, we're going to call build.
+And so this is going to give us
+back a database that we can use.
+So let's use this new object.
+Let's jump over to our NotesAdapter.
+And let's create a new
+method on this adapter
+to load everything from the database.
+So we'll just call this reload.
+So inside of our reload
+method, let's first set
+the value of that notes field.
+And so we can say MainActivity.database.
+Remember, we made
+database a static field,
+which means that we can access it by
+referencing this MainActivity class.
+So say MainActivity.database dot
+note data access object, or noteDao,
+and that's a method that we defined.
+And then we can say, getAllNotes.
+And this is going to call
+that method from the NoteDao,
+run that select query, and
+give us back a list of notes.
+Now just like last time, we have
+to call notifiyDataSetChanged.
+And that's going to
+tell the RecyclerView
+that we've just updated that
+underlying object, reload yourself.
+So now that we've written
+this method, let's use it.
+Let's come back to our onCreate
+and call adapter.reload.
+And this says, when the app runs,
+the first thing it's going to do
+is go to the database, grab everything,
+and display it in the RecyclerView.
+View.
+So now we have a mechanism for
+reading notes from the database,
+but we don't have a way
+to create new notes.
+And if you remember our UI doesn't
+have any controls or buttons
+to do that either.
+So let's add a button to this
+activity that, when we press it,
+is going to create a new note.
+And the class that I'm
+going to use is this class
+that's given to us by Android
+called a floating action button.
+This is a pretty common Android pattern.
+You've often seen, you know, a
+button sort of on top of a list
+and you can tap that button
+and something happens.
+So that button is defined
+in, again, a separate library
+that we need to pull
+in, so let's do that.
+And the name of this library
+is com.google.android.material.
+So the name of the library is
+Material and the version is 1.0.0.
+So this is just another class
+it's provided to us by Android.
+And it contains a bunch of other
+UI elements we might want to use
+and so let's just pull
+those into our project.
+So now that we've downloaded this
+library of material UI components,
+let's use them in our app.
+So let's jump back to the
+layout for our main activity.
+So the first thing we want to do is
+change the layout that's used here.
+And we want to pick
+a layout that's going
+to enable that floating
+action button to sort of float
+on top of the RecyclerView.
+So we're going to change
+ConstraintLayout to something else.
+We're going to use what's
+called a CoordinatorLayout.
+And this is just basically a
+different type of layout that's
+going to allow us to do what we want.
+So after we've changed that,
+let's come back over to here
+and add a floating action button.
+So just like before, let's
+specify a few of those attributes.
+So we have our layout width, and let's
+just have these both be wrap_content.
+So that's our width.
+That's our height.
+Let's give this button an
+ID, just so we have it.
+We have @+id and we have, let's
+just call this, add_note_button.
+After we give it an ID, let's
+specify where we want it to float.
+So let's add our button to the
+bottom right of the screen,
+since that's kind of a
+common place to put it.
+So let's say android: layout_gravity
+is going to be in the bottom(right).
+And then we don't want it to be
+all the way on the bottom right,
+so let's just give it a
+little bit of padding.
+So we'll say android: layout_margin.
+And let's just say 16 pixels.
+That probably looks pretty good.
+So the next thing we want to
+add is an icon to our button.
+And luckily, Android provides
+a bunch of default icons
+that we can use so we don't have to
+add our own or create our own icon.
+To do that, I'm going to
+use this app: srcCompat
+And I'm going to start
+by saying @android.
+And then here, you can see there's
+a bunch of stuff supplied already.
+So if I start typing drawable,
+I can see a bunch of icons.
+So I'm going to use this input_add icon.
+And so this is just a little plus.
+It basically says this
+is the system icon
+that you should use if you're
+having a plus button or button that
+adds something.
+And we do, because we're adding a note.
+Last, let's give our button a color.
+So we're going to say android: tint.
+And you can start by saying @color.
+And again, there's a bunch of
+colors here that are listed.
+I'm just going to pick this
+one, sort of a background color
+for a light background.
+So that's everything with
+our floating action button.
+So now, we've styled this pretty nicely.
+So now, let's build our application
+and make sure there are no errors.
+So let's come up here to build.
+Yup, looks like we have an error.
+So let's jump over here.
+Looks like there's some kind
+of problem with our database.
+So let's come over here.
+And, yeah, here, so rather than
+doing the data access object,
+we want to use the entity.
+So recall that Note is what we
+decorated with the @entity annotation.
+So we just want to make sure that that's
+the note, not the note data access
+object.
+So now if we rebuild, now
+we've compiled successfully.
+So let's run the app and just take
+a look at what this floating action
+button looks like.
+Looks like we've installed successfully.
+So let's pull up our emulator.
+That looks pretty nice.
+So we have a RecyclerView here.
+It's empty, because we
+haven't created any notes yet.
+Now we have this nice button
+over here that, when we press it,
+doesn't do anything.
+So let's hook up an action to
+this floating action button.
+To add an action, let's jump
+back to our MainActivity.
+And in onCreate, let's grab
+that floating action button.
+So we'll create a button object.
+And we'll set this
+equal to findViewById.
+And we called this add_note_button.
+So with this button object, we can
+call that same method we called before,
+which was setOnClickListener.
+And this took one argument,
+which was a view.onClickListener.
+See if we can get the
+auto complete here.
+There we go.
+And so remember, we're just overwriting
+this one method called onClick.
+And so when we click this
+button, we want to do two things.
+The first thing we want to
+do is create a new note.
+So let's get that note data access
+object just like we did last time.
+Say database.noteDao.
+And this time, we're
+going to call create.
+And that's going to create a new note.
+Next, let's reload the adapter.
+So let's call adapter.reload.
+And that's going to tell the adapter
+that now that we've created a new note,
+let's refresh the RecyclerView
+so that we can see it in action.
+So let's try this out.
+Let's run this app.
+Here's our emulator.
+Let's give our action button a click.
+And there we go.
+Here's a row that
+represents our new note.
+The contents of this
+row are the contents
+of the note, which is just new note.
+So we're off to a good start.
+Next, let's hook up a new activity to
+display the full contents of a note
+and enable the user to change it.
+So remember to do that, we're going
+to come over here to the left,
+we're going to say new
+activity, and we're just
+going to create an empty activity.
+And we're going to call
+this are NoteActivity.
+All right, so that created
+a Java class and a layout.
+Let's go to the layout first.
+So here, let's just create
+a really simple EditText.
+So EditText is actually
+a subclass of TextView.
+And as its name suggests,
+it's editable, instead of just
+being a read-only string of text.
+So let's just set this to be
+the entire width of the screen.
+So we're just going to
+match_parent on both of those.
+And then let's set an ID,
+because we know that we're
+going to need to access that later.
+So we'll call this note_edit_text.
+And that's it.
+So now, let's open up that new class
+that was generated, this NoteActivity.
+As we always do, let's create
+a field here for this EditText.
+And let's grab a hold of it in onCreate.
+OK.
+So we want to do two things.
+When this activity is created, we
+want to set the text of this EditText
+to be the note that's in the database.
+So that way, when we open
+this up for the first time,
+the user just sees
+what was there before.
+The other thing we want to do is
+when the user leaves this activity,
+we want to save the current contents
+of that EditText back to the database.
+So let's do those two things.
+So now that we have a reference to this
+EditText, let's set the contents to be
+the contents of the
+note the user selected.
+To do that, we're going to do
+just what we did last time.
+We're going to use an intent
+to pass the contents from one
+activity to the other.
+So let's assume that our intent has
+defined something like contents.
+We'll say String contents is get
+getIntent().getStringExtra() called
+contents.
+So now we'll just set the text of
+the EditText to be those contents.
+So that's loading the note.
+And the other thing we want
+to do is to save the note.
+So to do that, we're going to use
+another method called onPause.
+So where onCreate is called when
+the activity is first created,
+onPause it's going to be called
+when you leave the activity.
+So just as before, let's
+make sure we call super.
+And so now we want to use that database
+NotesDao to save the contents to disk.
+So let's just save the id of the
+note that this activity represents
+in a field.
+So we'll say private int id.
+And let's just use the
+intent to store that,
+so we'll say id is
+getIntent().getIntExtra().
+And we'll call that id and we'll
+just give it a default value of 0.
+Now in onPause, we can use
+that same database object.
+So we'll say
+MainActivity.database.noteDao().
+And now we're going to call save.
+And remember that save
+takes two arguments.
+The first one is the
+contents of the note.
+The second one is the id of the note.
+Contents of the note, that's going
+to be from the current text field.
+So that's going to be editText.getText()
+is going to get me the text
+that's currently in there.
+And then we just saved the is, so
+I can just call id right there.
+So now this says, before
+this activity is closed,
+when the user hits that back
+button, let's persist everything
+that we have to disk.
+So now, let's write the other
+half of this interaction.
+So let's come back to our notes adapter.
+And just like we did last time,
+we want to attach a click listener
+to the container.
+So we're going to say
+containerView.setOnClickListener.
+Let the autocomplete
+generate that for us.
+And so this is going to
+feel pretty familiar.
+We want to create an intent.
+We want to set the id and the
+contents extras field of the intent.
+And then we want to start the activity.
+So we need to make sure that this view
+holder has a reference to the note.
+So to do that, remember
+what we did last time.
+We said holder.containerView
+and we used this setTag method.
+So we'll pass along the
+current note right there.
+Now, we can say my note--
+current note is going to
+be my containerView.getTag.
+Remember we just have
+to cast this to a note,
+because this is just a
+regular object by default.
+OK, so now let's create our intent.
+Remember the way to do
+that is by creating a new--
+first make sure we're importing it.
+Create a new intent.
+And the intent is going to
+take a couple of arguments.
+The first one is that context
+object and the second one
+is the class that we want to go use.
+That's going to be NoteActivity.class.
+Now using that note object,
+let's put in those extras.
+Let's say Intent.putExtra().
+We have the id of our note and
+that's going to be current.id.
+And we have the contents of the note
+and that's going to be current.contents.
+Lastly, let's just start the activity.
+So we're going to say
+getContext.startActivity,
+pass along that intent.
+So now when the user
+taps that row, they're
+going to see the contents of the note.
+Last but not least, we have to make sure
+we're reloading the notes every time
+the user comes back.
+Because remember, that notes list is
+displaying a preview of the note text.
+We want to refresh that every time
+a user finishes editing a note.
+So to do that, we're going
+to use a third method.
+We've seen onCreate
+and we've seen onPause.
+We're going to use one
+more called onResume.
+So onResume is going to be
+called every time an activity is
+brought to the foreground.
+So when the activity is first
+created, it's going to call onCreate.
+And then it's going to call
+onResume, because the activity just
+entered the foreground.
+Then we could jump off to some
+other activity and come back
+and then onResume is
+going to be called again,
+because we're back in the foreground.
+So this is a great method
+to reload our RecyclerView.
+So rather than reloading the
+RecyclerView here in onCreate,
+we're just going to move
+this down to onResume.
+And so this will both reload
+when the app starts up
+and every time the user comes back.
+So now let's give this a shot.
+Let's run our application.
+OK, looks like we have one error here.
+So it looks like when we call getText,
+it returns this editable object.
+So we forgot to just
+change that to a string.
+Luckily, that's really easy.
+We can just say .toString.
+So let's try running this again.
+Looks like we built successfully.
+So here's that RecyclerView again.
+Let's tap on a note.
+And OK, it looks like we got a crash.
+So let's take a look at our
+log and see what happened.
+So we open up our log and we can see
+here in red, attempt to read from field
+on a null object reference.
+OK, so it even told us it's
+in NotesAdapter, line 31.
+So I can actually just
+click that and it's
+going to jump me right to
+where my exception happened.
+So it looks like here current is null.
+Now let's think about this.
+So it looks like we're setting
+current in the constructor,
+but that's not right, because when
+we invoke the constructor, as up
+here in onCreate view holder.
+But we're actually setting
+the tag in onBindViewHolder.
+So instead of having this
+getTag here, we actually
+want to put it inside of our onClick.
+So now let's try
+rerunning the app again.
+OK, we compiled successfully.
+Let's try again and tap on this row.
+And great, so looks like we've
+loaded this note from our database.
+So that worked out.
+Let's try testing it
+out by saving the note.
+So I'm going to--
+this is a test note.
+OK, I'm going to use the back
+button to come back to my list.
+And great, it looks like
+we've saved it to the database
+and we've successfully reloaded
+it in our RecyclerView.
+So before we finish up, let's just add
+some last finishing touches to make
+our app look a little bit nicer.
+Let's start with our note activity.
+So there are a couple of things I
+wanted to change about that edit text.
+First is it was kind of weird
+that the text was centered,
+so let's move the gravity of
+that text to be at the top.
+So we're going to set the
+android: gravity to top.
+And so now rather than
+centering that text,
+that's going to put the text
+at the top of the edit text.
+Let's also add a little bit
+of padding, just so the text
+doesn't run up against the screen.
+So let's say padding.
+Let's use 10 pixels for that.
+Lastly, we have that weird kind of pink
+bar at the bottom of the edit text.
+We can get rid of that just by
+setting the background property.
+So let's set at @android
+background to be
+equal to this @android
+color/transparent.
+And so that's going to make sure
+that we have that transparency.
+OK, so now that our second
+activity looks a bit nicer.
+Let's come back to that first
+activity and apply those same changes
+from our other app.
+So we're going to set
+a couple of properties.
+One is going to be make
+sure it's clickable.
+So we'll set clickable
+flexible to be true.
+Let's space out the rows a little bit.
+We'll say android: padding is 10 pixels.
+And lastly, let's add
+that nice ripple effect,
+which was foreground
+and then you can say
+android_attr/selectableitembackground.
+And so this will just make that
+RecyclerView look a bit nicer again.
+So let's take a look at
+these aesthetic changes
+by running the app one more time.
+All right, let's pull up the emulator.
+So now a row is looking a bit nicer.
+There's some more padding.
+If I tap this, I get
+that nice ripple effect.
+And then that kind of
+weird background is gone.
+So that's it for our notes app.
+To recap, we've made an app,
+used a RecyclerView to display
+a list of contents from
+our database, and then we
+wrote our DOA to save
+notes, to create notes,
+and to get them all from the database.
+And so now, you can write Android
+apps to save settings and other things
+to the user's phone, so they can have
+them when they open the app again.

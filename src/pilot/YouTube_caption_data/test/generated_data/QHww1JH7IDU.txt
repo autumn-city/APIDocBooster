@@ -1,0 +1,842 @@
+hi everyone my name is William Falcon
+I'm the creator of Pi torch lightning
+and today I just want to give you an
+overview of how to convert your PI
+twitch models to PI torch lightning I
+wrote lightning while I was doing my PhD
+at NYU and Facebook I research my
+academic research interests are in soap
+supervised learning and when I got to
+Facebook ki the projects that I was
+working on required a ton of compute
+that's when I started working really
+hard to get lightning to be super
+seamless to do things like grid searches
+across hundreds of GPUs or even train a
+single model on a few hundred GPUs
+although we have a lot of demos online
+with M this specifically I wanted to
+give you something a little bit more
+complex so that you understand how to
+bring slightly more complex projects
+into lightning lightning can support any
+complexity project since PI torch
+lightning is really just organized PI
+torch light which makes it very easy to
+do deep learning the problem comes when
+you're building multiple things or when
+your project starts to grow in
+complexity for instance your project
+might start simply where you can train
+it on CPUs while you're debugging it but
+as soon as you try to do anything more
+maybe you have to jump on a GPU at that
+point you're going to have to go back
+and refactor your code and that's going
+to be a non-trivial and you might
+introduce bugs but you might say well
+adding a single GPU to PI tour just not
+super hard yeah I totally agree with
+that however if your project starts to
+be super slow and maybe I new park takes
+seven ten hours or maybe if you're
+training an image that maybe three four
+days for one epoch then you're going to
+want to start looking at multiple GPU
+training as well or TPU training that's
+where lightning can really shine you can
+without changing your code at all start
+running on 256 GPUs eight GPUs for GPUs
+it doesn't really matter or even GPUs in
+addition to CPU and GPU training
+lightning offers out-of-the-box 16-bit
+precision training 16-bit precision
+training can help you leverage certain
+GPUs like the V 100 or 28 et is where
+you'll get anywhere from three to eight
+X speed up just for using those GPUs if
+you're using 16-bit precision
+there's a second advantage if your batch
+size is too big
+16-bit precision can drop that memory
+usage by half which means that you can
+now double your batch size and cut your
+training time in half at a minimum again
+that's without changing your code at all
+so this is the lightening repo and I
+want to point to you a few things one is
+that our code is rigorously tested so as
+you can see here we test across all
+versions of Pi torch so that if you use
+lightning you know that your code will
+be compatible with one point one two
+three four or five unless you're doing
+something very specific to your code
+what this means for you is that there's
+now a ton of research code that you
+don't have to figure out if you did
+correctly or not so you can focus on
+actually the research component of your
+research as opposed to trying to figure
+out if you did creating clipping or
+accumulated badges or GPU training
+correctly next I want to give you a very
+quick tour of the repo so if you want
+documentation there's a Doc's button
+here and if you want to chat on our
+slack you can click on that our
+documentation is pretty thorough you can
+get on here and look at anything you
+want I suggest you start with an
+introduction guide and work your way
+through here I'm going to walk you
+through a fast version of the
+introduction guide where we're going to
+refactor a VI e into lightning when I
+start with factoring a project the first
+thing I do is I I try to find where the
+core magic happens right so the training
+loop so in this case it's likely on the
+main Dappy Y so we browse his file and
+then I see that they have their network
+definition pretty standard they have
+their data loaders here that's also
+pretty standard and have a bunch of
+arguments then they accentuate their
+model here they get their optimizers
+here they have their via e los here and
+the training loop is here and so this
+looks pretty straightforward you have a
+test loop here as well and then you have
+your if main so all in all this is not a
+super complex project but this video is
+intended to be a mid-level project in
+the next video I'll cover refactoring a
+more complex project that might take
+longer so let's go over into my IDE
+where we can start to develop this great
+so now we're ready to get started
+all I've done now is create a single
+file called via EUI and I have set up a
+common environment with pipes which
+lightning and PI torch so as a sanity
+check I'm just going to import torch and
+print some tensors just to make sure
+everything's working fine and great so
+now we know it's we're all working so
+the next thing that I would do when
+reflect on a project this decide how
+many loops to you wants you want a
+training loop add a validation loop and
+a test loop or do you just need a
+training loop and so on so lightning mix
+all of those optional in this case let's
+just start with the training loop so the
+first thing I'll do is I'll go into the
+via e file and find where the network is
+so here's the VA e project and here is
+the main via e to get started I'm going
+to just copy this guy into the Lightning
+project so I delete this and I have a
+fears I'm going to do the employees
+great so again this is just pure PI
+torch so I'm going to go ahead and just
+import lightning now and I'm going to
+replace this module with a lightning
+module okay
+still the same great so again a
+lightning module is just a torch module
+so this here should still work
+okay so it looks like we have a
+and in this case I'm likely just
+importing the functional incorrect way
+so let's see where that's coming from
+okay great so now we change this and
+this should be fine
+okay so our model train without problems
+unless you spread that out just so we're
+very clear
+so I got nothing's changed this is just
+a torch module still no problems so
+lightning all the dust this gives more
+methods to a module so to get started
+make sure that we set up a trainer under
+debugging conditions so that this can be
+a lot faster so I can figure out if I
+have any bugs or not so the first thing
+is I can just init my trainer here
+trainer and I'm going to set fast dev
+run which will mean that it's going to
+run a single batch through a training
+loop a single batch through the
+validation loop and tell me if there are
+any errors so this is basically like
+trying to compile your code so this is
+kind of one of the first nice things
+about lightning is that it's very
+focused on research so that you can move
+through this a lot faster but once
+you're done you can take this into
+production without any problems
+okay so now when I do this I'm going to
+get a ton of errors and specifically
+because I have an ID at a training loop
+nor a validation live to my model so
+let's just do back to verify that
+lightning should give me errors about
+this okay great so lightning told me
+that I need a training step so now I'm
+going to add a training stuff
+so in the training step I'm giving the
+batch and the badge index so to figure
+out how exactly to structure this I'm
+going to just look at the documentation
+so I go here and then I go to my
+lightning module and then here I have a
+minimal example so I can look through
+this and say ok this is exactly what I
+need for the training step so for the
+training step I'm going to get my batch
+of data didn't do whatever operations I
+have and then I'm going to return this
+dictionary that has my loss in it so now
+to figure out what happens in that
+training step I'm going to just look at
+the original code and here's everything
+that happens in the training step so you
+have your batch of data you do the zero
+grad you run your model through you your
+own data through the model you have a
+loss function and then you have this
+loss here and then you apply law step
+backward okay great
+so let's just copy all of this stuff and
+put it into our lightning module so a
+training step comes here and I have
+exactly this again since in lightning
+you don't deal with GPUs through TP use
+directly I'm gonna delete all calls to
+devices or anything to do with CUDA so
+delete that also we update the
+optimizers for you so you don't have to
+worry about when that happens so I'm
+going to delete these guys and we also
+aggregate the loss exactly how it's done
+here across each training step and
+that's pretty standard across every
+project that you're gonna do so now
+since I am inside the model itself I'm
+just going to call self instead and pass
+in my batch which is this guy here now
+my last function is let's see here ok so
+now we need to figure out what this loss
+function is so let's find it
+my loss function is defined here great
+so this is my loss for this is looks
+like my whole elbow so you have the
+reconstruction loss here and then you
+have the KL divergence so I now I'm
+going to add it to my model so I'm just
+going to say here's my loss function
+I am inside the model so I didn t pass
+self great no problem and now I called
+that directly and then again this is
+called batch not data so I get my loss
+now lightning automates the backward as
+well for you so you have to deal with
+that so I'm going to delete that and
+then instead I'm just going to return a
+simple dictionary with the key word loss
+which lets lightning know that this is
+allow certain is to optimize okay so
+that's just my training stuff this
+should now work without any other
+changes okay great so Lightning says
+well you don't have a data loader okay
+so there are few things you can do so
+with lightning you can so we're gonna
+find the data loader first so in this
+case are using M this so this looks like
+the training data loader and I can do
+one thing very simple I can just bring
+in my data loader here and I guess I
+need to import all of these data set
+things so here we go
+so I import these guys and then I need
+args so I'm just going to do a very
+quick our cars
+looks like they have batch size on here
+great and that is all I need
+now these K we just want to make sure
+that nothing else is being passed in
+[Music]
+okay so it looks like they're also
+passing these guys in so we're going to
+define those and here they are okay
+great so now with this when I call fit I
+can also pass in my train data load
+and since this is a cpu machine we're
+not going to run it great okay so it
+looks like everything's working and we
+didn't have an optimizer so now
+lightning tells us hey you need to add
+an optimizer okay great so now we go
+back and find where the optimizer is and
+we say okay here we go so the way you
+add two optimizer enlightening is he
+just asked message tells you so we try
+to be very friendly with messages so you
+need to add or configure optimize first
+method
+and we are inside the model so we're
+going to pass in self parameters and
+[Music]
+this is inside the torch optimum great
+okay so now we have an optimizer and
+this should work now so I run again
+okay so it looks like I have an
+exception something about you okay so it
+looks like forward is kidding now a list
+and it does sense and the list can be
+viewed so something that's super nice
+you can't really do and things like
+tensor flow is debug code like this on
+the fly so I can see exactly what is in
+here so now I see that it's tuple and
+then I want to know what the shapes are
+here so that looks like and then this
+image and then this looks like all the
+labels okay great so so now we want to
+say well okay so here's a problem we
+forgot to split our batch into an x and
+a y again this is what happens inside
+the training loop and inside the train
+with you normally split your batch into
+x and a y so now I'm going to change
+this and then I'm going to also change
+this here so my loss function expects my
+reconstruction X and my X as well so I
+just want to make sure that we have that
+and that is in fact true okay great so
+we don't need the Y so we're going to do
+that and then we run again okay great
+so my training completed it did one
+batch one epoch and the calculator loss
+so now if I turn this off I should be
+able to have my model training
+great then you can see it down here that
+the loss is in fact decreasing I don't
+have a validation with yet so this is
+just training loss but everything looks
+like it's working correctly so now let's
+go ahead and add a validation with okay
+so now we're back at this main repo and
+now we're adding a validation loop so
+we're going to copy this data loader and
+bring it here into the lightning so
+there is my validation loader and I'm
+going to just pass it in now into my
+trainer
+okay so lightning tells me that I passed
+an eval data loader but I didn't pass in
+a validation step so again we need to
+know what happens inside a validation
+with so we're going to just copy-paste
+exactly what's in the training step in
+this case I don't want to do anything
+differently
+so we'll do validation step
+oh this should be fine let's
+double-check to see what the actual
+original repo does so here we have again
+we're just passing data we have the
+model and then this looks like some
+comparison stuff what is this right so
+they're showing some reconstructions
+okay so they want to log some images
+okay perfect so why don't we just do
+that as well so let's go ahead and copy
+all of this from the validation step so
+we do want to leave the batch stuff
+there okay so again we don't need the
+CPU nor the two calls we are inside the
+model so we're going to change that and
+we're going to pass in X instead
+and then we don't need this so we know
+what our test loss is in this case
+validation and it's a function within
+our class right now and then again this
+is just X okay so now that we have our
+valise looks like they want to log an
+image every now and then so in this case
+we want to check that the index is zero
+so the first looks like just the first
+image and we're going to just replace
+data with X data with X and now we have
+the save image function so we find out
+what that is okay so we have save image
+and we're going to just paste it here
+and imports this image from pill great
+okay so now that this works we're going
+to just do that
+so for epoch lighting module she checks
+us so itself thoughts current epoch and
+it's the same thing and then since we're
+validation step when this is the
+validation loss we're going to just
+return the validation laws so I'm just
+going to run this cuz I want to be
+faithful to the original repo and this
+is going to give me a validation live
+now as well okay so it detected that
+we're trying to shuffle our validation
+data loader so that is actually a bad
+practice so we just caught a bug that
+should not even happen that's actually
+on the PI torch repo so again lightning
+really makes it easy so you don't mess
+up things so you should not be messing
+up okay so now an ro we don't really
+know what that is let's look at what's
+they had save image okay
+so it looks like it's part of save image
+huh that's weird
+okay so I'm not sure we need that I'm
+just going to go ahead and delete that
+and this should be fine now so what is
+all of this this is the path it looks
+like so let's just reflect it's a bit
+and just passing it back okay now let's
+see if this works
+okay so it looks like this data this so
+we pass them data again and we're trying
+to clone it somewhere so where was this
+okay
+so data again is not a tensor so I mean
+so we're not passing the correct thing
+so we look at image again and the
+comparison here is cats so we want to
+know what comparison is let's see here
+so again this is something that you
+can't really do on tensorflow but here I
+can actually expect the things that are
+happening so this is not a lightening
+things just so if I torch thing so I can
+see that it is in fact a tensor and just
+that will check that our path is correct
+that's fine and then we step inside this
+guy so we have a filename okay so that's
+a problem we swapped the file name with
+the data ok so more bugginess we'll just
+do this
+okay
+all right we have another issue so save
+image access don't match array okay what
+does that mean
+so probably means that the shape of this
+guy or this guy is not three I'm going
+to just guess that real quick but I'm
+going to debug this first to make sure
+so again this is one of the beautiful
+takes of Pi torch okay so I can look at
+my image let's look at the shape of this
+okay 16 by 1 by 28 by 28 okay so that's
+interesting so let me just experiment
+real quick with a test and we're going
+to just do this
+okay great so that is a problem there so
+it looks like I'm just going to take the
+first image I'm not too full batch okay
+great so that fixes the problem and then
+we just want to make sure that the rest
+works so we're going to do this okay
+that's interesting cannot handle this
+data type okay looks like we forgot to
+add mode on this from array so we're
+going to do that okay so apparently we
+also did not make this file so let's go
+ahead and change the file name
+this and we have everything working
+correctly so now my epoch is running and
+unfortunately this validation step won't
+be called for a while so this is again
+another trick the lightning can do so I
+can skip straight to it by setting up my
+faster bra just to make sure that this
+worked so I can do that and then what
+we'll see is that we're going to run
+through our whole training and
+validations loop once great and then
+that should have printed an image and I
+can see my reconstruction it's not great
+but it's there and now let's just say I
+want to train on 10% of my data just to
+see what the reconstruction looks like
+without waiting too long so I can change
+this and say okay I want to use only 10%
+of my training data and my want my first
+epoch is going to be a lot faster so
+you're starting to see some benefits of
+refactoring into lightning is that you
+don't have to add any of these features
+yourself which makes your research flow
+a lot faster unless you focus on exactly
+what you want to be focusing
+ok so now we're going to change this a
+bit in the case where you're doing
+faster iteration on things I might
+change your data sets then you want to
+use this format where you passing the
+train and the valve data loader into
+your fit
+however lightning lets you do better the
+finishin for research which is inside
+the actual module itself and this means
+that you don't have to figure out where
+the data came from how it was processed
+etc so let's go ahead and do that so all
+you need to specify are your training
+data loaders and your validation data
+loaders ok so what we're going to do is
+now copy this into there and we're going
+to return that
+and this args will still be available
+because where there's a main file but
+we're going to generalize that in a
+second and we're going to pass our
+validation there as well and now we have
+our valid loader so again just to make
+sure that everything's working we're
+going to just set we're going to remove
+these calls here today we're going to do
+a fancy compiler trick and just say a
+fast step run equals true great
+wargs is since available here so I'm
+going to just remove it we don't really
+need it at the moment from these data
+loaders and great so now I just verify
+that everything works again okay so
+everything worked so why is this better
+that's because when someone looks at
+your code and github they're gonna be
+able to know exactly only the things I
+went into this research right so you'll
+be able to see you'll be able to see
+what the model was you'll be able to see
+exactly what the loss was you'll be able
+to see what what happened in the
+training step so this is where a lot of
+things to get super complicated and when
+you get into Garen's and different
+things this gets really crazy and people
+don't know necessarily where the magic
+specifically is happening and then you
+have your validation loop so what
+happens there and then your optimizer
+and then your data loaders so let's just
+make a slight modification here
+so we want to make this even more clear
+about what's happening in the forward in
+the training step so since this is a VA
+II what we are going to be using this
+mostly for reconstruction so we're going
+to give it noise and then it's going to
+give us back a reconstructed image so
+we're just going to modify this forward
+because this is actually what's
+happening in the training step we're
+going to pass it here
+and then we're going to so in the
+training step we have our encoder then
+we draw some noise and then we pass it
+into our decoder so we do decoding here
+which is what the only thing that we
+really want to do from our model when we
+do use it in production so here we're
+going to say self dot decode and we're
+going to pass in Z now and now all we
+need to do here is say X hat equals so
+dot Z and that is the only thing that we
+need to change great and then
+reconstruction is going to be X hat cool
+so now we modified this so now when I
+call this BAE later I can just use the
+decoder and give it some noise so I rub
+this to verify that my changes worked
+and there are no bugs okay it looks like
+I have some sort of bug somewhere so I
+have something mismatched so let's just
+double check this again so I take my X I
+run it through the encoder I Reaper
+amateur eyes I have my Z ID code my Z
+that gives me an X hats where's my
+decode okay that's fine and then I'm
+going to pass in into my last function X
+hat X new and log bar and my last
+function has a reconstruction X ok so
+where exactly is the bug is coming from
+a validation step so we need to go ahead
+and change that right so it says
+validation step so it's the same thing
+so we're just going to copy this guy and
+move it into a validation
+okay and reconstruction badge it's not
+just this and my vow loss is this here
+okay so now we rerun this too just to
+make sure it works again and fast
+everyone will let us know if there any
+bugs okay no bugs great finally the last
+thing I want to do is I don't really
+want to use this this logging situation
+that I torch has here so I'm going to
+just use tensor board to do that
+hook to your module where there are many
+hooks but here's one of them
+it's called validation epoch and and in
+this case I also want to have my
+validation loss not just per batch but I
+want it for the whole epoch so this is a
+good place to add this as well so this
+outputs is a list of dictionaries for
+whatever I passed in on my validation
+step so validation step I passed this in
+so that means that I can iterate through
+this and pull out exactly that key that
+I passed in so that was a scaler
+okay so now I can just stick the average
+and send that back so again this is just
+for logging or whatever I want so in
+this case because I want to log this to
+tensor board and then I have to pass on
+this keyword called log and then pass in
+the dictionary of things that I want to
+log and that will automatically get
+pushed into tensor board now now we
+allow other loggers it's not just sensor
+board so you can configure one or
+multiple of those okay so now we added
+validation debug and so I made some
+changes I just wanna make sure I don't
+break anything okay so everything works
+now I'm going to remove this logging
+stuff and I'm just going to use tensor
+board to do that as well so self dots
+logger that experiments and then I just
+do whatever I can do the tensor board
+so I actually want to save this image
+the reconstructed image so I'm just
+gonna pass it in also to my output so
+pass that and now I have it here and I
+can just say well give me just want to
+lock one of them so I'm just going to
+pick outputs and I'll pick the last one
+now I can delete all of this great and
+now I can just do whatever tensor board
+love does
+okay so self-doubt lager that experiment
+is just my summary rider from tensor
+board so here I have some utils to make
+image a set of a stuff so I'm going to
+just pass this here it's gonna give me a
+grid and then my writer is just self dot
+lager dot experiments and I'm going to
+add that image there and then I also
+need to import towards wish and for this
+to work so I'm going to just say import
+towards mission
+okay so now that should log images so
+again I want to make sure that this
+works so if you didn't have lightning
+you would have to somehow figure out how
+to skip the training epoch and goes to
+the end of your validation to see if
+this code has any bugs but instead
+because I have festive run on I can just
+test all my code immediately so if this
+adding image doesn't work correctly I'll
+know right now okay but it did it looks
+like it did work great so lightning has
+automatic tensor board built-in and you
+can see I've been run been debugging
+things but I have all of these
+experiments and every single one of them
+has been versioned so I don't have to do
+anything or log anything so now I can
+just start a tensor board and look at
+exactly the outputs of that
+I've been running but I just want to
+look at the last one because that one
+has the images and I see that I have
+something that isn't greats but damage
+was logged so it's great so I don't have
+to do anything here so if I want to log
+on tensor Bourdon trainer I go to my
+training stuff and then I add just logs
+again so this keyword called log so I
+usually do this to make this simpler
+because I can name it something
+different now so I can say train loss
+and then pass in my loss and now I'm
+going to say log is my training loss as
+well great
+okay perfect so now I'll be able to see
+a loss happening on my training once
+this experiment gets saved okay at 37
+here we go and we will see our training
+loss here okay so now you can see it
+happening okay I'm going to show you a
+few other things
+so one invalidation epoch and I'm going
+to add another key called Val loss and
+this is going to trigger model check
+pointing automatically so I passed that
+in and as soon as I do that and I'll set
+this up to only train on 10% of my
+training data and 10% of the validation
+data just so you can see what happens
+your lightning logs and when I run this
+it's going to start automatically saving
+check points for me when there's a new
+minimum bow loss you can obviously
+configure all of that but it's built
+into lightning if you just want to do it
+very quickly there's a callback called
+Auto Check Point where you can specify
+unlock keys and when you want to save
+stuff okay great so now we have my epoch
+here and we can see that lightning save
+the checkpoints after epoch zero
+okay that next thing I want to show you
+is what are some of the other features
+that you can get by just converting your
+model into lightning so the first thing
+I want to do is I'm just going to
+parameterize this so trainer has a lot
+of arguments and I don't necessarily
+want to be adding them one by one so I'm
+just going to add them to our parts like
+this
+so now I have all of the trainer
+arguments available and so that the
+trainer can instantiate with those
+arguments I'm just going to pass this in
+and I'm going to say from arc bars arcs
+and I'm going to pass in my arcs so now
+this lets me do really cool stuff like
+passing the number of GPUs some of the
+number of notes automatically so I just
+want to make sure that this worked okay
+no problems there and obviously you can
+continue to add things that lightning we
+expect such as this and you don't have
+to specifically pass them in through the
+arc bars so okay so that ran fast
+everyone okay now I'm going to take this
+into an environment with four GPUs and
+without changing any of this code I'm
+going to show you exactly how we can do
+multi-gpu training
+okay so I'm in this environment and now
+I see that my project is there so now
+I'm going to show you that we have a few
+GPS available here so we have 420 ATT
+eyes again this is just the same BAE and
+and nothing's changed
+there's no CUDA or anything like that so
+just to show you that nothing and also
+not to okay well no actual dot - okay
+perfect so it's the same code so now I'm
+going to create an environment
+I'm going to activate my environment and
+I'm going to install PI torch
+light switches installed nowhere to to
+install PI torch lightning
+just want to show that the VA aid again
+is still the same there are no Kuta
+costs nothing and now I'm going to just
+do a very quick test and show this works
+okay so looks like that did work now I'm
+going to run this on multiple GPUs but
+first I'm going to create a new screen
+so we can monitor the GPU side by side
+okay so this is going to be a screen
+where I run the code and this is going
+to be the screen where we monitor so
+we're going to say Nvidia the SMI and I
+see all four GPUs here so now I go back
+to my code and then I say python bae and
+then i'ma say GPUs just one so in this
+case I want to just turn on the single
+GPU and you can see lightening the text
+the GPUs and it picks 0 that's the index
+of the GPU and it starts training your
+model so now it's much faster and again
+you don't have to change anything about
+your code so now I'm using 10% of GPU
+and only 807 megabytes okay so we have a
+bug with the batch size thing so this
+should be an integer let's see here
+batch size default equals and that
+should fix it
+okay now much faster
+now we're gonna use some multiple GPUs
+so if I just wanted to do two of these I
+can go ahead and do that and lightning
+uses DP this by default but actually
+once you use DDP which is distributed
+data parallel that's a recommended way
+of doing multi GPO training instead of
+using DP in DDP every single GPU writes
+its own version of the model and all
+these things gradients
+okay now I'm trying on my model on
+multiple GPUs and you can see that I'm
+using both of them here and notice I
+don't have to do you distribute it
+sampler or anything like that lightning
+automatically adds that to your code you
+can turn that feature off if you don't
+want it but in this case I split my data
+set into two and I'm training half of it
+on one chip here and half of it on the
+other and then sync ingredients across
+okay so now I want to use for GPUs
+that's very easy to do so I just changed
+this flag here and I'm using all four
+GPUs okay now you can see each GPU is
+doing its own thing and I'm using
+effectively all four GPUs
+now I want to show you another feature
+which is precision so in this case if
+you want to use 16-bit precision you can
+do this however we need to install apex
+for anything that's PI torch 1.5 or
+earlier the apex intel's non-trivial so
+instead i'm just going to install the
+latest pi torch which has built in apex
+support okay so it looks like we now
+have pi torch 1.6 so now we can just run
+sixteen bit precision very easily okay
+so it looks like we need to modify our
+model just a little bit to be able to
+use sixteen bits so because pi torch
+auto cast a lot of things under the hood
+when using this mode we're going to
+change our cross-entropy
+to use cross-entropy logics
+be able to work normally
+okay great so now we're training so
+recent 60 my position on a single GPU
+great so in this video showed you how to
+convert a PI torch model into PI torch
+lightning and I showed you that although
+the model is super simple we were able
+to get really advanced features by just
+converting to PI torch lightening things
+that you would have to code on your own
+and probably test and it will take a
+while to get correct but this way you
+can iterate through projects and move
+across GPU CPUs and any kind of device
+that you want without any changes to
+your code whatsoever

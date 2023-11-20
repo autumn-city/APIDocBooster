@@ -1,0 +1,325 @@
+ Yeah, let us now get to these nonlinear activation functions.
+ So why are we interested in these nonlinear activation
+ functions? Yeah, together with the hidden layers, they allow
+ us to model complex nonlinear decision boundaries. So with
+ that, we can solve complicated problems, complicated
+ classification problems, for instance. So but before we take
+ a look at these nonlinear activation functions more
+ closely, let us briefly recap the pytorch API. So this is
+ something I just copy and paste it from lecture five, where we
+ already had a multi multi layer perceptron, just to illustrate
+ how the pytorch API works. So on the left hand side, yeah, this
+ is like the regular approach. So where we have in it,
+ constructor, and here, this is a multi layer perceptron with two
+ hidden layers, I called them linear one and linear two,
+ because linear because the layer is called linear, it's computing
+ the net input, right? So these are our layers that we use and
+ one output layer. So this is essentially the setup that I
+ showed you earlier on in the slides, if I can just go back.
+ So this is essentially this setup where we have one hidden
+ layer, second hidden layer, and an output layer. Alright, so
+ this is how it looks like. And in the forward method, we use
+ these actual layers. So we apply the first hidden layer, then we
+ have our nonlinear activation here, it's a relu function, we
+ will revisit this in a few slides, then another net input
+ and another activation function, another net input. And then
+ usually, we would compute the softmax in pytorch. Recall, we
+ use this cross entropy loss, which already computes the soft
+ max for us, so we don't have to do it ourselves. So here, we
+ apply this lock softmax function on the logits. So there's also a
+ softmax function. But here, we compute this based on the we use
+ the lock softmax, because it's numerically more stable, if we
+ were to use the negative log likelihood loss. This is really
+ the only if we want to use the negative log likelihood loss.
+ Otherwise, we would just use softmax if we are interested in
+ the probabilities. To be honest, now looking at this, I don't
+ know why I used lock softmax, I think, in the big code example,
+ when I created lecture five, I had the negative log likelihood
+ here. So also, technically, you don't have to compute the
+ probabilities within this class, you can do this separately, if
+ you care about because technically, you never have to
+ use the probability if you use the cross entropy function in
+ pytorch for optimization. But again, this will become more
+ clear when we look at the concrete code example in the
+ next video. On the right hand side, the main difference is
+ that I'm using the sequential API, which can be a little bit
+ more, I would say, easier to read more compact. So that's
+ exactly the same network, except that here, we define it and
+ sequential can actually also run it. So we don't have to put it
+ explicitly in the forward method, it will already do it
+ for us if we call here my network, I just called it my
+ network. So it is, in a way a little bit more convenient.
+ What's more convenient in particular is that we don't have
+ to define these steps in the order these are used ourselves.
+ And we can also just read right now from here, how these layers
+ executed, they are executed from top to bottom. This is also the
+ case here. But for example, if I want to know what the linear one
+ is, I have to go up and look it up here. So it's a little bit
+ more, I would say error prone, whereas on the right hand side,
+ we define it. And we also directly use it in that order.
+ So it's a little bit more, it's a bit safer, I would say. So
+ yeah, so the flow is we apply a linear layer, a nonlinear
+ activation, a linear layer, nonlinear activation, and a
+ linear layer. And that will produce our logits. And then if
+ we're interested in that the probabilities, but again, pytorch
+ and cross entropy already applies the softmax for us, so
+ we don't have to do it ourselves. So technically, we
+ can skip this softmax step and don't have to use that. It's
+ just like, I usually like to include the probabilities
+ because I sometimes also print out the results from a model
+ and analyze it with plots and probability plots and stuff like
+ that. So in that way, I sometimes find it helpful to
+ have the probabilities available. So I usually save my
+ results, but you don't have to worry about this really. Alright,
+ so with that, we can then solve the XR problem using these
+ nonlinear activation functions. So the nonlinear activation
+ functions, let us make complex decision boundaries, like I
+ just said, so here, this is like a toy data set, I made just two
+ features, x one and x two, just for simplicity, two classes,
+ these orange ones, and these blue dots. So the orange squares
+ and the blue dots on the left hand side here, just for fun, I
+ was applying a multi layer perceptron with one hidden layer
+ and a linear activation function. So recall the linear
+ activation function looks like that. So you can see that on the
+ left hand side, that it's a linear decision boundary, even
+ though we have a hidden layer, by the way, I don't want to open
+ the code notebook right now, because then I have to switch
+ the screen again. But if you're interested, after watching this
+ video, you can double check here under this link, that this is
+ indeed the code is indeed correct. So you can reproduce
+ these results, if you don't believe me. But in any case, so
+ you can see, on the left hand side, this is a linear decision
+ boundary, even though we have a hidden layer. So what happened
+ here? So because in logistic regression, we had a nonlinear
+ activation function, and no hidden layer, it was a linear
+ decision boundary. Now we have a hidden layer. And no nonlinear
+ activation, we also have a decision boundary that is
+ linear. So let's recap logistic regression. No hidden layer.
+ Plus, nonlinear activation gives us a linear boundary MLP with
+ with linear activation plus hidden layer, also linear
+ boundary. So from that, we can deduce neither the hidden layer,
+ which we have in the multi layer perceptron, nor the nonlinear
+ activation function alone are sufficient for making a nonlinear
+ decision boundary, they are necessary, but they are not
+ sufficient for making a nonlinear decision boundary. In
+ fact, we need both, we need both the hidden layers, and the
+ nonlinear activation functions to make a nonlinear decision
+ boundary. So on the right hand side, I have now the same
+ multi layer perceptron with one hidden layer, the same number of
+ weights, the only difference is that I'm now using a nonlinear
+ activation function, here, I'm using the relu function. And you
+ remember, this is very simple, it's actually just thresholded
+ at zero. So if the input is negative, the output is zero,
+ otherwise, it's an identity function. So it's almost an
+ identity function, but not quite. And this is sufficient
+ together with the hidden layers to make a nonlinear decision
+ border, you can see, this decision border is no nonlinear,
+ you can see it's solving this x or problem. So it can now
+ classify these data points correctly. So why is this working?
+ And why is this not working? So why is the linear decision?
+ Linear activation function, not sufficient and produces a linear
+ decision region. That's because if you think about it, even
+ though we have a hidden layer, if we have a linear activation
+ function, what happens is that we have essentially a
+ combination of multiple linear functions. And the combination
+ of multiple linear functions is still a linear function. So if
+ we don't use nonlinear activation functions, then we
+ don't really gain anything by using a hidden layer. So we need
+ actually both hidden layers and nonlinear activation functions
+ to produce these complex decision boundaries. Actually,
+ they are way more than just relu functions, really just happens
+ to be popular because it's, it's quite simple and quite fast to
+ compute and has also some other nice properties, which I will
+ also briefly talk about in a few minutes. So but yeah,
+ traditionally, these are also one of the most popular
+ activation functions in multi layer perceptrons. With that, I
+ mean, the logistic sigmoid that we already encountered in the
+ context of logistic regression. So back in the day, I would say
+ even the sigmoid was maybe the most popular activation function
+ in multi layer perceptrons. But again, it has this problem that
+ these gradients saturate here. Another very popular activation
+ function for a while was the 10 h function, it's also a sick
+ model. So both are sick model functions. It's also sick model
+ function. So as shaped by this hyperbolic tangent function looks
+ a little bit different. So you can see this one, the logistic
+ sigmoid function is centered around zero, and the output is
+ point five. Whereas this one is centered at zero. And the output
+ at zero is also zero. So it's producing positive and negative
+ values, which can be an advantage. There's also a hard
+ tension, which is essentially very similar to 10 h, except
+ that it's thresholded here, similar to relu. So what is the
+ advantage of let's say the 10 h over the sigmoid activation. So
+ the event of 10 h is really like that we have this centering at
+ zero. So that we have positive and negative values. And you can
+ also see it's steeper. So here, the it's steeper than this one.
+ So we have larger gradients. It has also a very simple
+ derivative, one minus 10 h, recall for the logistic
+ sigmoid, the derivative was like this. So itself times one minus
+ itself, so the derivative is slightly smaller, because it's
+ you're multiplying two numbers smaller than one with each
+ other. So whereas here, you have one minus this one. But then you
+ have also the squared here. So it's actually not that
+ different. Okay, um, yes. So but both have the problem that if
+ you make a wrong prediction, it's both if you make a right or
+ wrong prediction, but in both cases, you hear and hear, so you
+ saturate it. So that that can be a problem. If you make a wrong
+ prediction, you end up with a very small partial derivative
+ with with respect to its derivative with respect to its
+ input. And then when you compute the partial derivatives in the
+ chain rule, then yeah, you will get very small gradients and the
+ learning will be very slow, which can be a disadvantage. Or
+ maybe one more thing about why it's good to have negative and
+ positive values, that just gives you more combinations. So
+ imagine you initialize your weights from let's say a small
+ from a random normal distribution, standard normal
+ distribution, let's say, or a scale to standard normal
+ distribution. So you initialize your weights such that they are
+ centered at zero. So you can have positive and negative
+ starting weights. And if you also use this 10h, which can
+ have positive and negative values, you get just more
+ combinations of possible values, whether you combine a positive
+ with a negative number and negative with a positive number
+ to negative numbers or to positive numbers, you have four
+ different ways you can combine these signs. Whereas if you have
+ a activation function that can only produce positive numbers,
+ you're a little bit more limited. So I would say that
+ 10h is a little bit more expressive, it allows you a
+ little bit more explicit expressivity, if that's the
+ word. But yeah, I think also in practice, when I use them, and I
+ recall, I only saw a minor difference using one over the
+ other, really, if you use a redo function that gives you a better
+ bang for the buck, usually. So here are some more nonlinear
+ activation functions, including the redo function. So the redo
+ function here, that's something you've seen before, it's I would
+ say still the most widely used activation function in deep
+ learning. I think it's maybe 10 years old by now, something like
+ that. But when you look at recent papers, people still use
+ a relu a lot. It has three nice properties. It's simple to
+ compute, really. And you have always, yeah, large derivative,
+ the derivative is one. So if you use the chain rule, and your
+ derivative is one, if the inputs are positive, then yeah, you
+ don't diminish the product in the on general, okay, but it can
+ also be zero, which can be a problem. So if you have negative
+ inputs to this activation function, you are your output
+ would be zero, which will then basically cancel the weight
+ update for that corresponding weight corresponding to this
+ activation, or connected to this activation. So that can be a
+ problem if you always have very negative input. So there is a
+ problem called dying neurons or debt. Relu's that happens
+ usually when you have somehow updated the weights, such that
+ you will never come into the positive region anymore. And
+ then yeah, you will never be able to update your weights
+ again, because the derivative will always be zero, it can be a
+ problem. However, in practice, some people argue it can also be
+ an advantage because it can help with pruning, let's say,
+ unnecessary neurons, like if you have an excessive number of
+ neurons, this way, you can get rid of some of them. And it may
+ help with preventing overfitting. A version of Relu
+ that some people find to perform sometimes a little bit better is
+ the leaky relu, which doesn't have the problem of these dying
+ neurons. So here, the difference is that we have, so if we look
+ at the simplified notation, the the piecewise linear function
+ here, um, what you can see here, or the piecewise function,
+ sorry, what you can see here is that the only difference is that
+ we have now this alpha here, which is a slope, if the input
+ is smaller than zero, so for the negative region here, we have
+ now a slope, what value we can choose for the slope, it's a
+ hyper parameter, right? So hyper parameters is something that you
+ as the practitioner have has to choose. So there's no way you
+ get second know what's a good value if it's a hyper parameter.
+ It's something you have to try out in practice and change and
+ see what performs better. I have seen all kinds of values for
+ this negative slope here, or for the slope in the negative region.
+ So in Keras, that's API for TensorFlow, I believe they use
+ point three as the default value. In pytorch, I don't know
+ exactly the default. I usually specify it myself, I usually use
+ something like point one or point one. But yeah, there are
+ different values that work well for different problems. In
+ practice, you will only see a slight small difference. So it's
+ not something if your network that say doesn't perform very
+ well, then choosing different value here probably won't make a
+ big difference. So you have very bigger problems to fix. But it
+ can give you maybe 123 percentage points in terms of
+ accuracy, if you're lucky. I said hyper parameters cannot be
+ like automatically learned from gradient descent. However,
+ people designed parameterized version of the leaky relu, it's
+ called Prelude parameterized relu basically. And here, this is
+ essentially the same as buff. But here, the people made it
+ made alpha trainable parameter. So it's parameter that can be
+ also updated with gradient descent. So in practice, I
+ honestly never really have never really seen this being used. I'm
+ not sure if this is really that useful. There's also an elu an
+ exponential linear unit. So it's getting around this kink here.
+ It's like a more like a smooth version here in this kink. So
+ there are different types, really many, many different
+ types of nonlinear activation functions. There's also I
+ recall there's a cell I've seen that quite often recently, it's
+ on thing it stands for self normalizing exponential linear
+ unit. So it has some nice properties also. But yeah,
+ again, there are lots of different flavors. Usually,
+ um, people still use the relu a lot because it just performs
+ well. Yeah, related to the topic of nonlinear activation
+ functions, I saw this paper here, last year called smooth
+ adversarial training. I booked marked it because I knew it
+ would become handy when I teach a class on deep learning. So
+ adversarial training, just briefly, what is adversarial
+ training adversarial training is, yeah, on exploiting deep
+ neural networks, or more like fooling deep neural networks,
+ it's, if you have, let's say an image or some data point, and
+ your network makes a prediction, let's say you have an image of
+ a cat, it predicts cat, there's some way you can exploit the
+ network by just changing the image very slightly making like
+ a few pixel changes. But you find these pixel changes that
+ are able to fool the network to let's say now think that the
+ image is a dog instead of a cat. So it's like exploiting
+ weaknesses in the network. So like the author say it is
+ commonly believed that networks cannot be both accurate and
+ robust. So usually, if you want to make your network more robust
+ towards these adversarial examples, you usually trade it
+ off by Yeah, by suffering in terms of accuracy. So the
+ accuracy is usually lower in these more robust networks. So
+ like I say, gaining robustness means losing accuracy. However,
+ yeah, let me just read it. Our key observation is that the
+ widely used relu activation function significantly weakens
+ adversarial training due to its non smooth nature. So it sounds
+ like the relu is like a little bit of a disadvantage for
+ adversarial training. Hence, we propose smooth adversarial
+ training, in which we replace relu with its smooth
+ approximations to strengthen adversarial training. So the
+ authors argue that if you replace this revenue here in
+ red with this non smooth point here with a smooth version, for
+ example, the permit rig soft plus function, then yeah, you
+ can strengthen it because now maybe it has something to do
+ with the gradients because here you have this big difference
+ whereas here you have also something in between. So now
+ this is maybe helping with this adversarial training. So based
+ on the experiments. Yeah, and the second reason why I like
+ this paper is because they have a nice summary of the smooth
+ approximations of the non smooth relu function. So on the left
+ hand side, this is how the activation functions look like
+ they call it here the forward path. And then here are the
+ derivatives for the backward path on the right hand side. So
+ yeah, you can see these are all slightly different, but they are
+ all kind of approximating the other relu in some way. In
+ practice, um, yeah, in practice, this has a big implication
+ apparently for the adversarial robustness. But also, like I
+ said, choosing different activation functions that are
+ relatively similar, it doesn't make a big impact in practice.
+ So also what they see here, it's just one percentage point. So
+ one percentage point between relu and the others. So it helps
+ a little bit these some of these others perform actually better,
+ a little bit better. It's not huge, but it's a little bit
+ better. So it's in a way it doesn't hurt using them. But on
+ the other hand, you can see there's a huge advantage in
+ terms of adversarial robustness from 33%, up to 42%. It's almost
+ a 10% 10% difference in terms of adversarial robustness. So
+ given that, I mean, it's not much work to just replace relu
+ with one of these non other nonlinear activation functions,
+ given that it's not much work, why not doing it right? So it's
+ actually quite interesting. Yeah, and because activation
+ functions are quite boring, I have a quite fun visualization
+ here I just saw today coincidentally. So that's these
+ dance moves of deep learning activation functions. With that,
+ I want to enter this video. And then in the next video, we will
+ talk a little bit more about multilayer perceptrons and in
+ particular, coding it up in pytorch and training it.

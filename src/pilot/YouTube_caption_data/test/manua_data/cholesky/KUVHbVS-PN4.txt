@@ -1,0 +1,243 @@
+Hi everybody.
+My name is Markus Mottl and I'm going to present to you AD-OCaml.
+This novel framework for algorithmic differentiation and implicit parallelism 
+offers a wealth of features that is often missing from existing solutions.
+So what is algorithmic differentiation?
+It's basically about turning a computer program provided by the user
+into another program that augments it with mathematical derivatives.
+Due to the nature of some of these transformations,
+this may possibly also improve the program's efficiency
+or introduce parallelism.
+This is depicted in the computational graph below,
+which was automatically generated from the given user program,
+turning a simple feedforward neural network
+into an implicitly parallelized backpropagation network.
+Unlike solutions that use numerical approximations,
+algorithmic differentiation yields mathematically accurate results
+for gradients and directional derivatives.
+AD methods are also typically more efficient.
+Obtaining derivatives using AD only takes a constant factor more time
+than evaluating the user program.
+One restriction is that the computer program is differentiable.
+It may seem surprising, but this is frequently already the case,
+or can often be achieved with minor changes or relaxations.
+The application areas of AD obviously cover many scientific disciplines
+where parameter optimization or sensitivity analysis are important.
+AD also generalizes previously discovered computational techniques.
+For example, the famous backpropagation algorithm in machine learning
+is just a special case of reverse-mode algorithmic differentiation
+applied to feedforward neural networks.
+AD should not be confused with other methods.
+Unlike symbolic differentiation, which can lead to intractably large terms,
+AD should rather be seen as an exact numerical method,
+but we can still combine it with symbolic program optimizations when convenient.
+Unlike numerical differentiation,
+sometimes called "bumping",
+it does not introduce approximations,
+which, in practice, can lead to substantially incorrect results.
+So, finally, how can we make algorithmic differentiation work with a sophisticated language like OCaml?
+The approach used by AD-OCaml is the so-called tagless-final style.
+What do we mean by that?
+Most OCaml applications represent programs using algebraic data types.
+It's a so-called initial representation.
+These terms can then be evaluated or transformed
+using pattern matching and various interpreter functions.
+Some implementations tag terms
+with type information that needs to be checked at runtime
+while others use generalized algebraic data types to leverage the type system of the host language.
+Our tagless-final representation however
+neither uses tags to handle type information
+nor does it represent programs using algebraic data types.
+Instead, we use the actual OCaml program to represent itself,
+but we parameterize it over an arbitrary interpretation using a functor.
+A central concept of AD-OCaml is the algebra
+within which a user program is interpreted.
+Here is a simplified example.
+We have the signature of an algebra over floats.
+Besides some mathematical operations,
+it provides for a function that lifts standard machine floats into that algebra.
+Here, we instantiate the standard algebra
+where the abstract float is just a standard float.
+Now we define an example program
+that is parameterized over an arbitrary algebra.
+If we instantiate this example program using the standard algebra,
+we obtain an evaluator for the program over standard floats.
+That may seem like a lot of hoops to jump through just to evaluate a simple program,
+but the next slide will show you how powerful the tagless-final representation really is.
+On this slide, we implement forward mode algorithmic differentiation by transforming algebras,
+by transforming interpreters of our program.
+We want to augment them with directional derivatives.
+Using the chain rule of calculus,
+this will allow us to obtain the exact directional derivative of our whole program with respect to its input.
+First, as a reminder, here is our example problem
+and the chain rule of calculus as applied to it.
+We now implement a functor Make_dual,
+which transforms an arbitrary base algebra
+such that we can keep track of values and their derivatives with respect to the function input.
+For example, the sine function
+will calculate the sine in the base algebra,
+and also its derivative,
+the cosine, which is then multiplied with the derivative of its argument,
+with respect to the program input.
+This way, forward mode evaluates a chain rule from right to left.
+We now instantiate the Make_dual functor with the standard algebra,
+and our example program with the augmented dual algebra.
+Then we evaluate program with the augmented input
+to obtain both the function value
+and its exact derivative in one fell swoop.
+The user program did not require any modification whatsoever.
+As you can see,
+the function argument is also augmented with the rightmost part of our chain rule here:
+dx over dx, which is just 1.
+Using functors for calculating derivatives is admittedly less easy on the eyes than using functions,
+as other frameworks like Owl or DiffSharp chose to do,
+but unless you only want to implement small functions,
+or in the unlikely case that you need to calculate derivatives all over the place in your program,
+this fixed syntactic overhead is insubstantial and comes with significant advantages.
+On this slide, you can see a trace of the computations performed by our example program in forward mode.
+Here's the input, and here we have the function value and its derivative.
+Forward mode AD with dual numbers is easy to implement
+and has comparatively low bookkeeping requirements.
+Sadly, it is only efficient if there are few inputs to a program.
+In practice, this is often the less interesting application case.
+If you have millions or even billions of parameters,
+it is infeasible to calculate gradients one by one using forward mode.
+Reverse mode AD, which we will show in the next slide, can address this efficiently.
+Furthermore, each time we take derivatives by nesting dual algebras with the Make_dual functor,
+the computational effort grows exponentially for obtaining higher-order derivatives.
+That's why AD-OCaml implements forward mode using a UTP functor.
+This functor generates algebras over univariate Taylor polynomials.
+These are essentially truncated power series.
+AD-OCaml uses convolutional algorithms on UTPs
+that run in quadratic time to obtain high order power series approximations of programs.
+If you have only a few, or as is most often the case, one output — the result of a loss function for example —
+but large numbers of inputs,
+then reverse mode AD will allow us to handle the user program efficiently
+— at least in terms of computation time, because unfortunately
+reverse mode requires tracing all operations and intermediate results for your program in order to work.
+This can cause problems with memory consumption.
+Reverse mode AD benefits from introducing the concept of an adjoint.
+The adjoint of a value is simply the derivative of the whole program with respect to that value.
+It will be propagated from the end of the program
+through all intermediate values to the beginning
+to calculate the complete gradient in one go.
+A seemingly innocuous observation is
+that values can be used more than once within the program.
+As a consequence, we actually have to add up adjoint contributions from all the uses.
+This makes adjoint calculations intrinsically imperative in nature,
+with huge consequences for frameworks that were not designed right off the bat with support for imperative functions in mind.
+This is probably the single most important oversight in the vast majority of frameworks out there,
+including but not limited to the Owl framework.
+Even purely functional user programs may not work correctly or efficiently,
+because reverse mode inverts the flow of your program and turns reads into writes.
+This may force you to copy large amounts of data on even tiny reads,
+which can decrease performance without bounds,
+or force you to abandon support for such completely ordinary and frequently used operations entirely.
+It would basically prohibit support for aliasing, for example sharing a column of a matrix as a vector.
+AD-OCaml has unrestricted support for imperative updates,
+including in-place operations, which for example PyTorch and Autograd do not support.
+It can thus handle a greater number of user programs correctly and efficiently.
+Here is a computational graph of our example calculated using reverse mode.
+As mentioned earlier, reverse mode is great for handling programs that have large numbers of inputs,
+but memory consumption can be a problem.
+It is also fairly difficult to implement correctly, especially if you want to support imperative updates, aliasing, or extensibility.
+A nice side effect of reverse mode is that it requires accurate tracing of programs.
+The resulting trace is useful for many purposes,
+for example reusing previously allocated values,
+which can give a quite noticeable performance boost,
+or for visualizations and symbolic optimizations.
+There are some limitations when it comes to AD.
+Not all programs whose derivatives exist are written in a way that works with AD.
+The function on this slide computes the square of x in a rather unusual way.
+The problem here is that when x is 3,
+then AD would believe it has to return a constant, whose derivative is 0, which is clearly incorrect.
+The solution is for users to never let the control flow of their programs
+depend on values in whose derivatives they are interested.
+Typical user programs can frequently be fixed to avoid this.
+Complicated cases, for example numerically stable matrix factorization algorithms,
+can often be handled by extending algebras with new operators.
+Certain operations are inherently non-differentiable for certain inputs,
+for example, taking the maximum of two numbers,
+which leads to "kinky" user programs.
+Such kinks in the function can typically be smoothed out,
+and AD-OCaml provides support for that.
+Since it can also calculate directional derivatives,
+and not just gradients, it can handle some cases that reverse mode cannot.
+We could also handle such situations by raising exceptions if some value is too close for comfort to a singularity.
+There is a lot of competition among frameworks out there,
+but in my experience, most frameworks have significant shortcomings.
+Some may only support explicitly constructed computational graphs, for example like TensorFlow.
+This is infeasible for some real world programs.
+Some cut corners when it comes to how general user programs can be,
+or break scalability in seemingly normal use cases.
+Some, especially ones implemented in Python, are atrociously slow when it comes to handling individual floats,
+often hundreds if not thousands of times slower,
+or they may bomb on programs with deep computational graphs,
+as I've seen with TensorFlow in OCaml.
+AD-OCaml has been very carefully designed to work correctly and efficiently on even the largest and most complicated OCaml programs
+to which AD can be applied at all.
+It also mostly eliminates any cognitive overhead required for parallelizing them.
+Let's discuss the current state of AD-OCaml.
+Thanks to a rigorous test suite with about 5 000 lines of code,
+AD-OCaml, which has close to 50 000 lines of code, has reached maturity for production applications.
+It features almost all float operations provided in the C99 standard,
+which also work on vectors and matrices.
+It is mostly compatible with Lacaml.
+Many BLAS and LAPACK operations are supported, including Cholesky- and QR-factorizations, 
+symmetric eigen problems, and triangular matrix operations.
+Aliasing of vectors and matrices is fully supported.
+UTP and reverse mode as well as function tracers can be mixed without restrictions.
+Traced user programs can reuse previously allocated values like matrices.
+This can greatly improve efficiency when reruns are needed, for example, with iterative optimizers.
+Implicit parallelism works transparently through all nesting levels.
+It can be used directly on user programs without having to generate a full computational graph first.
+AD-OCaml achieves this by creating and reducing partial computational graphs in parallel on the fly.
+User programs that are instantiated with the standard algebra
+will evaluate exactly as expected
+and can thus be run essentially without any significant dependencies on the framework.
+One big feature still missing right now is support for GPUs,
+for which OCaml is unfortunately lacking dependable libraries at the moment.
+It may not be difficult to add this to AD-OCaml, since derivative calculations are oblivious to the underlying type of value.
+To show off the capabilities of this system,
+let me present you with one of the test suites in the framework.
+It applies AD to approximately 1 100 lines of numerical code.
+Here, you have a functor
+that parameterizes the program over an algebra,
+and as you can see from a quick scroll through the program,
+it is exceptionally complicated.
+Due to its testing of corner cases, it is considerably more complicated than what most users would write.
+It maps one input to one output,
+which allows us to compare the results of both forward and reverse modes directly for correctness and performance.
+Bumping is used too, for verification
+and to show the substantial difference in accuracy and efficiency.
+Finally, both the standard and the parallel algebra demonstrate the correctness and performance of implicit parallelism.
+Please note that this test suite was absolutely not written with benchmarking parallelism in mind.
+In fact, it deliberately creates a narrow and deep computational graph
+to improve detection of errors in reverse mode.
+This greatly reduces opportunities for parallelism.
+The parallel algebra nevertheless still finds ample opportunities for improving performance.
+The resulting derivatives of our program show
+that both UTP and reverse modes achieve greater accuracy than bumping.
+Note that the test suite was deliberately written to make bumping work well for verification.
+Bumping less well-behaved programs with less well-tuned epsilons can lead to meaningless results.
+It is sometimes impossible to obtain sufficient accuracy with bumping, even with tuning.
+Let's discuss the timing results.
+There are lies, damn lies, and then there are benchmarks.
+This is not a benchmark. It is a test suite for correctness,
+and as such not tuned to make AD-OCaml look fast.
+In fact, its deliberately narrow and deep computational graph
+only offers few opportunities for parallelism,
+which the parallel algebra is happy to exploit.
+The test suite is evaluated twice, on slightly different inputs,
+to show the impact of rerunning program traces.
+This shows that, shockingly,
+rerunning the trace of your OCaml program
+makes it faster than the original with a standard algebra.
+In fact, trace programs are hard to beat for most purposes.
+The test also shows that implicit parallelism,
+at least on this program, improves everything.
+It is interesting to know that evaluating the program and calculating its derivatives in parallel
+is only marginally slower than running the plain vanilla user program with the standard algebra.
+I hope this is a pretty convincing argument for AD-OCaml and the tagless-final style,
+which makes combining program transformations so much easier.
+Thanks for your attention.

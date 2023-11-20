@@ -1,0 +1,271 @@
+Hey guys and welcome to the video! Today, 
+I will talk about how we can implement  
+a custom optimizer in PyTorch. I'm on the official 
+github repository of PyTorch and I'm going to  
+show you where exactly you can find the relevant 
+source code for implementing custom optimizers.
+The module we're interested in is under the 
+subpackage optim and is called optimizer.py.
+Here we have a class called 
+Optimizer that is supposed to be  
+subclassed each time we want to 
+implement a custom optimizer.
+The constructor has two arguments one is 
+params and the second one is defaults. The  
+params argument is an iterable and 
+there are two possibilities when it  
+comes to the elements. First of all, one 
+can just have an iterable of tensors or  
+one can provide an iterable of dictionaries. If 
+you decide to go for an iterable of tensors we  
+can only have one set of hyper parameters for 
+all of the parameters. However, if we decide  
+to go for an iterable of dictionaries we can 
+specify different hyper parameters for different  
+parameter groups. Let us now focus on what 
+is inside of the constructor. As you can see,  
+we defined two different attributes first of them 
+is state which is a default dictionary and the  
+second one is going to be param_groups equal to an 
+empty list. The state attribute is really useful  
+because it allows us to store any information and 
+then use it in future steps. One specific example  
+of when the state might be useful is when we 
+implement momentum optimizers that need to store  
+information like the parameters from the previous 
+step. The second attribute param_groups serves as  
+a nice way how you can access all your parameter 
+groups with the same formatting of the parameter  
+dictionaries. The rest of the constructor 
+focuses on populating this param groups list.
+Here we have the zero_grad method of the optimizer 
+and it is supposed to be called just before  
+calling backward on our loss. The idea behind it 
+is to set all the gradients of the leaf parameters  
+to zero. Finally, we have the step method that 
+is supposed to be implemented in the child  
+and this one is supposed to be called just after 
+calling the backward method on the loss and in the  
+most general terms the goal of this method is to 
+update all the parameters. To do this update one  
+can use a lot of different things and information. 
+Specifically, you probably want to use things like  
+the inner state that we just saw or the gradients 
+of your parameters. Anyway, I think those are the  
+most important things that you need to know and 
+let me show you an example. Before I start with  
+the example though let me quickly introduce the 
+Rosenbrock function. It is a real function of two  
+variables and it has a unique global minimum at 
+this point. The reason why we want to use it is  
+because converging to the global minimum is not 
+that easy. I will write an example where i define  
+a custom optimizer and also i will try to see how 
+this optimizer performs on the Rosenbrock function  
+and to do that i will also need to write some 
+visualization code. All right, let's get started.
+I imported matplotlib to create 
+nice plots and animations.  
+Then I have numpy and torch to work with tensors 
+and arrays. I imported two already implemented  
+optimizers. One is Adam and the other one is SGD. 
+I will use them to benchmark our custom optimizer.  
+Finally, I imported tqdm to get progress bars. 
+Let us now implement the Rosenbrock function.
+First of all, we fix the a and b parameters 
+namely a is set to 1 and b is set to  
+100. Also let me point out that the way 
+we wrote this function will allow us to  
+use it both with PyTorch and Numpy. Now 
+we would like to implement a function  
+that runs the optimization given 
+a selected optimizer and its hyper
+parameters.
+Okay so this run_optimization function 
+accepts multiple parameters. First of all,  
+we need to provide the xy_init that represents 
+the starting point of the optimization algorithm.  
+Here we need to provide the class of the 
+optimizer that will only get instantiated  
+inside of the function. We need to provide 
+the number of iterations and finally  
+we can pass any additional keyboard 
+arguments (hyperparameters) to the optimizer.  
+What this function returns is a path 
+which is a 2d numpy array where the rows  
+are different iterations of the optimizer 
+and the columns are the xy coordinates.
+First of all, we create a tensor, set its value 
+to x y in it and make sure that it requires the  
+gradient. We instantiate an optimizer using 
+the optimizer_class and the optimizer_kwargs.  
+Note that the first argument that 
+we're passing is an iterable of  
+tensors or namely an iterable of a single 
+tensor. That means that we are not using  
+the possibility of creating groups. However, 
+in our example it doesn't really make sense to  
+split up our parameters into multiple groups since 
+we only have a parameter space of dimension 2.
+We initialize the path array and we populate 
+its first row with the initial x and y.  
+We then compute the loss which is just 
+the value of the Rosenbrock function  
+at a given point and we compute the 
+gradients by calling the backward method.
+We take all our gradients and we clip their 
+norm to one. We do this to guarantee that  
+the gradients are not exploding and 
+finally we call the step method of our  
+optimizer and as discussed it will update 
+in some way the value of our parameters.  
+At each iteration we cache the 
+corresponding value of the parameters  
+inside of the path array and finally we return 
+it. Now we would like to write a function that  
+visualizes paths of different optimizers 
+to do that we can create a small animation.
+Let me go through the arguments. We start with 
+the paths which is a list of all the different  
+paths representing different optimizers. Then for 
+each of them we can specify what color we want to  
+visualize them with and also we can specify 
+(to have a nice legend) what the name of that  
+optimizer is. Of course we can also specify the 
+figure size and the x and y limit of our figure.  
+We return an animation that is going to show the 
+paths of all the optimizers. Let's implement it
+First of all, we make sure that paths 
+colors and names have the same length  
+because they correspond to 
+the same set of optimizers.
+We compute the maximum path length 
+across the different optimizers  
+however in our example all of 
+them will have the same length.
+We prepare a grid of x and y coordinates and 
+then we evaluate the Rosenbrock function at  
+all of them. Here we just save 
+the x and y coordinates of the  
+global minimum because we know what 
+it is and we want to visualize it
+We create a figure and then we create a 
+contour plot of our Rosenrlock function.
+We predefine a scatter plot for each optimizer.
+We plot a legend and we also plot the 
+coordinates of the global minimum.
+We define a function called 
+animate and we will use it  
+to generate different frames of our animation.
+Finally, we create a FuncAnimation 
+object providing our animate function  
+our figure and other parameters influencing 
+how the final animation is going to look  
+like. Now we wrote all the boilerplate 
+code and we can test whether it works.
+First of all we specify the 
+initial x and y coordinates.
+We are going to run the optimizer for 1000 steps.  
+We run two different optimizations. 
+The first is going to be using the Adam  
+optimizer and the second one is going to be using 
+a vanilla SGD - stochastic gradient descent.  
+I define the frequency for the final 
+animation and the idea is that we don't  
+necessarily want to have 1000 frames and 
+instead we want to take every 10th frame.
+Finally, I prepare all the inputs for the 
+create animation function and i run it  
+the last step is to save the 
+animation as a gif on our computer.
+Now we can try to run it.
+We can see that both of the optimizers 
+go directly to the valley and once they  
+are in there they just continue towards the 
+global minimum. Let us now implement a custom  
+optimizer. Just for the record, we're 
+not trying to beat the state of the art  
+or whatever. The goal is to show some features 
+of the Optimizer class and how you can use them  
+Here we import numpy and torch and the parent 
+class Optimizer that we will need to subclass.
+We name our optimizer WeirdDescent and the way it 
+behaves is very similar to the coordinate descent  
+algorithm, however, in our case we're 
+going to choose the coordinate randomly  
+and not necessarily cycle through 
+all the coordinates. Additionally,  
+with every 100th step we will multiply 
+the learning rate by a very big constant.
+The only hyper parameter that this optimizer is 
+going to have is a learning rate and what we do  
+we insert it into the defaults dictionary and then 
+we use it to call the constructor of the parent.
+We're not going to use the concept 
+of a closure in our example. However,  
+you might want to use it when you need to 
+evaluate your loss function multiple times  
+and some existing optimizers 
+are actually using this.
+Here we want to define a key "step" 
+inside of our state dictionary. If  
+it's the first step we set it equal to 1 
+and if it's any consecutive step we just  
+keep on incrementing it. We need to 
+keep track of the number of steps in  
+order to be able to recognize whether 
+the current step is a multiple of 100.
+If we happen to be in a step 100 200 
+300 and so on we just define c to be  
+something really big for example 
+100 otherwise we keep it equal to 1.
+Let me explain what this block is trying to 
+do. First, we want to randomly select a group  
+out of all the available parameter groups. 
+Given this parameter group we then want to  
+select a random tensor that belongs to 
+this group. Once we have this random  
+tensor we try to access its gradient. If 
+it's defined great. If it's not defined  
+we repeat the above process until we hit a 
+tensor that has gradients computed on it.  
+Also let me point out that in our example with 
+the Rosenbrock function we will only have one  
+parameter group and inside of this parameter 
+group we will only have a single tensor.
+Given our selected tensor we want to 
+pick one element at random. Once we  
+have our element we will create a mask 
+tensor that will have the same shape  
+as our input tensor and it will be equal 
+to zeros everywhere except for one entry.  
+Finally, we perform the parameter update. The 
+way we do it is by taking the gradient tensor  
+and the mask tensor and multiplying them 
+elementwise. What this will essentially  
+result in is an update only along one single 
+coordinate. The alpha parameter defines the  
+multiplier we are going to multiply the update 
+with. As you can see we take the learning rate  
+and also our constant. Finally, we return the 
+loss all right so let's test out our optimizer.
+I just directly modified our source script 
+to include the weird descent optimizer  
+and also at the end I'm printing 
+a few rows from the path array.  
+It is always just one coordinate 
+that is changing its value at a time.  
+As you can see our optimizer is jumping every 
+100 steps. Which is something we expected.  
+When it comes to moving along a single coordinate 
+at a time, unfortunately, we cannot see it clearly  
+in this animation. The reason for this 
+is that we only show every 10th frame.  
+Anyway, that's it for the video. I hope I 
+managed to cover the most important things  
+and if you're interested in the topic i would 
+definitely encourage you to read through the  
+official PyTorch source code, documentation 
+or even look for implementations of custom  
+optimizers in third-party packages. Thank you 
+very much for watching and see you next time!!!

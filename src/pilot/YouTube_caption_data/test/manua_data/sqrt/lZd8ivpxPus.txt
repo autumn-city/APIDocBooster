@@ -1,0 +1,209 @@
+hi welcome to this short video it's a
+tutorial where we gonna go through the
+source code of an example using the
+bindsnet library: it is the
+self-organizing maps example - very
+interesting. First of all I'll tell you
+quickly about bindsnet. Bindsnet is a spiking neural
+network simulation library geared
+towards the development of
+biologically inspired algorithm for
+machine learning, which is a very good
+definition of what bindsnet really is
+and it runs on GPU and CPU, thanks to pytorch
+First, it is inspired
+by the paper called unsupervised
+learning with self-organizing spiking
+neural networks this is where we gonna
+get the mechanism for the learning - the
+unsupervised learning. The example runs
+on the MNIST dataset - the handwritten
+digits dataset. Okay so let's have a
+quick look at the structure of our
+network: input and output layer - that's it.
+input is fully connected (all to all) to
+the output layer and then the output
+layer is connected back to itself
+through a recurrent connection and
+provides only inhibition. This is the basic structure. The thing is,
+the output neurons inhibit themselve
+according to a rule and the strengths
+of the weights is defined here: it is
+they are proportional to the square root
+of the distance between all the neurons,
+and this is how the training the output
+neurons arrange themselves in
+self-organizing maps, hence the name.
+You will end up with something like this: the
+output neurons organize themselves and
+when most of them in the '7'
+region fire that's usually a seven that
+is presented at the input. This is the
+goal of our training
+and it works pretty good. So now we can
+have a look at the source itself. Here, we
+start importing the usual, torch and
+torch vision because bindsnet uses this
+framework. tqdm because it looks very
+nice and of course bindsnet.
+The 4 arguments for this example: here, the number of output neurons. 900 is a good
+number
+you can try to raise it, 2000,
+3000: you won't get that much
+better results but you can try. The time
+is the duration in milliseconds of the
+simulation of the network. Intensity
+represents the maximum frequency when
+you convert the pixel intensity in
+spike frequency and of course epochs is
+the number of epochs we want to train
+our network on through the entire dataset.  Here, very interesting, batch size 100
+it means that in this source code we can
+train our network a hundred sample at a
+time, which is much faster but beware not
+to have batch size too high then
+learning may become not as steady not so
+stable so usually 100 is is a good
+number. Tests interval which means that
+every 1000 sample we will test and we
+will evaluate the accuracy of our network
+and every 500 sample we will slowly
+increase the inhibition of the recurrent
+connection on the output layer. Here are
+the two parameters for the initial setup
+of this inhibition. well if a GPU is
+available we might as well use it it
+will speed things up, like badly, and here
+we go: we start creating our network. The
+only required parameter is the batch
+size. We then create our first input layer.
+it's an input node - the usual shape 28 28
+784 neurons. 'Traces' have to be true
+because of the training going on, and this
+is the time decay
+for these traces. We just add it
+to our network and we name it X then
+same goes for output layer but this time
+it's the kind of neurons that we're
+gonna use it's the Diehl and Cook neurons
+from the paper from 2015 (you have the
+link up here if you want to have a look)
+same goes here we need to have the traces
+on and we just have a simple change here
+for the reset voltage of this neurons we
+just add it to our network and we call
+it Y. Here is the input
+output connection it's what we call
+connection is actually fully connected
+system in every neuron is connected to
+every other neuron from the from the
+other layer. Here are the
+two layers. You just set up the initial
+weights here about point one and with
+the size of the connection. Interesting:
+the learning rule what we call the
+update rule. here we use post-pre which
+stands for STDP learning, which is this
+standard way of teaching the neurons
+learning rate is here called nu.
+negative and positive rates in this
+order. this is how we accumulate all the
+learning from the batch we just sum
+them up and we clamp these weights to
+minimum and maximum of 0 and 1 and we
+norm we normalize these connection weights
+just to make sure that every output
+known has exactly 0.1 total weight from
+the input layer. We add this connection
+to our network then we will compute what I was talking about which is
+the inhibition: here it's proportional to
+the square ROOT!!!! of the distance between the
+neurons so we will just set up these weights here
+this is what we do here: we have power
+and we make sure that the diagonal which
+means that every neuron has no effect
+on itself, the diagonal is null it's just
+zero. Here we create the initial
+inhibition values. We add this recurrent
+connection to a network between layers Y
+and Y and here we create a weight mask for
+increasing the inhibition. We use it to
+slowly adapt and add the inhibition
+and more and more inhibition. Again, we
+take care to have the diagonal
+left untouched. OK, network is ready.
+we put it on the device CPU or GPU.
+We print a nice summary of our network and
+we're good to go
+I'll start by running it, by the way. Here
+we get the dataset ready we use the
+Poisson encoder to convert from pixel intensity to spike frequency.
+We download the dataset if necessary.
+here's the intensity and we set up a
+monitor to get these spikes from the
+output layer from the Y layer and we
+were going to record the s value which
+are the spikes value for the duration of
+the simulation. We add this monitor to our
+network. Dataloader is ready using pytorch
+again we just have to provide the
+batch size. Spike record, labels, we need
+put them aside, every test interval
+we're gonna evaluate the quality -
+the accuracy of this network. Default accuracy is 0.1, for the random answer one might
+give. Again here, rate, proportions,
+assignments: these are the 3 values that we need
+to evaluate which neurons fire for which
+digit. This is just statistical analysis of
+the output and we're good to go! We run
+through the epochs and
+through the dataloader- the entire data set
+at every pass. We get the input which are
+now encoded. we just permute it because
+we need to have time as the first
+dimension upfront and we reset all of
+our network make sure that everything is
+at default value or rest value and we run
+our network here, finally providing the
+inputs and the duration of our
+simulation. We add the labels and spike
+records, put them aside and when we want
+to test it here we just ask our network
+for his prediction: y_pred. so every
+test interval we make this evaluation as
+Algorithm is called proportion
+weighting, based on proportion of the
+output networks that fires the most
+regarding the input numbers. Accuracy is
+just smoothed out here when the labels are
+good. We just print it out. So now I have
+it running somewhere here: I have already
+(while I'm talking to you)
+24% for about 2 minutes. 2 minutes
+learning which is cool and just the
+entire mechanism of progressive
+increasing inhibition is here so
+every 500 samples we slowly increase
+using the weight mass that we created we
+increase the inhibition from Y to Y and
+this is the mechanism of the
+self-organizing maps but every 10x500
+every 5,000 samples well then
+we make a huge bump in this curve and we
+speed up increasing the inhibition
+to have fewer and fewer neurons firing
+and just to select the most meaningful
+the most significant output neurons to
+fire. So while I'm talking here I'm
+getting
+32% (37%!) which is nice usually at the end
+of first epoch you would get 86-88% and
+at the end of second epoch, usually
+something like 91 to 93% if you get lucky
+and this is pretty much state of the art
+for unsupervised learning. Well I hope
+you liked this video and I hope you have
+a good time working, playing and
+experimenting with bindsnet, which is a
+beautiful library for experimenting
+spiking neural networks. Thank you.

@@ -1,0 +1,228 @@
+So yeah! Tensorflow is not exactly easy to use,
+it took us over 20 minutes just to walk through the code to do the most basic Deep Learning example
+there is out there, the MNIST dataset that people generally use for tutorial purposes.
+Let's talk about a way to make things a lot easier using the Keras library.
+So, what's the big deal about Keras?
+Well, it runs on top of tensorflow, so it's a higher level library that's more purpose built for Deep
+Learning.
+Like we said, tensorflow is more of a general purpose tool for distributing graphs of operations across
+GPU's and many computers on a cluster,
+whereas Keras is really built for the purpose of Deep Learning, so it's a lot easier to use for that purpose.
+It's not limited to tensorflow, either, it can actually run on top of other libraries as well such as
+Theano, is another popular competitor to tensorflow,
+but as I said, tensorflow seems to be winning the competition here just because it's sponsored by Google.
+Another benefit of Keras in addition to its ease of use, is its integration with the scikit_learn library,
+so if you're used to doing Machine Learning in Python, you probably use scikit_learn a lot and using Keras
+you can actually integrate your deep neural networks with scikit_learn. And you might have noticed in
+our previous lecture that we kind of glossed over the problem of actually doing train testor cross-validation
+on our neural network because it would have been a kind of a big pain in the butt, but it with scikit_learn
+that it's very easy to do cross-validation and, like, perform proper analysis and evaluation of
+this neural network,
+so that makes it easier to evaluate what we're doing and to integrate it with other models, or even change
+a neural network with other Deep Learning or Machine Learning techniques.
+There's also a lot less to think about and that means that you can often get better results without
+even trying, you know, with tensorflow you have to think about every little detail at a linear algebra
+level of how these neural networks are constructed because it doesn't really natively support neural
+networks out of the box,
+you have to figure out how do I multiply all the weights together?
+How do I add in the bias terms? How do I apply an optimizer to it? How do I define a loss function?
+Things like that,
+whereas Keras can take care of a lot of those details for you.
+So when it's less things for you to screw up and more things that Keras can take on for you in terms
+of optimizing things where you're really trying to do, often you can get better results without doing
+as much work, which is great!
+Why is that important?
+Well, the faster you can experiment and prototype things, that better your results will be,
+so if it's that much easier for you to try different layers in your neural network, you know, different
+topologies, different optimizers, different variations,
+it's going to be that much easier and quicker for you to converge on the optimal kind of neural network
+for the problem you're trying to solve,
+whereas if tensorflow is putting up a bunch of roadblocks for you along the way, in the end of the day
+you only have so much time to devote to these problems, right?
+So the more time you can spend on the topology and tuning of your neural network and the less on the
+implementation of it, the better your results will be at the end of the day.
+Now, you might find that Keras is ultimately a prototyping tool for you, it's not as fast as just going
+straight to tensorflow,
+so, you know, sometimes you want to converge on the topology you want and then go back and implement that
+at the tensorflow layer,
+but again, just that ease of prototyping alone is well-worth it, makes life a whole lot easier,
+so let's take a closer look,
+let's take a look at doing the same problem that we did in tensorflow with Keras and you'll see this
+goes a lot more quickly.
+So if this is your first time using Keras, first you need to install it,
+and if you're using Enthought Canopy, you can do that by going to the Tools menu and opening up a command
+prompt,
+and just type in pip install keras, assuming you've already installed tensorflow, will automatically
+set itself up on top of tensorflow,
+and I've already installed Keras so it's not actually going to do anything for me, but for you it will
+probably go out and download and set that up for you.
+With that out of the way, let's go back to our course materials here,
+you want to open up the Keras.ipynb file...
+and up should come our browser with a notebook
+that looks like this.
+All right!
+So you've already installed it
+and again, Keras is just a layer on top of tensorflow that makes Deep Learning a lot easier.
+All we need to do is start off by importing the stuff that we need,
+so we're going to import the Keras library and some specific modules from it.
+We have the MNIST dataset here that we're going to experiment with; the Sequential model which is a very quick
+way of assembling the layers of a neural network;
+we're going to import the Dense and Dropout layers as well, so we can actually add some new things onto
+this neural network to make it even better and prevent overfitting;
+and we will import the RMSprop optimizer, which is what we're going to use for our gradient descent.
+Shift Enter,
+and you can see we've already loaded up Keras just by importing those things it's using tensorflow as
+the back end.
+Let's go ahead and load up the MNIST dataset that we've used in the previous example. Keras's version
+is a little bit different, it actually has 60000 training samples as opposed to 55000, still 10000 test
+samples, and that's just a one line operation.
+All right,
+so now we need to ask before convert this to the shape that tensorflow expects under the hood,
+so we're going to reshape the training images to be 60000 by 784,
+again, we're going to still treat these as 1D images, we're going to flatten these all out into
+1D rows of 784 pixels for each 28 by 28 image.
+We also have our test dataset of 10000 images, each with 784 pixels a piece, and we all explicitly cast
+the images as a floating point 32 bit values, and that's just to make the libraries a little bit happier.
+Furthermore we're going to normalize these things by 255, so the image data here is actually 8-bit at
+the source, so it's 0 to 255,
+so to convert that to 0 to 1 what we're doing basically here is converting it to a floating point number
+first from that 0 to 255 integer and then dividing it by 255 to rescale that input data to 0 to 1.
+We've talked before about the importance of normalizing your input data and that's all we're doing here,
+we're just taking data that started off as 8-bit, 0 to 255 data, and converting that to 32 bit floating
+point values between 0 and 1,
+it's all is going on there. As before, we will convert our labels to one-hot format,
+so that's what to_categorical does for you,
+it just converts the label data on both the training and the test dataset to one-hot, 0 or 10 values.
+Let's go ahead and run that previous block there before we forget,
+and we will run this as well,
+again, I'm just hitting shift enter after selecting the appropriate blocks of code here.
+All right before let's visualize some of the data just to make sure that it loaded up successfully,
+this is pretty much the same as the previous example, we're just going to look at our input data for
+a sample number 1, 2, 3, 4 and we can see that our one-hot label here is showing 1 in position 4,
+and since we start counting at 0, 0, 1, 2, 3, that indicates label 3, using argmax that gives us back the human
+readable label and by reshaping that 768 pixel array into a 2D shape we can see that this is somebody
+who's attempt at drawing the number three.
+OK, so so far so good,
+our data looks like it makes sense and it was loaded correctly.
+Now, remember back in when we were dealing with TensorFlow we had to do a whole bunch of work to
+set up our neural network,
+well, look at how much easier it is with Keras.
+All we need to do is say that we're setting up a model, a sequential model,
+and that means that we can add individual layers to our neural network one layer at a time, sequentially
+if you will.
+So we will start off by adding a dense layer of 512 neurons with an input shape of 784 neurons,
+so this is basically our first layer that takes our 784 input signals from each image,
+one for each pixel, and feeds it into a hidden layer of 512 neurons and those neurons will have the ReLU
+activation function associated with them.
+So with one line of code we've done a whole lot of work that we had to do in TensorFlow before, and then
+on top of that we'll put a softmax activation function on top of it to a final layer of 10, which will
+map to our final classification of what number this represents from 0 to 9,
+OK? So, wasn't that easy?
+We can even ask Keras to give us back a summary of what we set up just to make sure that things look
+the way we expected,
+and sure enough we have two layers here,
+you know, one that has 512
+and then going to a 10 neuron layer for the file classification,
+and this does sort of omit the input layer,
+but we do have that input shape of 784 features going into that first layer.
+All right! Now, you also might remember that it was kind of a pain in the butt to get the optimization
+and last function set up in TensorFlow, again, that's a one liner in Keras, all we have to do is say
+that our loss function is categorical_crossentropy and it will know what to do there;
+we're going to use the RMSprop optimizer just for fun, we could use any other one that we wanted to,
+we could just use Adam if we wanted to, or there are other choices like Adagrad, SGD, you can read up
+on those at this link here if you want to; and we will measure the accuracy as we go along,
+so that's all that's saying.
+Let's go ahead and hit that and that will build the underlying graph that we want to run in TensorFlow.
+All right, so now we actually have to run it.
+And again, that's just one line of code with Keras,
+all we need to do is say that we're going to fit this model using this training dataset,
+these are the input features, the input layers that we're going to train with, we want to use batch sizes
+of 100,
+we're going to run that 10 times,
+I'm going to set up verbose level 2 because that's what works best with an iPython notebook,
+and for validation we will provide the test dataset as well.
+So instead of writing this big function that does this iteration of learning by hand like we did in TensorFlow,
+Keras does it all for us,
+so let's go ahead and hit shift enter and kick that off as well.
+Now, Keras is slower than TensorFlow
+and, you know, it's doing a little bit more work under the hood so this will take more time, but you'll
+see that the results are really good,
+I mean, even on that first iteration we've already matched the accuracy that we got after 2000 iterations
+in our hand-coded TensorFlow implementation.
+We're already up to Epoch 6 and we're approaching 99 percent accuracy in our training data.
+Keep in mind this is measuring the accuracy on the training dataset.
+And we're almost there,
+but yeah, I mean, even with just 10 Epochs we've done a lot better than using TensorFlow, and again, you
+know, Keras is kind of doing a lot of the right things for you automatically without making you even
+think about it,
+that's the power of Keras, even though it's slower,
+it might give you better results and less time at the end of the day.
+Now, here's something that we couldn't really do easily with TensorFlow, it is possible, I just, you know,
+didn't get into it because that lecture was long enough as it was, but remember that we can actually
+integrate Keras with scikit_learn, so we can just say model.evaluate
+and that's just like a scikit_learn model
+as far as Python's concern, and actually measure based on our test dataset what the accuracy is, and
+using the test dataset as a benchmark,
+it had a 98 percent success rate in correctly classifying those images, so that's not bad.
+Now, mind you, you know, a lot of research goes into optimizing this and this dataset problem and 98 percent
+is not really considered a good result.
+Like I said, later in the course we'll talk about some better approaches that we can use,
+but hey! That's a lot better than we got in the previous lecture, isn't it?
+As before let's go ahead and take a look at some of the ones that I got wrong just to get a feel
+of where it has trouble,
+things that our neural network has challenges. The code here is similar we're just going to go through the
+first 1000 test images here and since it does have a much higher accuracy rate we have to go deeper
+into that test to find examples of things that went wrong. We'll reshape each data, each image into a flat
+784 pixel array, which is what our neural network expects as input, call argmax on the resulting classification
+in one-hot format and see if that predicted classification matches the actual label for that data,
+if not, print it out.
+All right,
+so you can see here that this model really is doing better, than once that it's getting wrong are pretty
+wonky,
+OK?
+So in this case we predicted that this was the number 9
+and if I were to look at that myself I might guess that was a 9 as well.
+Turns out this person was trying to draw the number 4, but, you know, this is a case where even a human
+brain is trying to run into trouble as to what this person was actually trying to write.
+I don't know what that's supposed to be,
+apparently they were trying to draw the number 4,
+Our best guess was the number 6,
+not unreasonable given the shape of things.
+Here's somebody who is trying to draw a 2, but it looks a whole lot more like a 7,
+again I wouldn't be too sure about that myself,
+so, you know, even though we flattened this data to one dimension this neural network that we've constructed
+is already rivaling the human brain in terms of doing handwriting recognition on these, these numbers,
+I mean, that's kind of amazing.
+That one, I probably would've guessed a 3 on that one,
+but again, you can see that the quality of the stuff it has trouble with is really sketchy.
+What is that?
+A scorpion?
+Apparently that was supposed to be an 8
+and our best guess was a 2,
+but that's much less.
+Wow.
+OK.
+Yes some people really can't write.
+That's a 7?
+Yeah,
+I mean, you get the point here.
+So just by using Keras alone we've gotten better accuracy,
+ve've gotten better result because there's less for us to think about.
+All right.
+And you can probably improve on this even more,
+so again, as before with TensorFlow I want you to go back and see if you can actually improve on these
+results,
+try using a different optimizer than RMSprop, try, you know, different topologies
+and the beauty with Keras is that it's a lot easier to try those different topologies
+now, right?
+Keras actually comes in this documentation with an example of using MNIST and this is the actual topology
+that they use in their example, so go back and give that a try and see if it's actually any better or not,
+see if you can improve upon things. One thing you see here is that they're actually adding dropout layers
+to prevent overfitting,
+so you can, it's very easy to add those sorts of features here,
+basically what we've done here is add a, that same dense layer of 512 hidden neurons taking the 784 features,
+and then we're going to drop out 20 percent of the neurons at the next layer to force the learning to
+be spread out more and prevent overfitting, so might be interesting to see if that actually improves
+your results on the test dataset by adding those dropout layers.
+All right.
+So go play with that, when we come back we'll do some even more interesting stuff using Keras.

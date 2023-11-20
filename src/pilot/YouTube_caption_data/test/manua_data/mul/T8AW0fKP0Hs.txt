@@ -1,0 +1,698 @@
+♪ (music) ♪
+(clapping)
+Hello.
+My name is Alex,
+and I'm here to tell you
+about Eager Execution,
+which I think you've heard
+in the last two talks now.
+But I'm here to tell you
+what it's actually about.
+This new, imperative,
+object-oriented,
+pythonic way of using TensorFlow,
+that we're introducing to you today
+as part of TensorFlow core.
+So, you know because you're here,
+or because you're watching the livestream,
+I hope, that TensorFlow has been
+this graph execution engine
+for machine learning,
+that lets you run graphs
+at like high scale
+and all sorts of other nice things.
+But has it?
+And why did we choose to go
+with graphs in the first place?
+Since now I'm going to tell you
+about Eager Execution,
+where we move beyond
+what we can achieve with graphs,
+I think it's a good idea to recap
+why we bothered.
+And a really good reason
+why you want
+to have your computation represented
+as a platform-independent graph
+is that once you have that,
+it's very easy to differentiate the graph.
+And I went to grad school
+before auto diff was standard
+in machine learning toolkits
+and I do not wish that on any one.
+Like, it's... life is much
+better now trust me
+Also, if you have a platform-independent,
+abstract representation
+of your computation,
+you can just go and deploy it
+to pretty much anything you want.
+You can run it on the TPU.
+You can run it on the GPU.
+You can put it on a phone;
+you can put it on a Raspberry Pi.
+There are like all sorts of cool
+deployment scenarios
+you're going to hear about today.
+And it's really valuable to have this kind
+of platform-independent view.
+Also, compilers work with data flow
+graphs internally,
+and they know how to do
+all sorts of nice optimizations
+that rely on having a global view
+of your computation,
+like constant folding, common
+subexpression elimination,
+like data laying and things like that.
+And a lot of these optimizations
+are really deep learning specific.
+We can choose how to properly
+lay out your channels and your height,
+and width and stuff.
+So, your convolutions are faster.
+And finally, a key reason that's very
+important to us at Google,
+and I hope important to you as well
+is that once you have
+a platform-independent
+representation of your computation,
+you can just deploy it, and distribute it
+across hundreds of machines
+or a TPU-pod, like they showed earlier.
+And this is a very seamless process.
+So, since graphs are so good,
+what made us think that now it's a good
+idea to move beyond them
+and let you do eager execution?
+Good place to start
+is that you don't actually
+have to give up
+automatic differentiation.
+I'm sure like you're familiar with like
+other frameworks, like Pythons
+Autograph that let...
+sorry Autograd,
+that let you differentiate
+dynamic code and...
+You don't need to have an a priori
+of your computation differentiated.
+You can just build up a trace as you go,
+and then walk back the trace
+to compute gradients.
+Also, if you don't stop
+to build a platform...
+like this computational graph,
+you can iterate a lot more quickly.
+You can play with your model
+as you build it.
+You can inspect it.
+You can poke and prod at it.
+And this can let you
+just be more productive
+when you're like making all these changes.
+Also, you can run your model
+for debuggers and profilers
+and add all sorts of analysis tools
+to them, to just really understand
+how they are doing what they are doing.
+And finally, if we don't force you
+to represent your computation
+in a separate way than the host
+programming language you are using,
+you can just use all
+the machinery of your host programming
+language to do control flow and data flow,
+and complicated data structures,
+which for some models is key to being
+able to make your model working at all.
+So, I hope you're not wondering,
+"How do I get to use this?"
+And the way you use this is super easy.
+You import TensorFlow
+and you call
+tf.enable_eager_execution
+And once you do that,
+what happens is anytime you run
+a TensorFlow operation,
+like in this case a .matmul,
+instead of TensorFlow building a graph
+that later when executed is going
+to run that matrix multiplication,
+we just immediately run
+that matrix multiplication for you
+and give you the result.
+And you can print it,
+you can slice it, you can dice it,
+you can do whatever you want with it.
+And because things
+are happening immediately,
+you can have highly dynamic control flow
+that depends on the actual values
+of the computation you're executing.
+And here is just a simple
+Wolfe conditions line search
+example that I wrote.
+And it doesn't matter, it just matters;
+it has like while loops
+that depend on complicated values
+that are computer-based
+on the computation.
+And this runs just fine
+on whatever device you have.
+And together with this
+enable_eager_execution thing,
+we're also bringing you
+a few symbols in TensorFlow
+that make it easier for you
+to write code that's going to work,
+both when building graphs
+and when we're executing eagerly.
+And we're also bringing you
+a new way of doing gradients,
+because I'm sure you're familiar now
+with how we do gradients
+in normal TensorFlow.
+Where you just create your variable,
+you create your loss function,
+and I hope you can think of a better
+loss function than this one.
+And then you call tf.gradients
+to differentiate it.
+But when you have eager execution, we try
+to be as efficient as we possibly can
+And if you're going to...
+one thing to think about is
+that if you're going to differentiate
+a computation,
+you need to keep track
+in memory of information
+about what happened so far,
+like your activations
+and things like that.
+But I don't want you to pay
+for the cost of this tracking
+when you're not computing gradients
+because performance is really
+like the whole reason why we're doing this
+is because we want to use these big,
+nice pieces of hardware
+that train models super fast.
+So, when eager execution is enabled,
+when you want to compute gradients,
+and you use this little context manager
+to keep a tape active,
+and the tape just records
+all the operations you execute,
+so we can play it back
+when you've computed the gradients.
+Otherwise, the API is the same.
+Also, writing training loops in eager,
+as Derrick pointed out,
+is much...
+is very easy and straightforward.
+You can just use a Python for loop
+to iterate over your data sets
+and data sets work in eager just fine.
+And they work with the same high
+performance you get
+in the graph execution engine.
+Then you can just do your predictions,
+compute your gradients,
+supply your gradients
+and do all the things
+you're used to doing.
+But really the interesting thing
+about eager execution
+is not when you're just writing
+this code as finished,
+that is done,
+that we already know works,
+but when you're still developing,
+when you want to do things like debug.
+So...
+when eager execution is enabled,
+you can just take any model code--
+and I used my simple,
+silly gradient example here--
+add notes to like drop into the Python
+debugger anywhere you want.
+And once you're in the Python debugger,
+you have the full power
+of debugging available.
+You can print the value of any tensor,
+you can change the value of any tensor.
+You can run any operation
+you want on any tensor.
+And this will hopefully empower you
+to really understand
+what's going on in your models
+and really be able to fix
+any problems you have.
+You can also take eager execution
+code and profile it,
+using whatever profiling tool you are most
+familiar and comfortable with.
+So, here I have a little [inaudible] model
+that just does a .matmul
+and a bias_add.
+And let's pretend I don't know
+which of these operations
+is going to be the bottleneck.
+Which one is lower?
+And I'm sure you all know the answer
+that the matmul is a lot more expensive.
+But here you can just run your code
+through your Python profiler
+like you would do with any
+other programming job,
+and find out that the matmul
+is like 15 times more expensive
+for my batch size here
+than my bias addition.
+And also,
+by the way those examples are run
+on the Google collaboratory thing,
+which is this...
+completely public-shared,
+GPU-capable interface
+for Jupiter notebooks
+that are like hosted on Google Cloud.
+It's pretty cool and I think
+we have a demo on eager
+that's hosted on that.
+And you can play out with later,
+or if you're on livestream,
+you can play out of it now
+if you can find the link.
+But together with eager,
+we're bringing you a lot of new APIs
+that make it easier for you
+to build TensorFlow graphs
+and to execute models.
+And these APIs are compatible
+with both eager execution
+and graph building.
+So one that's been 
+a recurring low priority feature request
+is how to customize gradients 
+in TensorFlow.
+And I'm sure you are familiar with a few
+of the tricks that people have,
+like stop gradients and functions
+and things like that.
+But we're introducing a new API that works
+in both eager and graph execution
+And what I like about this example is that
+it's a thing that's been asked by many,
+many people, how to do it.
+If I want to run my forward pass
+and then in the backward pass,
+take the gradient of a particular tensor
+and clip it, clip it's norm to keep it
+small to prevent it from exploding.
+And it just takes six lines of code
+to make a version of tf.identity
+that in the backward pass
+clips its gradient,
+and I think this is really cool.
+And I look forward to seeing
+what you guys can do with this
+when you're doing
+more than six lines of code
+and solving all sorts of new,
+interesting research problems.
+A big, big change when programming
+with eager from graph
+that I really want you to stop
+and think about
+is that we're trying
+to make everything as pythonic
+and object-oriented as possible.
+So, variables in TensorFlow are...
+usually are a complicated thing 
+to think about.
+But when eager execution is enabled,
+it's much simpler.
+A TensorFlow variable
+is just a Python object.
+You create one, you have it.
+You can write, you can change its value,
+you can read its value.
+When the last reference to it goes away,
+you get your memory back,
+even if it's your GPU memory.
+So, if you want to share variables,
+you just reuse those objects.
+You don't worry about variable scopes
+or any other complicated structure.
+And because we have this
+object-oriented approach to variables,
+we can look at some
+of the APIs in TensorFlow
+and like rethink them in a way
+that's a little more object-oriented
+and easier to use.
+And a very...
+one that really stood out to us
+as needing an overhaul
+was the metrics API.
+So, we're introducing
+this new tfe.metrics package,
+where each metric has two methods,
+one that updates the value
+and one that gives you the result.
+And hopefully, this is an API that everyone
+is going to find familiar to use
+and please don't try to compare
+this with the other metrics API.
+(laughs)
+We're also giving you a way to do
+object-oriented saving
+of TensorFlow models.
+If you've tried looking
+at TensorFlow checkpoints now,
+you know that they depend
+on variable names.
+And variable names depend not just
+on the name you gave to a variable,
+but on all other variables
+which are present in your graph.
+This can make it a little hard for you
+to save and load subsets of your model
+and really control
+what's in your checkpoint.
+So we're introducing
+a completely object-oriented
+Python object-based saving API,
+where you...
+it's like Python pickle,
+like any variable that's reachable
+from your model gets saved
+and your model gets saved.
+You can save any subset of your model.
+You can load any subset of your model.
+You can even use this tfe.checkpoint
+object to build things you want to save
+that have more than a model.
+And here we have an optimizer
+and a global_step
+but really you can put
+whatever you want in there.
+And the idea is that this object graph
+that eventually goes down to variables
+is something you can save and load.
+So you can have your [GAN]
+and save and load your discriminators
+and your generators
+separate from each other.
+Then you can take your discriminator
+and load it backup
+as like another newer network that you
+can use in another part of a model.
+And this should give you a lot more
+control to get a lot more out
+of TensorFlow checkpointing.
+But the real question that everybody
+asks me when I tell them
+that I work on eager execution
+is, Is it fast?
+Because graphs...
+have this high performance promise.
+So, how fast can it make this thing
+that runs Python code all the time?
+And the answer is
+that we can make it fast enough.
+For models that are highly
+computationally intensive,
+you pretty much don't see
+any Python overhead,
+and we're as fast as graph TensorFlow.
+For...
+sometimes slightly faster,
+in reasons that I don't fully understand,
+even for highly dynamic models,
+you have comparative performance
+with anything else you can find.
+And please don't get attached
+to these numbers.
+We have many more benchmarks
+in our codebase.
+And we're optimizing eager
+performance very aggressively,
+but I hope that the message you'll get
+out of this is that if your model
+can keep a GPU busy,
+if you're doing large convolusions,
+large matrix multiplications,
+there is almost no cost in experimenting
+and doing your research and model building
+with eager execution turned on.
+But when you're doing smaller things,
+there are some overheads
+and I want to go over them.
+But again don't get attached to them
+because we're being very aggressive
+about optimizing this.
+If you just run a no op in TensorFlow,
+like an identity,
+it takes almost a microsecond
+to execute it.
+If you run that with eager
+execution turned on,
+there's an extra microsecond of overhead.
+If you're tracing gradients,
+there are another 3 microseconds
+of overhead that you get.
+But if you're just enqueuing
+something on the GPU stream,
+that alone takes like
+single-digit microsecond.
+So, if you can execute enough
+computation to keep a GPU busy,
+you're unlikely to see anything bad
+from using eager execution,
+and again these numbers
+are improving very quickly.
+Please don't get too attached to them.
+But there is this large ecosystem
+of TensorFlow code libraries,
+models, frameworks, checkpoints
+that I don't think anyone
+wants to give up.
+And I don't want you to give up
+if you want to use eager execution.
+So, we're also thinking really hard
+about how you can interoperate
+between eager and graph.
+One way is to like call
+into graphs from eager code.
+And you can do that with tfe.make_template
+which has this create
+graph function argument
+when you pass through
+to it with build a graph,
+for that little Python function
+that you wrote.
+And then you can use it an manipulate
+and call the graph from eager execution.
+We also have the reverse,
+which is how to call
+into eager from a graph.
+Let's say you have a big graph
+that you understand everything in it,
+but there's a little chunk
+of your computation
+that you really don't know how to express.
+And either you don't know,
+or you don't want to bother expressing it,
+in using like TensorFlow graphs.
+So you can wrap it in a tfe.py_func
+and what you get in there
+when the Python function is executing
+are eager tensors, that you can
+run any TensorFlow op in,
+including convolutions and other things
+that are not available in my_py.
+But you can also look at the values
+and inspect and use dynamic
+control flow in there.
+So, I hope with these two things together,
+you can really reuse eager
+and graph code across.
+But really the easiest way
+to get eager and graph compatibility
+is to just write model code
+that's going to work in both ways.
+And if you think about it,
+once your model is fully written,
+debugged and [tested],
+there's not much there that tells you
+whether you need to build a graph
+or to execute eagerly.
+So write, iterate, debug in eager
+and then import that same code
+into a graph,
+put it in Estimator,
+deploy it on a TPU pod,
+deploy it on a GPU,
+distribute it and do whatever you want.
+And like this is what we've done
+in our example models
+and there's going to be a link
+in the end of the presentation,
+so you don't need to like worry
+about writing this down.
+So, here is some practical advice for you.
+Write code that's going to work well
+when executing eagerly
+and when building graphs.
+And to do that, use
+the Keras layers. They're great.
+They're object-oriented;
+they're pythonic.
+They're easy to understand,
+manipulate and play around with.
+Use the Keras model
+to stitch those layers together,
+that will guide you in saving and loading
+and training and all sorts of things
+automatically if you want,
+but you're not forced to use those.
+Use tf.contrib.summary
+instead of tf.summary.
+They will move to the tensor board 
+open source package very soon.
+So, if you're watching this on video,
+it probably already happened.
+Use the tfe.metrics
+instead of the tf.metrics,
+because these are object-oriented,
+friendlier to use,
+and friendlier in eager.
+And use the object-based saving,
+which is a much nicer
+user experience anyway.
+So, I hope you're going to want
+to do this all the time.
+If you do all of this,
+it's highly likely your code
+is going to work super well
+in both eager execution
+and graph building.
+So now, I'd like to take some time
+to tell you why you should
+enable eager execution.
+You know like a real good...
+important reason for us that led us
+to build this in the first place
+is that if you're new to machine learning,
+or you're new to TensorFlow
+and you want to learn,
+being able to play with these objects
+and manipulate them directly
+is just a much nicer experience
+than having to build a graph
+and interact with later in a session.
+It's a lot more intuitive,
+lets you understand
+what's going on much better.
+So I've shown you, just by all means
+go straight into your execution,
+play around with it
+and figure out how to get graphs later.
+Also, if you're a researcher
+and you're quickly iterating over models.
+You're changing their internal
+properties and...
+you're comparing them and you're
+trying to do models that are non trivial
+that we in the TensorFlow team 
+were not thinking about
+when we designed TensorFlow.
+Eager execution will make it much easier
+for you to understand what's going on,
+to debug what's going on,
+to be productive in advance.
+So, if you're a researcher
+this is for you.
+Also, if your model's not working
+and you want to understand why,
+being able to enable eager execution
+and then [start through] it in a debugger,
+change some values, play around with it.
+Understand that is priceless,
+and that has saved me a lot of time.
+Similarly, if you want to profile
+a model using like the full power
+of whatever tool you like
+to use to profile Python,
+eager execution is your friend.
+Also, there are some models 
+like recursive RNN's
+that are just much easier to express
+if you don't need to put
+your entire computation
+in a static data flow graph.
+If you're working on one of those models,
+eager execution is also a choice for you.
+But really the reason
+I think you should enable this
+is that it's fun.
+It's a very nice and intuitive way
+of interacting with TensorFlow,
+and I hope you're going to have
+a lot of fun experimenting with it.
+So now, I would like
+to point to a few things.
+Some of my colleagues,
+sitting over there now,
+they're going to be in the demo
+room during the break
+with laptops, with [collabs]
+that are like Jupiter notebooks
+to let you type and try
+eager mode there.
+Please go give it a try.
+Or if you're watching this
+on the livestream,
+type that short link--
+hopefully it will stay on the screen
+long enough for you to type it--
+and play with it right now.
+It's really nice.
+We have a Getting Started
+Guide on TensorFlow
+that should be live now.
+programmers_guide/eager
+that tells you what you need
+to know about eager execution
+and what you need to know
+about starting to use TensorFlow
+using eager execution.
+We also have a ton of example models,
+like from RNNs to [inaudible]
+to all sorts of things,
+that are available behind that link.
+And I encourage you
+to look at them and see
+how it's easy to write the model
+and how easy it is to also reuse
+the same code from graphs
+for deployment.
+We have deployment
+for graphs for all models
+except for the highly dynamic ones
+that are just really hard
+to write in a graph form.
+And give it a try.
+If you give it a try,
+let us know how it went.
+We're super excited
+to share this with you.
+I hope you're going to have
+a great time playing with this.
+And, yes.
+Thank you.
+(clapping)
+♪ (music) ♪

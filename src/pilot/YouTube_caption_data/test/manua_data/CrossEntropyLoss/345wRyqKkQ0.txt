@@ -1,0 +1,206 @@
+ All right, let's now take a look at how we can implement a
+ convolutional auto encoder in pytorch. So I have like always
+ a couple of helper functions, which I will go over later. Let
+ me hide this view. So we have more space in the center for the
+ notebook here. So we start as usual by importing watermark. So
+ you know which pytorch version I used. We are later also going
+ to use matplotlib for visualizing some outputs, and
+ also the training loss as usual. So the helper functions are some
+ related to plotting. The data loader is exactly the same that
+ we used before. And this is the domestic setting that we also
+ used before, I slightly modified the training function, I will
+ show you the modification later. But except that, um, yeah, I
+ tried to keep it very simple. So we are going to train for 20
+ epochs batch size of 32, just some settings here. Here, I'm
+ getting my data set. Now notice we are not using any validation
+ data points. We don't compute anything like accuracy here. So
+ here, we are only looking at the reconstruction between the input
+ and outputs. And for that, we just use the training set. So
+ just testing that the data loaders work, you can notice a
+ validation set is empty now. Yep, so here, that is our main
+ model. In fact, okay, these are some helper functions from a
+ main model. But here, these are my main, main ones. So I think
+ you can see that. So here, this is my auto encoder class, I will
+ explain the other functions in a few moments, the other classes I
+ showed you. So we are implementing our auto encoder
+ using two sequential parts. That is because that makes it later
+ easier to reuse the encoder as a feature extractor, and to use
+ the decoder as something where we can reconstruct images from a
+ latent representation. So I like to keep those two separate. It's
+ easier to read, in my opinion, but also in that way, we can use
+ them in a certain way, as you will see later. So here, I just
+ implemented convolutional layers, a couple of them. So
+ going from one channel to 32. So the MNIST has only is grayscale.
+ So we only have one input channel, I go to 32. Colonel
+ says three by three, that's just the usual stuff that I go from
+ 32 to 64. And then I have just two conversion layers that keep
+ the channels, you could probably increase the channels, this is
+ just reducing the size by two, this is not doing anything
+ except having more parameters in my network might be redundant,
+ you could be able to remove that, then we are flattening
+ this. So this is, I don't know exactly the size, but this is
+ something times something times 64, which is, yeah, then
+ reshaped flattened into a linear layer. So it will be all combined
+ into one dimension like you are familiar with before from
+ convolutional networks. So in this case, we get a 3136 pixel
+ vector as the output from here. And then I'm compressing it into
+ a two dimensional space. So only two hidden features, it's very
+ small. This is let me go to my slides. So this is here, here.
+ So this is the fully connected one. But for some reason, I
+ should have probably put something in here. So this in
+ between would be only two, two pixels, two dimensional. Okay,
+ back. So this is my encoder going from the 784 pixel MNIST
+ to a two dimensional representation. So we are
+ reducing the size here by 392 by a factor of 392, which is
+ actually very impressive, in my opinion. And then we have the
+ decoder, and the decoder goes backwards. So it takes the two
+ dimensional here, the two dimensional representation, and
+ projects it into a 3136 dimensional representation. And
+ then I'm reshaping this so that it has the dimensionality of the
+ convolution as before. So here, the output now I remember, so the
+ output here would be seven times seven times 64 or 64 times seven
+ times seven. So 64 times seven times seven. That's where we get
+ this value from. Oops. And now we are going backwards, we're
+ going from 3136 to 64 times seven times seven. Then I have
+ my transpose convolution, Nikki relu, transpose conversion. So
+ he I'm essentially with this one, I'm undoing this one with
+ this one, I'm undoing this one, and so forth. And then I go from
+ 64 to 32, like the opposite of this one. And then I have the
+ opposite of this one. However, due to how things work with
+ padding and everything, I tried to get a 28 by 28, tried
+ different paddings and thinking about it where to pad and it
+ didn't work out. So what I get is either something like 27 or
+ 29. I'm not able to get 28. It's just because of rounding in the
+ padding. So this is why I have this trim class. So this trim
+ class I implemented here is just removing one pixel. So from 29,
+ it's trimming it to 28. In that sense, I'm going from 29 to 28.
+ So I have the original size as my input. And then I have a
+ sigmoid here to get a pixels in the range 01. Because I'm not
+ showing it here. But by default, if I don't use anything, the
+ input images, let me go maybe to my helper data loader function.
+ Yeah, so by default, if I don't specify the train transform in
+ my, this is actually cipher 10. And this, so yeah, if I don't
+ specify anything for my train transforms, I will just use this
+ one. And as you know, it will normalize the pixels into a 01
+ range. And I want to compare my input to my output pixels. So I
+ also want my output pixels in a zero and one range as you know,
+ sigmoid will accomplish that. So if you alternatively normalize
+ your inputs for minus one to one pixel range, you could use a 10
+ h function here, technically. Okay, and then in the forward
+ method, I'm just defining my encoder and decoder. So just
+ putting together what I have here. And then I'm initializing
+ it, I'm using Adam here for simplicity. And then I'm calling
+ my train function. Let's take a look at this train function. So
+ okay, this is from the previous lectures, the train classifier.
+ Now we have a slight modification, I can't
+ so the train auto encoder functions almost identical to
+ this train classifier function, except of course, we don't
+ compute the cross entropy loss, we compute the mean squared
+ error loss. So I have an MSE here, if no loss functions
+ specified, some people like to train auto encoders with a
+ binary cross entropy. But I don't, I don't like this idea,
+ because it's not symmetric. In any case, so if you have
+ questions about that, I'm also happy to discuss the small
+ Piazza, I have some visualizations to show it to you.
+ But I don't want to make the lectures too long. If you're
+ interested, I can show it to you, but it's not essential. So
+ we have now the mean squared error loss here. By default, if
+ we don't specify anything, and this is between the logits and
+ the features, right, so we don't use any class labels, that's
+ the main difference compared to the classifier. Here we are
+ comparing the logits, which are the reconstructed images with
+ the original images. Alright, so this is all that's new, all
+ that boilerplate here is the same as before, it's just for
+ except that we don't compute the accuracy, of course, we're just
+ computing plotting the loss, we don't have any accuracy here.
+ And yeah, this is essentially it's pretty simple training
+ function, it looks maybe more complicated than it is. But
+ it's just the classifier function simplified. Alright, so
+ now here, I'm training it. So you can see, there's a big jump,
+ and then it only trains slowly. So the first iteration already
+ minimizes it a lot, which is good to translate for eight
+ minutes on a GPU. And then he has a loss, maybe I can see,
+ maybe training it longer would have helped a little bit. But
+ yeah, I was lazy, just trained it for eight minutes. And you
+ can see, the results look quite blurry. So you can. So at the
+ top, so you have a function on the in the top row, these are
+ the original images. And at the bottom are the reconstructed
+ versions. And you can see, it's all very blurry. So why is that
+ why is the quality is so bad compared to what I showed you
+ here. So the reason is, I'm using only a two dimensional
+ representation here, I actually forgot what I used to use
+ something higher dimensional. So here for the fully connected
+ one, I use the 32 dimensional, I think I did the same thing for
+ the convolution one here. So here, I just want to see what
+ happens if I use a two, two dimensional one, it's an extreme
+ reduction. So it's kind of impressive that it can
+ reconstruct anything at all from just two pixels, right. But then
+ you can also see, it makes mistakes here for the four, it
+ also thinks it's a nine, because four and nine are sometimes very
+ similar. And yeah, so it's not perfect, you would get much,
+ much, much better results, if you would, for example, change
+ this number here, if I go up, if you change this number, let's
+ say to 100, or let's say 64. And 64, you would get much better
+ results. I just wanted to show you the extreme case of having
+ two because a two dimensional space we can visualize. Okay, so
+ because I have some more visualizations. So this is how
+ the reconstruction looks like. Now here, I have a visualization
+ of the two dimensional space, the embedded space for all the
+ training data points. So you can see, it's kind of a mess. But
+ what you can see is that similar numbers cluster together. So I
+ have added the class label information by color. So you can
+ see the oranges here are all the all the ones, the dark blues are
+ all the zeros, and they all cluster together, because yeah,
+ they are somewhat similar. And the auto encoder is able to
+ capture this similarity in this two dimensional space, which is
+ kind of interesting. But you can also see that for, for example,
+ some overlapping eight and nine, you can see they are overlapping
+ here. Three is also buried somewhere here. So it's, it's
+ not great. So certain things are overlapping a lot. So in that
+ way, if you sample a data point here, where things overlap,
+ well, it's unclear which one it would reconstruct, right. So in
+ that way, it loses the information between these
+ classes, it can also maybe then help explain, I think the four
+ might be also bird here might explain that if we have a four
+ here, it reconstruct a nine because they are overlapping
+ here. And in the next lecture, we will talk about variational
+ auto encoders, which fix this problem a little bit better. So
+ there will it will be a little bit better organized in this
+ space. Yeah, and here, I'm just using the decoder. So maybe I
+ can show you the plot latent space function briefly. So that
+ helps you understand maybe how I did that. So that is plot
+ latent space. So here, I'm technically just using a data
+ loader, iterating over the data loader. And here I'm using only
+ the encoder, you can see model dot encoder based on the images.
+ So features here are the images from my data set. And then I'm
+ producing these embeddings. And then I'm here is just some
+ plotting code for plotting these two dimensional embeddings. But
+ here, see, I'm only using the encoder part. And if I go back
+ here, here, I have another visualization here, I'm using
+ the decoder part. So what I'm doing here is I'm reconstructing
+ an image. So I'm taking one point here, let's say 2.5 minus
+ 2.5. So if I go here, it should be somewhere here in the center.
+ And you can see it reconstructs this nine here from a from from
+ this vector. So this is my input vector. And it will
+ reconstruct the nine, I'm just sampling from here. So here, it
+ looks like a pretty dense space. But you can think of it as that
+ we have now a method for reconstructing or generating new
+ data. So I could sample any point here, any can put in some
+ random values. And by inputting these random values, I will be
+ able to generate data. And if I take something that is not in my
+ data set, like point here, it's I actually don't know what will
+ happen, it will create some data, I wish I could show you
+ now, but I would have to run this on my laptop, this will
+ probably take more than 20 minutes. But yeah, if you're
+ interested, you can just put in some random values as a homework
+ or exercise or something, and see what comes out. And you
+ will see the results won't be great. And you maybe get some
+ fantasy numbers that don't exist. And in the next lecture,
+ we will see a better method for doing that. There's a concept
+ called a variational auto encoder. So here, this is just
+ the basic introduction. In the next lecture, I will show you a
+ modification of the auto encoder, which is better at is
+ more designed for sampling from a certain distribution to
+ generate new data. Alright, so this is it for this code
+ example. In the last video, I will go over some other types of
+ auto encoders. And then we will end this lecture for today.

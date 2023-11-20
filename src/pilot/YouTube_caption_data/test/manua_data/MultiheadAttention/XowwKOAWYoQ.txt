@@ -1,0 +1,689 @@
+Hello, my name is Mohammad Namvarpour, and
+in this video, I'll try to present a comprehensive
+study on Ashish Vaswani and his coauthors'
+renowned paper, “attention is all you need”
+This paper is a major turning point in deep
+learning research. The transformer architecture,
+which was introduced in this paper, is now
+used in a variety of state-of-the-art models
+in natural language processing and beyond.
+This video’s contents are listed here.
+Introduction
+In sequence modeling and transduction problems
+such as language modeling and machine translation,
+recurrent neural networks, long short-term
+memories, and gated recurrent neural networks
+used to be firmly known as state-of-the-art
+approaches.
+Tasks like machine translation, were traditionally
+handled by sequence to sequence architeccture.
+Sequence-to-Sequence is a neural net that
+transforms a given sequence of elements, such
+as the sequence of words in a sentence, into
+another sequence.  Sequence-to-Sequence models
+consist of an Encoder and a Decoder.
+The Encoder takes the input sequence and maps
+it into a higher dimensional space
+That abstract vector is fed into the Decoder
+which turns it into an output sequence. The
+output sequence can be in another language.
+A very basic choice for the Encoder and the
+Decoder of the Sequence-to-Sequence model
+is a single LSTM for each of them.
+In 2015, Bahdanau and coauthors proposed a
+new, attention-based model for machine translation.
+Since then, attention mechanisms have become
+an essential component of compelling sequence
+modeling and transduction models in a wide
+range of activities, allowing for the modeling
+of dependencies regardless of their distance
+in the input or output sequences.
+However, since RNNs were used in these architectures,
+they were all bound to the fundamental limitation
+of sequential computation that recurrent neural
+networks have, which prevented researchers
+from taking advantage of parallel processing
+and the power of GPUs.
+This paper introduces transformer, a new deep
+learning architecture which doesn’t use
+sequential processing and hence, has a lot
+of potential for parallel processing.
+Model Details
+As I said, Most competitive neural sequence
+transduction models have an encoder-decoder
+structure.
+The Transformer follows this overall architecture.
+For both the encoder and decoder, it uses
+stacked self-attention and point-wise, fully
+connected layers, as shown in the left and
+right halves of this Figure, respectively.
+Let us just disassemble this model and examine
+it in greater detail.
+Let's start by looking at the encoder's internals.
+Here is the transformer encoder. Let’s start
+from the inputs.
+As you can see in the figure on the left,
+the first step is converting inputs into input
+embeddings. The transformer architecture was
+originally proposed for translation task.
+So, the inputs are series of words. Of course,
+the computers don’t understand words. They
+can only work with numbers. So, we should
+somehow convert these words into numbers.
+This is what this embedding layer do.
+We could simply give the computer a dictionary,
+and then represent each word by its number
+in the dictionary, or by converting that number
+into a one-hot vector. But this is actually
+silly. We need another, more clever way for
+representing the words. This clever way is
+called word embeddings.
+Word embeddings are a method of representing
+words with vectors in such a way that similar
+words have similar vectors. For example, we
+want the word “cat” to have a similar
+vector with
+The word “dog”
+And although “Cat” and “Car” would
+be almost next to each other in a dictionary,
+we want their vectors to be relatively different,
+because they have different meanings and appear
+in totally different contexts.
+The process of collecting these embeddings
+is beyond the scope of this video, but if
+you want to learn more about it, check out
+computerphile's excellent video on the subject.
+link is available in description.
+The embedding layer in transformer architecture,
+produces a 512 dimensional embedding vector
+for each word in the sentence. Then it's passed
+on to the model's next component.
+next stage is positional encoding. The purpose
+of positional encoding is adding some information
+about positions before feeding the embeddings
+to the encoder. But why does it matter?
+I'll remind you once again that the Transformer
+architecture was designed with NLP tasks like
+translation in mind. So, I'll use sentences
+to illustrate the importance of position in
+understanding natural language correctly.
+Look at these two sentences. If we don’t
+consider the position of each word, they are
+exactly the same thing; because they are composed
+of exact same words.
+But we know that these two sentences are not
+the same at all. Actually, the fate of more
+than 3 billion people depends on whether word
+‘Thanos’ comes first or last in that sentence!
+When working with words and sentences, it's
+vital that our models have a sense of positioning.
+But how can we achieve this?
+Recurrent Neural Networks inherently take
+the order of words into account; They parse
+a sentence word by word in a sequential manner.
+This will integrate the words’ order in
+the backbone 
+of RNNs.
+How can we add some information regarding word order, now that we’re removing RNNs for the benefit of parallel computation and increased speed?
+In transformer, Vaswani and coauthors try
+to add positional information by using the
+sum of current embedding vectors with a new
+vector that contains information on position
+of each word.
+The positional encoding should satisfy the
+following criteria:
+It should output a unique encoding for each
+time-step
+Distance between any two time-steps should
+be consistent across sentences with different
+lengths.
+Our model should generalize to longer sentences
+without any efforts. Its values should be
+bounded.
+And It must be deterministic.
+A simple solution would be assigning a number
+to each time-step linearly. That is, the first
+word is given “1”, the second word is
+given “2”, and so on.
+It would provide Unique encoding for each
+time step and Consistent distance between
+any two time steps. It also is deterministic.
+However, the problem with this technique is
+that not only may the values become rather
+huge, but our model could also be confronted
+with sentences that are longer than those
+in training. Furthermore, our model may not
+observe any samples of a given length, which
+would limit our model's generalization.
+Another possibility is to assign a number
+to each time-step within the range 0 to 1,
+where 0 represents the first word and 1 represents
+the last. One of the issues it will create
+is the inability to determine how many words
+are present within a given range. To put it
+another way, the term "time-step delta" does
+not have a consistent meaning across sentences.
+The authors of this paper introduce a new
+way for positional encoding that achieves
+everything we ask for in our checklist.
+In this method, instead of adding a single
+number to each and every element of the vector,
+we create a d-dimensional vector that contains
+information about a specific position in a
+sentence. Because word embeddings have 512
+dimensions, the current model's encoding dimension
+will also be 512 dimensions, and the positional
+encoding vector will have 512 dimensions as
+well.
+In order to fill the elements of the vector,
+authors used a sinusoidal function. Keep in
+mind that there are two formulas, one for
+even and one for odd dimensions.
+The authors chose this function because they
+hypothesized it would allow the model to easily
+learn to attend by relative positions, since
+for any fixed offset k, Positional encoding
+at position (P+k) can be represented as a
+linear function of Positional encoding at
+position P.
+We can also imagine the positional embedding pt as
+a vector containing pairs of sines and cosines
+for each frequency wk.
+If you're interested in learning more about
+positional encoding in transformer architecture,
+check out Amirhossein Kazemnejad's excellent
+blog post on the topic, link to which is included
+in the description.
+The two components that I described so far,
+the Input embeddings and positional encoding,
+are actually doing the pre processing of data.
+The data goes through them only once, while
+the next part, which is where we do the REAL
+encoding, can and will be repeated several
+times.
+So, let’s see what’s ahead of us in the
+next step.
+A multi-head self-attention mechanism is the
+encoder's next element. Let's start with the
+"self attention”, then move on to the "multi-head
+attention" mechanism.
+As an example, consider this sentence. What
+does the pronoun “it" refer to? Is it “the
+animal" or "the street"?
+It is easy for us to infer that it is pointing
+to the animal, but it is more difficult for
+an algorithm to do so.
+Self-attention may assist computers in comprehending
+these details about sentences. As you can
+see in the figure, when we were encoding the
+word "it," part of the attention process was
+focused on "The Animal," and baked a representation
+of it into the encoding of "it."
+But how does self attention work?
+Let's look at the process of encoding a single
+input embedding vector for the sake of simplicity.
+First of all, we should create three different
+copies of each input embedding. We multiply
+each vector with a weight matrix, which is
+learned through the training process. These
+three copies of the input embedding will be
+called “query”, “key” and “value”
+vectors.
+The weight matrices can be square shaped,
+so the result of their multiplication has
+same dimension as the embedding vector. Or
+we can choose non-square matrices. The authors
+of the paper chose these matrices in a way
+that the 512 dimensional input embedding was
+converted to three 64 dimensional embeddings
+after matrix multiplication.
+We use the query and key vectors to calculate
+“score”. Say we’re calculating the self-attention
+for the first word, which in this example,
+is “Thinking”. We need to score each word
+of the input sentence against this word. As
+we encode a word at a specific location, the
+score decides how much attention to place
+on other parts of the input sentence.
+Then, we first divide score values by the
+square root of the dimension of the key vectors.
+In this paper, this dimension was 64, so every
+score value was divided by 8.
+The results then have to go through softmax
+operation. Softmax normalizes the scores so
+they’re all positive and add up to 1.
+This softmax score determines how much each
+word will be expressed at this position. Clearly
+the word at this position will have the highest
+softmax score, but sometimes it’s useful
+to attend to another word that is relevant
+to the current word.
+The next step is where finally, the value
+vectors come into play. We multiply each value
+vector with its corresponding softmax score.
+The goal is to preserve the values of the
+words we want to focus on while fading out
+irrelevant words by multiplying them by very
+small numbers.
+The last step in self attention is to sum
+up the weighted value vectors. This produces
+the output of the self-attention layer for
+the first word.  The resulting vector is
+one we can send along to the feed-forward
+neural network. In the actual implementation,
+however, this calculation is done in matrix
+form for faster processing. So let’s look
+at that now that we’ve seen the intuition
+of the calculation on the word level.
+In the actual implementation, embedding vectors
+of individual words are stacked on top of
+each other to create one matrix per sentence.
+So, instead of vectors, we end up with query,
+key and value matrices.
+The entire process of calculating the output
+will be the same as before, with the exception
+of using matrices instead of vectors. That’s
+it for self attention. Now, let’s focus
+on multi-head attention.
+Instead of performing a single attention function
+with d-dimensional keys, values and queries,
+the authors found it beneficial to linearly
+project the queries, keys and values h times
+with different, learned linear projections.
+In this work, Vaswani and coulegues employed
+8 parallel attention layers, or heads.
+With multi-headed attention, we maintain separate
+query, key and value weight matrices for each
+head resulting in different query, key and
+value matrices. As we did before, we multiply
+input embedding X by the WQ, WK and WV matrices
+to produce Q,K and V matrices.
+On each of these projected versions of queries,
+keys and values we then perform the attention
+function in parallel, yielding output values.
+This leaves us with a bit of a challenge.
+The feed-forward layer is not expecting eight
+matrices – it’s expecting a single matrix
+(a vector for each word). So we need a way
+to condense these eight down into a single
+matrix.
+How do we do that? We concat the matrices
+then multiple them by an additional weights
+matrix WO.
+This wraps up everything on multi head self
+attention mechanism. If you are willing to
+read more about it, check out Jay Alammar’s
+great post about transformers. I have used
+a lot of his material in these slides. You
+can find the link to his blog post in the
+descriptions.
+The attention block is followed by an add
+and norm layer. In this layer, we first calculate
+the sum of output vector of attention block,
+which we just calculated, and the input embedding
+vector, which we retrieved in the first step.
+The aggregate is then subjected to layer normalization.
+But what exactly is layer normalization, and
+why we should normalize our data? Let’s
+begin with the later question.
+Normalization is good for your model. It reduces
+training time, unbiases model to higher value
+features and doesn’t allow weights to explode
+all over the place and restricts them to a
+certain range.
+All in all, It is undesirable to train a model
+with gradient descent with non-normalized
+features.
+There are more then one way to perform normalization,
+two of which are presented in this slide.
+the main difference between these normalization
+methods is the way we calculate average and
+variance in order to normalize our data.
+You are probably familiar with the one on
+the right, the batch norm.
+In batch norm, we take all sentences in a
+batch, and for each feature in these sentences,
+we can find an average and a variance, which
+will be used to normalize the data in that
+feature.
+For example, here we have a batch of 2 senteces:
+“Popcorn popped.” and “Tea steeped.”
+you can see that each sentence is displayed
+by a matrix. Each row represents a word and
+contains the sum of input embeddings and the
+output of attention layer.
+In batch norm, we take one feature and calculate
+the average and variance of it.
+And then normalize the data so that the average
+is near zero and variance is about one.
+Of course, we should repeat this for other
+features as well.
+In the layer norm, we take the average and
+variance from all of the features of a single
+sentence, instead.
+Let’s see what it means using the same two
+sentences.
+Here we don’t care about the fact that these
+two sentences are from the same batch.
+In order to obtain the average and variance,
+we simply use all of the features in every
+sentence.
+And again, after normalization, we’ll have
+matrices with average of 0 and variance of
+1.
+Layer normalization was initially intended
+to be used in Recurrent neural networks because
+the result of batch normalization is depending
+on the mini-batch size and it is not clear
+how to apply it to RNNs.The developers of
+Transformer architecture chose it as their
+preferred method of normalization because
+it performs exceptionally well, especially
+in NLP tasks.
+In addition to attention sub-layers, each
+of the layers in our encoder and decoder contains
+a fully connected feed-forward network, which
+is applied to each position separately and
+identically. This consists of two linear transformations
+with a ReLU activation in between. its general
+role and purpose is to process the output
+from one attention layer in a way to better
+fit the input for the next attention layer.
+Geva and colegues gave this feed forward network
+a more detailed look in their paper “Transformer
+Feed-Forward Layers Are Key-Value Memories”.
+They found out that the feed forward networks
+in the transformer architecture tend to capture
+some linguistic patterns that might be one
+of the reasons of transformer’s incredible
+performance in NLP tasks.
+As you can see in this figure, neurons in
+lower layers often capture shallow patterns,
+while higher layers capture more semantic
+ones.
+I'm going to use some examples to help you
+comprehend these patterns better. Several
+sentences can be seen here, and the feed forward
+network of the transformer model appears to
+have connected them. Let's look at each collection
+of sentences and try to figure out why this
+induction exists.
+Shallow patterns are the ones that come from
+the words themselves. For example, all the
+sentences shown in the first row of this chart
+have “subtitutes” at the end of them.
+Semantic patterns, on the other hand, are
+the meaning you induce from the sentence by
+looking at the its words. In the second row
+of this chart you can see sentences that end
+with base or bases, but also are related to
+military, because of the presence of underlined
+words.
+Last group of patterns that are identified
+in the Feed Forward network, are pure semantic
+patterns. Examples in the last row of the
+chart are all about tv shows, and the model
+has figured it out using the clue words such
+as “episode”, “season” and “NBC”.
+After the feed forward block, comes another
+add and norm layer that is just like the one
+that we have already described.
+So that’s it about the encoder. But before
+we shift our focus to the decoder module,
+I want to point out 2 more things.
+First, I just want to remind you of the residual
+connections. These connections send the output
+of each sublayer to the add and norm block
+of the next layer.
+Second, remember that the transformer architecture
+stacks several identical encoder blocks on
+top of each other. In the original paper,
+the number of stacked encoder units was 6.
+Finally, we can talk about the decoder.
+First of all, we should point out the different
+modes that our decoder can work in them.
+When our model is in the training phase, we
+are fine-tuning the parameters of the network
+and the decoder is in the training phase.
+But when we are using our model to actually
+translate sentences, we are in the test mode.
+Imagine that we want to use transformer to
+translate sentences from English to French.
+Here is how the model works in the test phase.
+We first feed the English sentence into the
+encoder, which we now understand very well.
+The encoder has to process the entire sentence
+only once, and will produce an output, which
+we will feed to the decoder.
+Usually, every output that the decoder has
+produced so far, should be fed into it. But
+Since the decoder has not translated anything
+yet, we simply give it a “Start of the Sentence”
+token, to turn on its engine.
+Based on the encoder output and the initial
+“start of the sentence” token, the decoder
+then chooses the word that is most likely
+the correct translation.
+Now that we have our first output token, we
+can feed our decoder with both the “start
+of the sentence” token and the French word
+“Tu”. Once again, our decoder will try
+to find the best translation using the encoder
+output and previously translated words.
+We repeat
+This process
+For every word
+Until our decoder decides the most probable
+output would be the “end of the sentence”
+token. This is when we stop the translation.
+As you can see, the encoder uses parallel
+computing and works quite quickly, whereas
+the decoder takes its time and produces output
+tokens one by one during the test phase.
+This time, we were fortunate, and our translation
+was flawless. However, if the decoder chose
+an improper word for translation in one of
+the steps, the model would have no way of
+knowing, and the result would not be as excellent
+as our example.
+In the training phase, on the other hand,
+we have the full, perfect translation made
+by experts. We use these “target” sentences
+to adjust the parameters of our model so that
+it would produce the same translation if the
+same input sentence was given to it.
+To do so, we give the entire input sentence
+to the encoder, and instead of giving only
+the “start of sentence” token to the decoder,
+we give it a part of the target sentence,
+so that it tries to predict what the next
+word would be.
+Of course, at the beginning, our model will
+perform poorly, but by fine-tuning the parameters
+in the back propagation process, it becomes
+better and better in doing its job.
+As you see, in order to Train the model, instead
+of using model output from a prior time step
+as an input, we use the ground truth.
+This strategy is called Teacher forcing
+Please keep in mind that during the Train
+phase, both the encoder and the decoder can
+utilize parallel computing to speed up their
+training. In the actual implementation of
+the transformer model, instead of only a portion
+of target sentence, we can give the whole
+target sentence to the decoder during the
+training phase. I'll show you how this is
+done in the next slides as we go over the
+decoder's inner workings.
+The embedding and positional encoding steps
+of the decoder are identical to those of the
+encoder. So, we skip them.
+The “masked multi-head attention” is the
+first attention layer in the decoder. This
+layer looks a lot like the one we saw in the
+encoder, but it also masks the input. What
+does masking mean, and how does it work?
+As previously said, we’d like to provide
+the entire target sentence to the decoder
+during the training phase so that our model
+could train quicker.
+The decoder gets the encoder output and full
+target value, and then it is supposed to produce
+an output that is as much similar to the ground
+truth as possible. But if the decoder has
+access to every word in the target sentence,
+It would be cheating!
+This way, The decoder knows what it’s next
+outputs should be, and it may harm its ability
+to generalize.
+In order to prevent our decoder from cheating,
+we use masking. For example, when the decoder
+is supposed to produce the fourth output token,
+we should mask every word from index 4 until
+the end of target sentence.
+The self attention mechanism used in the decoder
+is just like the one we saw in encoder. The
+main difference is that in this self attention
+mechanism, we apply a mask matrix on the scores
+Mask is a matrix like this. It’s an upper
+triangular matrix that all of the entries
+above its main diagonal are minus infinity.
+Adding this matrix to the score matrix, will
+cause the softmax to assign zero probability
+for every forbidden word, hence, the attention
+weight on these words will be zero.
+So, Multiplying the output of softmax with
+our value matrix will prevent our model from
+accessing the words that are not translated
+yet.
+If you wanna learn more about the masking
+procedure, I recommend you watch Lennart Svensson’s
+video on this topic, link to which is available
+in the description.
+Keep this in mind that here again we are using
+multi-head attention. So these calculations
+will be done for several copies of key, query
+and value matrices.
+After this attention layer, our data goes
+through another add and norm layer, which
+we have already covered.
+Next step is the second multi-head attention
+layer. This is where we finally use the data
+that encoder produced.
+As you probably know by now, self attention
+mechanism uses 3 inputs in order to produce
+an attended output: key, query and value.
+Let’s see that for this particular self
+attention mechanism, where do each of these
+values come from.
+Keys and values come from the encoder. Encoder
+takes the entire input sentence and produces
+an output. We take this output and make two
+copies of it by linear transformation. One
+of these transformations will be the key and
+the other will be the value for our self-attention
+mechanism.
+the last ingredient for self-attention, which
+is the query, comes from the decoder. Decoder
+takes the target sentence and in the first
+attention layer, it produces an attended output.
+Let‘s say we are currently working on the
+4th word. So, the foruth and fifth token from
+target sentence are both masked.
+And the fourth token from the output of attention
+block will be used as the query.
+And the rest of self attention process is
+just like before. You may have noticed that
+the output of this attention layer actually
+gets its values from encoder. The only influence
+the output of previous decoder attention layer
+has is that is contributes in the calculation
+of attention weights and also, the output
+dimension of current attention layer is the
+same as the previous one.
+If you wanna learn more details about this
+self attention mechanism, I recommend you
+another video from Lennart Svensson’s channel,
+and you can find the link to it in the description.
+After this second attention layer, comes yet
+another add and norm layer.
+The rest of decoder is very straightforward.
+First we have a feed forward network just
+like the one in encoder. Then another add
+and norm, followed by a linear transformation
+and then a SoftMax layer. SoftMax layer will
+produce the output probabilities.
+Don’t forget that just like the encoder,
+the decoder has residual connections that
+connects each sublayer to the add and norm
+block of the next layer.
+And just like the encoder, several decoder
+blocks are stacked on top of erach other.
+In the original implementation of the paper,
+the number of these blocks was 6.
+Finally, as you see here, the key and value
+data comes only from the top encoder block
+to each and every decoder block.
+Okey, this sure took a lot of time to explain,
+now let’s see how does this complex architecture
+pay off.
+Results
+The authors created two different versions
+of the transformer model: a base model, and
+a big model.
+This table shows some of the diffrences between
+these two models. Notice that even the Base
+model contains the mind blowing number of
+65 million parameters.
+This chart shows the performance of transformer
+model in translation, compared with other
+models.
+The model performs so great in English to
+german translation that even the base model
+beats every other model.
+In English to French translation, the big
+transformer model stablishes a new state of
+the art BLEU score of 41.8. outperforming
+all of the previously published single models,
+at less than a quarter of the training cost
+of the previous state-of-the-art model.
+To evaluate if the Transformer can generalize
+to other tasks, the authors performed experiments
+on English constituency parsing.
+Constituency Parsing is the process of analyzing
+the sentences by breaking them down into sub-phrases
+also known as constituents. These sub-phrases
+belong to a specific category of grammar like
+noun phrase and verb phrase.
+they trained a 4-layer transformer with model
+dimension of 1024 on the Wall Street Journal
+portion of the Penn Treebank, about 40K training
+sentences. They used a vocabulary of 16K tokens
+for this setting.
+they also trained their model in a semi-supervised
+setting, using the Berkley Parser corpora
+with approximately 17M sentences and a vocabulary
+of 32K tokens
+This table shows the performance of transformer
+model in English constituency parsing task.
+it shows that despite the lack of task-specific
+tuning, this model performs surprisingly good
+and generalizes well to English constituency
+parsing.
+Conclusion
+The Transformer architecture was introduced
+in this paper. It is the first sequence transduction
+model based purely on attention, with multi-headed
+self-attention replacing the recurrent layers
+most typically employed in encoder-decoder
+architectures.
+For translation tasks, the Transformer not
+only can be trained significantly faster than
+architectures basedon recurrent or convolutional
+layers, but also performs much better then
+them. It achieved the state of the art status
+on both English to german and English to French
+translation tasks, and In the former task
+the best transformer model outperforms even
+all previously reported ensembles.

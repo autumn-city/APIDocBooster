@@ -1,0 +1,909 @@
+Hi, I'm Ines.
+I'm the co-founder of Explosion, a core developer
+of the spaCy natural language processing library,
+and the lead developer of Prodigy.
+Prodigy is a modern annotation tool for creating
+training data for machine learning models.
+It helps developers and data scientists train
+and evaluate their models faster.
+A key feature of Prodigy is that it's fully
+scriptable.
+This makes data loading and preprocessing
+really easy and also lets you add automation
+to make your annotation more efficient.
+You can even put together your own interfaces,
+which is especially helpful for very custom
+use cases.
+Of course Prodigy also comes with a variety
+of built-in workflows for different machine
+learning and NLP tasks, like text classification
+or named entity recognition.
+If you want to see those in action, check
+out the other tutorials on this channel.
+In this video, I'll show you how you can use
+Prodigy to script fully custom annotation
+workflows in Python, how to plug in your own
+machine learning models and how to mix and
+match different interfaces for your specific
+use case.
+And the use case we'll be working on in this
+video is image captioning.
+Image captioning technology has come a long
+way and we can now train models that are able
+to produce pretty accurate natural language
+descriptions of what's depicted in an image.
+This is very useful for assistive technologies
+because we can generate alternative text for
+images so that people who are using screen
+readers can get a description of an image.
+And we want to create a dataset of image descriptions,
+use an image captioning model implemented
+in PyTorch to suggest captions and perform
+error analysis to find out what the model
+is getting right and where it needs improvement.
+So I was looking around for images that we
+could work with and I ended up downloading
+over a thousand pictures of cats from this
+dataset on Kaggle.
+So yeah, we'll be captioning cats!
+And let's start with the basics and let's
+get our cats on the screen.
+Prodigy isn't just a command line tool and
+web app, it's also a Python library that you
+can import and work with.
+Under the hood, Prodigy is powered by recipes,
+which are Python functions that define annotation
+workflows.
+Recipes can implement logic to stream in data
+or define callbacks that are executed when
+the server receives new answers.
+You can turn any function into a recipe by
+adding the "@prodigy.recipe" decorator.
+The first argument is the recipe name.
+This is how you're going to call your recipe
+from the command line.
+And here we're calling it "image-caption"
+so when you run the recipe later you can type
+"prodigy image-caption" on the command line.
+And any arguments of that function will be
+available as command line arguments.
+So you can use them to pass in settings and
+to really make your recipes fully reusable.
+So what arguments do we need?
+At a minimum, we should be able to pass in
+the name of the dataset to save the annotations
+to.
+Datasets in Prodigy let you group annotations
+together so you can later reuse them in the
+application or export them to use them in
+a different process.
+And then we also want to pass in the path
+to the directory of images that we want to
+annotate.
+And now, how is the recipe going to tell Prodigy
+what to do and how to start the annotation
+server?
+Well, a recipe returns a dictionary of components
+that define the settings for the annotation
+server.
+So this is the other convention.
+A recipe needs the recipe decorator and it
+returns a dictionary of components.
+That's all you need to be able to run it with
+Prodigy.
+And one of the components we need to return
+is the name of the dataset to save the annotations
+to.
+So we can just pass that right through from
+our arguments.
+And next, we need a stream that streams in
+the examples that we want to annotate.
+And Prodigy doesn't make you import and data
+upfront if you want to annotate it.
+That's all done in the recipe.
+And for images there's a built-in image loader,
+which we can import from "prodigy.components.loaders".
+And it takes a path to a directory of images
+and then it load them in the expected format.
+So we can pass in the path that we receive
+as an argument here and our recipe will be
+able to load any directory of images that
+we give it.
+And to make the stream available, we can return
+it as the component "stream".
+And now we also need to define how Prodigy
+should present the data by setting the "view_id"
+which is the name of the annotation interface
+to use.
+And there's a variety of different interfaces
+available that are built in and you can see
+examples of them and the data format they
+expect in the docs.
+For example, there's an interface to show
+plain text, there are interfaces for highlighting
+spans of text and there's also an interface
+called "image" which lets you present... an
+image!
+Yay.
+And the data it expects is of course exactly
+what our image loader creates.
+So we're going to be using that as the view
+ID.
+So let's take a look at what we have so far
+and start the server.
+We saved our recipe file as "recipe.py" so
+we can now navigate to the terminal and run
+the "image-caption" recipe, because that's
+the name we've defined via the recipe decorator.
+And if you remember, our function had two
+arguments, which we can use on the command
+line.
+First, the name of the dataset that we want
+to save the annotations to.
+So let's use a temp name just so we can experiment
+a bit.
+And the second argument is the path to our
+directory of images, which is our cats.
+And finally, we need to tell Prodigy where
+to find our recipe code, because that's just
+an arbitrary file and of course it can't just
+magically know that.
+So we can use the "-F" argument on the command
+line and point it to the file.
+And now when we hit enter, Prodigy will start
+up and it will serve our recipe.
+So yay, let's check this out in the browser.
+And as you can see, it worked.
+The images are here and we can go through
+them, we can accept them, we can reject them
+and yeah, we've successfully queued up our
+cats for annotation.
+And if your goal is to curate images then
+you could stop right here.
+That's all you need.
+But of course we don't just want to go through
+images, we also want to caption them.
+So we need a second interface which is the
+text input interface.
+And text inputs are something you should always
+use with caution.
+It's very very tempting to just make everything
+a free-form input and make the annotator type
+everything in and then call it a day.
+But the data you are collecting this way is
+very very unstructured and there's so much
+potential for human error and just for typos.
+And if your goal is to train a machine learning
+model you typically want to have as much control
+as possible over what's being annotated.
+And also how it's being annotated.
+So if you're creating training data and you
+can avoid free-form input, don't use free-form
+input, use something else.
+Make sure you can control the structured data
+that you're collecting.
+But for our use case we do want to create
+captions so we need a way to input them.
+And the best way to do that is to use a text
+input field.
+And to combine multiple interfaces and any
+custom content, Prodigy comes with a "blocks"
+interface.
+Here's an example where we have a manual span
+labelling interface that's followed by a free-form
+input and an arbitrary HTML block that embeds
+a song from SoundCloud.
+So this is all possible and you can pretty
+much do whatever you want here and freely
+combine multiple UIs and different pieces
+of content.
+But again, I always recommend against just
+cramming everything you need into a single
+interface.
+You'll get much much better results if you
+let annotators focus on a single concept at
+a time and you don't overwhelm them and present
+too many different tasks at once with too
+much cognitive load and too many steps that
+have to be performed in order.
+Because that's exactly the stuff that we as
+humans are bad at.
+And if you want to collect human feedback
+you should be focusing on the type of stuff
+that we're good at.
+And you don't want to additionally include
+lots of human mistakes this way and end up
+with even worse data overall.
+So, again, if you can keep it simple, keep
+it simple and avoid just doing everything
+in one interface.
+But in general, the "blocks" interface does
+let you combine a few interfaces and if that
+makes sense for your use case that's very
+cool.
+So if we go back to our image captioning problem,
+what we want to do here is, we want to show
+the image and we want to show a text input.
+So all we need to do is use the blocks interface
+and then add two blocks: one image block and
+then one text input block.
+And we can then set our blocks config in the
+"config" that's returned by the recipe.
+And the text input interface also allows a
+bunch of additional settings like the label
+that's displayed at the top of the field,
+the placeholder text that's shown if the field
+is empty and says something like "type something
+here", and whether the field should autofocus
+and also the ID of the field that's going
+to be added.
+And this is going to be the key that's used
+to store the text later on.
+So as you can see here, if the "field_id"
+is "user_input", the text the user types in
+will be available as "user_input" in the annotated
+task.
+So for our use case, let's change that to
+"caption" so the caption text that the user
+types in will be available as the key "caption".
+And we'll also set it to autofocus so that
+whenever a new task comes on we're immediately
+in the field and don't have to click on it.
+And the block here lets you override properties
+that apply to all tasks.
+And that's very nice because we don't want
+to bloat our data by adding "autofocus: true"
+to every single example that we annotate.
+So we can set that on the block and then it's
+applied to all of the tasks and it's not going
+to end up in our data.
+So now let's start the annotation server again
+and take a look.
+And yay, here we have our custom blocks interface
+and it shows the image block, followed by
+a text input block.
+Just like we wanted.
+So yeah, here's the first one that's just
+a simple white cat.
+So I'll try to keep the captions a bit simple.
+Then here we have two cats in the snow, I
+guess.
+That's how we would caption this.
+And here, cat, black cat, on a couch.
+That's pretty easy.
+And yeah, so we can kind of go through them
+here and I'll try to type something sensible
+for each of them.
+I don't know how detailed we want to have
+our captions here.
+So I try to keep them a bit uniform.
+Okay, so we got 14 annotations, so let's hit
+"save" and let's go back to the terminal and
+check out the annotations.
+I totally didn't expect that captioning images
+of cats would be so difficult, wow.
+So we can use the "db-out" command to export
+any dataset that we have.
+And we can either forward that output to a
+file or we can just pipe it to "less" so that
+we can take a look at the data quickly on
+the command line.
+And as you can see, we first have this really
+long string here, which is the base64-encoded
+image data.
+And by default, Prodigy's image loader will
+encode the image as a string.
+So that it can be saved with the examples.
+And this has two advantages: one is, it lets
+us load the images very easily in the browser.
+And it also means that the data is stored
+with the annotations.
+And this way, we can make sure that we never
+lose the reference to the original image.
+And of course you can change that and only
+store the file name of the image.
+But then you're in charge of keeping the files
+safe and making sure that they never change
+or move and you never actually lose the files
+and the references here.
+But in our case our cat images are pretty
+small so we'll just keep them with the data
+for now and let it convert it to a string,
+because it doesn't take up that much space.
+And, as you can see, with the image, Prodigy
+also stores some metadata and the caption
+that we typed in earlier.
+So this is all working pretty well already.
+Now, one thing we already noticed earlier
+is that writing all these captions from scratch
+is pretty tedious.
+And it's also much harder than you'd think
+when you hear "caption some cats".
+So maybe we can improve that and automate
+this a bit.
+Or maybe you already have a model that does
+image captioning and that you want to improve.
+So I had a look around online and I found
+this PyTorch tutorial and this example for
+an image captioning system.
+And I'll share the link in the description
+below if you want to take a closer look and
+of course I'm also sharing all code and data
+that I'm producing and working with in this
+video.
+So this image captioning system here uses
+a CNN as the encoder pretrained on the ImageNet
+dataset.
+And then we have an LSTM as the decoder.
+So essentially, what goes in is an image and
+then the model extracts a feature vector from
+it.
+And based on that, the decoder, which was
+trained with a language modelling objective,
+then outputs a sequence of tokens.
+So for this image here in this example, it
+will predict "giraffes standing next to each
+other".
+And what I liked about this example was that
+a) the code was very straightforward and well-written
+and I also didn't have to implement anything
+myself.
+And it also comes with a pretrained model
+that you can download from the repo.
+So it's very easy to try it out and get started.
+And I'm not going to go through the exact
+implementation in detail because that's going
+to be too much for this video and also, if
+you're serious about image captioning, you
+probably want to be using a different model
+implementation anyways.
+But if you want to take a look, I've combined
+it all into a very straightforward Python
+module and here I also wrote two functions
+that make it easy to access and use the model
+in our recipe script.
+We have one function here that loads the model
+and returns the encoder, decoder, vocabulary
+and image preprocessing transform.
+And then we have a second function that takes
+those objects and the base64-encoded image
+data, loads the image from bytes and generates
+the caption.
+So let's go back to the editor and add another
+recipe for the model-assisted image captioning.
+We'll call this recipe "image-caption.correct",
+just like Prodigy's built-in recipes like
+"ner.correct" for model-assisted named entity
+annotation.
+And it takes the same arguments again: the
+dataset to save the annotations to and then
+the path to our directory of images.
+So here's the skeleton.
+At the end of it, we need to return a dictionary
+of components, starting with the dataset.
+And let's also copy over our blocks from the
+other recipe.
+Next, we need a stream.
+Streams in Prodigy are generators, so typically,
+functions that return an iterator that you
+can iterate over, one at a time.
+And if you haven't worked with generators
+before, one of the big advantages, in a nutshell,
+is that we don't need to consume the whole
+stream at once.
+Instead, we can do it in batches.
+So you can have gigabytes of data and process
+that with a model, which takes a while, and
+it still works fine because Prodigy only ever
+needs to process one batch at a time.
+And then it sends it out for annotation and
+then it needs to process the next one when
+the queue is running low and when it requests
+the next batch.
+So the best way to define our stream generator
+is to write a function.
+And first, we load the images again which
+gives us a stream of dictionaries in Prodigy's
+format.
+And each dictionary here will have an image
+key that contains the encoded image data.
+And now we can import our model helper functions
+from that other module that I showed you earlier
+and we can load our model.
+And I typically like to do that kind of stuff
+at the very top of the function so if something
+fails your script can stop as early as possible,
+basically.
+And now for each example in our stream, we
+can call our "generate_caption" function and
+pass it the image data.
+I always like to use the variable "eg", which
+stands for "example" because it's short and
+it's still descriptive enough.
+So that's going to be what I'm using for our
+loop variable here.
+But... what are we going to do with this?
+Remember, we were going to pre-fill our text
+box with that caption that's produced by the
+model.
+And the nice thing is that Prodigy always
+lets you pass in pre-annotated data and it
+will respect that and display the annotations
+to you, if it has the same format as the data
+that Prodigy produces.
+So since we're adding the caption that we
+type to the field "caption", we can just pre-populate
+that and it will show up in the text field.
+That's pretty cool, right?
+Now, because it's a generator, instead of
+returning something, we yield the example
+and send it out.
+And then to create our stream, we just need
+to call the function and return it as a recipe
+component.
+And don't worry, it's a generator, so calling
+that function won't just run it all at once.
+It will only run when we need it and it will
+run for one single batch.
+So yeah, let's try it out and run the recipe!
+So we've called this one "image-caption.correct"
+and it takes the same arguments as the previous
+recipe.
+And it's in the same file, so we don't need
+to change that.
+And you can have multiple recipes in the same
+file, that's absolutely no problem.
+They just need to have distinct names.
+And if we head back to the browser now, we
+can see the first caption.
+Wow!
+Our model actually predicted something and
+it's not even so far off.
+So that's really really cool.
+And if we change the caption here, this will
+also be reflected in the "caption" value of
+the annotated task that's saved to the database.
+Let's do a few of them and correct the captions.
+I'm trying to stay as close as possible to
+the original captions here because I guess
+that's probably the best approach.
+But as you can see, we can just edit them
+and then move on to the next example.
+And what's pre-filled here, that's all coming
+from the model that we plugged in here and
+that I downloaded earlier.
+And one thing that would actually be pretty
+helpful is if we could keep track of what
+we're changing here.
+Because otherwise we won't necessarily remember
+what the original caption was and whether
+it changed or not and how it changed and how
+good the model was.
+So let's go back and add a key for the original
+caption to the examples.
+And Prodigy lets you add arbitrary properties
+to the examples that you stream in.
+They just need to be JSON-serializable, that's
+all.
+And the data will then be passed straight
+through and saved in the database with the
+example.
+So even as we change the value of the key
+"caption", the original caption will stay
+the same.
+So we'll always keep track of that.
+And another thing we can do is, we can keep
+a count of how often we change the caption
+and how often we keep the model's suggestion.
+And then when we exit the server, we could
+just print the results.
+So if later on you end up changing or updating
+your captioning model you can get a quick
+summary after each annotation session.
+And maybe you end up changing more or maybe
+you've accepted the model's captions more
+often.
+It's always good to have some real numbers
+at the end so you don't just have to rely
+on how you felt the model was doing.
+Prodigy recipes let you provide an "update"
+callback that is one of the components the
+recipe returns.
+And that function is called every time new
+answers are sent back to the server from the
+web app.
+And in some of the built-in active learning
+recipes this callback is used to update a
+model in the loop because that makes sense,
+right?
+But in our case, we can just use it to update
+our counts.
+And it receives a list of answers in Prodigy's
+format, so that's the same format as our stream,
+only that it contains the annotation.
+So in our case the potentially edited caption
+and the "accept", "reject" or "ignore" answer,
+depending on which button we clicked.
+So we can loop over the answers here and we'll
+only increment the counts if we actually accepted
+the annotation, so if the value of "answer"
+is "accept".
+Next, we can simply compare the value of the
+original caption to the value of the actual
+caption.
+And if it's different, that means that we've
+changed it in the UI, and then we can increment
+the "changed" counter.
+And otherwise, we know it wasn't changed and
+we increment the "unchanged" counter.
+So that's it.
+And to make the "update" callback available
+to Prodigy, we return it by the recipe under
+the name "update".
+And now we just need to output the results
+when we exit the server.
+So for that we can use the "on_exit" callback
+that's called... on exit!
+And it receives what we call the controller
+as an argument, which gives us access to a
+bunch of stuff related to the current annotation
+session.
+But we don't need that here so we can ignore
+it for now.
+And all we need to do is print our counts.
+And then we add the "on_exit" callback to
+the components returned by the recipe.
+Now let's see this in action and collect a
+few annotations!
+Yeah, those are all the ones that we already
+saw earlier.
+And the model obviously has a limited vocabulary
+which becomes pretty apparent here.
+So I am trying to match that a bit and not
+make it too complicated and also leave as
+much as possible so that we're only correcting
+what's really necessary.
+So again, some of them are actually quite
+difficult or not immediately obvious.
+Yeah, I dunno... what is this cat even doing?
+I don't know.
+How detailed do we want to be here?
+It's kind of unclear.
+It also ultimately depends on your application
+and what you want to do with this model.
+Like, does it matter for your model that the
+cat is lying on its side or is all you care
+about the cat and roughly whether the cat's
+doing something or the color?
+Yeah, some of them, like here for example:
+wow.
+Yeah, I had to look twice, but it's actually
+a table.
+So it could just be a lucky... thing.
+Is that Gumpy Cat?
+I think it's Grumpy Cat, right?
+Or it's the same type of cat at least.
+That cat I guess is kind of... table-colored?
+What's going on here?
+Als, what's up with the model?
+Probably, I dunno, "remote" was something
+that was common in the dataset and common
+in the captions that the model was pretrained
+on.
+So I guess that's why it's sort of hallucinating
+these arbitrary items like a remote.
+Or it also tends to hallucinate other cats,
+which is quite interesting.
+But to be fair, I mean, it does get most of
+them right and most of them are cats.
+Okay, so I don't even know anymore.
+So let's stop here.
+Let's hit "save".
+And we've collected 25 annotations in total
+and in the data we're storing the changed
+caption and the original caption.
+And let's just take a quick look at the data
+again using the "db-out" command just to see.
+And here we have the image data again, followed
+by the caption we wrote, plus the original
+caption produced by the model.
+And I'd say the model was surprisingly good,
+considering it's just a machine predicting
+things, right?
+And it was also clearly struggling, but that's
+kind of expected of an arbitrary model downloaded
+off the internet that was not trained on any
+data that was specific to my problem at all.
+But let's imagine for a second that this was
+your model.
+And a model that you've carefully developed
+and pretrained and that you now want to fine-tune
+on more annotations.
+And at this point, you've maybe done enough
+work to convince your stakeholders that yes,
+computers can indeed generate image captions
+now and it's totally worth investing in this.but
+you don't yet have a good answer for what
+you're going to do to improve the model and
+what problems to even focus on.
+Like, yeah, we've corrected the captions,
+but it kinda felt like shooting in the dark.
+And collecting unstructured free-form text
+makes things more challenging as well, because
+we don't have an immediately obvious way to
+evaluate the data that we've collected.
+So I want to add a new workflow that lets
+us go through the annotations again and specifically
+those where we changed the predicted caption.
+And then I want to label why we've changed
+the caption.
+For example, because it said "polar bear"
+but it was a cat.
+So in that case the subject was different.
+Or maybe the description of the background
+was incorrect, or the items around it or maybe
+it hallucinated a cat that wasn't there.
+And doing this as a separate error analysis
+step makes a lot of sense here because we
+don't want to mix the data creation with the
+evaluation and with the error analysis.
+And also, we probably want to make this a
+multiple-choice question and after we've started
+labelling, we might want to change the options
+because we forgot something or something new
+came up.
+And if this is all mixed in with the rest
+of the annotation going back and re-doing
+parts becomes really really annoying.
+So this is a separate workflow and let's go
+back to the editor and call this recipe "image-caption.diff"
+because essentially, we want to diff the two
+captions and collect feedback on the differences.
+And our recipe takes two arguments for now:
+first, the dataset to save the annotations
+to because we also need to save the diffed
+data with the feedback.
+And then also the source dataset.
+Because in this case, we're not actually reading
+examples from a file or from a directory,
+but we want to read them from an existing
+dataset.
+And doing that in Prodigy is pretty easy because
+there's a Python API for the database that
+you can interact with.
+And the easiest way to connect is by using
+the "connect" helper.
+And then we get a database object and then
+we can call the "db.get_dataset" method to
+load all examples from a dataset.
+So now, we need our stream.
+So let's write a generator function again.
+And we want to loop over the examples in the
+dataset and only look at the ones we've accepted,
+not the ones we've skipped or ignored.
+And of course we're only interested in the
+annotations where the final caption is different
+from the original caption, so the ones that
+were edited in the UI.
+And only if those are different, we yield
+the example and send it out for annotation.
+So, how are we going to present this most
+effectively in the UI and in the app?
+Fun fact, Prodigy actually has an interface
+for visually diffing text.
+But it doesn't really work so well here because
+we have quite a few changes and typically
+it's several words that we remove and add,
+so a visual diff can actually make it a bit
+harder to read the diff, which kind of defeats
+the purpose.
+So I don't think it's a good use case for
+that.
+I think the diff interface is much better
+if you're doing something like spelling correction.
+So instead, let's just set up two blocks and
+use HTML and write our own little blocks.
+And the "html_template" feature here is pretty
+cool because it lets you write HTML and reference
+any properties in the example, as variables.
+So the original caption and that variable
+references that value and that field in the
+annotation task dict.
+So you can structure your data however you
+like and then write an HTML template to define
+how to display it.
+And let's do something really simple here
+and make this caption half transparent so
+it shows up a bit fainter because that's the
+one that we changed.
+And then in the next block we use the value
+of "caption", which is the final edited caption.
+And if you want to style it, you can add some
+HTML around it, but I'll just keep it super
+simple for now and just use the HTML template
+here for consistency.
+And let's finish up the recipe skeleton and
+check this out in the app quickly to see where
+we're at and if everything displays correctly.
+And we call this recipe on the command line
+again and we have one dataset that we'll save
+the annotations to and then we use the name
+of our previous dataset that we added the
+annotations to.
+And then, here we go!
+The before and after captions, displayed together,
+in the "blocks"UI.
+Yay, so that's also working.
+Great!
+And now, we just need some multiple-choice
+options so that we can select the types of
+changes made to the caption.
+And for this we can use the "choice" interface.
+And it can render options as multiple or single
+choice, depending on the use case.
+And the format is actually pretty straightforward.
+Each option has an ID, which is used under
+the hood and can be any integer or string,
+whatever you want.
+And then we have a text, which is the display
+text.
+That's what you or what the annotator is going
+to see.
+I always like adding emoji because it's a
+very very simple and effective way to add
+some visual distinction.
+So in our recipe specifically, we could then
+go and define the following options.
+So we have subject, which basically is the
+wrong subject.
+So "polar bear" instead of "cat", and so on.
+And then attributes, that's like, if it says
+"black" and the cat's actually white, stuff
+like that.
+Background, that's sort of everything around
+it, the setting.
+And then we have number, that's wrong number
+of subjects.
+If it says one cat but it's two cats, and
+vice versa, we would tick that.
+And I've added one for wording because maybe
+we will want to change just some general wording
+and spelling.
+So that should get its own point.
+And then I've added one for "other" that you
+can tick if something else was edited as well.
+So I'll also go ahead and add some emoji here
+to make it easier to tell them apart.
+That's always my favorite part.
+And you really only want to define options
+here that need human feedback and that you
+cannot determine programmatically.
+Like, there's really no point in doing stuff
+like "added words" or "removed words".
+That's just wasting the annotator's time.
+When designing custom annotation tasks I think
+this is always a very valuable question to
+ask yourself: What do I really need from the
+human?
+And what can I infer programmatically and
+do not actually have the human do because
+the human will likely do it worse than a machine?
+So yeah, here we have our options now.
+And we just need to attach them to each annotation
+task that goes out.
+And then in our recipe config we'll also want
+to set "choice_style" to "multiple" to allow
+multiple selections because multiple of these
+options can be true for any given caption.
+So let's restart the server and check it out
+in the app.
+Here we have our options, complete with emoji.
+And by default, the "choice" interface will
+display an image or a text if it's present
+in the task.
+And since we have an image, like the cats,
+it's displayed so we don't have to add it
+separately.
+And we already have it here together with
+the captions so we can always check what's
+going on.
+And if you don't want the image and you say,
+hey, I actually just want to focus on the
+text, I don't want that kind of distraction,
+then you could just go back and override it
+in the block.
+That's no problem either.
+And if you prefer, you can also use the number
+keys on your keyboard to select the options.
+And you can even map the options to custom
+keys if you like.
+So it's really up to you and what you find
+most efficient to work with.
+So now before we keep going, we might as well
+implement some counting again so that we can
+see results immediately when we exit the server
+and get a breakdown of the options that were
+selected, so after each session you can see
+what the most common problems were.
+And to do that, we just go back and add an
+"update" callback again.
+And let's also user a proper counter this
+time to make things a bit easier because we
+have lots of options and they might change.
+So we're just looking at the accepted annotations.
+And we also look at the options that were
+selected in the UI.
+And those will be added as a new key called
+"accept".
+And it's a list, and it includes the ID values
+of the options that were selected in the UI.
+And then for each of those options that were
+selected, we increment the counts in our counter.
+And I think you could also just call "counts.update"
+here with the list of IDs, but writing it
+like this makes it a bit more obvious what's
+going on and what's happening here with our
+counter.
+And then, just as before, on exit we go and
+print those counts and kind of print them
+nicely so that we get a good overview.
+So let's start it up again and see, and do
+some annotation.
+Yeah, so here we have... wrong background
+or setting.
+And I guess also here, this is the setting,
+and it's also the number because it's two
+cats.
+Okay, so here, yeah, that was a bit unfair.
+I annotated that unfairly.
+So here we get to "no tasks available", which
+means we've annotated all of the examples
+that were in the previous dataset, minus the
+ones, obviously, where we just accepted the
+caption.
+So let's hit "save" here so that our answers
+are sent back to the server.
+And then let's check out the breakdown of
+the different options.
+So when we exit the server and we press control
++ c for example, we'll then get a breakdown
+of the different options and how often we
+selected them.
+And all of this information is, of course,
+also saved with the data in the database.
+So here's the very raw structured data again.
+You have the image data as a string, we have
+the captions, and then we have the feedback
+that we just collected in the "accept" key
+of the annotation task.
+And that maps to those IDs that we defined.
+And you can use that to produce some useful
+stats about your model's performance or even
+start and use the corrected captions as training
+data for your model and improve it.
+Or maybe you want to implement another recipe
+that takes the captions we wrote manually,
+finds words that are not in the model's vocabulary
+and then suggests alternative words that are
+in the vocab, using something like word vectors.
+Or maybe you want to write a recipe that suggests
+different possible captions, based on the
+highest-scoring candidates that your model
+produces.
+There are so many possibilities and of course
+there's a lot more that you can do with custom
+recipes in Prodigy.
+I hope that prodigy makes it easy to implement
+your ideas in a way that fits to your personal
+workflow and your machine learning stack.
+If there's something that you want to load
+or process and you can do it in Python, you'll
+be able to use it in your annotation workflows
+in Prodigy.
+I hope you enjoyed this video!
+To find out more about Prodigy, check out
+the website and docs.
+And as always, I've added the links and everything
+else you need to the description below.
+And if you have any questions, feel free to
+get in touch and talk to us on the forum.

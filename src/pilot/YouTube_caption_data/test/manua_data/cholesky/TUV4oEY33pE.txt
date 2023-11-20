@@ -1,0 +1,2291 @@
+- Great, let's get started.
+So, Geoff Pleiss is a Postdoctoral
+Researcher at Columbia,
+hosted by John Cunningham
+with affiliations in statistics
+and the Zuckerman Institute,
+which is sort of a mind and
+brain, behavior institute.
+He obtained his PhD in
+Computer Science from Cornell
+with Kilian Weinberger,
+who's well known in machine learning,
+and his bachelors at Olin
+College for Engineering.
+His research interests
+are broadly situated
+in machine learning,
+including neural networks,
+Gaussian processes,
+uncertainty quantification
+and scalability.
+And he co-founded this
+Gaussian process GPyTorch
+software framework and
+maintains that community online.
+Take it away, Geoff.
+- All right, thanks Claire.
+(audience applauds)
+So, today I want to talk about my work
+in two machine learning paradigms,
+in deep learning and in
+probabilistic modeling.
+And in particular, I want to
+discuss how I aim to combine
+the strengths of these two worlds,
+using insights from one
+to improve the other.
+And before I dive in the details of that,
+to motivate why we wanna
+look at these two paradigms
+in particular.
+I wanna paint a picture of
+two very different settings,
+where machine learning
+has been successful today.
+And in the first setting,
+our goal to extract semantically
+meaningful information
+from complex data.
+So, we might have, for example,
+a set of natural images
+and our goal is to be
+able to detect objects
+in those images.
+Or we might have a large
+set of text documents
+and we wanna classify those
+text documents based off
+of their content.
+Now models that excel
+at these types of tasks,
+fall into what I call
+the high power regime.
+And this is gonna characterized
+by models that are accurate,
+especially on these
+complex data modalities.
+But also models that
+are gonna be scalable,
+so that can make use of the wealth of data
+that we now have available to us.
+And the models today that best exemplify
+this high power regime,
+are neural networks.
+They're gonna be best
+suited for these types
+of predictive tasks.
+So, now we paint you a picture
+of a totally different setting,
+where machine learning
+has been successful.
+And here in this setting,
+our goal is to develop models
+that aid in downstream
+decision making tasks.
+So, for example,
+let's say that we want to
+predict future health outcomes
+for a newly born infant.
+We might use a machine learning model
+to forecast what this child's
+weight might be in the future,
+based off of our early health records.
+And our model may report that
+there is a sufficient risk
+that this child is likely to
+be underweight in the future.
+Now, being able to
+reliably quantify this risk
+and reason about it is gonna
+aid a medical practitioner
+in making an informed downstream decision
+to potentially prevent this
+potentially bad health outcome.
+So, models that excel in these settings,
+where we need to assess risk
+and reason about downstream decisions,
+fall into what I call this
+high reasoning regime.
+And this is gonna be
+characterized by models
+that are aware of
+uncertainty in the real world
+and are able to incorporate
+that uncertainty
+into the predictions.
+They also generally tend
+to be domain specific,
+so able to incorporate prior
+knowledge or expert knowledge
+that we have about the world.
+And they're also generally intuitive,
+so, built from understandable
+building blocks.
+And today what best exemplifies
+this high reasoning regime,
+is gonna be the framework
+of probabilistic modeling.
+Which for the purposes of this talk,
+is the paradigm where we're going
+to be inferring a distribution
+over statistical models,
+conditioned on some set of observed data.
+And I'll dive into a little
+bit more what I mean by that,
+later on in the talk.
+Well, those are two
+very different settings
+that I've described,
+where machine learning
+is successful today.
+And if we looked to the future,
+we're gonna need models that
+live in both this high power
+and high reasoning regime.
+So, let's think about what we
+want machine learning models
+to be a part of in the future?
+Settings like driving autonomous vehicles
+or guiding policy decision
+or informing scientific discovery.
+And in these settings, we'll
+undoubtedly come across
+complex and large scale data.
+So, we're gonna need models
+that are gonna be accurate,
+especially on these
+complex data modalities
+and also scalable.
+But at the same time, these
+are high states decisions
+and incorrect downstream
+decisions post substantial risk.
+And so, we must be able to properly assess
+and mitigate that risk.
+So, we're going to need models
+that can quantify uncertainty,
+incorporate expert knowledge
+and generally behave intuitively.
+So, in short, we really need the strengths
+of both of these two paradigms.
+And if we think about where we are today,
+we need significant developments
+to get to this high power,
+high reasoning regime.
+So, today's current set of models
+often constitute a trade off,
+where we can either get one or the other.
+Neural networks for example, tend to fall
+into this high power but
+low reasoning machine.
+Again, they're very accurate,
+especially on complex data,
+but they're also prone
+to being miscalibrated,
+unconstrained in their predictions
+and generally black
+box and hard intuitive.
+And to briefly demonstrate this,
+let me show you that the
+accuracy of a neural network
+often comes at the cost
+of a miscalibrated notion
+of uncertainty.
+So, imagine we had a pedestrian
+detection neural network,
+say as part of a self-driving car.
+Now, we'll feed images
+into this neural network
+and this neural network
+is gonna output a score
+for each image that can
+generally be interpreted
+as the probability that
+there's likely a pedestrian
+in that image.
+Let's group these images
+based off of the score
+that our model assigns.
+And let's for example,
+consider a set of all images,
+where our model makes a prediction
+and assigns a score of 70% confidence.
+Now, it should actually be the case
+that in 70% of these images,
+there should actually be a pedestrian.
+This is the definition
+of a well calibrated
+uncertainty estimate,
+which basically means
+that our neural network,
+is accurately modeling the
+ground proof likelihood
+that we observe in the data.
+And it should be straightforward,
+why this would be a desirable property
+for a predictive model.
+It means that we can trust
+the uncertainty estimates
+that it produces.
+So, I trained a common neural network,
+a 110 layer residual network
+on the standard CIFAR-10
+image classification dataset.
+And what I'm showing you here,
+is a subset of images
+from the test dataset,
+where the model made a prediction
+and assigned that prediction,
+a confidence score between 80 to 85%.
+Now, based off of this
+definition of calibration
+that we just talked about,
+it should be the case that 80
+to 85% of these predictions,
+are actually correct.
+But that's not the case,
+in fact, this neural network actually got
+over half of these predictions wrong.
+So, that 80 to 85% confidence score
+that's being output by the neural network,
+is wildly over confident.
+And it shows that we can't
+trust the uncertainties
+that are output from this model.
+But it gets even worse,
+what I'm showing here now,
+is a plot of the accuracy of this model
+and its miscalibration
+as we add more layers
+to this neural network.
+So, additional depth
+is gonna be beneficial
+for the accuracy of this model,
+which we can see from the blue line here.
+We see that error decreases
+when we add more layers,
+but also adding more
+layers makes this model,
+more miscalibrated as we
+see from the red line.
+So, this accuracy that we
+celebrate in neural networks,
+which to a large extent has come
+from making these models deeper,
+also comes at the cost of
+unreliable uncertainty estimates.
+- Sorry.
+- Yeah.
+- How were those confidence
+estimates calculated?
+Are you gonna get into that?
+I probably won't get into
+it in this talk here.
+The confidence estimates in this case,
+since it's a multi-class classification,
+it's just gonna be the
+output of the softmax layer
+in a neural network.
+And just thinking about
+the most likely class,
+according to that softmax.
+So, this example here,
+just focuses on a few of the
+dimensions that we care about,
+but it illustrates that
+these reasoning capabilities
+of neural networks lead
+something to be desired.
+And later on in this talk,
+we'll see that current
+probabilistic models,
+are gonna fall on the
+opposite end of the spectrum,
+this high reasoning, but low power regime.
+They're not gonna be as adept
+at handling these complex data types.
+And they're also not
+gonna be able to scale
+to some of these large datasets.
+So, the goal of my research,
+is to expand this Pareto frontier.
+I aim to develop models that
+are capable of both high power
+and high reasoning.
+And we don't need to go
+back to the drawing board
+to do this.
+What I show in my research,
+is that it's possible to increase
+the reasoning capabilities
+of neural networks without
+sacrificing their power.
+And also possible to improve
+the power of probabilistic
+models without sacrificing
+their statistical grounding
+or reasoning capabilities.
+So, for example, while I do demonstrate
+that neural networks are
+prone to being miscalibrated,
+I also showed that it's possible
+to alleviate this miscalibration
+with simple post-processing techniques,
+such as scaling the untransformed outputs
+of a neural network.
+I won't go into too much
+details about this approach now,
+I'm happy to chat about it more offline.
+But crucially, this post-processing
+approach does not affect
+the accuracy, the blue
+line remains unchanged.
+Which means that we can use
+these deep and accurate models
+and in many cases have
+near perfect calibration.
+There's lots of limitations
+to this approach,
+which I'll come back to at
+the very end of my talk,
+especially when it comes to so-called,
+out-of-distribution data.
+But it's a first step towards
+getting neural networks
+that are also capable of
+modeling uncertainties.
+And so, beyond miscalibration,
+my work has focused
+on pushing this Pareto frontier
+in multiple dimensions,
+with one line of work
+focusing on improving
+the reasoning capabilities
+of neural networks.
+And another line of work
+focusing on improving the power
+of probabilistic models.
+And today I wanna tell
+two specific stories
+from these lines of work.
+And beyond just describing
+the improvements
+that I make in these papers.
+What I hope to convey
+through these two stories,
+is a central tentative of my research.
+Which is while we can
+push this Pareto frontier,
+if we work on neural networks
+or probabilistic models in isolation.
+The way we get to this high
+power high reasoning regime,
+is by applying insights
+from neural networks
+to improve the power of
+probabilistic models.
+And also vice versa,
+applying insights from
+probabilistic models
+to improve the reasoning
+capabilities of neural networks.
+So, in the first part of the talk,
+I'll discuss a line of work,
+focusing on improving the
+scalability of one class
+of probabilistic models,
+in particular, Gaussian
+process regression.
+And this line of work, as I hinted at,
+will draw heavy inspiration
+from my research
+in deep learning.
+And the second part of the talk will focus
+on the reverse story.
+I'll be describing some recent work
+towards better understanding
+neural networks
+and making them less black box.
+And again, this is gonna
+be using techniques
+from my research in
+probabilistic modeling.
+So, let's dive into this
+first part here, where again,
+we're gonna be talking about
+Gaussian process regression.
+And let's return back to
+this motivating example
+that I described in the
+beginning of the talk,
+where we're predicting
+infant health outcomes.
+Where again, we wanna
+extrapolate the weight trajectory
+of a child into the future.
+Now, this paradigm of
+probabilistic modeling,
+is considering a distribution
+of all possible models
+conditioned on a set of observed data
+and according to some prior.
+And by reasoning about a
+distribution of possible models,
+the result is rather than
+getting a point prediction,
+we instead get a distribution
+of all plausible outcomes.
+And this is very beneficial because
+with this distribution of outcomes,
+we can then better assess risk
+and reason about potential
+medical interventions.
+Gaussian processes are specific
+type of probabilistic model,
+where importantly, this
+distribution of outcomes
+can be computed in close form.
+There are analytic equations
+for this average prediction
+in the middle, as well as
+this uncertainty estimate.
+And I won't get into the
+analytical equations now,
+but this is really what sets it apart
+from a lot of other probabilistic models.
+We're getting these uncertainty estimates
+that would often require
+sampling or approximations.
+And here's a Gaussian process
+model that I developed
+in collaboration with the Bill
+and Melinda Gates Foundation,
+specifically for this task
+of predicting infant health outcomes.
+And when we apply this
+model to newly born infants,
+like we see over on the left,
+we extrapolate with high uncertainty.
+Which is exactly what we would want
+because we don't have
+a lot of observed data,
+we should be uncertain
+about our predictions.
+As the infant grows older
+and we collect more data,
+we can start extrapolating
+with more uncertainty,
+like we see over on the right.
+Which is again, exactly what we would want
+after we've collected more data.
+So, these Gaussian processes are giving us
+a very rich notion of uncertainty,
+which again can be computed analytically.
+And this is what makes
+them really powerful,
+especially in these applications,
+where we wanna be reasoning about risk.
+- So, did you say analytic?
+- Yes.
+- So, you have a close formulation.
+- Yes.
+- Is it easy to compute that?
+'Cause most of this--
+- Yes and no.
+- And then...
+- Yes, so, it's easy to compute
+in the sense that it is a
+straightforward equation
+that doesn't require any sort of sampling
+or any sort of approximations.
+Like I can write down the equation
+and you can compute it in a few lines
+of like Math ledger Python code.
+But the big catch, which
+I'm just about to get to,
+is that even though there
+are these analytic equations,
+they can be computationally expensive.
+So, imagine that we wanna
+apply a Gaussian process
+to a dataset with a million data points.
+As a back of the envelope calculation,
+this is gonna require
+about 600 quadrillion
+floating point operations.
+Which is roughly the cost
+of inverting a 1 million
+by 1 million matrix.
+And based off of these numbers,
+you might think it's fully impractical
+to try to use these
+Gaussian process models
+on such large datasets.
+Until that as you consider
+the cost of neural networks.
+So, this DenseNet with 264 layers,
+used to be state of the art
+for many computer vision tasks.
+And training this model on
+the 1 million data point
+ImageNet benchmark dataset,
+requires two quintillion
+floating point operations.
+So, a whole order of magnitude more.
+And yet the community has shown
+that it's actually possible
+to train these models
+in as little as three hours
+or as little as $25 of AWS compute.
+So, how is it possible
+that this one model,
+which is actually more
+computationally expensive,
+is somehow considered practical?
+The answer is not the number
+of floating point operations,
+but the type.
+And in particular, Gaussian
+processes are gonna use,
+what I consider to be
+smarter numerical operations.
+By which I mean numerical operations
+that are gonna be more
+amenable to distributed
+in parallel hardware
+like GPU compute clusters
+that are now so commonplace.
+And so, let's take a lesson
+from neural networks here.
+The computations for large
+scale Gaussian processes,
+might be practical,
+if we can make Gaussian processes
+more numerically similar
+to neural networks,
+using the same computational
+primitives that are better able
+to exploit GPUs and distributed hardware.
+So, how do we do this?
+At a high level, this is
+basically what we need to do,
+if we wanted to use Gaussian
+process model in practice.
+We start off with some training dataset
+with N data points.
+And then we're gonna compute
+an N by N covariance matrix,
+where each entry of
+that matrix corresponds
+to essentially the KY similarity
+between any pair of data points.
+With this matrix, we need
+to compute two terms,
+a matrix solve K inverse
+Y and a log determinant
+of that covariance matrix.
+And with those two terms,
+we then have basically everything we need
+to now perform inferences with
+our Gaussian process model.
+The computational bottleneck comes
+from computing these two terms here.
+And the way this is typically done,
+is through the Cholesky factorization
+of our covariance matrix.
+Where we're essentially
+decomposing this covariance matrix
+into a lower and upper triangular matrix
+that are transposes of one another.
+Once we have performed this decomposition,
+it's relatively easy to
+compute this matrix solved
+in the log determinant.
+But computing this decomposition
+in the first place is,
+this is really where our
+computational bottleneck is.
+It's gonna require a cubic
+amount of computation
+in the number of data points we have
+and also a quadratic amount of memory.
+And though it's possible to
+do this Cholesky factorization
+on GPU or distributed hardware,
+we're not really gonna
+see the gains that we need
+to really apply these
+models on large datasets.
+We're not gonna get quite
+the level of acceleration
+that we need from GPUs.
+And if we wanna distribute
+this computation
+over multiple devices,
+it's gonna require a lot of communication
+between those different devices.
+And so, we're not going
+eek out all the parallels
+that we would need for these
+very large scale models.
+So, to solve this, what I propose doing,
+is replacing the Cholesky factorization
+instead with an algorithm
+that's entirely built
+on matrix multiplication.
+And why matrix multiplication?
+Well, it's the highly parallel,
+computational primitive
+that basically underlies
+most of neural networks.
+And in fact, GPU's, which
+are so commonplace nowadays
+for most of our machine learning compute,
+were explicitly designed
+to accelerate matrix multiplication.
+Making it so that it can be 10,000
+or even a hundred thousand times faster
+than when we do it on a CPU.
+And along the way what we'll see,
+is it's not just gonna
+be a practical speed up,
+but we can also get asymptote
+improvements as well.
+With this matrix multiplication approach,
+I can compute this matrix
+solve and log determinant
+up to four or five
+decimal places of accuracy
+or more if desired, in a
+quadratic amount of time
+and a linear amount of space.
+- You're assuming that the (indistinct)
+- No sparsity, it is gonna
+be positive definite,
+and it can be computed from
+data which can be stored
+in a linear amount of space,
+but no sparsity assumptions.
+- You need to store the matrix
+offline or will be on file?
+- Right, so, that I'll kind
+of like touch on this later,
+but that's sort of how we're gonna be able
+to reduce this down to,
+sorry, you have to burn things again.
+This is how we're gonna
+get this linear complexity,
+is essentially by not
+having to store this matrix,
+but instead of being
+able to compute one row
+at a time from our data.
+And then performing a
+matrix multiplication
+with that one row.
+And I'll touch more on that later,
+but that's how we're able
+to get the linear complexity
+or linear memory complexity that is.
+So, how do we go about doing this,
+reducing these two terms
+down to an algorithm
+that relies only on matrix multiplication?
+For those of you with the
+background in numerical methods
+or optimization,
+you're probably familiar with the method
+of conjugate gradients.
+Which is an iterative algorithm
+for computing matrix solves
+using only matrix vector products.
+And for those of you who
+are not familiar with it,
+this is at a high level how it works.
+We're gonna start off
+with an initial guess
+to what our matrix solve is C naught
+and then we're gonna
+reframe this matrix solve
+as an optimization problem.
+Were gonna perform several
+iterations to refine this guess.
+And each iteration is
+specially designed in a way
+that only requires a single
+matrix vector product.
+After N iterations, we're
+guaranteed an exact arithmetic
+to arrive at our true
+matrix solved K inverse Y.
+But in practice, we often need
+way fewer than N iterations
+to arrive at several
+decimal places of accuracy,
+this algorithm converges
+very, very quickly.
+And just to put a concrete
+number into the mix here,
+the exact number of
+iterations that we need,
+depends on a lot of
+factors, like our data,
+our choice of covariance function.
+But in a lot of Gaussian
+process applications,
+I've seen that with
+say 15,000 data points.
+We can often get away with as
+few as 200 matrix multiplies
+in order to achieve say
+four or five decimal places
+of accuracy,
+which is often gonna be good
+enough for what we care about.
+Now, conjugate gradients
+has been used before
+in conjunction with
+Gaussian process inference,
+it's a very historic algorithm.
+But typically it's been
+relegated to special cases,
+where there's explicit
+structure that we can exploit
+in the covariance matrix.
+And here the goal is to
+convert conjugate gradients
+into this general workforce algorithm,
+where can not only get this matrix solved,
+but all the other terms that we need
+for Gaussian process
+inference in the general case.
+And really, again, designing it
+to explicitly exploit GPU acceleration.
+And to do this,
+we're gonna need to make
+a few modifications.
+So, what I show in my research,
+is that with a little
+additional bookkeeping,
+we can also get unbiased estimates
+of this law determinant term here.
+Essentially for free from the byproducts
+of this conjugate gradients algorithm,
+which very little additional math.
+And in addition, I introduced
+a low rank preconditioners,
+specifically designed for Gaussian process
+covariance matrices.
+What this preconditioner does,
+is it's gonna accelerate the convergence
+of this conjugate gradient algorithm.
+Meaning that we can
+often achieve these four
+or five decimal places
+of accuracy we need.
+It may be a order of magnitude,
+fewer matrix vector products,
+so now maybe as few as 20.
+And finally in the case,
+where four or five decimal
+places of accuracy,
+may not be enough.
+I prove that the residual error
+of this conjugate gradient
+algorithm is guaranteed
+to be unbiased when we
+use it in conjunction
+with a simple randomized
+truncation scheme.
+Which means that we can use this
+with any of our typical
+stochastic gradient optimizers.
+And not be worried about
+any sort of bias creeping
+into the system,
+even if we're not computing
+these solves to completion.
+So, this is the basis of
+what I call black box matrix
+and matrix inference
+for Gaussian processes.
+Where again, we've taken this
+main computational bottleneck
+of Gaussian processes
+and reduce it down to
+about 20 matrix multiplies.
+Each of which are gonna
+be highly parallelizable
+and really able to
+exploit GPU acceleration.
+So, to show you what this
+looks like in practice,
+I'm gonna compare this black box matrix
+transformation approach over on the left
+with the Cholesky approach on the right.
+I realize everything is
+really small on the screen,
+it's basically just gonna
+be a quick training routine.
+There's not too much you need to see,
+when it comes to the exact numbers here.
+But the big takeaway is
+that this black box matrix
+transformation approach
+is gonna be a lot faster.
+On this particular example here,
+it ends up being about 10 times faster.
+- Are you using GPU for both?
+- Yeah, for both, yeah.
+And so, again like the
+Cholesky factorization
+you can make use of GPU acceleration,
+but the matrix multiplication approach,
+is really gonna be able to utilize it
+to a much greater extent.
+- Is Cholesky factorization
+does use any sort
+of prioritization or nothing?
+- There is definitely
+parallelization that it can exploit,
+but it's not quite as parallelizable
+as matrix multiplication.
+Where like with matrix multiplication,
+you can basically perform
+every single floating
+point operation you would need
+to completely and parallel.
+Whereas there's going to be
+some inherent sequential nature
+to the Cholesky factorization.
+So, I've mostly just
+talked about this algorithm
+in the terms of Gaussian process training
+or optimizing the
+hyperparameters of these models.
+But in a series of papers,
+I expand out this approach
+to really cover all aspects
+of Gaussian process inference,
+ranging from being able
+to make predictions with these models.
+And also to be able to sample,
+using a very similar approach
+that only relies on matrix multiplication.
+So, I've just demonstrated
+that it's faster,
+but can we do anything new with it?
+And I already hinted at
+this a little bit before,
+but the great thing about
+matrix multiplication,
+is it's super easy to distribute
+across multiple devices.
+So, if we have multiple
+GPUs available to us,
+we can break up this matrix multiplication
+into multiple subproblems.
+Where each subproblem is
+multiplying a few rows
+of the covariance matrix by
+the vector we care about.
+We can assign each of these
+subproblems to its own GPU.
+And again, each of these
+subproblems can be performed
+completely independently.
+Cruising a few rows of the
+result in matrix vector product,
+sorry, a few entries of
+the matrix vector product
+that we care about.
+And afterwards, we just
+can compute those together.
+This is really gonna be highly parallel
+with very, very little overhead.
+And what this means is when we have access
+to large scale computational resources,
+we can truly exploit them
+for very large scale Gaussian
+process computations.
+Which means now that it's possible
+to apply Gaussian process
+inference to datasets
+with over a million data points.
+Putting this into perspective,
+using standard approaches
+that relied on this
+Cholesky factorization,
+the previous limit that I
+had seen in the literature,
+was about 20,000 data points.
+After this point, it's gonna
+start running out of memory
+on standard computer devices.
+And again, even though it's
+possible to distribute this
+across multiple computers,
+so that we can potentially use memory,
+if we have a big cluster.
+There's going to be a lot
+of communication overhead,
+so, this isn't really a practical
+approach to scale it up.
+In contrast with this matrix
+multiplication approach,
+we can train a Gaussian process
+on a million data points
+across eight GPUs in about four hours.
+Which I will still admit
+is a lot of computation,
+but again, this is two orders of magnitude
+beyond what had previously
+been thought to be possible.
+And now once we've trained this model,
+when we wanna make predict with it,
+we can do so on a single
+GPU in less than a second.
+So, we may not always have access
+to these large scale
+computational resources,
+but when we do, we've unlocked
+a new class powerful models.
+And this isn't just an academic curiosity,
+what I'm showing here is this
+large scale Gaussian process
+approach with these blue bars here.
+Compared to what people
+had previously been using
+to approximate Gaussian
+processes on large datasets
+with the orange bars.
+And I'm showing this for a number
+of regression benchmark datasets.
+This is plotting error,
+so lower is better.
+And what we see is that, on many datasets
+these large scale Gaussian
+process models, again in blue,
+can significantly outperform
+these previous approximations
+that people had been using.
+So, this is a very powerful model
+that we now have access to.
+- So, what was the
+horizontal, the vertical axis?
+- So, the vertical axis is, tested error,
+measured by Gaussian error
+for regression datasets.
+- Thanks.
+- Yeah.
+So, to facilitate the adoption
+of these new large scale
+methods, my collaborators and I,
+built a new software library
+for Gaussian processes called
+GPyTorch.
+The name as you maybe
+guess is a portmanteau
+of Gaussian processes and PyTorch.
+'Cause we built this on top
+of the PyTorch framework
+and we weren't very
+creative with our naming,
+but our goal with this framework was
+to make large scale
+Gaussian process models,
+very accessible.
+And again, this is drawing
+inspiration from the success
+that neural networks have had.
+Clearly there's been a lot
+of advances in optimization
+and architecture design,
+but arguably a very big
+component in the success
+of neural networks has been
+just how accessible they are.
+And easy to use due to
+software frameworks making them
+very modular and easy to
+rapidly prototype and deploy.
+This is what we wanted to
+do for these large scale
+Gaussian process models,
+to make it very easy
+to rapidly prototype with them
+and to deploy them in practice.
+And today, I'm pleased to say
+that GPyTorch has become one
+of the defacto standard
+Gaussian process libraries,
+not only used by researchers
+in machine learning
+and other scientific disciplines.
+But also actively used by many
+companies like J.P. Morgan,
+Meta, Lyft and Mars and actively deployed
+in many of their products.
+And so, this kind concludes
+the first part of the talk
+and I'd be happy to
+pause here for questions.
+But just to briefly recap,
+we've taken Gaussian processes,
+which again are this probabilistic model,
+where we can compute these
+predictive distributions
+in close form.
+And we've scaled it
+towards magnitude larger
+than what had previously been possible
+by making these models
+more numerically similar
+to neural networks.
+So, I can pause here if
+there's any more questions.
+(indistinct)
+- Yeah, that's a good question.
+So, that's what I was showing
+over here on this slide here.
+So, this is with SVGP,
+which is essentially a fancy version
+of the Nystrom approximation
+is one way to think about it.
+And this isn't to say that
+there aren't cases where, SVGP,
+it isn't a good model for many datasets.
+But there are often
+gonna be a lot of cases,
+where some of these
+traditional approximations,
+are not gonna be well suited
+for all types of applications.
+And we generally found that
+this large scale approach
+with multiplication can often outperform,
+these more traditional
+approximation methods.
+- So, when you did the
+preconditioning, I dunno,
+from your figure, I thought
+you meant you did something
+like the Nystrom approximation
+to the affinity matrix.
+- Yeah.
+- What did you do that was--
+- Right, no, that's
+actually a very good point.
+So, we didn't necessarily
+do Nystrom approximation,
+we used in particular was
+an incomplete Cholesky
+factorization,
+which has a lot of similarities
+to Nystrom approximation.
+I think that like, it can
+to some degree be viewed
+as a specific case of that.
+One way of viewing this,
+which I outline in a recent
+paper that's under submission,
+is that one of the ways that
+we can view conjugate gradients
+is starting off with like
+a traditional approximation method.
+Which is defined by a preconditioner
+and then doing iterative
+refinement on that.
+So, to some degree it could
+be seen as, we're starting off
+with this orange bar up here
+and then we're just
+running some iterations
+to make it better.
+And yes, there's a very
+deep connection there.
+- So, you can do this
+as an Appalachian study?
+- Yeah, yeah, exactly, yeah.
+And it does seem to be the case
+that more iterations, not always,
+but many times seems to be better.
+If there's no more questions,
+I'm gonna now switch gears
+and move on to the
+second part of the talk,
+where now we're gonna
+focus on neural networks.
+But again, Gaussian processes
+are gonna pop up in this part
+of the talk as well.
+Where I'm gonna demonstrate
+how they can be used as a tool
+to help us better understand
+neural network architectures
+and make them less black box
+and more interpretable and intuitive.
+So, one of the many benefits
+of statistical models
+or probabilistic models,
+is they generally have what
+I call intuitive structure.
+And what I mean by this is,
+when we make a change to the model,
+we generally have a pretty good idea
+of how this change will affect
+the downstream predictions.
+So, for example let's say,
+that we have this Gaussian
+observation model,
+which we're using to make predictions.
+What would happen if I replace that
+with a student T observation model?
+We have a pretty good sense
+of what would happen here,
+more of our data is likely
+to be interpreted as noise.
+And so, our predictions that
+our model makes will tend
+to be more conservative.
+And so, being able to
+intuitive how our model works,
+this way when we make changes
+to it is really useful.
+Because it'll allow us to
+trust our predictions more
+and it'll generally make it
+easier to encode assumptions
+about the world into our models.
+So, neural networks are gonna
+be a bit more black box.
+It's gonna be harder to intuit,
+how changes to the architecture,
+is going to affect the
+downstream predictions.
+So, for example, what would happen,
+if I made this neural network really wide?
+What happens to the types of predictions
+that we would expect to see?
+And it turns out this is
+actually a pretty hard question
+to answer
+because the effects are gonna
+be rather counterintuitive.
+Before I dive into that,
+I wanna spend just a few
+brief moments talking about,
+what is so special about neural networks?
+What is our intuition, the why they are,
+this really powerful classic models
+that can work well on
+these complex datasets?
+And to do that, we need to
+contrast neural networks
+with so-called shallow models,
+which is going to include
+things like splines
+and kernel methods or wavelets
+or things along that nature.
+And the way that shallow models work,
+is we're gonna take our input
+and we're gonna use a
+set of basis functions
+to extract features that
+describe this input.
+We then take these features
+and we linearly combine them
+to form a prediction about this input.
+Now, crucially these basis functions
+that we're using to extract
+features about our data,
+are fixed a priority.
+And in this sense, the
+basis functions themselves,
+are data independent.
+And sometimes our choice
+of basis function,
+is not gonna be well
+suited to the type of data
+that we have in practice.
+For example,
+if we use these four Gaussian
+bumps as basis functions,
+no linear combination of them
+is going to be well suited
+to make predictions on
+the step function data
+that we see over here on the right.
+And of course, this is a
+very true trivial example.
+There's clearly a better set
+of basis functions we could use
+to extract better features
+for the step function data.
+But as we scale to problems
+that are more high dimensional,
+it's not gonna always be clear,
+what types of basis functions
+are going to be well suited
+for a predictive task.
+Neural networks work a
+little bit differently.
+So, they're also extracting features
+and forming a linear
+combination of these features
+to make predictions.
+But crucially, these
+features are gonna come
+from basis functions that are
+learned directly from the data
+in the sense our basis functions
+are data dependent rather
+than being data independent.
+And the result is we'll
+have a set of features
+that is gonna be much more well
+suited to the data at hand.
+We might end up for example,
+with the set of naught functions
+over here in the middle,
+which gonna be perfectly
+aligned with the steps
+that we see over on the right.
+So, with this intuition in place
+of neural networks
+performing a set of feature,
+learning a set of
+features from data rather
+than having a fixed set of features.
+Let's go back to this question now
+of how width affect neural
+network performance?
+And again, knowing this question,
+is gonna help make neural
+networks less black box.
+So, prior research gives this
+insight into two phenomenon
+that occur as neural
+networks become really wide.
+On one hand, more width means
+that we have more access
+to features that can describe our data.
+And this is generally desirable.
+With more features, we are gonna be able
+to describe more complex functions.
+And in fact, we know that in
+the limit of infinite width,
+neural networks become
+universal approximators,
+meaning that a neural
+network has the capacity
+to model any continuous
+function to arbitrary precision.
+On the other hand,
+there's a more stranger
+phenomenon at play as well.
+It's also true that in
+this infinite width limit,
+neural networks lose the
+ability to learn features
+from data.
+And in particular what this means,
+is that when we train the
+neural network on a set of data,
+we end up with a set of basis
+functions that are exactly
+the same as if we had
+trained this neural network
+on a completely different set of data.
+So, what this means, is
+we have a fixed basis,
+meaning that these infinite
+width neural networks,
+aren't any different
+from these shallow models
+that I was talking about earlier.
+So, this is a classic result
+that neural networks lose
+the ability to learn features
+in the infinite width limit.
+But it's also one that's received
+a lot of renewed interests
+because it's a very strange
+and unsettling phenomenon.
+Again, remember that being able
+to learn features from data,
+is supposed to be what makes
+neural networks so powerful
+in the first place.
+What makes this really confusing
+and hard to reason about,
+is that width is conflating
+these two phenomenon here,
+we go from having a finite set of features
+that describe our data to
+an infinite set of features.
+And this seems like a good thing,
+but again, those features go
+from being learned from data
+to then being fixed.
+And that doesn't seem
+like such a good thing,
+it's not immediately obvious,
+which we would prefer,
+a finite set of learned features
+or an infinite set of fixed features?
+So, to grapple with this,
+I propose running a control experiment
+that's gonna be easier to reason about.
+We have these two variables
+here that change with width
+and let's decouple them.
+I wanna now compare the
+difference between a model
+with an infinite set of learned features
+and a model with an infinite
+set of fixed features.
+To do so, we're good to need to consider
+a neural network model
+with a slight modification,
+this so-called bottleneck neural
+network architecture here.
+And this is gonna be a neural network,
+where we alternate between having layers
+with an infinite amount of width.
+And so-called bottleneck layers
+that have a finite amount of width.
+This is inspired by lots of
+models that we use in practice,
+such as autoencoders or
+generative adversary networks,
+but these models haven't really seen a ton
+of theoretical analysis.
+It turns out though that they're gonna be
+the perfect architecture
+for this control experiment
+that we wanna run.
+I prove that these
+bottleneck neural networks,
+do in fact correspond to an infinite set
+of learned features.
+It's an infinite set of features
+because this last layer down
+here, is infinitely wide,
+but crucially, this bottleneck
+layer in the middle,
+is gonna prevent this
+model from collapsing
+to this limiting case where we just end up
+with a shallow model with fixed features.
+I don't wanna go into too
+much detail about how to show
+that these bottleneck neural networks,
+do in fact correspond to an infinite set
+of learned features.
+But at a high level,
+I'm just gonna get the
+very high level proof
+'cause it's gonna tie
+back to the main theme
+of the talk here.
+It turns out that
+bottleneck neural networks,
+are a subclass of models known
+as deep Gaussian processes.
+Which is what we get,
+if we take multiple
+Gaussian process models
+and stack them together hierarchically.
+Lots can be said about these
+deep Gaussian process models,
+but for the purposes of our talk,
+this reduction now makes it possible
+to analyze bottleneck neural networks
+with the theory of
+Bayesian nonparametrics.
+And this is gonna give us a tool
+to formally describe this
+idea of feature learning
+and show that it does in fact occur
+in these bottleneck models.
+So, what we have now is we have a model
+with provably infinitely
+many learned features.
+What now happens is we increase the width
+of this bottleneck layer.
+Well, as this bottleneck
+layer grows wider and wider,
+it ends up being the same width
+as all of our other neural network layers.
+And we know what happens
+to an infinitely wide neural network,
+it loses the ability to learn features.
+And in particular,
+I'll show that the width
+of this bottleneck layer,
+to some extent controls how
+much feature learning occurs.
+So, width of this bottleneck
+layer becomes a knob
+that we can turn to control
+how much feature learning
+we want to occur.
+And again, this can be
+formalized through the lens
+of Bayesian nonparametrics.
+So, now what happens?
+As we increase the width
+of this bottleneck layer
+and lose the ability of
+you to learn features,
+the result is actually quite surprising.
+What I'm showing you here
+is the test set negative log
+likelihood of several
+regression benchmark datasets
+as a function of the width
+of this bottleneck layer.
+So, lower is better.
+And what we see is that
+a width of one or two
+in this bottleneck layer is optimal
+after which performance
+steadily decreases.
+So, width in these bottleneck
+models is strictly harmful
+because all that it's doing
+is it's decreasing our ability
+to learn features.
+And this really goes against our intuition
+for the role of width in neural networks.
+Now--
+- Is that true for neutral networks?
+- It should be, yeah.
+- Is this because you
+have received some kind
+of regularization?
+Because you have both and
+each one of them is a feature,
+then you have those widths
+that have to combine a feature
+that if you're not
+regularizing that layer,
+then you're probably
+getting similar kind of
+(indistinct)
+- Interestingly, I think it
+actually might be the opposite,
+where I think it actually
+might be due to regularization.
+So, this is kind of taking
+a Bayesian interpretation
+of neural networks,
+which would correspond
+to say neural networks
+with L2 regularization.
+And as you decrease that
+amount of L2 regularization,
+there's been some research that's shown
+that width can actually be beneficial.
+Of course, L2 regularization
+can also be beneficial,
+so, it might be the case that,
+you'd want to have some
+amount of regularization
+in order to make these
+models actually practical.
+But from what I can tell
+in my research is actually
+the regularization
+itself might be creating
+this limiting case.
+- Or small with itself is
+serving as a regularization?
+- With a small width,
+yeah, it's complicated in the
+sense that you can view it
+as a regularization
+because like your model is
+essentially less complicated.
+But also, something I'm not
+gonna touch on this talk,
+but depth has the opposite role,
+where depth is actually
+making more amenable
+to learning features,
+even though that's also
+making the model more complex.
+So, I think that,
+trying to map us onto
+like traditional notions
+of regularization is like,
+it only brings us so
+far with our intuition.
+It's actually like pretty strange.
+(Geoff chuckles)
+So, this again is for these
+bottleneck neural networks here.
+And what you might be thinking is,
+what we care about is gonna
+be standard neural networks.
+Importantly, standard neural networks
+also happen to be a subclass
+of these deep Gaussian process
+models, which is again,
+this class of models that
+we made this reduction to,
+to help us formalize this
+notion of feature learning
+and losing that ability
+as we increase width.
+Of course, standard neural networks,
+are gonna be a degenerate
+subclass of these models.
+And again, I won't go into
+too much details about,
+what this reduction means particularly.
+But importantly, what it
+means is that the findings
+that we had for about
+bottleneck neural networks,
+are also going to apply to
+standard neural networks,
+but with a few caveats.
+For bottleneck neural
+networks, what we saw,
+is that width is strictly
+harmful to their performance
+because all that it's doing,
+is it's causing the
+ability to learn features.
+Now, for standard neural networks,
+we obviously need some amount of width
+because we start off with
+a finite set of features.
+And so, we need enough
+features in order to be able
+to model complex functions
+that in order to describe our data.
+But after a certain amount of width,
+once we have enough hidden
+units to describe functions
+that we're trying to model.
+This rather detrimental
+effect of losing the ability
+to learn features starts to kick in.
+And so, this is what we see in practice,
+additional width is only
+good to a certain extent
+after which it starts to become harmful.
+Again, I'm showing the test
+at negative log likelihood,
+so, lower is better.
+Now is a function of the width
+of standard neural networks.
+Two regression benchmark
+datasets over on the left
+and the CIFAR-10 image
+classification dataset on the right.
+And surprisingly,
+for these small regression
+benchmark datasets,
+a width of eight to 16
+hidden units is about optimal
+after which performance starts degrading.
+And that's really not that wide,
+these are very simple
+regression benchmark datasets.
+But it points to the fact
+that we might have been using models
+that have been too wide in practice,
+including performance without knowing it.
+For the CIFAR-10 image
+classification dataset.
+This is a much bigger dataset,
+it's more complex data.
+So, we probably need
+about 500 hidden units
+before we get to this sweet spot,
+this sufficient capacity
+to model functions,
+which is what we see over on the right.
+But again, after about 500 hidden units
+width starts to degrade performance.
+And so, the big takeaway here is that,
+wider models aren't always better.
+And in fact, at a certain point,
+they can start to become worse.
+And so, that concludes the
+second part of this talk here,
+again, I'll pause for some questions.
+And just to briefly summarize,
+we've analyzed the effect
+of width in neural networks.
+And again, utilizing Bayesian
+nonparametric theory,
+which we get from Gaussian processes.
+We demonstrate a surprising
+counterintuitive result
+that helps to make neural networks
+a little bit less black box.
+So, I can pause here again
+for some more questions,
+if there are any.
+- So, a few slides back
+when you had that comparison
+between bottleneck and standard.
+- Yeah.
+- The reason why it says
+infinite learned features in red,
+is that the non bottleneck
+layers are infinitely wide?
+- Yeah.
+- Okay.
+- Right, and so I guess to
+formalize that a little bit more.
+- That's how you don't
+have plots from that.
+- Yeah.
+(Geoff chuckles)
+Or that was these plots
+here, where the bottleneck,
+which we can model through like--
+- Yeah, very large.
+- Yeah, yeah.
+And the reason I claim
+that it's infinitely many features here,
+is because these
+bottleneck neural networks,
+are also guaranteed to be
+universal approximators.
+So, which you need infinite
+number of features,
+if you wanna have function class
+that can model functions
+to arbitrary precision.
+And if there aren't
+any more questions now,
+happy to revisit this later on the talk.
+But I wanna briefly now talk about,
+what I aim to do in the future.
+And so, what I've
+hopefully convinced you of
+at least apart from these
+two stories is that,
+it's possible to improve
+the reasoning capabilities
+of neural networks.
+And our understanding of neural
+networks while also possible
+to improve the power and
+scalability of probabilistic models
+like Gaussian processes.
+And now looking forward,
+I aim to continue pushing
+this Pareto frontier
+to bring us closer to this
+important regime of high power
+and high reasoning.
+And getting there is gonna require work
+on all of these different dimensions
+that I've described up here.
+But for now, I'd like to
+highlight two directions
+that I think offer some
+of the greatest promise
+to getting high power
+models that are also capable
+of reasoning about downstream decisions.
+So, I just spent a lot of
+time discussing work on
+better understanding neural
+network architectures
+and trying to make them less black box.
+I now wanna take this line
+of work and push it beyond,
+just understanding our current
+set of neural networks.
+But to use this understanding,
+to develop our next
+generation of neural networks
+that are gonna better be able
+to encode inductive biases
+and quantify uncertainty.
+And so, let me dive into that.
+And first I wanna talk
+about inductive biases,
+what I mean by that?
+And what it means to
+encode inductive biases
+in neural networks?
+So, let's say that we have
+this particular dataset
+of carbon dioxide levels
+in the atmosphere.
+Now, how do we ensure
+that if we're using a
+machine learning model
+to extrapolate in the future,
+that the extrapolations that
+we make with this model,
+are gonna be consistent
+with our prior beliefs
+about what we would expect to see?
+And we do so by specifying
+an appropriate inductive bias
+into the model.
+One, we're gonna use a model
+that codifies this general
+increasing behavior
+that we expect to see,
+as well as the periodic
+trends that we expect
+due to seasonal fluctuations.
+Now, we know how to encode
+and specify inductive biases,
+pretty well in probabilistic models,
+but we don't really know how to do this
+for more complicated models
+like neural networks.
+And to explores in a
+little bit more detail,
+here's some things that we can
+do with probabilistic models.
+We can choose inductive biases
+that encode domain specific knowledge
+about our type of problem.
+And in Gaussian processes,
+this is usually accomplished
+through our choice of
+prior covariance function.
+We can choose inductive biases
+with desirable functional
+properties, saying that,
+for example, our model
+should fail gracefully
+in the presence of unseen data
+by reverting to a safe mean prediction.
+And finally, to choose models
+that are gonna be well suited
+to our observed data.
+We have the ability to
+combine model selection
+with modern gradient based
+optimization techniques
+to find appropriate hypoparameters
+that describe our model.
+And this can be accomplished
+through something like,
+type two maximum likelihood estimation.
+So, this is what we can do
+with probabilistic models.
+And this is gonna allow
+us to encode domain
+specific knowledge and also
+desirable functional properties.
+How do we think about doing this now
+for larger models like neural networks?
+So, we have some tools for encoding domain
+specific knowledge.
+For example, there's lots
+of work on structured layers
+like convolutional layers
+for computer vision.
+Which is going to be a layer
+that's gonna be very
+well suited to the types
+of private knowledge that we
+have about natural images.
+And I think we're just beginning
+to scratch the surface,
+how to choose domain specific
+layers for neural networks.
+But what I'm really excited
+about out right now,
+are some of these last
+two properties here.
+So, being able to encode
+desirable functional properties
+in neural networks and also being able
+to perform gradient based model selection.
+So, one of the interesting threads
+that comes outta my early
+work is developing priors
+and regularization and
+model architectures.
+And training procedures
+for neural networks
+that are specifically going to encode
+desirable functional
+properties rather than relying
+on vague parametric
+regularization penalties.
+And so, for example,
+extending this line of work will allow us
+to encode properties like saying
+that neural networks
+should fail gracefully
+in the presence of unseen data
+or should avoid spurious correlations
+or confounding factors.
+And another thread falling outta my work
+on understanding neural networks,
+is going beyond cross-validation,
+when it comes to
+selecting model components
+that impact the inducted bias.
+And this includes things like,
+our choice of activation
+function in neural networks
+or a choice of parameter initializations.
+Now, cross-validation is a wonderful tool,
+but it's gonna be inherently
+limited to grid search
+or black box optimization techniques.
+Meaning that we're not
+gonna be able to search
+over a wide space of
+possible activation functions
+or architecture designs.
+And my work points towards
+rethinking neural network
+model selection and
+replacing cross-validation
+with a approach that's inspired
+from empirical base methods
+from statistics.
+Which is gonna allow
+us to choose components
+against randomly
+initialized neural networks
+in a way that's amenable to
+gradient based optimization.
+Meaning that we can choose the appropriate
+activation function for example,
+in our neural network
+through gradient descent.
+Now, this is a very high level overview
+of three very different threads.
+I realized it was very brief
+introduction to all of these,
+I'm happy to discuss them more offline,
+but taking a step back here.
+Again, the goal is to
+develop more meaningful
+inducted biases in neural networks,
+so that we can really codify,
+how they should behave in
+the presence of unseen data.
+Now, to finish off, I
+wanna briefly move back
+to uncertainty quantification
+of neural networks.
+And if you recall, I started
+off the talk describing some
+of my work on calibrating neural networks
+uncertainty estimates
+using these post processing
+based approaches.
+And this goes a long way
+towards getting meaningful
+uncertainty estimates
+out of neural networks,
+but also these post-processing approaches,
+are gonna be inherently limited.
+And in particular, one of
+the biggest limitations
+of post-processing calibration is that,
+it's only gonna really cause
+a model to remain calibrated,
+when the model is exposed to data,
+that is similar to what it was trained on.
+So, called in-distribution data,
+it's gonna really fail
+to remain calibrated
+or have some meaningful
+notion of uncertainty,
+when it's exposed to data
+that differs sufficiently
+from data that it saw during training,
+when it sees so-called
+out-of-distribution data.
+I'll go into a little bit more detail
+about what I mean by this.
+But before I do, I wanna emphasize,
+this isn't just a limitation
+of this post-processing approach.
+Out of distribution
+uncertainty estimation,
+is a really hard problem,
+especially with neural networks.
+And to demonstrate this,
+let's consider an alternative method
+to getting uncertainty estimates
+out of neural networks,
+which is using an ensemble
+of multiple diverse neural networks.
+There's many recent
+papers that have claimed
+that this is the gold standard
+for uncertainty quantification
+with deep learning.
+It's also gonna be a lot more expensive
+than this post-processing approach
+because we're relying on
+multiple networks now rather
+than a single neural network.
+But here's the intuition that's offered
+by many recent papers
+for why this should be
+the gold standard for
+uncertainty quantification.
+If we feed data into these models,
+that is again in-distribution,
+so similar to what we
+encounter during training.
+It's likely that each of these networks,
+is going to make a similar prediction.
+If we instead feed something nonsensical
+into this neural network
+or something that is very
+dissimilar to what we encounter
+during training.
+Again, what we're calling
+out- of-distribution data.
+Now, there's nothing
+constraining these networks
+to produce a similar prediction.
+And in fact, the inherent
+diversity of these network,
+should cause them to
+make diverse predictions.
+So, this is what the
+current consensus tells us,
+is when we have variance
+amongst the predictions made
+by our neural networks,
+this should be indicative
+of when we have out-of-distribution data.
+But in some of my recent work,
+that's currently under submission,
+there's a startling finding
+that breaks this intuition.
+What I'm showing here is the
+expected ensemble variants
+for in-distribution data, the blue line
+and out-of-distribution data,
+which is the orange line
+after we condition on the
+uncertainty expressed by each
+of the component models of
+this ensemble in isolation.
+And what's really surprising is that
+with this conditional expectation
+that I'm plotting here
+after we control for the uncertainty
+of the individual models in isolation.
+There's no difference in
+the amount of variance
+that this ensemble expresses
+for in-distribution
+and out-of-distribution data.
+And this is really surprising
+because it really breaks our
+intuition about ensembles.
+What this is saying is that variance
+amongst ensemble members
+is not at all indicative
+of when our data is
+out-of-distribution or not.
+And again, this is supposed
+to be the gold standard
+for neural network
+uncertainty quantification.
+So, here's where we're at,
+this post-processing approach,
+which I started off at the
+beginning of the talk with
+doesn't really work for
+out-of-distribution data.
+But this expensive gold
+standard alternative
+also doesn't really work for
+out-of-distribution data.
+This is a really hard problem
+and it's a great opportunity
+to draw inspiration
+from probabilistic models
+like Gaussian processes.
+Which are actually really good
+at expressing high uncertainty
+when exposed to data
+that is dissimilar to
+what they were trained on.
+We can think about designing
+new uncertainty propagation
+layers for neural networks
+that could rely on some
+of the same analytic computations
+for Gaussian process
+uncertainty estimates.
+We could think about hybrid models
+that combine neural networks
+and probabilistic components,
+such as the deep Gaussian
+process that I described earlier.
+And finally, we could
+develop meaningful diversity
+regularization for ensembles
+that we can get actually good
+variance estimates from them,
+building on top of the
+work that I just discussed.
+So, uncertainty quantification
+and encoding inductive biases
+and neural networks are
+just two of the areas
+that I'm really interested
+in pursuing in the future.
+I also am interested in a
+number of different directions
+as well,
+some focus on improving
+probabilistic models,
+some focus on improving neural networks.
+And I'd love to chat more about
+any of these areas one on one,
+I realize this was a very quick overview
+of a lot of future work directions.
+But progress in any of these
+areas is gonna be essential
+to allowing us to use
+machine learning models
+in these high stake
+settings that we care about.
+And finally, if there's anything
+that I hope you take away
+from this talk,
+is that all of these
+directions really require
+that we continue to study
+both neural networks
+and probabilistic models together.
+And think about the
+intersection of the two of them,
+because this is how we continue
+to push this Pareto frontier here.
+And with that, I would like to thank
+a whole host of collaborators,
+who helped to make this work possible.
+And I have time for, well, I
+dunno, I'm almost out of time,
+but I'll stick around for more questions.
+(audience applauds)
+- So, since the Zoomers might
+run away, let's first see,
+if there's any people
+on Zoom with questions.
+Okay, there's people clapping
+and there's a hand raise, Ali Razah.
+- Yes, very interesting talk,
+excellent presentation and work.
+I just wanted to follow up
+on the discussion you had
+regarding the width in the
+bottleneck type architectures.
+- Yeah.
+- How much of that discussion is dependent
+on your sample size for the training?
+And I was wondering,
+in fact, like you had,
+one of the slides when
+you had a big dataset,
+basically you show that,
+if you increase the width,
+your error goes down.
+And then you start increasing
+and that probably is,
+very exactly it goes back up
+with the sample size dependence.
+I was wondering if you've
+looked at same maybe simulation,
+but with larger sample size
+and see if actually it shifts
+to the right in terms of when you start,
+increasing your errors.
+- Yeah, that's a very good question.
+And I think your intuition
+is exactly correct,
+if I remember the experience correctly.
+So, it is the case that sort of this,
+one thing that isn't quite demonstrated
+from the plots that I should show.
+Is that the error of these models
+in the limit of infinite
+width, actually like asymptote,
+it's not that it just
+explodes up to infinity.
+And so, both this asymptote
+depends on the amount of data
+that we have.
+So, you're gonna end up with
+asymptotically less error,
+when you have more data,
+but also exactly like what you were saying
+in the case of standard neural networks.
+That sweet spot where we get
+the best performing model
+with more data,
+we're gonna require more width
+before we hit that sweet spot.
+- And does it apply also
+to these bottleneck type
+architectures that you showed?
+You know, basically you
+start increasing your error
+as soon as you go to
+larger widths than one.
+- Right, sorry, in the
+bottleneck neural networks,
+it's still very much the case that.
+- Okay.
+- Like smaller is always better,
+but like you're going to end the asymptote
+that you end up with is gonna be lower,
+when you have more data.
+- Okay, one other question very quick.
+What are your thoughts
+in terms of things like,
+Bayesian version of neural networks,
+when it comes to uncertainty
+quantification associated
+with deep learning?
+- Yeah, that's a very good question.
+And I would be able to
+probably rant for hours about,
+but maybe my high level
+thoughts on that is,
+I think a major challenge is, one,
+ensuring that the types
+of approximate inference
+that we're using for
+Bayesian neural networks,
+isn't creating other confounding effects
+that we would care about.
+And so, I think that
+that's like, for example,
+I know that there's been
+a lot of interpretation
+of ensembles as approximation inference.
+And what this sort of recent
+study that we looked into,
+is showing is that it's
+not necessarily giving us
+reliable uncertainty estimates,
+which perhaps is to some extent,
+a product of having to do
+poor approximate inference
+in that case.
+But of course,
+one big thing with any
+sort of Bayesian modeling,
+is things are very dependent on the prior.
+And so, it's not even clear
+that this choice of having
+what is typically the case like
+Gaussian prior on our weight,
+corresponding to L2 regularization.
+It's not necessarily clear that
+that's the appropriate prior
+that we even want.
+And so, I think that, a Bayesian approach
+to neural networks could
+be a really cool way
+to do uncertainty quantification.
+But I think that maybe
+there's a lot of work
+before we would get to a point,
+where that would be practical,
+but also have guarantees that
+we would want to practice.
+- Awesome, thank you very much.
+- One question in the room
+and then the rest of
+the questions offline.
+Are there questions in the room?
+Surah.
+- Yeah, so, there's been a lot
+of recent work on combining,
+for example, symbolic
+like programmatic models
+with the neural networks.
+- Yeah.
+- Everyone's running around
+saying neural symbolic,
+differential programming or
+probabilistic programming.
+- Yeah.
+- So, do you think that's a way
+to combine your deep listening
+and your scalability?
+- Yeah, I think it's a super cool area.
+One thing that I didn't really
+have time to get into here,
+is I think, we can sort of think about...
+One advantage I think of neural networks
+or hierarchical models in general.
+Is one interpretation
+that kind of comes out
+from some of this research that I've had
+with this probabilistic
+interpretation neural networks,
+is that they're a way of
+encoding soft constraints
+into the data.
+So, for example, with these
+deep Gaussian process models,
+you could compose them of
+stationary Gaussian processes,
+where like, that basically means
+that I'm assuming a priority
+that my data is shift independent.
+But when I combine them
+in a hierarchical fashion,
+I end up with something
+that's non stationary.
+It's gonna mostly be stationary,
+but when the data basically indicates
+that it shouldn't be stationary,
+it's likely to induce a
+bit of non stationary.
+Which one way of interpreting that,
+is that this hierarchical
+modeling that we get
+from neural networks
+is helping us to encode
+like soft or local versions of constraints
+that we would otherwise get
+through shallow versions
+of models.
+And so, one thing, again, this is maybe,
+a very short answer to that is,
+I think that there is a
+lot of interesting work,
+when it comes to combining,
+you know, like neural symbolic.
+But I think you're gonna
+end up with something
+that is gonna be fundamentally different
+because the symbolic nature,
+is probably gonna be encoding
+very hard constraints.
+Whereas perhaps some of these
+like probabilistic models
+and hierarchical models are
+imposing softer constraints.
+- Let's thank the speaker again,
+and he'll stick around in
+the room for questions.
+(audience applauds)

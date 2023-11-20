@@ -1,0 +1,326 @@
+hey guys welcome back to the channel and
+this new tutorial on pie torch in
+previous video we learned about um rnn
+like um
+how they works and how we can implement
+them in pi torch in this video we will
+learn like what are the limitations of
+rnn and how we can
+solve them using uh lstms which are also
+known as a long short term memory okay
+so let us dive in and
+see what are the limitations of rnn so
+there are two main limitations one is uh
+they cannot handle uh long range
+dependencies and the other one is one is
+in gradient okay so let us see in like
+uh
+figure like how they are kind of uh
+having those issues so first thing is
+like when we unfold an rnn for a
+sequence length like let us say uh 100
+words of a sentence so it will be like a
+depth of 100
+uh layers you know and then when the
+when the first is computed and the
+hidden layer is passed to the next one
+next one next one so the the information
+that was at the first word is completely
+lost when it is at the end of the last
+token okay so that's like
+it cannot handle long range dependencies
+for example if you are processing a
+paragraph to do a text classification
+and in that sense the information that
+you get at the end of the
+at the end of the encoding it will not
+remember like how
+or what was the input information that
+was given in the beginning okay
+and the next one is uh like in this
+figure itself so you are kind of uh
+trying to train a model with uh a layer
+of uh 100 size like you could think of
+simply like you have a neural network
+with the depth of 100 layers
+and then if the
+gradient is kind of small for a
+particular patch
+it will be uh like
+zero when it will try to try to update
+the initial few layers okay
+and that's uh that's the very uh
+uh big problem in training are in models
+um there are another problem which is
+also known as uh
+which is also related to uh gradients
+only known as uh exploding gradients
+like in that case the gradient is too
+high in the beginning and then it
+multiplied again and again with large
+values and then the
+gradient becomes really large but that
+is kind of a bit um
+easier to handle you can use gradient
+clipping and other
+techniques to
+avoid the exploding gradient but
+vanishing gradient is something that is
+really hard to handle and uh
+that's what happens in case of vinyl
+iron and that's why it is not very much
+recommended to be used in general and
+that's why lstm and
+other variants of rnn are quite popular
+to be used okay
+so let us see like how lstm can dissolve
+it so lstm simply uses some gated
+mechanism so it uses
+three gates to to to
+control the information flow and those
+are known as input gates target gates
+and output gates okay
+so they are simply like
+linear layers in a sense so you have two
+weight matrices in the input they gate
+and then two uh weight matrices for
+forget gate and two weight matrices for
+output gate as well and then we have a
+one more linear layer that is used to
+generate a intermediate state you can
+think of it like a linear layer that is
+learnable and it is used to generate
+intermediate state that is used to
+compute uh
+cell state and then hidden state
+another
+another important thing that you need to
+note here instead of just having one
+hidden state you have another cell state
+here okay and this is uh known as
+long-term memory and this is like a
+short term memory this ht
+so it is like it is updated every each
+and every time
+when when input comes whereas the ct is
+has a bit more uh
+controlled environment
+surrounded by
+and this is how it handles the long-term
+dependencies because it has a mechanism
+to uh
+to to control the information flow okay
+so let us dive in and see how we can uh
+use lstm in uh pytorch
+so
+so this is the code that we have written
+for simple rnn so what we will do is
+simply reuse it simply change it to
+[Music]
+say
+lstm network okay
+and just refactor it
+and we will simply change it to
+an nn dot lstm
+and
+now we are using lstm cell the inputs
+are exactly same like you have input
+size hidden layer
+and number of layers and then by
+direction four and false and path first
+is two so if you haven't seen the old uh
+the previous video check it out so that
+you could understand it uh more properly
+also just to mention here when we say he
+is handsome and the features are
+of size let us say here we are saying
+size two
+so what we are passing is here is the
+word embeddings not what itself for
+those who are like quite new in this
+uh nlp domain so for them it is like
+we have uh embedding layers beforehand
+okay so that is uh excluded in this
+tutorial so what we are getting here is
+after the embedding layer we get like uh
+so the the raw input would be like
+is handsome then we use a one hot
+encoding where we get the indices of
+each and every word and then we uh pass
+through them via embedding layers and
+that's how we get the features okay and
+that's where we are that's what we are
+using it to to
+to not make it too much complex uh so we
+didn't put that
+part in this uh
+code okay
+and uh
+um
+another thing is that the output we get
+from the um
+lstm layer is uh
+as we have seen like here
+so what we get as output is this and
+this as a hidden state and definitely
+the the the
+output okay which is nothing but this
+one more difference is like instead of
+passing just one hidden we need to pass
+a tuple here okay so that we will change
+here as well
+here
+okay and that's how it is different so
+here we are passing hidden state as well
+as cell state
+so this is like uh hidden it will be the
+same size that's why i just copied it
+but the first one is hidden state and
+the second one is
+del state and this hidden state is also
+uh
+like uh hidden state and
+telestate for the last
+i mean after the last layer okay
+let us run it
+so you see here is our final output
+so as we have uh like
+two inputs so we have like two samples
+each of uh
+with three segments are three words not
+segments and then each word we got as a
+final output like
+uh what is the hidden size of the lstm
+okay it is uh quite similar exactly what
+we get from the
+rnn vanilla iron okay
+and the hidden uh hidden output are this
+uh
+the second output is two matrices you
+can see here this is like the first one
+which is nothing but the hidden state
+from the after the last input and then
+we have this uh
+cell state which is after the last
+okay they are also like uh same size
+like number of layers best size cross
+hidden size okay so we have by size two
+we have one layer that's why we have
+just one
+if there is a more it will be uh other
+matrices there as well and we have best
+size of two so it is two cross hidden
+size which is three okay
+i hope that is clear like how it is
+working now let us dig a bit deeper and
+see like how it is actually implemented
+in python okay so let us print this
+the parameters
+and
+let us run and see the output okay
+okay so now it looks a bit different
+than what we have seen in simple rna
+so it is kind of a little smart
+implementation wise okay so what they
+did is simply
+so for for for um
+input to hidden layer so if we look at
+the
+equations so we have
+weight matrices multiplied by input okay
+so what they did is they simply batched
+this part
+this part
+this part
+this part in just one matrix
+you see that's how it is a bit smart or
+not quite smart i would say
+so this first
+part
+this
+3 cross 2 is
+that is
+this w i i and so on so you can have
+w i f
+w
+i o and then w
+g i
+i g okay
+and then similarly we have this also
+patched together for the second uh part
+of the equation where you have
+w h i h f and
+and this is like h it is called here
+okay
+and then uh if you have an input which
+is of the size let us say
+2 cross so let us say here we have
+2 cross 3 cross 2 and if you simply
+transpose it and multiply it it will
+give us the
+input for the next next state
+so that's how it is
+quite uh
+intelligent way of implementing it ok
+okay now so let us look a bit deeper in
+the
+equations a bit uh more carefully so
+what is happening here is
+so we have three gates which is input
+forget and output gates
+and then we have an intermediate layer
+to compute this uh uh intermediate uh
+state
+and then we have this uh um
+cell state which is computed with uh dot
+product of target gate and the previous
+cell state okay
+and then we also add it with uh input
+gate with this uh
+gt or
+you could say this is a linear layer
+that is uh processing our input and
+hidden state to get uh intermediate
+representation and then we are passing
+it through the input gate okay so this
+is the part where we are
+controlling the flow of information via
+input gate
+and this is the part where we are
+controlling that how much information we
+need to pass it to the next cell state
+okay
+so this way we are kind of uh
+generating the
+solid state the new cell state okay and
+the next part we use this new cell state
+and then
+we simply apply 10 h on that and then
+multiply it with output gate to get the
+new hidden state and it is also the
+output state
+okay so it is like
+output representation for our that we
+are getting as a final representation
+okay
+so i hope that is clear
+if you have uh any queries or question
+ask in the comment section i will try to
+address them um
+okay so i hope uh it is clear like how
+lstm is uh
+working
+so we will stop in this video in the
+next video we will uh learn a bit uh
+more advanced uh
+um iron and type which is zru where we
+uh don't use any um
+cell state i mean it is memory less like
+rnn
+but it has a gates compared to
+rnn but it only uses two gates one is
+reset gate and other another one is
+update gate okay so we'll see
+uh in detail in the next video so thanks
+for watching bye for now take care see
+you in the next

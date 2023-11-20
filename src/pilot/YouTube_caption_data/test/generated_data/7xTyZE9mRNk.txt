@@ -1,0 +1,1820 @@
+hi and welcome to the fourth lecture
+of deep learning last time we talked
+about
+multi-layer perceptrons the most basic
+form of feed-forward neural networks
+and we've seen that even very simple
+ones very shallow ones with just
+a single hidden layer basically two
+layer neural networks are able
+to represent virtually any function
+we've also seen
+that this is not necessarily a good idea
+and in order to
+have models that are both
+expressive while also being
+able to generalize well we need deeper
+models that make use of the
+compositionality of
+computations and lead to more robust
+behavior
+today we're going to continue talking
+about
+this basic form of feed-forward networks
+multi-layer perceptrons and we have a
+deeper look
+at output and loss functions activation
+functions
+and also data pre-processing and
+weight initialization which are all very
+important
+in order to make neural networks work
+well
+so let's start in this first unit with
+output and loss functions
+so here we see a very simple
+feed-forward neural network where we
+have a two-dimensional input
+x1 and x2 and it feeds into two hidden
+layers
+that have two nodes each so these are
+both all
+one-dimensional compute nodes so the
+output is
+a 1d quantity after the non-linearity
+and then we have an output layer that
+computes a prediction y-hat
+and then we have a loss function that
+computes that compares that prediction
+y-hat
+to the target y
+which is given by the data data set
+so data set provides x and y labels
+so in the first part of this unit here
+we are going to focus on the output
+layer
+and the loss function here and the
+choice of both of them
+depends very much on the tasks that we
+wish to solve
+for instance both of them change
+depending on if we're looking at
+regression or classification problems so
+if we are looking at continuous
+or discrete predictions y hat
+that's what we're going to see today of
+course
+this was a one dimensional example here
+of course
+it's also possible to predict higher
+dimensional outputs as shown here
+in this case of course the loss function
+needs to compare
+y y 1 and y 2 the prediction to
+y1 and y2 the target i'm gonna see both
+today so first of all
+let's think about what is our goal
+during optimization
+what is the goal in optimizing the loss
+function
+actually well in some form at a very
+abstract level
+we want to simply try and make the model
+output which is our prediction
+in red here similar to the target which
+is coming from the data set so here
+we're looking at a two-dimensional
+y1 y2 output space we're having a
+prediction in red
+and a target in green and we can already
+see like if we look at for instance an
+euclidean cost measure an eccledian
+loss function that in this left example
+here we have a higher cost
+on the right so our optimizer should if
+it's
+minimizing this distance here between
+the green and red point
+should make the prediction over time
+during
+the optimization while updating the
+parameters
+of the neural network should make this
+red point come closer to the green point
+it's also useful to think about this in
+terms of distributions which we are
+going to use a lot in the next couple of
+slides and which are a good motivation
+for us
+for deriving specific loss functions
+in terms of distributions the model
+might predict in a very simple form here
+a gaussian distribution
+in red and the data distribution is in
+green here
+and what we're trying to do is we want
+to align the model distribution
+and the data distribution again here we
+have a conditional predictor
+so we want to what we show here is the
+probability of
+y given x given some input x
+and so we can measure for instance this
+discrepancy here in terms of
+the killback light blood divergence and
+so the cool bug lipo divergence if you
+would compute it
+on these two gaussians here would be
+quite large because the overlap
+between these distributions is pretty
+small
+on the other hand on the right side the
+overlap is very large
+between the two distributions and so the
+divergence or distance is small which
+means that these distributions are
+well aligned again over the course of
+optimization
+from such an initial state of our model
+parameters we want to arrive at a model
+that
+does a prediction that aligns very well
+with
+the data so this is
+the goal of what we want to actually
+achieve during optimization
+now the question of course is well how
+to design a good loss function
+so far we have just seen very abstract
+examples without naming explicitly or
+formally stating a loss function
+first of all a loss function can be any
+differentiable function
+that we wish to optimize and can express
+our
+belief about a cost that would be
+incurred by a particular state
+that we are predicting or particular
+decision that we're making
+so it has connections to decision theory
+however what we're going to do today is
+something which is uh more elegant
+we're not going to define cos loss
+functions based on our intuition
+but instead we're going to derive them
+based on the maximum likelihood
+principle
+which is nice because it removes the
+burden of manually designing cost
+functions for each model we can just
+always
+come back to the maximum likelihood
+principle look at the maximum likelihood
+principle
+and derive a loss function for our
+problem
+and it also gives us a nice connection
+to you know a probabilistic
+interpretation
+of the model that we're having so it's
+always good
+in my opinion to think about loss
+functions
+not only as cost functions but also in
+terms of
+the maximum likelihood principle in
+terms of a model that is predicting a
+distribution
+so what we're effectively doing when
+considering
+or deriving the cost function from the
+maximum likelihood principle is that we
+consider the output of the neural
+network
+not as a point estimate not as
+predicting a single value
+but predicting a distribution
+so in other words the neural network
+does a point estimate
+for the parameters of a distribution it
+predicts concrete values
+but we consider these values not as
+the target y directly but we consider
+them as
+some the parameters of some distribution
+over
+the output y and that's why we call the
+model distribution p model
+that we've seen already in earlier
+lectures okay
+so this is uh the maximum likelihood
+formulation what we want to do is we
+wanna
+and we've seen this before want to find
+the parameters
+w hat ml stands for maximum likelihood
+that maximize the model probability
+over the data set and so why bold and
+export here denote the entire data set
+where we have
+one-dimensional outputs that are stacked
+like for the entire data set stacked
+into a vector
+and we have this input matrix x where
+the columns are the features
+and the rows or maybe pixels an image
+and
+the rows are the data points
+and w is just a generic notation for the
+parameters
+you will see throughout the lecture that
+sometimes we're using also a and b
+if we're referring to very concretely
+parameters of
+an affine transformation but in general
+when we talk about w
+we mean simply all the parameters of a
+a model in our case a neural network
+good okay so we can use the id
+assumption
+assuming that all the data points are
+independent and identically distributed
+in order to simplify this expression
+into a product over
+n individual predictions
+for individual inputs x i
+and then of course we can take the
+logarithm of this expression
+which then converts this product into a
+sum
+because the logarithm is monotonic it
+doesn't change the maximum
+so it's still the same problem and this
+is called the log likelihood
+we're using the logarithm often in
+practice because it makes
+our implementation much easier
+as you will see later we are going to
+often deal with exponential functions
+also the sigmoid that we have already
+seen is an exponential function
+and so if we input values to an
+exponential function and these values
+are large this exponential function will
+become this exponential expression
+will become very quickly very large will
+explode in the sense that it can not be
+represented anymore
+with the data representation that we're
+using
+like single or double precision
+and so it's good to look at log
+representations which don't have this
+problem
+but this will come up later through the
+lecture okay so here we have
+the maximum log likelihood that we want
+to maximize
+now
+here in the last slide this model was a
+generic description of a model
+distribution but how do we represent
+this now with a neural network right
+and as i mentioned before already we can
+think of our neural network as
+predicting
+not a point estimate why but the tar the
+parameters of a distribution so for
+instance here
+the model distribution p i omitted the
+model here but this is p
+model this is this one here the model
+distribution
+given an x and parameters w predicting
+some y
+is a gaussian this is the expression for
+a
+univariate gaussian
+and as you can see the mean of that
+gaussian
+has been replaced by a function with
+parameters w
+and that function takes us input x and
+this
+precisely the feed forward neural
+network or multi-layer perceptron
+so we have this multi-layer perceptron
+fw
+of x which is this part here
+that predicts mu which is the mean of
+the gaussian
+and we insert that mu at this place
+where the mu would be
+in the gaussian distribution so the
+neural network makes a prediction for
+the mean of the distribution here with
+this dashed line
+and what we then want to do is we want
+to maximize the probability of the
+target
+value y this is coming from the data set
+under this distribution
+so in this concrete case here we see
+that the probability for the target is
+not
+zero it's never zero neither is it
+maximum
+so what the model will then
+has to do is to change the parameters of
+this neural network such that this
+prediction for this particular input x
+that corresponds to this target y
+comes closer to the target
+such that the probability of the target
+under that distribution
+becomes larger think about moving this
+gaussian bell here a little bit to the
+right by 1.5 or so
+then the probability of this value here
+which might be located at
+i know minus 0.5 becomes larger
+it becomes maximum
+so this is how we're going to think
+about
+[Music]
+the maximum likelihood principle and
+loss neural networks predicting
+parameters of distributions
+so let's quickly recap the different
+types of problems and this is what we're
+going to look at today
+we're not going to look at complex
+structure prediction problems we're
+going to look at
+simpler regression and classification
+problems so in regression
+the input is an arbitrary object and the
+output is a real number
+for instance the value of a stock
+in class in binary classification
+the input is an arbitrary object let's
+say an image
+and the output is a
+binary variable in this case beach or no
+beach
+and then one more thing that we'll
+consider today
+this is what you know already one thing
+that we consider in addition
+is multi-class classification where
+again the input is a structured object
+like an image
+and the output is a discrete random
+variable
+in this case with four different states
+or possible labels so the
+image is classified as being ever or
+depicting aver
+a beach a mountain a city or a forest
+so whenever we talk about classification
+with more than two classes we talk about
+multi-class classification
+and so we're going to make this
+distinction today and we're going to
+learn
+how to define loss functions and output
+layers for these different types of
+problems regression binary
+classification
+and multi-class classification
+okay so let's uh start with regression
+problems
+first we've seen this gaussian
+distribution already
+right so everybody is familiar with a
+gaussian distribution this is the form
+of the gaussian distribution on the
+right is an
+example of such a gaussian distribution
+therefore
+why we depict the probability density of
+over y a gaussian distribution is
+parameterized
+by a mean mu and a standard deviation
+sigma or the variance sigma squared
+one characteristic of a gaussian
+distribution is that it has fin tails
+which means that the probability of y
+goes very quickly to zero as we go
+towards plus or minus infinity with y
+which means that if we
+if we go to this direction here we vary
+the distribution very quickly decays
+and we are reaching a value that's very
+close to zero very quickly
+that means this distribution penalizes
+outliers strongly
+what does that mean if i have a data set
+of
+some points that are
+faithfully following
+a gaussian distribution let's say they
+are distributed around here but i have
+one point that's distributed here
+this means that this one point has a
+strong influence
+on the estimate of this distribution
+because it will have extremely low
+probability if the distribution would
+focus only on
+what's called the in-layers what's
+the correct observations right so if i
+have an
+outlier an incorrect observation that
+would um
+uh that would basically influence the
+distribution a lot and that's why we're
+going to
+talk about a different distribution um
+also in the following slides that
+doesn't have this problem
+but let's stay with the gaussian
+distribution for a bit
+and this is actually what we've seen
+already in the context of maximum
+likelihood estimation in the first
+lecture
+but the only difference to the first
+lecture is that now we have a neural
+network that predicts the parameters mu
+not a very simple linear model but now
+this is a arbitrarily complex non-linear
+transformation
+mlp let's say so we assume the model
+distribution is a gaussian where
+the mlp or the feed forward network
+predicts the mean
+of that gaussian distribution and sigma
+is just kept constant to some constant
+value
+doesn't actually matter which value
+then we obtain as we have seen in the
+first lecture already
+if we go through these equations like
+here in the first
+equation so this is basically the
+maximum likelihood
+objective or maximum log likelihood
+objective
+if we then plug in this equation here we
+see that
+this is the first part comes in front
+and the second part here in the back the
+exponential cancels with the logarithm
+which i previously already mentioned is
+a good idea to do
+that's the reason why we use the log
+likelihood
+the first expression here is constant
+with respect to w
+w does not appear in the first
+expression which means
+we can just remove the first expression
+the arc mark stays the same because it
+doesn't depend on w
+so we're left with the second expression
+1 over 2
+sigma square is also
+a constant with respect to w doesn't
+depend on w in this case
+so we can also remove it so we're left
+with this expression
+and we can reformulate this by
+removing the minus and minimizing
+instead of maximizing
+and this gives us the loss function
+finally so
+from this maximum likelihood principle
+by changing the sign
+with the rind from a maximization
+problem a minimization problem
+which means that we minimize a quantity
+and that quantity is called the loss
+function
+and we can read off from that expression
+here
+how that loss function looks like it is
+a squared loss because we have
+a f so the prediction of the model minus
+the target to the power of two here and
+we do this for each data point so it's
+actually the sum of squares
+but this expression here is called the
+squared loss sometimes also called the
+l2 loss
+yeah so we've seen already this is a
+loss that's strongly affected by
+outliers
+by wrong data points and so
+people in practice often use a different
+distribution and this is
+a distribution this is one example of
+one of these other distributions that is
+less prone to these outliers
+it's called the laplace distribution has
+a
+similar form to the gaussian
+distribution
+except that now in this exponential
+expression we have
+the absolute difference between y
+and mu which is in for the laplace
+distribution called
+the location parameter but you can think
+of this as the mean of the gaussian
+distribution
+so the difference is now that the
+distribution the normalization constant
+has changed slightly because we have
+this absolute difference here
+and we have the absolute difference we
+have the location view
+which is in this example here on the
+right here the location would be zero
+and we have the scale b which similar
+to the standard deviation for the
+gaussian determines
+the width of the
+distribution so if we have a larger b
+then
+the distribution decays more slowly
+towards larger and smaller y's so it is
+wider basically
+if we have a smaller b then it becomes
+sharper
+in contrast to the gaussian distribution
+now this distribution has heavy tails or
+heavier tails which means that p of
+y goes to zero much more slowly
+as y reaches plus or minus infinity
+compared to the gaussian distribution so
+we have much more weight at the tails
+here
+much more probability mass at the tails
+and therefore it penalizes outliers less
+strongly and is often
+a preferred choice in practice or
+amongst
+preferred choices for regression
+problems in practice
+now what happens if we do the same
+calculation as before for the gaussian
+but now
+with the laplacian distribution so again
+we have a model distribution
+where the model distribution in this
+case is now a laplace distribution
+for which the location parameter is
+predicted
+by the feed-forward neural network with
+parameters w
+and b is an arbitrary but constant
+scale parameter of the laplace
+distribution
+if we plug in this into our maximum log
+likelihood
+formulation we obtain this expression
+here
+we again see that the first expression
+here does not depend on w
+so we can ignore it in our maximization
+problem
+and the same is true for one over b
+which is constant with respect to w
+so we arrive at this expression here
+and then again we can convert the
+maximization problem
+into a minimization problem and
+from that we can read off the loss
+function
+now the loss function looks very similar
+to before except
+that the square has been replaced with
+these
+absolute brackets in other words we
+minimize
+the absolute loss in other words the l1
+loss
+which is more robust than the l2 loss
+we've seen before
+okay
+now so far we have only predicted
+one of the two parameters of these
+distributions but
+it's also possible to predict both
+parameters in this case we
+have we're considering a laplace
+distribution again
+but we're predicting not only the
+location but we're also predicting the
+scale
+b so we're predicting both mu and b
+b appears twice so you can see appears
+here and here
+we predict both the location mu and the
+scale b with a neural network
+and i've written f of w and g of
+g w here as if they were different
+neural networks but i've used the same
+parameters w to indicate that
+often these networks are largely the
+same so that the whole backbone
+the whole like the first part of the new
+network
+all the layers are the same and then
+there's maybe one additional
+output layer which is the head that is
+different from the two
+one predicts f and the other predicts g
+but i've indicated this with the w that
+the w is just a universal representation
+for the parameters of this
+one neural network that has like a
+larger backbone maybe five layers and
+then there's one additional output layer
+for f and one for g where the parameters
+are different
+but in this case subsumed into this big
+parameter vector w
+right so f and g is basically one
+network with two
+output hats that might be slightly
+different
+but of course i need to make the
+distinction here in this equation to
+this
+to make distinction between the location
+and the scale parameter
+okay so if we do this then the
+resulting expression doesn't become as
+simple anymore because of course
+we can't ignore this expression or this
+expression here because
+they both depend on w so they remain in
+the equation
+so it's not a simple l1 loss anymore but
+it's a more
+it's a more complicated form of a loss
+function but again
+it's important to highlight here that we
+have derived this loss function in a
+principle manner
+from the maximum likelihood principle by
+assuming a certain distribution over our
+data
+so if we have knowledge about the
+distribution of our data
+and often that's the case we can come up
+with a loss function as here
+that would be hard to specify otherwise
+now the advantage of predicting both
+parameters
+the location and the scale in this case
+is that we can now explicitly
+model or ask our model to estimate to
+give an estimate a prediction for the
+aliatoric uncertainty
+with the neural network itself so the
+aliyah torque uncertainty is basically
+observation noise
+there might be an observation where
+from that observation it's simply not
+clear what is on that image let's say
+the um you're looking at images of
+animals
+but for some reason um the lens has been
+covered or
+it was dark and so it's really hard to
+see
+the animal even as a human it would be
+hard
+to tell is it is it you know which
+animal it is in this case it's actually
+regression problems so maybe animal is
+not a good example so it should be
+you know um
+if we stay you know with making
+measurements from an image let's say
+predicting the height
+of some object if the image is
+too dark it's maybe hard to see and so
+we want to predict
+um or we have the advantage of
+predicting now also this uncertainty by
+predicting the scale parameter
+if the scale is large this means we have
+high uncertainty
+the distribution will be very wide if
+the scale is small we have low
+uncertainty
+and the model can learn this right can
+when it's certain it's better for the
+model
+um to predict a small b because then it
+can
+put more probability mass on the right
+location
+but if from the input it's not exactly
+clear
+what it is it's not a good idea to have
+a small b
+because if the distribution is too
+narrow and we're slightly off
+we'll have a very low probability for
+the target y
+because we're slightly off that's the
+intuition behind this
+so the model itself can now trade off
+the location and the scale and that's
+also the reason why this
+scale parameter appears twice it appears
+here in this term and it appears here in
+this term
+here's an example where this another
+example where this is
+useful in this case we are this is a
+classification problem
+we are trying to predict a category
+for each pixel
+but you can also think about predicting
+depth values for each pixel
+from a single image and often it's very
+hard to predict to make exact
+predictions at boundaries because
+at boundaries we don't know what is
+exactly the object class because it
+could be that a pixel is
+ever on the foreground object or it
+could be on the background object
+and similarly for the depth it's hard to
+tell at the boundary
+is it the foreground or the the
+background
+and so in this case the model has
+accurately captured this
+by predicting high uncertainty or large
+a large scale parameter if we
+will be looking at the model before add
+boundary regions
+which you can see on the right
+okay finally
+if we're talking about regression
+we're talking about distributions then
+all the distributions that we have
+looked
+so far at are unimodal which means they
+are not
+they cannot represent multimodal
+data distributions let's say maybe
+if you want to make a depth prediction
+then
+you have a multi-modal behavior
+or multi-modal prediction they want to
+make because
+well at the edge of an object you don't
+know exactly
+if that pixel belongs to the foreground
+or the background but
+you're pretty sure it's either or it's
+either the foreground or the background
+so it's
+if you would just have at your disposal
+a laplacian or a gaussian which has a
+single mode a single peak
+then it's hard to express this but you
+can model mixture densities as well
+so here's a mixture model in this case
+um
+a mixture of two components it's a
+simple
+uh laplacian distribution that is now
+added over
+the number of components so we have now
+a prediction for
+the pris for the
+location and for the scale for all the m
+components in this case
+uh big m is two so we make a prediction
+for the mean and the scale of both of
+these distributions and then we sum them
+up
+and we weight them relative to each
+other with this this is another
+prediction from the model
+actually or it could also be fixed
+so this is uh in this case here it's
+fixed
+so it's another parameter that is
+between zero and one and sums to one
+it's called a mixture density network
+with
+in this case a mixture of laplace
+distribution
+okay
+so um what we haven't talked about yet
+is like what should actually be the
+output layer when we're
+tackling regression problems
+the hidden layers so far we have
+discussed a simple combination of
+affine transformation plus some
+activation function a sigmoid activation
+function and
+in the following unit we will get to
+know more activation functions
+but what should be the output layer well
+of course the output layer is also a
+combination of its inputs so we have an
+affine transformation
+but if the output for most of the
+outputs like let's say we want to
+predict the mean
+of a gaussian distribution which is
+within
+which lies on in the real numbers in a
+space of real numbers
+then this output layer
+is only a linear layer so we have an
+affine transformation and nothing else
+there is no activation function or if
+you wish
+there is a a identity activation
+function a linear activation function
+but there is no non-linearity required
+because
+the linear prediction is already going
+into the right
+space it's already going into the space
+of real numbers we don't need to do
+anything else
+right and that's very different from the
+other
+like the classification problems that
+i'm going to see later on it's also
+different
+from the case where we want to predict a
+variable
+that's not within the space of real
+numbers
+let's say we want to predict the scale
+parameter of the laplace distribution
+b the scale parameter also the standard
+deviation parameter
+of a gaussian distribution are in
+r plus they cannot be negative
+they can only be positive therefore
+we need to use an activation function
+here on top of the
+linear layer in order to squash the
+range the output range
+to r plus and we can for instance use a
+relu
+that we're going to see today or soft
+plus function these are all squashing
+functions similar to the sigmoid
+the sigmoid is a squashing function that
+squashes from
+the real numbers to zero and one but in
+this case we want to squash to
+zero to infinity and you can use the
+rail or the soft plus to do that
+but not the sigmoid because it squashes
+to zero and one
+right so this is the output layer for
+these uh
+regression problems that i've showed on
+the previous slides
+and then to summarize um what
+should the loss function look like well
+if we are assuming a gaussian or a
+laplacian model distribution then the
+loss function corresponds to an l2
+an l1 loss we can directly implement
+this l1 or l2 loss
+for optimizing our network but it's also
+possible to predict the uncertainty for
+instance the variance in the scale or
+multiple modes using a mixture density
+network
+mdn in short
+so this was all i wanted to say about
+regression problems
+i'm now going to move on to
+classification problems
+in classification and this is the
+exercise two that we're gonna see
+in um that we're gonna work on
+in the next two weeks
+we are interested in making
+a predicting a discrete outcome ever a
+binary outcome
+as we have done in the first exercise we
+have tried to classify uh
+from the emni status at once from eights
+but um we might also um
+have a multi-class classification
+problem where we want to classify into
+ten different numbers
+it's ten different amnesties from zero
+to nine
+so here are two examples of each number
+mnist is actually one of the most
+popular data sets in machine learning
+and despite its simplicity or maybe
+because of its simplicity
+there's a huge number of variants and
+it's still in use today even for
+for research it's based on the data from
+the national institute of standards and
+technology
+and it comprises handwritten digits
+by census employees and also high
+schools
+children it has a resolution or each of
+these digits has a resolution of 28 by
+28 pixels
+and there is overall 60k 60 000 training
+samples
+with labels and 10 000 test samples
+also with labels in order to test the
+performance of the algorithm and
+jan lecunho has created this data set or
+curated the data set made sure that
+within the training samples and test
+symbols there is no overlap of
+individuals so
+the test samples are are written
+by different people than the training
+samples
+are now
+one more word about the curse of
+dimensionality
+and this is an interesting one if you
+look at the space of
+all possible images and we're just
+talking about this tiny little
+28 by 28 pixel mnist digits
+there exists and if we would assume
+these were binary images actually they
+are not their grayscale
+if there would be binary images they
+exist 2 to the power of 784
+different images that we could
+generate this is the overall space the
+size of the space
+that we could generate in other words
+these are 10 to the power of 236
+if we consider mnist which is actually
+grayscale we would have even 256 to the
+power of 784
+combinations it's truly impossible to
+enumerate
+all of these possible images the image
+space is insanely large
+it's much much larger than all the atoms
+we have in the universe
+so it's it's impossible to enumerate the
+entire space and
+the question might arise why is image
+classification with just
+60 000 label training images than even
+possible why is there any hope that we
+succeed at this task
+and the answer to this is well the
+images are concentrated
+on a low dimensional manifold
+in this very high dimensional space and
+that is why we don't need to search
+through the entire space but there's
+only
+like very a very small fraction a tiny
+fraction of this
+extremely large space that looks like
+realistic images
+and from those there's just a tiny
+fraction that looks like digits
+and from those there's just a very tiny
+fraction that looks like
+handwritten handwritten digits so
+we are we're living on a very small
+manifold
+of this high dimensional space or within
+this high dimensional space
+okay so now let's go back to
+classification
+one thing we've already looked at is the
+bernoulli distribution and we're going
+to start with the bernoulli distribution
+again
+the bernoulli distribution is a
+distribution over
+two classes so we're looking at the two
+class the binary classification problem
+for now
+it can be written as such here so the
+probability of y y can take
+a over zero a one is mu to the power of
+y
+times one minus mu to the power of one
+minus y
+and mu is the probability for y equals
+one right so if
+y equals 1 then this term goes away
+this is something to the power of 0. so
+it becomes 1.
+and we are left with mu
+that's why mu equals one or mu is the
+probability for
+y equals one and it it handles two
+classes for instance we're gonna
+distinguish cats from docs
+here's an example for such a
+distribution
+in this case the probability for class
+one is higher than the probability for
+class zero
+and of course they must sum to one so
+one is 0.7
+the other is 0.3 they sum to 1.
+now we can do again the same thing that
+we did before we can put this bernoulli
+distribution
+we can assume the model distribution as
+a bernoulli distribution
+and put this into our maximum likelihood
+estimator which i've shown here maximum
+log likelihood estimator
+and as we already know what happens then
+is that
+the loss function that we derived from
+this is
+the binary cross entropy loss function
+that we already know
+in other words maximizing the log
+likelihood
+where the model distribution is
+bernoulli
+is equivalent to minimizing the binary
+cross-entropy loss
+which is minus y log f
+minus one minus y log one minus f
+and f is the prediction and y is the
+target
+as a remark the last layer of fw can be
+a sigmoid function
+for instance such that can be any other
+squeezing function there must be a
+squeezing function that squeezes the
+range of real numbers
+to zero and 1. that's why we use often a
+sigmoid function
+as in logistic regression to get a
+probability probability mu that's
+between 0 and 1.
+right so that's that's why in this case
+unlike for
+regression in the case of the mean of a
+gaussian distribution in this case
+we need a squashing function that
+squashes to the probability range 0 and
+1.
+now what we're going to discuss next is
+how we
+this how we can scale this up to
+multiple classes
+going beyond two classes looking at more
+like mnist
+10 classes for instance
+and in the case of multiple classes we
+again just
+use the maximum likelihood principle and
+the corresponding distribution which is
+called the categorical distribution
+it's a special case of the multinomial
+distribution where we're just drawing
+one
+event um and it's
+defined like here the probability of y
+taking any of the classes
+in the set of classes in this example
+here we have four different classes
+is mu c so this is the per the
+probability for class c mu c
+so for instance class 1 mu
+1 is a 0.2 or 20
+mu 2 is 0.1 mu
+4 will be 0.5 and again
+all the probabilities of course have to
+sum to 1. so we have
+0.5 plus 0.5 is 1 in this case
+now discrete distributions
+by their definition automatically
+accommodate multiple modes so we can
+have
+a mode here this is a
+one of the values that's large right and
+then we can have
+another mode here we don't need to
+define multi-modal distributions using
+mixture models but this is
+completely parameterized already now
+what we're going to look at in this
+class is add
+an alternative notation to this notation
+while this
+looks like a convenient notation this
+indexing notation is not convenient for
+many machine learning
+problems what we're going to do instead
+is we're going to consider
+this distribution here as a distribution
+not over a
+one-dimensional categorical label
+variable but over a
+vector y which is a one hot vector
+that's
+containing elements of zero and one so
+each element of this vector
+the length of this vector is the number
+of classes so four in this case
+and each element of this vector is ever
+zero or one
+but the sum of the elements is one which
+means that only one of these elements
+can be active
+this is why it's called a one hot vector
+one one class is hot
+so for instance we would represent the
+class here uh
+two as zero one zero zero so we have a
+element one at um
+the second entry of the vector and 0 is
+everywhere else
+now with this definition we can rewrite
+this expression
+like this we have the probability now
+over a vector which is this one hot
+vector
+and now we can use a product over the c
+classes
+c equals four in this case where we have
+mu
+c to the power of y c and why is that
+well
+you can already see that there's only
+one
+element of y that is one and all the
+others are zero
+wherever we have a zero this whole
+expression becomes one
+so you can basically ignore it in the
+product
+but only where we have one c y c
+uh equal to one like for the for the
+class of interest like two
+i just mentioned before we are then
+basically uh
+um the probability
+mu c remains all the other probabilities
+become one mu c or all the other
+factors here are one only mu c remains
+where y c equals one and so it's exactly
+the same as above
+just with a different notation
+so here's an example of this one hot
+vector representation let's say we have
+four classes
+dog cat mouse elephant
+then using this this representation we
+would have y
+one two three four but using the vector
+notation we would have
+one zero zero zero zero one zero zero
+zero zero one zero and so on
+the one hot vector y again has binary
+elements
+and the index c with y c equals one
+determines the
+correct class and y k for all the other
+case c
+not equals c is a zero um
+[Music]
+this vector has an interpretation also
+as a discrete distribution
+where all the probability mass is
+concentrated at the true class
+so here if you consider this as a
+histogram as a distribution
+then we say with probability one this is
+a dog
+and with probability zero it's a cat and
+probability zero is a mouse
+and so on or here with probability one
+it's a cat
+and if probability with zero it's a
+mouse elephant
+or dog right so it's it's a nice uh
+viewpoint of thinking about this vector
+as a
+a discrete distribution representing a
+discrete distribution
+and then what we can do of course what
+we want to do during maximum likelihood
+is we want to
+make this distribution the groundwork
+distribution similar to
+the predicted distribution of the model
+you can already imagine what we're going
+to do with our model we're going to also
+predict a vector
+and the vector should become as similar
+as possible to these vectors here the
+ground true factors
+so now let's proceed let's put this
+categorical distribution
+as model distribution into our maximum
+likelihood formulation
+and what do we get so here's our maximum
+log likelihood formulation
+here we have our categorical
+distribution which we're going to plug
+in here
+leading to this expression nothing has
+happened except that i have replaced
+this term with this term
+now because i have the logarithm the
+product this is equal to the
+sum of the logarithm
+and then by the law of the logarithm i
+can also pull
+the y down in front so i get this
+expression here
+and again instead of a maximization
+problem i can look at a minimization
+problem by
+replacing the plus with a minus here in
+front
+and arrive at the so-called
+cross-entropy loss
+the cross-entropy loss is simply this
+expression here which goes over all the
+classes it computes minus y
+this is the target times the logarithm
+of
+the prediction for that class c so we're
+comparing
+the target for class c
+this is the entry in this one hot vector
+to the prediction
+so we need a prediction for every c now
+with our model
+in other words now we are minimizing the
+cross entropy loss
+and the target y is such a one hot
+vector
+with y c it's c element and the index i
+is just
+the data index so we have an additional
+index i now in addition to the index c
+that we've seen before because we're
+looking at this x y
+x i y i pairs
+in a data set
+now the question of course arises how
+how should we now formulate the output
+layer
+and how can we formulate the output
+layer such that this
+fw c outputs a proper
+discrete distribution
+how can we ensure that fwc predicts a
+valid
+discrete or categorical distribution
+what is the requirement
+well the requirement for a pro a
+discrete probability distribution is
+that
+each element each
+element of that vector that is predicted
+is between zero and one
+so each probability cannot be smaller
+than zero or bigger than one
+and at the same time the sum
+over all the categories or classes
+must be equal to one so the distribution
+must sum to one
+and for instance an lmi element-wise
+sigmoid
+if we would choose an element-wise
+sigmoid on top of
+an affine layer for each of these
+c-classes
+we would ensure this first expression
+here
+this first condition but we would not
+ensure the second condition
+because there's no guarantee that
+the outputs after the sigmoid would sum
+to one if we have
+individuals independent sigmoids for
+each of these are fine predictions
+so the solution now is on top of the
+affine prediction for each class now we
+have multiple outputs as i've shown in
+the very beginning right we can have
+multiple predictions
+the um so multiple affine predictions
+on top of these are fine predictions
+which we call scores from now on
+because they are not normalized we are
+defining
+a soft max function which guarantees
+both
+that the individual elements are between
+0 and 1 and
+the distribution is normalized to 1.
+and the softmax function looks like this
+the softmax of a vector x
+or y is the exponential of
+each individual element divided by the
+sum
+of the exponential of of the
+exponentials of each individual element
+you can already see that this sums to
+one if i
+take each component here and and sum it
+up i get
+the same expression in the enumerator as
+i get in the denominator
+so they cancel and you can also see
+that the value is always bigger than 0
+because of the exponential
+and it's always smaller than 1 because i
+divide by a sum that
+involves itself
+so both the conditions are met that's
+great
+so it's the simplest function that
+guarantees these two conditions
+now let s which we call scores
+that's why we call them s denote the
+output of the network after the last
+affine layer
+and we are producing multiple scores we
+produce as many scores as we have
+classes
+so we have f w
+indexed with c for each of the classes
+um
+no sorry we have sc for each of these
+classes that are predicted by the
+network
+then we define the
+output of the neural network or the
+output of the
+output layer as the function
+now this is the function f w because
+this s
+and the scores of course depend on w
+because they are defined through this
+neural network
+as the softmax here so this is the
+softmax expression from above
+so for each class we have the output of
+the null network
+as an input to the softmax and this is
+how we define
+fw that we're going to plug into our max
+like maximum likelihood formulation
+if we take the logarithm of the soft
+marks
+we arrive at this expression because the
+exponential again
+cancels with the logarithm and this has
+advantages
+because we see already here now that
+this sc is a direct contribution to the
+loss function so it cannot saturate
+it's a direct linear contribution to the
+loss function whenever we make a change
+we make sure that this propagates to the
+gradients
+and here we have another term which is
+the logarithm of this expression
+it's a minus because this is in the
+lower part of this expression
+so this is the log softmax
+now let's give some intuition about this
+log
+soft max that we want to maximize right
+we're still
+in this case we're still maximizing it's
+not the negative log likelihood that we
+want to minimize but here we'll
+maximize the likelihood so assume that c
+is the correct class for now our goal is
+to maximize
+the log softmax or this expression here
+on the right
+the first term of this expression here
+encourages the score
+for the class c to increase
+right we want to maximize this
+expression so we want to increase this
+the second term encourages that all
+scores in s
+jointly decrease so we have a minus here
+so we want to
+have all the scores the sum over all
+scores and the logarithm of this
+to decrease now the second term
+and there's this display against each
+other right if one of the scores
+increase then another score must
+decrease
+so the model tries to to the output is
+always a distribution
+and if i'm i'm increasing the correct
+one i have to decrease
+the incorrect ones um
+the second term here can be a process of
+this
+this term here can be approximated by a
+maximum
+operator why is that well
+all of the ex all of the terms
+inside this sum here are insignificant
+for all almost insignificant
+because we have an exponential so these
+are very large numbers so if i have lump
+if i have an s that's a little bit
+bigger than the other s this is going to
+dominate the entire sum
+so all of the other s's are going to be
+insignificant in this expression
+which means that
+we're left with almost just the maximum
+score and if i'm if i'm
+looking just at one term here the
+maximum then the logarithm and the
+exponential would cancel right so
+and i'm arriving at the maximum term
+this is the intuition
+behind why this is roughly the maximum
+we're going to see an example on the
+next slide so the second term
+can be approximated by the maximum
+over the indices k sk
+therefore and this is the intuition here
+the loss
+always strongly penalizes the most
+active incorrect prediction
+right so we because we are we're looking
+at this maximum
+we're always penalizing the most active
+incorrect prediction if it's the correct
+prediction we're not maximizing because
+these two terms
+we're not penalizing because both terms
+cancel
+but if it's the wrong term then we're
+penalizing it
+and this is what is here in the last
+statement if the correct class already
+has the largest score
+then both terms cancel because we have
+sc here and roughly sc here
+then the example will contribute little
+to the overall training cost
+so here's an example we have four
+classes
+and these are the scores predicted by
+the neural network
+here on the right i show the exponential
+of these scores
+you can see that this plot is very
+different already from this plot
+you can see that all of the classes that
+are not
+the top score class are almost
+insignificant compared to the top score
+class when i'm taking this
+exponential
+the second term so this is the second
+term here
+becomes in this case logarithm of this
+expression is 4.06
+all right so if i if i compute the
+second term over over this over this
+here
+i get 4.06 so it's basically the sum
+over this and taking the logarithm
+and this is very similar to the maximum
+of the scores right
+4.06 compare this to the maximum which
+is 4
+is very similar and this is this
+statement here
+just in a visual explanation
+so now let's assume for a second that c
+equal 2 would be the correct class
+if 2 would be the correct class and our
+model would predict these scores
+we would obtain the following logs of
+max so we would obtain
+sc which is 1 minus
+4.06 which is minus 3.
+on the other hand if the correct class
+would be the class number 3
+we would obtain sc which is 4 minus 4.06
+which is roughly zero
+you can see that we have a much larger
+value
+if the correct class corresponds to the
+class
+where we have assigned the highest score
+with our neural network
+and it has a much lower value if
+we didn't assign the correct class like
+if the correct class would be 2
+and we're assigning 1 but 4 to class 3.
+okay now
+um i want to briefly talk about the
+connection
+of soft max to the sigmoid function and
+about
+over parametrization as you might have
+noticed
+requiring this constraint that the
+distribution must normalize to one
+is removing effectively removing one
+degree of freedom so we wouldn't even
+need to predict
+c categories
+should actually be a c here c minus one
+c
+equals two so this is the categories
+but it would be sufficient to predict c
+minus one
+categories because the last one we would
+know
+must be the sum over the first like one
+minus the sum over the first
+and this is true so for instance we can
+consider this example here where we have
+two categories
+and we fix one degree of freedom let's
+say we fix
+the second one to zero
+so then the softmax becomes soft mark
+this is the soft max for these two
+categories here
+the softmax becomes well if we fix x2
+equals zero we have a one here
+and we have one here and a one here
+because x plus zero is one
+now we can rewrite this expression as
+this expression
+by dividing by x of
+x1 and we can rewrite this expression as
+this expression
+as well and
+what you see here now is that this first
+expression here is exactly
+the expression for the sigmoid function
+that we have defined
+in the second lecture so you can see
+that we can derive the sigmoid function
+from the softmax function by fixing one
+degree of freedom and assuming two
+classes
+so what this means is that the softmax
+is effectively a multi-class
+generalization of the sigmoid function
+now the question of course remains is
+what is better is it better to
+always predict the number of classes
+as scores or should we just predict
+one score less and calculate the
+remaining one and the answer to this is
+in practice it doesn't make a big
+difference and it's often simpler to
+implement to just predict
+this over parameterized version to
+predict all let's say 10 values
+all 10 scores for mnist and apply the
+softmax to it
+because the softmax takes care of the
+normalization
+yeah another comment i want to make is
+that
+the name softmax is actually a bit
+confusing and soft arc max would be more
+precise
+as it is the softmax is a continuous and
+differentiable version of
+arcmax in if you think about it in a one
+hot representation
+so here on top we have the softmax
+example again
+and on the bottom we have an example
+with
+four classes so here this is the example
+from before where we have the scores
+if we compute the exponential of these
+scores we get this
+distribution if you compute now the
+softmax which is
+this exponential divided by the sum over
+all exponentials
+we get this it's exactly the same it's
+just
+the normalization changes so the y-axis
+here changes as you can see
+such that now if i would sum overall
+classes i would get one
+and if i compare this now to the one hot
+encoding
+for the category three you can see that
+they are almost the same and that's why
+the softmax is kind of a continuous
+differentiable and soft approximation to
+the arc max in this case here the arc
+max would be
+[Music]
+would be uh
+would be basically the vector 0 0 1 0
+because
+the third class here is the largest one
+if we consider a one hot representation
+for the representation of categories
+and this is what is shown here on the
+right
+okay good
+so we've seen that the softmax responds
+to differences between inputs
+one thing to note is also that the
+softmax is invariant to adding the same
+scalar to all of its inputs
+in other words the softmax of x is equal
+to the softmax of x
+plus c and we can therefore derive
+a numerically more stable variant of the
+softmax
+which is the softmax of x equals softmax
+of x
+minus the maximum of all the elements so
+for all of the
+inputs here we are subtracting the
+maximum of all
+the inputs or scores to the softmax
+the advantage of doing this is that this
+allows for accurate computation in
+computer even with
+limited fixed precision even when the
+axes become large
+as we've seen before there's exponential
+involved in the softmax right so if you
+have large axis
+this becomes very very quickly very
+unstable due to rounding errors
+so this is what we should do in practice
+and it illustrates again that softmax
+depends only on the differences between
+individual scores not on some
+global term that we add or subtract
+so let's put it now together
+the cross entropy loss that we've seen
+before for a single training sample
+here we look at concrete example is this
+one here
+so far we have looked at the log softmax
+the log softmax is part of this
+right so this is this last part of the
+expression
+the cross entropy loss is the sum of all
+classes
+times minus the
+true the target
+at index c times the soft
+arc max over the network scores which we
+indicate here with
+fwc
+now suppose we have four classes
+and four training samples x with
+corresponding labels y
+and the labels are represented as one
+hot encodings
+the classes are dog cat mouse and
+elephant
+and the labels are as such
+then let's suppose we have a
+model that makes the following
+predictions here
+as shown here so for each of these
+classes it makes
+for each of these inputs actually makes
+these predictions you can already see
+that for the first one it does a good
+job for the second one it's kind of
+uncertain
+um so this vector is very different from
+this one hot encoding because it's
+uncertain if it's class
+one or class two for the third one it's
+even uncertain about
+all of the input it's even uncertain
+about all of the class it could be with
+equal probability
+any of them it doesn't know anything the
+model and in the last case
+the model actually predicts the wrong
+class like all of the classes all of the
+other classes which are not elephant
+are have a higher score than the class
+elephant itself
+the last one now if you take these
+scores and compute the softmax over this
+scores we get
+these probability distributions
+and from these probability distributions
+we can output the cross-entropy you can
+compute the cross-entropy loss
+using this expression and what we see
+here and this is very intuitive
+is that the cross-entropy loss for this
+first
+example prediction here is relatively
+small because with high probability we
+have a
+with high probability here we have
+assigned um the correct class
+to that image which is dog
+now for the second one the cross entropy
+loss decreases because we are more
+uncertain
+we're saying well with like 0.46
+probability it's a dog with 0.46 it's a
+cat
+so the loss increases
+in the third example it's increasing
+further because
+we're even more uncertain now all of the
+classes have the same probability
+and then the final example we're making
+the wrong prediction so we're assigning
+very low probability to the class
+elephant
+and high probability to for instance the
+class dog
+and mouse and so the cross entropy loss
+in this case is highest which is quite
+intuitive
+yeah so if we if this would be a mini
+batch
+in our gradient based stochastic
+gradient descent
+optimization algorithm then clearly the
+sample 4 would contribute most strongly
+to the loss function
+right sample um four
+would would have the highest loss and
+the gradients would be strongest in
+trying to turn this
+sample around and making the incorrect
+prediction
+correct
+yeah so um to summarize
+what is the output layer and what is the
+loss function for classification
+problems well the output layer
+in the case of two classes we can never
+predict one single value and use a
+sigmoid
+and just take like one minus the
+probability for the other class
+or we use an over parameterized
+representation and predict two values
+and then apply a softmax to it to get a
+normalized distribution over
+these two values for
+c more than two classes we typically
+predict c
+scores and then use the soft max
+non-linearity on top
+and for the loss function in the case of
+two classes we have the binary cross
+entropy loss
+which is really just a specialization of
+the cross entropy loss
+which we use for more than two classes

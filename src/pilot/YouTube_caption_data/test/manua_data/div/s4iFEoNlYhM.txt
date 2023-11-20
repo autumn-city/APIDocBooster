@@ -1,0 +1,509 @@
+Hey there and welcome to this video! Today, I 
+will implement the SIREN. It was introduced in  
+the paper "Implicit neural representations 
+with periodic activation functions".  
+As you probably realized I'm on the official 
+GitHub repository. The official code is more  
+general and among other things it can be 
+used to represent audio and video. Anyway,  
+all the credit goes to the authors of this 
+paper and the code. Let me give you a quick  
+description of what the setup is. You're probably 
+familiar with the task of image classification.  
+There we have a data set of images where each 
+image has a certain label assigned to it.
+So in this case it's a classification data 
+set and each sample represents one image. Let  
+us now completely abandon this paradigm 
+and assume we only have a single image.
+For example, it's going to be a grayscale 
+image with both height and width equal to  
+20. We can actually think of the image as a 
+function that maps the pixel coordinates to the
+intensities. In other words, if we have an image 
+we can create a regression data set out of it.  
+There are two features which are the 
+two coordinates and the target is the  
+intensity. And nothing prevents us from using our 
+a neural network that approximates this mapping.  
+This is where the SIREN neural network comes in 
+because it works extremely well for this task.  
+Anyway, you're probably thinking: "Oh, 
+that's cool! It can represent an image  
+but what else can I use it for?" First of all, 
+as mentioned before we can also use SIRENs to  
+represent video and audio signals. Additionally, 
+there are other really cool applications. For  
+example solving partial differential equations, 
+image editing and image inpainting. Anyway this  
+video is going to be focused on creating the 
+representation and we are not necessarily going  
+to talk too much about the applications. 
+Let us now start with the implementation.
+Before we start implementing the 
+SIREN architecture let us now  
+implement a specific way of 
+initializing a linear layer.  
+So this layer will take the weight of the linear 
+layer and it's going to modify it in place. The  
+initialization will depend on whether this 
+is the first layer of the architecture or  
+if it's not. Lastly, we will have a hyper 
+parameter omega that will be used for scaling.  
+Given the weight matrix, we extract the input 
+features as you can see we will always initialize  
+the weight with a uniform distribution and the 
+bound will depend on whether we are in the first  
+layer or a later one. The authors of the paper 
+propose this initialization strategy because it  
+will lead to the activations of the neural 
+network having some really nice properties.
+Now we're ready to implement a 
+single layer of the SIREN network.
+The input features, output features and bias are 
+going to be used to construct a linear layer.  
+is_first and omega are two hyper parameters. 
+is_first we'll determine whether we are in  
+the first layer of the neural network and 
+omega will be used for scaling. Finally,  
+we will give the user an option of passing 
+a custom initialization function and if they  
+don't we will just default to the paper 
+initialization function we defined above.
+We instantiate the linear layer.
+We initialize the weight matrix of 
+the linear layer. The reason why  
+we allow for a custom initialization 
+function is that we want to inspect  
+how the activations of the neural network behave 
+under different initialization schemes. However,  
+for training we will always use the paper 
+initialization that we defined above.
+When it comes to shapes, the forward method 
+behaves exactly like the linear layer.  
+Note that I call the first 
+dimension number of samples,  
+however, in our case I can just 
+name it the number of pixels.
+The forward pass itself is extremely 
+simple. We take the input, we  
+run it through the linear layer, 
+then we multiply with omega  
+and finally we use the sin activation. Let 
+us now move to the actual neural network.  
+The SIREN neural network is nothing else than a 
+bunch of SineLayers followed by a linear layer  
+at the very end. Here we make a simplifying 
+assumption that all of the hidden layers are  
+going to have the same number of features. We will 
+have two different omegas. One for the first layer  
+and then another one for all the hidden ones. 
+As before we will allow the user to specify a  
+custom initialization scheme. Internally, 
+we will be using the Sequential wrapper.
+So we will have two input features 
+representing the coordinates of  
+a given pixel and we will have a single output 
+which will represent the predicted intensity.
+We instantiate an empty list and then 
+we append the first SineLayer to it.  
+We iteratively define all the hidden layers and 
+all of them will have the same number of features.  
+We instantiate the last linear layer 
+and we initialize it accordingly.
+Finally, we create the sequential module.
+The input is going to consist 
+of multiple pixel coordinates  
+and the output is going to be the predicted 
+intensity for each of the coordinates
+The forward pass  
+is extremely simpl because we just use the s
+Sequential module. Anyway, we have implemented  
+the network and as you would probably agree it 
+was extremely simple. The SIREN is nothing else  
+than a multi-layer perceptron that is using 
+the sin function as the activation. Anyway,  
+before we jump into training let me show you 
+how the activations of the SIREN look like.
+I set the seed in order to 
+have reproducible experiments  
+and now the idea is to define a couple 
+of different initialization functions  
+and then inspect what influence they have 
+on the activations of the SIREN network.
+So ones initializes everything we with 1s. eye is 
+an identity matrix. default should be what torch  
+is doing by default. If I'm not mistaken and that 
+is the Kaiming uniform. Finally, we will provide  
+None which as we know means that we will use the 
+initialization proposed in the paper. For each of  
+the initialization schemes we will have a separate 
+logging folder and a separate summary writer.
+Here I create a forward hook that will take the  
+activations of a given layer 
+and log them with TensorBoard.
+I instantiate the SIREN and I make sure that 
+I pass the correct initialization function.
+Here I iterate through all the submodules and 
+I make sure I register the above forward hook.  
+Here I prepare an input that is going to be 
+uniformly distributed in the interval -1,1.  
+For both of the coordinates this is exactly 
+the kind of input we will be dealing with  
+while training. Because we will scale the 
+coordinate grid into the interval -1, 1.
+I run the forward pass and since we registered  
+the forward hooks with multiple layers 
+they're actually going to be executed.
+So the script was run and now we 
+just want to open TensorBoard.
+We are in the histogram section and 
+as you can see all the layers are  
+conveniently numbered based on their order. 
+When it comes to the input it is clearly  
+a uniform distribution in the interval minus 
+-1,1 irrespective of the initialization scheme.  
+Let us now focus on the rightmost column 
+because it represents the paper initialization.  
+It seems like after the linear layers the 
+distribution of activations is always normal.
+After SineLayers it seems to have this funny 
+shape which is actually the arcsin distribution.  
+Again, it seems to be consistent 
+throughout the network.
+If you look at the ones it seems like 
+from certain point onwards we are not  
+having any normal distributions 
+and it's always this arcsine-like  
+distribution. However, the range 
+is different for linear and sine.
+When we look at the identity initialization there 
+doesn't seem to be a clear distribution pattern.  
+Finally, the default one actually 
+seems to behave similarly to  
+what the paper initialization is doing.
+Anyway, I just wanted to show 
+you a couple of different  
+initialization schemes and prove that the 
+activations are really dependent on them.  
+In the paper, the authors actually proved that 
+under certain assumptions the activations will  
+be always switching between the normal and the 
+arcsine distribution. One of the main implications  
+of this is that one can create arbitrarily deep 
+SIREN networks. Additionally, this initialization  
+scheme seems to be the key ingredient to make 
+the training work really well. We are back in  
+the main script and we would like to implement 
+the training functionality. To do that we will  
+start with a function that generates a grid 
+of coordinates. So we will make an assumption  
+that our image is a square and the only thing 
+we pass into this function is the side length  
+and then it will generate a grid of coordinates 
+inside of this image and it will return it.
+So we use numpy's meshgrid to generate rows 
+and columns and at this point they are still  
+in 2D shapes and then we just flatten both of them  
+and stack them into the final array. So the 
+first column of this array will represent the  
+row coordinates and the second one will represent 
+the column coordinates. And now the goal is  
+to write a data set that is going to yield the 
+coordinates, the intensities and the gradients.
+At construction time, we will give this data 
+set a grayscale image and internally it is  
+going to define multiple attributes. The first 
+one is the size representing both the height  
+and the width of the image. Then a grid 
+of coordinates. This attribute will hold  
+the approximate gradient of the image in both 
+directions. Here will be just the norm of it and  
+finally the laplace attribute will be holding the 
+approximate Laplace operator for that given image.
+Here we just check whether the image is grayscale 
+and the width and the height are identical.
+Here we use the function that we defined 
+above to generate a grid of coordinates.
+So we take the original image and we apply the 
+Sobel filter in both of the directions. The  
+Sobel filter actually approximates the first order 
+derivative and additionally adds some smoothing.  
+If you're wondering why I talk about gradients 
+I guess now it's the perfect time to talk about  
+another really cool feature of the SIREN. 
+The siren has a very nice property that  
+if you take the derivative with respect 
+to the input of any order you will again  
+end up with a SIREN. That means that the higher 
+order derivatives are not going to be zero  
+and therefore the SIREN is very well suited 
+to represent natural signals. We can actually  
+use this property and supervise our 
+network on derivatives of any order  
+rather than just the zero order intensities. That 
+is exactly the idea behind what we are doing here.
+So we take the gradient and we compute 
+the norm over both of the directions  
+and this way we again have something that 
+has exactly the same shape as our original  
+image. And finally we also used the Laplace 
+filter to approximate the Laplace operator.  
+Note that both the Sobel and the Laplace 
+functions are implemented in scipy.
+Here we define what the size of our data set 
+is and it's nothing else than the number of  
+pixels. Note that this is slightly different to 
+the official implementation because there they  
+would set the length equal to one and they would 
+always yield all the pixels of the given image.
+Now we want to implement the __getitem__. 
+We will give it the index of the pixel  
+and then we will just return all the interesting 
+things that we know about this pixel.  
+We extract its absolute coordinates. We unpack it 
+into the row coordinate and the column coordinate.
+Here we take the absolute coordinates and we 
+turn them into relative ones that are going to  
+be in the range -1,1. These relative coordinates 
+are actually going to be the two input features  
+to our neural network. In general in machine 
+learning it's a good thing to scale your features  
+and additionally as we saw a few moments ago 
+if our features are uniformly distributed  
+in the range minus one one then the activations 
+throughout the network are going to be really  
+nice. As you can see we create a dictionary where 
+each entry represents some information about the  
+coordinates of that pixel. So for example the 
+relative coordinates, the absolute coordinates,  
+the intensity, the gradient, the laplace and 
+so on. And what's really important is that the  
+relative coordinates will be used as features 
+when it comes to the intensity, gradient and  
+laplace they can all be used to supervise the 
+network. Note that this is extremely powerful  
+because not only can we supervise on the intensity 
+but we can also supervise on any higher order  
+derivative. As you've just seen the __getitem__ 
+returned a dictionary and the question is how  
+is the data loader actually going to process this 
+dictionary. Let us now write a minimal data set.
+The length of this data set is going to be 8 
+and the __getitem__ will return a dictionary  
+and what we are trying to answer here 
+is how exactly does the data loader  
+create a batch. We instantiate our data set
+and we instantiate a data loader with batch 
+size three. As you see the default behavior  
+kind of depends on the type of the value of the 
+dictionary. a was originally an integer or a  
+float and as you can see the data loader batched 
+it into a one-dimensional tensor. b was initially  
+a list of two elements and here the data loader 
+actually did the batching element by element.  
+The c and d are both torch tensors and they are 
+identical. What's really important is that this  
+default behavior turns numpy arrays or floats 
+into torch tensors. So now we understand what  
+is going to happen when our get item returns a 
+dictionary but what if I was not happy about this  
+default behavior. Well there is a solution. Here 
+I'm looking at the docstring of the data loader  
+and here we see there is this collate function 
+which is a callable and we could actually use  
+it to define any batching strategy whatsoever. 
+I'm not going to show you an example but just be  
+aware of it. So we're back in the implementation 
+and now the only thing left is to write some  
+gradient related utilities that will be using 
+torch's autograd. Before we start though let  
+me just give you a quick overview of 
+higher order derivatives in torch.  
+So I just copy pasted a loss function that is 
+nothing else than a single variable polynomial  
+and all of its derivatives and we'll 
+try to do this calculation in torch.  
+Actually, it's extremely simple and there's just 
+one small trick that you need to be aware of.  
+First of all we need to directly use the torch 
+autograd which is a little bit more low level.
+It correctly computed the derivative and 
+now to get the second order derivative  
+we would want to do something like this.
+However, as you can see it doesn't work 
+and the reason why this is not working  
+is that the dx loss does not have 
+the requires_grad set equal to True.  
+The trick to guarantee that the result of this 
+differentiation can again be used as an input  
+is to use the keyword parameter create_graph and 
+set it equal to True. So as you can see now it  
+is the case and if we do this procedure multiple 
+times we can get derivatives of any order we want.
+We're back. We've seen that we 
+can approximate derivatives and  
+higher order derivatives by sliding 
+a filter along the image. However,  
+we also want to have the predictions of 
+these. In other words we want to compute  
+the gradient with respect to the input of our 
+SIREN as well as higher order derivatives.
+So our first utility function will be the gradient 
+and it will be doing more or less what you've just  
+seen in the small tutorial. However, we'll be 
+applying it to the function of more variables.
+We take the gradient of the target with respect to  
+the coordinates. The next one 
+is going to be the divergence.
+So what is different here is that 
+the input is already a gradient  
+and here we want to compute the 
+second order partial derivatives  
+and only sum of those that are not mixed. 
+So let me just maybe add a note here.
+Now we just put everything together 
+to get the Laplace operator.
+So first of all we take the gradient with 
+respect to the coordinates and then we are  
+going to differentiate the gradient one more time 
+and sum up the non-mixed partial derivatives.  
+And now we can finally write a training script.
+Let us start with image loading.
+We load a png image and the intensities are going 
+to be in the range of 0 and 1 and we rescale them  
+to be in the interval -1,1. Also here I define a 
+down sampling factor, however, you don't have to  
+have it and its main goal is to make the training 
+faster. Let us now instantiate our pixel data set.
+When it comes to the batch size I set 
+it equal to all pixels in the image,  
+however, you can also set it to a lower 
+number. Note that the authors actually  
+propose to use the entire image at once. I 
+noticed that for the training it really helps.
+The idea here is that we are going to try two 
+different networks. First of them is going to  
+be the SIREN and then we will have a vanilla 
+multi-layer perceptron with relu activations.
+Here I let the user decide what kind 
+of target we want to supervise on. Note  
+that we can also use all of them at the 
+same time or combine them in any fashion.
+So here if the user selected SIREN 
+then we just instantiate our SIREN.  
+If the user selected a multi-layer 
+perceptron we build it from scratch  
+also here I'm initializing the weights with 
+the Xavier normal initialization. I think  
+I've seen it in the GitHub repo. I might 
+be wrong. We instantiate the data loader.
+Here I will just write a very simple training 
+loop. Note that we're not splitting the data  
+set into validation test and training. In a way 
+our goal is just to overfit the training image.
+So we have our batch and we're going to 
+extract the features out of it. And they  
+are nothing else than the coordinates. We make 
+sure that we set the requires_grad equal to True  
+because this way we will be able to take the 
+derivatives with respect to the coordinates.
+We extract the target which is the 
+intensity and in a way it's like  
+the zeroth order derivative. 
+It's just the function itself.  
+As discussed the data loader is going to collate 
+the intensities into one dimensional tensors  
+and we actually want to add the second dimension 
+so that we can comfortably compute the loss.
+We run the forward pass and we 
+get the predicted intensities.
+If the user wanted to use the intensities as the 
+targets we just compute the mean squared error  
+between the predicted intensities 
+and the ground truth intensities.
+If the user specified the target to be 
+grad then we use our gradient utils to  
+compute the predictions and as the 
+ground truth we use the image after  
+applying the Sobel filter to it 
+which is an approximation of the
+gradient. The loss is again 
+the mean squared error.
+And finally, if the user selected the target to be 
+Laplace we will be supervising on the second order  
+derivatives. At the end, we just add the torch 
+boilerplate which is computing the gradients  
+and taking the optimization step. 
+And what comes next is just some  
+minimal logging functionality that will help us 
+visualize what's going on during the training.
+Here we just prepare the prediction images and we  
+will iteratively set all the 
+pixels to the right values.
+Here for each batch we extract the 
+coordinates, we run the forward pass and  
+then we also compute the predicted gradient 
+norm and the predicted Laplace operator.
+And then we just take these per-coordinate 
+predictions and use them to populate the  
+corresponding pixels in our images. Note 
+that if batch size is equal to the number  
+of pixels there will be only one iteration 
+and we will populate all the pixels at once.
+Here we just always plot the ground truth and 
+the prediction for the zero for the derivatives  
+which are the intensities, the first order 
+derivatives and the second order derivatives.
+We're done. I think I will just run this 
+with a couple of different hyper parameters  
+and different settings and then 
+I will just explain the results.
+Here I actually computed the norm twice so that's 
+not correct. I'm going to show you a series of  
+different results. The ground truth will always be 
+in the left column and the predictions will be in  
+the right column. The first row represents the 
+intensity image which is just the actual image.  
+The second row represents the gradient norm 
+and finally the last row represents the  
+Laplace operator. Note that I did not really 
+look for optimal hyper parameters I just took  
+the training script and ran it for a couple of 
+iterations. So please take that into account. Let  
+us start with the SIREN network. We see that if 
+we supervise on intensities we can get an almost  
+perfect representation of the image in a couple 
+of iterations and it seems like both the first and  
+the second order derivatives are matched really 
+nicely as well. Similarly, if we supervised on the  
+gradient the results look really impressive. 
+Note that under this setup one could add an  
+arbitrary constant to our SIREN and the gradient 
+would stay the same. Luckily matplotlib actually  
+scales the image intensities before plotting 
+them so we don't have to worry about anything.  
+Here you can see the results when using the 
+multi-layer perceptron with the relu activations.  
+I guess the major difference compared to the SIREN 
+is that the Laplace operator of the prediction is  
+just black. This is because the second order 
+derivatives are equal to zero. When it comes  
+to the predictions we can see that they are not 
+necessarily smooth. Anyway, I guess by having more  
+trainable parameters one could squeeze out better 
+performance out of this architecture, however, the  
+SIREN is clearly doing better at capturing natural 
+signals. And I think that is the main takeaway.  
+Anyway, that's it for today's video. I hope you 
+enjoyed it. It was slightly tricky to decide on  
+the scope because SIRENs are very versatile. 
+If anything, I hope I managed to spark your  
+interest and I would more than encourage you to 
+check out the paper and the official repository.  
+Most importantly, all credit goes to the authors. 
+I just hope I did not make too many mistakes.  
+Anyway, thank you for making it to the very end. 
+Let me know whether you liked the video and if you  
+have any ideas or feedback I more than encourage 
+you to leave a comment below. See you next time!!!

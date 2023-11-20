@@ -1,0 +1,831 @@
+alright hey everyone and thanks for
+coming
+so yeah I'm one of the original creators
+of fighters but as you can guess from
+the long list we've already had a bit of
+contributors and it's mostly become a
+diva a community project at this point
+so how many of you actually do know
+piperj like know how it can be used how
+the API looks like what are the general
+features okay okay so yeah I guess we'll
+need to introduce it so generally like
+most people and like if you look on the
+internet it will generally be like
+presented as a deep learning framework
+but ultimately if you're really like I
+don't only have half an hour and I
+really want to talk about some of the
+new stuff so I will need to be really
+quick with the introduction and yeah I
+think it will be much simpler to
+actually understand that if we don't
+look at it as a deep learning framework
+but more is something like numpy so
+probably most of you actually know numpy
+so numpy is like a library and python
+that implements erase it can be they can
+be a raised of arbitrary Python object
+but most importantly if you put numeric
+types in them they will actually like be
+unwrapped from Python objects and they
+will be stored in memory efficiently and
+also like in native like whatever is the
+native computer format you're using and
+and so many of the operations on those
+arrays become much more efficient like
+matrix multiplication or generally like
+addition of many numbers in parallel
+right so yeah just in case you don't
+know numpy - well generally like you can
+construct those arrays like this they
+can be multi-dimensional so at the top
+you have a multi-dimensional layer you
+can wrap scalars as well you then you
+can do operations on those arrays you
+can like take columns slices whatever
+check their shape the add operator is
+like matrix multiplication you can
+generate random matrices all this and
+ultimately at the lowest level torches
+exactly like this so you basically get
+this nd array library which which again
+lets you manipulate this torch doesn't
+really let you put arbitrary Python
+objects in this but that's not really
+the common use case like you mostly care
+only about the numeric types that you
+want to do some math on yeah so
+ultimately at the lowest
+it's just like numpy but of course doing
+numpy exactly would be really silly and
+and like that would be pointless it's a
+project that's relatively mature and
+like there's there's been a lot of work
+put into this and it has pretty good
+pretty good implementations for all of
+those operations already so that will
+basically be a waste
+so of course torch comes with some new
+features and I'll just like give you a
+quick overview of what are the most
+important points I think that are
+beneficial both for deep learning but
+not only really like there's there's
+something that can be used in in a lot
+of domains that just you know requires
+some kind of scientific computing
+software so first and foremost pirate
+really wants to integrate with monpa
+Eltham utley python is great just
+because it has this like really huge
+ecosystem of like arbitrary arbitrary
+packages that can do pretty much
+anything you want but really like the
+the thing that every single package
+scientific computing package at least
+uses to exchange data or numpy arrays
+and so you really need to be able to
+integrate with numpy so just to quickly
+go through this we have methods to
+convert both from torch to numpy arrays
+and vice-versa
+and so the like most important thing
+about this note is that actually it's
+really cheap like it's basically cost
+this constant no matter how many
+elements you have into the in the array
+it's like on the order of microseconds
+so it's really fast and the way we
+achieve this is essentially torch users
+almost to say like pretty much the same
+layout in memory as a non PI so the data
+is actually shared between those arrays
+so if you convert to you know one of
+those libraries and modify the array
+within one of those libraries if you
+print out the you know the one on the
+other side you'll see that it changes as
+well so this is something that kind of
+lets you lets you ultimately use torch
+in like small parts of your program and
+only places where you actually care
+about those features and the rest can
+just use whatever Python library you
+really like and you can just exchange
+data with no copying so that's really
+efficient so that that's that's that's
+one of the important points but then
+there are two I think crucial things
+that are ultimately extremely needed
+didn't like today's scientific computing
+workloads so first is accelerate
+support and that's pretty basic and
+numpy doesn't have it it actually takes
+a lot of work to get it to get this
+right
+and what I mean accelerators ultimately
+most of you already have them there GPUs
+or some more specialized hardware but
+like almost everyone has a GPU that's
+capable of executing some kind of you
+know specialized languages like CUDA
+GPUs or OpenCL on and GPUs or rockem so
+yeah basically all of this like kind of
+array oriented programming paradigm
+where like you have all of those arrays
+it basically exposes a lot of
+parallelism and in your operation so
+like if you have two arrays and you add
+them you just add two elements the
+dependently you have like a lot of
+elements at independently of each other
+and and and basically GPUs are like
+extremely parallel machines and they
+really excel at those kinds of things
+they've been basically designed to do
+those things because that's like how
+most workloads and graphics look like
+and so so when you have programs like
+this they map extremely well to them and
+in fact like just by moving the
+computation that you have from CPU to
+GPU you can easily get like 10 X or 20 X
+feet up provided your arrays are like
+large enough and just to kind of give
+you an idea that it's really easy to do
+that in pi torch this is a program that
+actually runs on the cpu so you generate
+arrays you add them you print them if
+you want to run this on the GPU you just
+do something like this so basically all
+tensor constructors like this device
+argument which lets you specify where to
+put the data or if you get like a result
+of some CPU computation maybe from non
+PI perhaps you can use the two method to
+actually move it to a different device
+and the line at the top basically makes
+it possible for you to kind of have
+scripts that are agnostic to the system
+you're running it on so like you can do
+quick development on your laptop that
+doesn't have like it powerful GPU don't
+really want to use it or it's not even
+capable of running like it has only an
+integrated card and then you kind of
+pushed it to some kind of more beefy
+server and it will run on the GPU
+automatically so it like detects if it
+can actually use this and so this kind
+of shows you that it's relatively easy
+to have code that's like independent on
+the actual device you'll be using
+so you can just write your your thing
+once and then like depending on the
+capabilities of your system that you're
+running your script on it will either be
+faster or slower but yeah you can still
+do that and another I think really
+differentiating feature I mean its
+popular in machine learning libraries
+ultimately but like something that's
+missing in a lot of other libraries is
+high performance automatic
+differentiation so this is also
+something that's been really important
+for machine learning because like
+basically what it lets you do it kind of
+lets your writer function and as long as
+it's differentiable you can basically
+ask the system for what's the derivative
+of you know something I computed with
+respect to something that I use to
+compute it and it will do like all the
+differentiation for you so you don't
+kind of need to you know do this by hand
+and like compose the formulas and all
+this and and so that'sthat's a technique
+that's like really important in many
+domains as I mentioned machine learning
+but also like in engineering are in
+finance generally if you want to
+simulate something or if you have a
+function that you want to optimize which
+is exactly the machine learning case for
+example this is very useful because like
+you can you know take gradient kind of
+gives you some kind of local idea of the
+shape of the function you're optimizing
+so you can kind of try to traverse the
+landscape to actually reach the lower
+points and also this is again really
+easy so basically you just write it as I
+mentioned you just write up this
+function here it's this polynomial
+function then you just evaluate it on
+some data and like in here we just
+evaluated on this X and then we can ask
+what's the gradient of you know the
+output of this polynomial with respect
+to its input and so like if you print
+this you'll see that it exactly follows
+like the simple rules of differentiation
+you probably know so yeah that's kind of
+the that's kind of the you know the like
+if you don't know this that's kind of
+the most important part towards also has
+a bunch of helpers for training machine
+learning models but I don't really have
+time in here to cover them unfortunately
+so I want to kind of move on to like
+what's new in n fighters 1.0 so Piper's
+been released in January last year so
+it's already been some time and we've
+had a really rapidly growing community
+which were like super happy about
+and you know ultimately when we have so
+many people depending on this package so
+far we've been in beta we wanted to kind
+of push new features quickly we wanted
+to experiment unfortunately sometimes
+you know between versions you needed to
+adapt your code to actually have them
+work but I think we've converged to like
+a relatively nice API at this point and
+so we don't we kind of want to stabilize
+so we think that it's a good idea to
+actually like release the 1.0 version so
+so you know to kind of send a signal to
+people that actually this is pretty
+pretty much ready to be used in any kind
+of environment and the important part is
+that this is already available and
+what's already available is the release
+candidate so it's not the final version
+it's actually updated I think daily
+based on the builds from like the master
+branch and the stable version will be
+released sometime in December I think
+this is not to say that the current
+version is unstable basically like some
+features might not exactly be there or
+may not be like as polished as we would
+like them to be in the final release or
+worse we're still working on this but
+like ultimately if you use it and you
+you know you have some code that works
+with the release candidate builds you
+kind of got it to work you know even
+though like some error messages might
+not have been super helpful this will
+also work in stable so it can still kind
+of play with whatever's in there today
+we already have documentation for the
+new things but it will ultimately get
+better and at yeah it will ultimately
+get somewhat better in the end the final
+release like in a month yeah and then
+the really important part that we've
+been emphasizing in 1.0 was kind of the
+path from research to deployment but I
+think it's really important to kind of
+clarify what deployment e is so
+ultimately pike-perch
+the API that that kind of I showed you
+is like really close to numpy and it's
+and you know that's nothing with the
+something that's that that multiple that
+many people are familiar with and it
+makes like you know rapid iterations to
+like improve on the model you're working
+on or in some kind of program you know
+you're working on to solve some problems
+really convenient because you just kind
+of you just kind of shift around
+multiple lines of Python and there
+everything you know adapts magically you
+just rewrite in your script and and so
+you know we believe that ultimately you
+you will be going through many many many
+iterations of such research cycle but uh
+but then converge to something that you
+really care about and this is something
+you want to use in some kind of a final
+product and just to clarify what
+deployment is in here so it's completely
+fine to run Python in production people
+are running PI parts in production as
+well just from a Python process but
+that's not something you really want to
+always do and you know there are
+multiple reasons for this one if you
+have a you know really large-scale
+infrastructure just any kind of saving
+will be beneficial for you in terms of
+power money anything and the second
+thing is you know many people want to
+take the models they built or just you
+know some kind of pipelines they built
+and actually port them to run mobile
+phones and unfortunately Python is not
+the greatest thing to run on mobile
+phones because the interpreter is
+actually relatively relatively slow in
+them it's relatively big if you want to
+bundle this it like adds you know a lot
+of weight to your application so you
+don't really want to do that you really
+want to embed kind of a minimal runtime
+that can execute something and two into
+the app you're shipping so the API I
+showed you the the numpy like API which
+will still you know remain the primary
+primary API for pi torch I'll be you
+know calling it eager mode from now on
+and you know the good things as I
+mentioned is that it's really simple to
+write and debug it's ultimately the
+model that everyone is very familiar
+with if you know if you know how to
+program in Python the problem is that
+it's really hard to deploy in the sense
+that I meant because like whatever you
+wrote is really tightly bound to the
+Python code that we wrote and so a way
+that you know we thought of to actually
+kind of get around this to kind of get
+your code and your pipeline as data that
+you can actually export and run without
+python is something called script mode
+so script mode ultimately you know at
+the lowest level you can think of it as
+a new programming language but the good
+thing is that you actually don't need to
+learn anything because it like follows
+exactly the syntax and semantics of
+Python the only caveat
+is that it's only a subset of semantics
+of Python so there are certain things
+that are disallowed in those functions
+so you can't you know do our betrayed
+reassignments of functions and like hope
+that everything will work but ultimately
+like if you follow a you know certain
+certain pattern mostly like avoiding
+mutation of objects etc which we can
+statically analyze we'll be able to kind
+of recover the allness structure of your
+code and so two good things that come
+from this first is again you can export
+this and you can run this from like pure
+C environments and second is that it's
+actually pretty optimizable so we can
+take the code of your pipeline and like
+apply some optimizations that are
+relatively hard to apply by hand but we
+can do this automatically in the back
+end to actually make some things run
+faster some most common patterns usually
+so just to give you an idea of what
+works today so those are kind of the
+things that are supported and script so
+you can work with tensors you can work
+with integral and you know
+floating-point numbers there is basic
+control flow that works you can print
+stuff you can get strings you have
+tuples of arbitrary things you have
+polymorphic lists and you have function
+calls and so that's a like very very
+restrictive subset as I mentioned there
+will be more coming even building like
+something that supports this much is
+like a pretty pretty big effort but
+ultimately like when we tried this it's
+actually enough to like express most of
+the machine learning models that we care
+about and also like sometimes you can
+actually break out from the subset which
+I'll be talking about in the moment so
+the important part is this path from
+your eager program that you know you do
+some research to write the eager program
+and then you actually want to deploy
+this and the question is how do you get
+from the eager program to the script
+program and so there are two ways to
+actually to actually do that so one is
+tracing and another is just using script
+straight away so tracing is exactly this
+like escape hatch that lets you not but
+like doesn't doesn't make us inspect
+your code so you can actually use
+arbitrary Python features like whatever
+whatever
+whatever you use is completely fine
+there are there are no restrictions
+whatsoever so you don't need to do any
+code changes the downsides are first
+basically how tracing works is you give
+us your function and you give us an
+example input and so we'll run this
+function once and we'll see exactly what
+kind of pi torch operations you do on
+the arrays right so and we'll basically
+like assemble a list of instructions
+that will you know be able to to replay
+this single execution of the function
+that we recorded so the this comes with
+some downsides like if you have control
+flow that's kind of data dependent so if
+it actually varies at different costs to
+this function this won't work correctly
+because we'll only see like one branch
+of an if or if you're you know for loop
+executed five times will only like oh it
+will always execute it five times even
+though like you know your original
+function if passed the different input
+would execute ten times like we won't do
+that so the and and unfortunately there
+is no way for us since we're not
+expected inspecting the source there's
+no way for us to actually warn you that
+like we're kind of losing some kind of
+information like if you use trace you're
+kind of asserting to yourself
+that you that it is actually a valid
+thing to do and and so you know as I
+said there are a lot of warnings in here
+but often often times this is really
+what he wants because if you take
+convolutional neural networks as an
+example that's a picture from the
+residual networks paper what you really
+want to recover if you want to expert
+them to mobile what you really want to
+recover is kind of this structure of
+computation that you can see on this
+graph right so every single box that you
+see in here is ultimately some kind of
+an operation and the arrow simply
+indicates how do you pass around the
+data and so it doesn't really matter
+like if you use for loops if use
+conditionals inside to implement this
+kind of model structure like it will
+always produce exactly the same sequence
+of operations and it's really the only
+the sequence of operations on arrays
+that you care about so in this case it's
+completely fine to kind of throw away
+all of the Python bits that you have
+around it and
+again it's completely fine to like use
+this control flow so if I were to
+implement a model like this kind of a
+simplified version would look like this
+so I would probably have a list of some
+operations like you know those come 2d
+things are exactly the most of the
+blocks in this picture so I would just
+have a list of them and my model would
+simply loop over them and apply some
+function and between and so this is
+actually perfectly price herbal so again
+if you were to change the list of
+convolute if you were to trace this and
+change the list of convolutions the you
+know the function that you trace
+wouldn't adapt it would be fixed and if
+and essentially it would look like this
+but of course like in most cases your
+programs if you for example training
+machine learning model you really only
+construct the the model at the beginning
+like you know you might have this list
+might have a different length depending
+on some command line parameters but it
+doesn't really matter because like once
+you once you've finished constructing
+your model it will stay constant for the
+whole duration of the program which will
+train the model later so even if you
+wrote this function like this it will be
+fine too like it will be semantically
+equivalent to the trace version if you
+use this and in fact if you we have a
+torch vision package which is like you
+very handy way to train a lot of vision
+models it has both data sets and you
+know models pre trained and the ones you
+can train for in scratch and I'm pretty
+sure that like you can take any model
+from the torch vision package that's
+written there and you can safely trace
+it on a single input that's like even
+randomly generated and that will give
+you a trace that's like completely valid
+for training or for a later export yeah
+so that summarizes tracing and as I
+mentioned there is another way to do
+this because sometimes you really do
+care about this control flow and you
+really wouldn't like to lose it and
+that's this and that's the scripting way
+so torch that script is an annotation
+that you can put uncertain functions to
+kind of assert that they will be written
+in the subset of Python that we support
+so you're just again you're still
+writing Python like you're not imported
+you're kind of you don't have another
+programming language embedded you don't
+really need to learn anything
+you and we'll simply statically analyze
+the source of the functions that are
+annotated like this so control flow is
+recovered correctly because we'll see
+that you have like an if or you know a
+loop inside your function but again
+you're restricted to this subset and the
+cases where this is useful for example
+our recurrent neural networks so so
+basically this is a function that
+computes the recurrent neural network
+and why this is important is because you
+have this loop which like depends on the
+size of the tensor so if you think about
+the networks they're like recurrent
+neural networks are sometimes used you
+know you can you can refer to them as
+sequence to sequence models so they map
+a an input sequence to an output
+sequence and the nice thing is that the
+sequences can have different lengths so
+like if you're processing natural
+language a sequence might be a sentence
+and not all sentences have equal length
+so in this case it's like really
+important to actually retain the leg to
+actually be able to run this loop a
+different number of times so tracing
+wouldn't work in this case but you know
+this function is written in the subset
+that we support if we do require you to
+put some type annotations on this so we
+know actually what's what and like if
+you can actually unpack those things
+correctly so we do support both the
+Python 3 syntax and the Python 2 syntax
+for like compatibility reasons although
+you should really use Python 3 at this
+point yeah and the important part is
+that trace and script really mix
+seamlessly so if you have like a big
+thing that you don't really again care
+how you implement it so you want to
+trace it
+except there's this single loop inside
+that you really care about preserving
+and and so so it's completely fine to
+like put the script annotation on this
+small thing and then just trace through
+the whole thing and and once you get to
+it it will actually not trace the it
+will like still run the scripted
+function but it will actually not use
+the instructions it emitted it will
+actually just copy paste the graph so it
+will retain the for loops or like
+contraflow that's inside and again if
+you use something that you trace
+previously in a script function because
+again script phone
+in support function calls it will again
+like not go through some external
+mechanism it will be a first-class
+function call in this like programming
+language that we designed and the
+important part again is that we support
+function calls and they're not only
+within the language we also support
+function calls to Python so obviously
+when you call back to python from a
+scripted function you will no longer be
+able to like export your model because
+it will again not be able to run without
+python you have some Python references
+inside but it allows you to like really
+quickly kind of iterate on those things
+so when you if you if you were to take
+your your your your script that's
+written in Python and like transfer it
+we don't want you to kind of jump on a
+you know huge journey to kind of
+transpile all of your code to this up to
+the you know format we support we kind
+of want you to you know plop those
+annotations kind of you know function by
+function you can verify that it works
+every step along the way and and also
+later like if you have something that's
+completely converted to script you've
+exported your model but then you want to
+go back to the research cycle like you
+want to change some things to try out
+some new libraries we don't support in
+the subset it's again completely fine to
+just remove a few of those annotations
+in the places you want to edit it just
+runs this regular Python you know you
+can debug it as regular Python code and
+and you know it's still it so keeps
+working as long as you don't export it
+it's completely fine you can still run
+this and as I mentioned the important
+part is that you can really run this in
+native C++ environments so once you
+export such a model there is basically
+one liner at the top in here that can
+load it in C++ using our own library and
+you can run it on any tensor and C++
+because we also have a C++ API now which
+I'll be talking about in a second as
+well yeah so expert is one thing but I
+also briefly mentioned that it's also an
+optimizable subset so this is very much
+work in progress so you shouldn't really
+expect wonders once you annotate those
+things we've been really mostly working
+on getting it to be robust and kind of
+give nice error messages and you know
+generally be a nice thing to
+work with and performance optimizations
+can be done like later in the background
+things can magically start getting
+faster and faster but basically the
+problem we're trying to solve hate here
+is that like if you use a like vanilla
+model that like maps really well to some
+fast primitives like you know that if
+you run a recurrent neural network on a
+GPU there is like an Nvidia CUDA n n
+library and that implements this network
+and it's really really fast and like
+it's really hard to match it and so if
+you write the same network but using
+like regular Python you know torch
+Hobson Python your performance will drop
+like a few times at least like 5 X 10 X
+is actually relatively reasonable and so
+something and and so you know in most
+cases if you're just training vanilla
+models this is completely fine because
+they always map perfectly but if you
+actually want to change some small
+things inside you suddenly fall out of
+the subset and so you have to pay this
+performance penalty and this is
+something we want to avoid so for one
+variant of analyst TN that we've been
+benchmarking kind of just annotating it
+with script already gives you like a
+three times speed-up so again it's not
+like it won't magically improve every
+single model it really depends a lot on
+what your model is and what how our
+optimization have well our optimizations
+that we currently have mapped to it but
+you know there are certain cases where
+you can really find very noticeable
+speed ups yeah and now I'll have to
+really quickly cover the extensions an
+interface that we've recently added is
+currently in beta it's not really very
+much part of the release this can still
+change so you really shouldn't kind of
+depend on some production projects on
+this like the part for loading the data
+for loading the the exported things is
+should be stable but like some of the
+other things I'll point out which ones
+are they they can actually change
+between this and next release so you
+really shouldn't depend on this
+so extensions have been around for like
+a few months now I think basically what
+they let you do is they let you port
+some of your code from Python to C++
+either because you want to interface
+with some others
+plus plus libraries or because you have
+custom CUDA kernels because again you
+want to speed up your thing so you know
+it's an example of a function in here
+that you know this some basically
+allocates a new tensor multiply some
+other tensor by two and then just
+launches a CUDA kernel and so everything
+you need to do to expose this to Python
+is actually just put those three lines
+at the bottom this usually pi bind 11
+library that we ship with it's very
+convenient and like it will
+automatically generate all of the code
+that kind of converts between python and
+c++ types back and forth so that gives
+you a really easy way to writing those
+c++ programs the only difficulty you
+might still be facing is how do you
+actually compile them because that's not
+usually very easy in c++ but we do
+provide two ways to actually do this for
+you so if you want to be distributing
+your extension you can like use a setup
+tools base method which is like you know
+the canonical way to build to create
+Python packages but if you really want
+to hack on something really quickly
+there is also like a one-liner that lets
+you import such C++ code so you
+basically give it a list of sources like
+relative to the to the script I think
+and it will basically first time you
+call it it will compile it and give you
+the Python module for this the next time
+it will just load load the load the
+precompiled module again and then you
+can simply use this function as if so
+like you know and here it took like two
+tensor arguments returned a tensor at
+the bottom here it's pretty small but
+like it's but you can basically use it
+as a Python function that liked again
+takes two tensors returns a python
+tensor your program doesn't really even
+notice it called like into your C++ code
+and just to quickly go over the
+interface I don't really want to get
+into details again but that's an example
+of how so that was the stable part this
+has been here for some time and it will
+be stable now we get to the kind of
+preview part so that's how you would
+define in simple neural network and in
+Python and if you were to do this the
+same in C++ that's how it would look
+like if you have a training loop in
+Python that's how it looks like if you
+were to do this in C++ it looks like
+this so it's really like mostly just
+syntactic differences
+between the two languages but ultimately
+we do have an API like if for some
+reason you really need to run in C++ we
+really think you should use Python if
+you can but like if you if you want to
+embed in some runtime environment that
+only has a C++ API that's still
+sometimes better to just write the code
+straight in C++ and now we have an API
+that exactly much is pretty much
+one-to-one with our Python API and you
+can do that so most of our packages for
+neural networks grading based
+optimization data loading serialization
+Python integration and toward script
+again are there they're part of the
+preview so they might change but if you
+want to if you want to try you can see
+I'm really running out of time but
+generally like the final thing is we
+have a new distributed back-end it's a
+complete overhaul it has like new
+abstractions it has some performance
+benefits and some of the nice things is
+that it actually lets you write fault
+tolerant programs so for example you
+know if some of your notes fail you can
+still recover and you can also like
+implement elastic sizing on like you
+know on spot instances and on some cloud
+providers to kind of lower the costs of
+your training finally there is we're
+also working on integrating with cafe -
+it's not very much user visible but
+ultimately cafe 2 is like merging with
+piperj to become Pytor 1.0 they have a
+lot of great mobile kernels so the
+mobile sorry will be generally getting
+better yeah so I run out of time
+generally pite which is supported by a
+lot of institutions both academic and
+and corporate we have a really vibrant
+community you can go into the forums
+people will help you they'll answer your
+questions and yeah I hope I hope you'll
+appear somewhere in there as well so
+thanks a lot
+[Applause]

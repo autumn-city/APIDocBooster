@@ -1,0 +1,1073 @@
+what is going on guys welcome back to
+another video and uh
+in this one we will try to build on what
+we did in the last video
+so
+the last video was a paper walk through
+or paper explained of uh variational
+auto
+and
+so hopefully if you watch that video or
+if you watch some other video you have
+an understanding of variational
+autoencoders and
+how they work and the derivation and so
+on
+so
+this one we will build it and luckily
+actually
+uh this is pretty easy to build so the
+the difficult part is understanding the
+theory
+and um
+and how it works but now that we've had
+we have that uh i think this video will
+be pretty smooth
+uh it will be pretty easy to build it
+and so our goal is to build two
+functions here one for the model
+the variational autoencoder
+and then set up a training loop to train
+it and do inference on
+simple data set uh mnist data set
+but i think you know understanding
+variational encoders is something that
+you definitely should do
+uh i've been sort of
+like
+i've known about but this is really the
+time when i've taken it to really
+understand the details of it
+and if you look at you know variational
+encoders they're used
+all over the place even if you look at
+more modern approaches like diffusion
+models and so on then
+uh variational autocoders is a component
+of that and i think understanding this
+thoroughly is a good investment
+so with that said um
+let's get started so you know many
+people also in the when they code things
+they um
+they have the code pre-written and i've
+seen comments people ask me to do that
+for me
+i feel like
+i would i like to watch someone build it
+you know from scratch explain it step by
+step what they're doing what's going on
+and sort of uh be more chill with it in
+that way
+uh instead of just throwing all the code
+and then go through it and it will be
+rushed and and so on um but going
+through it line by line i can explain
+what i was thinking and and in many
+cases i uh
+have to
+sort of uh
+rethink myself and you know maybe pause
+and make a better explanation
+uh
+but yeah so that's
+let me know what you think of of having
+these types of videos and if you think
+it's cool if it's if it's useful if it's
+beneficial then
+uh please like the video subscribe
+and give a comment
+uh all right so you know for the model
+we'll start with that
+so we're to just import towards nn
+uh actually i think you should do this
+instead of doing import torch.nbn it's a
+bad habit i think you should just do
+from search import and then i think that
+makes more sense
+but then
+i don't know this i usually do import
+nn.functional as f
+yeah all right and then we should do
+like this
+all right so we'll do a class
+variational auto
+encoder we'll inherit from nn module
+we'll do uh the init
+then we gotta call this the parent
+method right
+this is standard stuff uh then i'll
+write the skeleton code so we're gonna
+have uh an encode function the encode
+function is what we talked about it's
+gonna be the
+i mean this is the queue of phi of
+uh
+zed
+given x i guess
+so you know this is the encoder network
+then we'll have the d code
+which will be where we send in zed and
+we'll get back the image so this is uh
+if you follow that i'll try to do it's
+phi
+no it's a
+p of theta of
+x given
+goddammit
+given that
+so do a pass on that for now and then we
+will have a forward method where we will
+sort of combine everything or the encode
+and the decode
+and that's it so we'll then check
+this is always a good thing if you build
+a model just
+build uh
+like
+uh like do some random test case so rand
+of one
+784 will do
+and then we'll in initialize the vae
+all right but then we'll just print i
+guess the shape of it but
+we don't have to do that now
+okay
+so uh
+what do we want to do all right for the
+init i guess you know
+we need to know the input dimension
+right this is going to be for mnist
+that's a 28
+by 28
+which is 784
+so we'll just set input them we will
+have a hidden dimension we can set that
+to default maybe 200
+and then the set dimension we will set
+to default 20.
+so that's for uh the encoder right and
+uh also for
+i guess also for the decoder so
+um
+what we want to do first right for the
+uh the encoder
+this is when we take the image so we
+will take the image and we will convert
+it to a hidden dimension
+and this is just a linear layer where we
+take the input dim to htm
+so in the encoder here
+uh this will be
+uh first that we take it to a hidden
+dimension
+and then
+so we have input image we take it to a
+hidden dimension
+hit then then and then we output mean
+and standard deviation
+we parametry parametrization trick
+and then send it to the decoder and then
+output image
+right that's the
+idea that we're gonna try to do
+so uh
+for this now we will do uh hidden to mu
+which is gonna be h dim to
+set them
+and then we'll do the same hidden
+dimension to
+sigma
+and that will be also these are two
+separate linear layers
+and remember in the loss function is
+when we where we specify that these
+like what we want these layers to learn
+is that
+well uh
+for depends the loss functions are
+there's two terms but the kl divergence
+right
+will try to push this linear layer to
+learn a
+uh or it will try to learn that this
+will be a standard gaussian
+now it won't become a standard gaussian
+but it will push it towards that um
+because
+uh
+so that we ensure that the latent space
+is
+is uh is is gaussian or sorry we ensure
+that the
+latent space is standard gaussian
+but we still have the reconstruction
+loss
+all right so we then have uh we then
+have so this is for the
+uh this is for the encoder
+now for the decoder
+decoder here uh we're gonna have
+this is right when we take
+uh when we have done the
+parameterization trick so we've combined
+the means and and standard deviation
+we will now take zed to to hidden first
+so it's just going to be another linear
+layer
+and then we will do
+hidden to image so just the opposite
+straight up of what we did for the
+encoder pretty much
+uh
+let's see
+this should be this
+and then input dimension
+cool cool so now we got the uh the
+initial initial
+let's now do the encoder so this will
+just be
+uh image to hidden right we'll do image
+to hidden of x
+then
+we will do so this will be h we will do
+f dot relu on this
+actually i don't know why i did that i
+kind of prefer to do
+i think i like doing this more
+and then that relu
+uh is this wrong oh
+yeah like that so
+i don't know why i prefer to do it that
+way but
+yeah i guess both work
+but i like doing this
+so self.relu
+let me know which one you like i haven't
+decided yet if i want to do this and
+nn.relu or self.relu
+uh like doing the using the functional
+or i mean it's a function so it makes
+sense but
+i don't know
+i it's like if you use the in place
+equals true here then you just set it
+once instead of doing it all over the
+place maybe
+right but so hopefully i mean this is
+you should this would be pretty clear to
+follow i hope i'm explaining things well
+um
+i'll try to see if i miss anything but
+now we're just doing a right image to
+hidden and then we do h what we want to
+return here now is the mu and the sigma
+so we're then going to run h
+uh
+right mu sigma is going to be n uh wait
+self.hidden to mu
+hidden to mu of h
+and then self.hidden to
+sigma
+of h
+now i'm thinking should this be
+relu on this
+no
+i don't think so i think this should
+just be the linear layer
+yeah
+that's good
+because i mean uh if we put it to relo
+it's going to be between 0 and 1 which i
+guess it's going to be in any uh
+anyways but it can be negative values
+for the mu and i guess also for sigma so
+we do not want to do rel here and then
+uh let's see we want for the decode
+we taking z now so we're going to take z
+to hidden dimension of z
+uh this is going to be h
+and then we're going to do self.relu on
+this
+and let's see after that we're going to
+take the hidden to image so i guess we
+can just return
+self.hidden to image of h
+and that should be it
+yeah actually one thing that's missing
+here
+um is
+when we do the decode when we output um
+for this we want to ensure that this is
+actually between
+uh
+zero and one
+uh because that's what we normalize the
+images to be for mnist so
+here
+uh
+the pixel value should be between zero
+and one so we use we use torch.sigmoid
+for that
+so that's a decode now uh in the forward
+we're just going to put those two
+together so we're just going to first
+generate uh mu and sigma which is uh
+you know self.encode of x
+after we have that we can do x
+uh
+uh
+re
+parametrized
+uh which is gonna be mu plus
+sigma times
+and then towards
+this is epsilon right maybe we can do
+that
+epsilon is torch.rand and like
+uh
+of sigma
+so then you know we element-wise
+multiply this and this is i think
+default if you do it this way
+uh by epsilon so this will ensure that
+it's uh gaussian
+after that we're gonna do
+x reconstruct
+ed
+reconstructed
+is
+uh
+is a decode right so we now run it
+through the decode with said
+re-parameterized
+there we
+go and that's it reconstructed mu and
+sigma so
+here you might be asking well why do we
+not just return reconstructed because
+mu sigma isn't the loss function for the
+kl divergence
+so this is going to be for the
+reconstructed loss this is going to be
+for the kl divergence
+all right i told you this was going to
+be pretty easy uh
+i don't know i'm trying to think if
+there's something that could be missing
+in the explanation but this is i think
+pretty straightforward especially if you
+watched the last video
+all right now that we have that uh we
+generate just an example here maybe we
+can do a batch size of four so we have
+four examples each have 28 by 28
+where we have flattened it
+and we flattened it because we use
+linear layer here right and
+then we initialize
+this
+and the other default argument so now we
+can try and run it
+model
+and that doesn't work god damn always
+happens
+object has no attribute image to hidden
+image to hidden
+i do have that image oh
+image
+to hidden
+oh right we we return uh
+so we can do maybe uh
+let's see
+va of x we're gonna get back x mu and
+sigma
+are reconstruct
+constructed
+print x reconstructed that shape
+mu that shape print
+sigma
+shape maybe we can do that
+so here we expect to get back the same
+in 2020 that's good
+all right so that means
+probably it's correct
+hopefully
+all right so that's the model
+we can remove that nice makes it cleaner
+now let's go to the main or the train
+function so
+again i can just copy paste those
+actually
+this i think is a waste of time to write
+so yeah all right we're importing torch
+torch vision data sets as data sets and
+by the way if you're confused about any
+of this like i mean like
+if you're confused about building models
+and python stuff i have so many
+tutorials on pytorch and the basics and
+building architectures and stuff like
+that uh that you can watch uh that is
+explaining the basics behind
+uh pie torch and so
+i'm assuming i'm assuming some prior
+knowledge of this uh and it's hard like
+some of you probably think it's slow and
+some i think it might be difficult so
+i'll i'm doing my best you can give me
+your feedback
+but yeah so torture vision that data
+sets as data sets where we're going to
+import i'm going to use that for getting
+the mnist data set uh tqdm for a
+progress bar then we have nn
+for neural networks
+from model input variation auto encoder
+and then what we've just built
+transforms for image augmentation stuff
+save image here because you want to see
+how it looks like and then data loader
+for easier data set management for
+batch sizes and stuff
+all right so we can start by doing a
+configuration we're going to first set
+the device
+to be torched at cuda no torso device
+kuda
+[Music]
+if torsada is available
+otherwise we'll run it on the cpu
+uh this should be run to i think this
+should be fine to run on the cpu
+probably
+because this is pretty small
+uh then we have hdm
+which is
+200 i think did we set 400 not 200
+and then 20. so these are just hyper
+parameters i mean this is you can put
+uh this is just going to constitute more
+compression
+uh
+and this is just going to constitute
+more
+uh
+[Music]
+let's see this is just going to make it
+more
+yeah just
+more compute i guess more more power to
+the network i actually don't know
+exactly
+uh did they say exactly how their
+architecture looked like they probably
+did
+i mostly followed on the theory of how
+they did it
+not so much on the exact architecture
+that they used i don't think it's that
+important i'll be honest
+but i mean
+if they talked about it maybe we could
+have done it
+yeah i don't think they did if i did i
+must have missed it but i don't believe
+they showed exactly how they
+how they did that so
+i think this is probably fine um this is
+what i've seen other people use
+maybe you can play around with this if
+you want i think maybe this i mean this
+is a little bit small maybe but
+it depends on the data set i feel like
+for eminence this is i think plenty
+sufficient
+all right num
+epochs
+is 10
+all right batch size
+32
+learning rate
+i mean all right you should know what
+learning rate we use on this channel all
+right
+if you don't
+get out of here
+we always use
+3 minus 4. those of you who know
+you know and i shouldn't have to explain
+it
+god damn it
+all right i'll explain it
+it's the carpathic constant
+and you should always use the karpate
+constant and actually actually
+you should always also name like when
+you use it should always be the
+carpathic constant because
+i just feel like i mean
+the guy's done a lot right but he's
+never got anything really named after
+him
+like
+where will per karpati be like you will
+like see
+his name like there's no there like
+karpathy's theorem you know
+maybe if he would have become more more
+of a
+theoretician instead of a
+engineer
+but
+we should still honor him by keeping the
+karpati constant anyways
+dataset datasets.mnist
+root data set
+i've done this so many times i'm just
+bored at this point
+all right so we're just loading data's
+eminence data set uh we're well in this
+case we'll just do transform.2 tensor
+all this will do is normalize it so this
+will actually also divide by 255 so this
+ensures that the
+each pixel value is between zero and one
+which is necessary that we
+if you come from like tensorflow for
+example this is not clear that it does
+that but it does divide by 255
+so then the torch.sigmoid which ensures
+that it's between 0 and 1 will actually
+work
+and then we'll do download true
+we'll create a training loader
+so we'll the data loader here
+data set is data set batch size is batch
+size
+and then shuffle equals true
+so
+yeah here we're just using python to
+load mnist nothing particular here we
+will create
+the model and we'll send in uh input dim
+hdm
+and zim
+and also we'll send this to the device
+we specified
+which is either cuda or cpu
+the optimizer will be torch optim
+dot atom
+model dot parameters
+wait oh this should be device device
+model parameters learning rate is the
+learning rate
+alright so that's the optimizer using
+i guess we should do from torch import
+and then
+can you do optim as well yeah so we'll
+do
+instead of doing torch shot opt-in we'll
+do optim
+that atom um
+and then the loss function here uh i
+told you you could use this is for the
+reconstruction loss function
+and what we'll use in this case is bce
+loss
+and
+we'll do a reduction sum now uh like
+i think you could
+i think you could also use actually like
+a i don't know if it would work worse
+maybe but you could probably do do like
+a msc loss probably or like
+absolute error loss
+instead of bce
+um
+the thing here is that usually with bce
+right you have this i think it's like
+this you have y i which is the label
+times if this is one
+you want the prediction to be
+one right
+let's google it
+bce loss pi torch
+all right so for bc here you have this y
+n times log of x n
+and then 1 1 minus y n times log of 1
+minus x n
+so
+here
+uh basically
+you for this is what you use for
+logistic regression right but then y is
+either a label of 0 and 1. in this case
+the y will be pixel values of the input
+image
+so these are the actual pixel values
+so let's say that's 0.5 right
+then the target so they say here no to
+the target should be numbers between 0
+and 1 and here they also say this is
+used for measuring the error of a
+reconstruction in for example an auto
+encoder
+so
+if it's 0.5
+then we'll be using both of these terms
+and in that case actually the optimal
+will be to also have it as 0.5 so
+um
+yeah this law still works and
+yeah
+i don't know i just i think i was just a
+little bit confused about it because i
+thought it was only for binary uh labels
+and then you couldn't use uh floats but
+it makes sense even for floats
+all right so
+here now we want to start the training
+right so we do
+i guess this is not a good way to code
+it actually
+it's okay for these like hacky types of
+things but usually i like to do like a a
+train
+stream function
+and then like uh main
+run the train function and so on
+um
+but now
+i'm doing it in sort of a single script
+because this is just sort of an example
+right it's a prototype
+but i think for like multiple gpu or
+several device if you're running on
+uh what is it called for the data loader
+you have uh
+oh now i forget about it
+uh the num workers right num
+workers yeah if you do num workers and
+you don't do it like this i don't think
+it's gonna work um
+but we're not looking for the most
+optimal code i guess
+or
+so this is okay we'll do a loop here
+we'll use a tqdm
+enumerate of trainloader just so we get
+a progress bar
+and then we'll do x and y
+in loop so remember
+here that
+actually we won't be using y
+i don't think
+no so
+yeah you could just do underscore here
+because we're not going to use the label
+so for the forward pass
+we'll first want to uh
+get x to cuda
+to device
+uh
+re-declared x
+define
+above without usage
+hmm
+okay i'm a little bit confused over that
+but we'll do a view
+of minus one to input dimension so we'll
+just keep
+uh
+yeah we don't have to do we can do x dot
+shape of zero so we'll keep the number
+of examples that we have and then we'll
+just reshape it to
+input dimension
+uh
+yeah i guess you could do minus one here
+but
+uh
+it makes more sense i guess to keep
+reshape it so if you will reshape it
+to the exact
+um
+to the exact and i think uh like you
+could also use reshape here i think vue
+will do it uh on this one
+uh sort of uh without a making a copy
+so
+i think it's a little bit more efficient
+but sometimes you might want need to do
+a reshape so reshape could be a little
+bit of a safer option
+all right we'll do x reconstructed mu
+sigma that's what we get back when we
+run the model
+now we need the loss function
+or compute loss
+compute loss so remember we have
+reconstruction loss
+so we have reconstruction loss
+that will be
+our loss function of
+our x reconstructed and then
+x
+right so the labels here will be the
+input
+and then we have the kl divergence
+and this is the formula that we saw i'll
+try to put it on the screen but it's the
+formula we saw from the paper it's 1
+plus towards log
+of
+sigma dot power of 2
+and
+then
+we have minus mu that power of two
+and then minus sigma the power of two so
+to for
+uh
+right also important uh since we want to
+minimize right we wanted to maximize in
+the paper but
+we want to minimize here the loss by
+default with pi torch so we'll do a
+minus sign
+in front
+and this
+is i guess already in that format yeah
+it's already a minus sign here
+so this will be uh
+this is already good so this will be the
+reconstruction loss and the kl
+divergence just following the paper this
+will push it towards a standard gaussian
+this will push it towards actually being
+able to reconstruct the image
+but now after that we want to do the
+back prop right
+so we'll do first compute the
+combined of the kl divergence now we're
+using a weighting of one for each um
+maybe it's actually like i found that
+this worked uh
+and they didn't say but i guess like you
+in general right you would have some
+alpha term here and you could play
+around with the weighting of the two
+uh but this seemed to it seemed to work
+like just off the like just using one so
+i figured let's not play around with it
+if it works
+so we'll do you know optimize your grad
+loss it backwards off my usual step
+i feel like a lot of people do this like
+in some weird ordering like they do like
+the optimizer this is just me ranting by
+the way because
+i don't know i'm bored i guess here like
+they usually do like zero grad over here
+and then they do some loss backward and
+then like they do some other stuff and
+i don't know like i'm just confused like
+it makes sense to me like just do
+optimizers to your grad now we know that
+there are no zero gradient like there's
+no accumulated gradients from before
+we'll do lost that backwards we'll
+compute a new gradient and then we'll do
+this step
+like i don't know having it in disorder
+makes things just make more sense for me
+see all right this is good like i just
+wanted to show you that
+this is a good idea look
+look he also does it okay
+talking about
+since we talked about the constant i
+figured why not so here you can see
+model zero grad right lost that backward
+and optimize that step personally
+yeah okay if you do the clipping of
+gradients that's fine but otherwise it's
+in this ordering like don't do anything
+else god damn
+i'm taking out i'm venting
+venting
+all right so now that we have set up the
+training loop
+um i guess like
+what we could yeah so what i did here
+i'm thinking of copy pasting this code
+because this is the important stuff like
+we can now uh run it so
+hopefully it works we'll see so download
+all right this is a warning user warning
+that's from pytorch that's not that's
+not from us which is good so
+all right so it runs uh
+the loss is pretty large i guess
+um
+all right
+maybe the learning rate is not uh
+the best
+yeah
+it might be a little bit too large you
+might want to decrease the learning rate
+just a tad bit
+all right so you know how we actually
+use this for inference i i'm gonna copy
+paste it because i don't know the video
+is now
+32 minutes long let's not make this
+longer than it has to be
+uh i'll just explain this so you this is
+the
+important stuff
+actually no yeah all right so
+here what i do is for inference i do
+model to cpu actually let's rerun it and
+let's just do
+let's do just
+three epochs because it's going to take
+a long time
+all right so we set it to the cpu
+i'm not sure why i do that
+i don't think you need to do that
+but then we do an inference function and
+what we send in here is the digit uh we
+want to specify like the
+digit we want to generate and the number
+of examples we want to generate for that
+digit
+so for that right to be able to do
+inference you need to have mu and sigma
+for that you need to know
+you need to send in an image
+get the mu and sigma and then you can do
+the re-parameterization trick many times
+generate many samples but you need to
+have the mu and sigma
+so here i do images
+and i run through index from starting
+from zero
+i run through the data set and i check
+if
+uh
+yeah if y is equal to in index
+then i
+uh i append i i add the image right to
+this list
+uh and then i uh
+basically add index plus one
+and then we do that until we get all so
+basically the first uh
+it's a it's a dumb way of doing it i
+don't know why i did it this way but so
+basically it will be like like digit
+zero digit one digit two digit three
+it's gonna be like that so
+uh yeah
+i guess until we have all the the digits
+this is pretty fast so it's it's like no
+worry if it's inefficient but then we
+have the uh encodings digit uh and then
+we run through for
+each digit
+okay so we actually do
+mu and sigma for each digit all right
+then we
+actually generate
+why did i do it like this this is dumb
+this is dumb
+oh this is so bad i can't believe i'm
+making a video showing this
+so it's done because we're generating
+for each all 10 but then here we're
+going through for the number of examples
+oh okay okay okay nevermind it's not
+that dumb actually i'm sorry for
+not following my own code
+um
+yeah so here we get all the images we
+add them to a list here we get the mu
+and sigma for each digit
+here
+we
+generate
+a new image we get the mu and sigma from
+that digit we encode it and then we run
+a loop where we generate uh
+sorry i'm really tired uh this is
+actually dumb yeah i'm it is dumb
+because we have the loop here but we've
+already generated everything but then we
+still run through
+yeah so here you could do if you want to
+do like we could do that we could for
+many
+um you could do like five here and it
+will generate many like uh
+yeah we should do that so what this will
+do is it will generate many
+digits of zero
+and then it will do that for each digit
+because here we have the loop for each
+of the ten
+so basically what we do is we run
+through the example we generate epsilon
+we do the re-parameterization we do the
+decode and then we
+get it into a grid and then we save the
+image
+so what we get here these are generated
+zeros and ones and twos
+these look blurry right uh it's because
+it's because it didn't run for that long
+i think
+um
+this feels bad to do but i'll change
+alert i think it's a little bit high
+maybe
+um
+actually no i will keep it and i will
+increase the batch size
+you can always adapt remember that
+and then we'll run it for
+10 bucks
+it's probably not as efficient but i'll
+run it this way
+and uh i'll get back to you with the
+results
+all right so uh 10 epochs i still think
+like
+like uh
+so there are two things i'm thinking the
+loss is not decreasing that much and i
+think it should be uh
+so
+it might be that the either of one of
+these is uh sort of taking over
+which uh
+yeah we you should probably check that
+which one is taking over and then also
+maybe decrease the learning rate a
+little bit i would try but uh it seems
+to work still so
+here you can see uh these are with
+different
+uh
+different uh
+parameterizations
+one thing you can see though like these
+are different zeros right
+um so we've definitely succeeded with
+that but one thing i'm wondering too is
+uh if you have like um
+they still have like the same
+type of
+like they're all tilted towards the same
+for example you could have a zero that
+tilts the other way uh and there might
+be examples showing that in the training
+data and if we would have saved that
+image here gotten the mu and sigma from
+that one
+maybe you could have directed it uh
+towards another
+sort of
+like the tilting of the the
+of the digit or whatever could have been
+different
+maybe if we look at the one
+you can see here also
+like maybe here you could you
+could have imagined that the one could
+have been like more straight maybe
+um
+but i don't know
+just something that i oh these are bad
+actually
+all right
+some of them are a little bit bad yeah
+um i think probably training longer and
+decreasing learning rate i think that
+would have helped
+um
+yeah i it didn't look that bad when i
+ran it the first time actually so it
+might have been because of the batch
+size because i ran 10 bucks but i ran
+with lower
+so uh
+it could have been that
+but anyways i think uh the inference
+thing is a little bit interesting
+probably you know uh
+i mean
+yeah
+i don't know i still feel like the
+encoding the mu and sigma has a big
+impact on the
+the inference step and so
+it might like you can still get many
+different generations of sort of some
+of an original one but it's still
+uh it's not like gans for example right
+like for vaes
+there's a term for it but obviously for
+gas you can just send in a latent
+directly and then you'll uh sort of
+you'll have it but for
+vaes you you uh you need to send in the
+input and then be actually to be able to
+do inference and generate
+all right uh
+yeah i don't think there's anything else
+uh i'll upload the code i'll put it in
+the description or it will be on my
+github
+you can check it out there
+let me know what you think of the video
+hopefully it was
+it it was uh educational and you learned
+about vaes
+yeah let me know what you think
+future videos could be on i'm thinking
+right now
+i uh
+i'm thinking
+of doing more
+paper reviews i want to get more into
+the
+research right now and learn more about
+what's going on
+um do some interesting projects maybe is
+a plan of mine
+um
+yeah i'm not sure if things aren't like
+for this one i felt it was so easy to
+hack a vae
+and it's so it's kind of basic
+but for like larger projects i'm not
+feeling like i want to implement like
+yolo v7
+like some monster
+uh it's just yeah
+but i definitely want to start reading
+more and do more explanations and paper
+reviews so let me know if you have any
+interesting papers that you think i
+should be
+making videos on and so on all right
+thanks for watching guys uh
+leave a like comment subscribe
+everything
+support the channel
+by doing that
+and bye bye have a nice day see you in
+the next video
+[Music]
+you

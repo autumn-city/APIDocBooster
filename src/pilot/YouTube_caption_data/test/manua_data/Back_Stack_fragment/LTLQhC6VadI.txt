@@ -1,0 +1,568 @@
+[MUSIC PLAYING]
+JEREMY WOODS: Hi.
+My name is Jeremy
+Woods, and today, I
+want to talk to you
+about Navigation
+Compose on every screen size.
+In 2021, the Android
+X Navigation Component
+added the Navigation
+Compose module.
+The Navigation
+Compose module allows
+you to navigate
+between composables
+while taking advantage of the
+infrastructure and features
+already offered by the
+navigation component
+with other components, such
+as views and fragments.
+Navigation Compose consists
+of three main parts--
+the Navigation
+Controller, which manages
+the state of your navigation.
+This is how you navigate
+between different destinations,
+and it also maintains
+the backstack.
+The Navigation Graph
+provides the map
+for your Nav Controller.
+This is where you define
+all of your destinations
+and how they relate
+to one another.
+And the NavHost, which is
+what we will focus on today.
+So what is a NavHost?
+The NavHost is a
+bounding box container
+for the part of your
+UI that should be
+considered part of navigation.
+This normally takes the
+form of a single composable
+destination, such
+as a screen that
+takes the entire
+space of the NavHost.
+For example, looking
+at this implementation
+of a scaffold with a
+NavHost along with the image
+of a device, the
+highlighted portion
+represents the container
+that is the NavHost
+and where the content from
+any composable destination
+will be displayed.
+So a destination being shown in
+the NavHost cannot take up only
+part of the NavHost.
+If you want destinations
+to take less space,
+you have to make the NavHost
+itself take less space.
+The exception for this is
+what we call a floating window
+destination, which includes
+components such as dialogs
+and BottomSheets.
+But those are still considered
+a destination of the NavHost.
+They just have their
+content displayed
+in a completely separate
+container floating
+above normal composable
+destinations.
+The NavHost consists
+of everything
+that navigation is responsible
+for showing on the screen.
+But often time,
+Navigation interacts
+with components
+outside of the NavHost
+that Navigation is
+not responsible for.
+This includes things like the
+top app bar, bottom navigation,
+navigation rail, and
+the drawer layout.
+Generally, we can identify
+things outside the NavHost
+as something that
+remains on the screen
+even when the
+destination changes.
+Let's focus specifically
+on the bottom navigation
+and navigation rail components.
+Both of these contain
+different menu items
+that users can select to
+indicate to Navigation
+that they want to navigate
+to a different destination,
+but they are presented
+in different ways.
+The bottom navigation
+is a menu that
+is presented at the
+bottom of the app.
+For compact window sizes, you
+should use a bottom navigation
+bar.
+The navigation rail is presented
+on the side of the app.
+For medium and expanded
+width window sizes,
+such as tablets
+or foldables, you
+should use a navigation rail.
+Both of these components
+connect to Navigation
+in a very similar way.
+When implementing a bottom
+navigation component,
+start by declaring
+your Nav Controller.
+This will be our hoisted
+state and allow us to connect
+the bottom nav to the NavHost.
+Next, we will use the
+scaffold component
+and define our bottom
+navigation composable
+within the bottom bar
+parameter content.
+This allows us to avoid
+any screen formatting
+and ensures that the
+bottom navigation
+is in the correct location.
+Then, within the
+bottom navigation,
+using the hoisted
+Nav Controller state,
+we get the current destination.
+We won't go into
+detail here, but we
+can assume that icon
+is the list of items
+that helps us link each icon
+in the bottom navigation
+to a destination in the NavHost,
+and using the item along
+with the current
+destination, you
+can determine the correct
+state of the bottom navigation.
+Finally, in the content
+of the scaffold,
+we implement the NavHost,
+passing in the same hoisted
+Nav Controller used by
+the bottom navigation.
+So whenever the state of
+the Nav Controller changes,
+both the bottom
+navigation and NavHost
+are updated appropriately,
+and they remain in sync.
+To implement a
+navigation rail, we just
+need to change a few things.
+Instead of a scaffold,
+we use a row.
+Replace the bottom navigation
+with the navigation rail
+and the bottom navigation item
+with the navigation rail item.
+Then, our NavHost
+needs to be defined
+as the next item in the row
+instead of in the scaffold's
+content block.
+With that, we've successfully
+gone from bottom navigation
+to navigation rail.
+We now have implementations
+of both the bottom navigation
+and navigation rail.
+But as it stands, there's
+a bit of duplicated code.
+Let's see if we can
+clean it up a little bit.
+Both functions get the
+current destination
+from the Nav Controller.
+They also need
+the Nav Controller
+in order to navigate in
+response to some onClick event.
+Instead of passing down
+the Nav Controller,
+we will follow best practices
+and keep it hoisted.
+So we'll extract out the
+destination and the lambda
+for the onClick event.
+The other major part
+here is the NavHost,
+which, depending on
+the size of your graph,
+can get pretty large.
+And it would be much
+nicer if we only had
+to declare that once as well.
+Let's extract out our
+bottom nav implementation
+into a composable function
+called BottomBarLayout.
+This takes a destination, an
+onMenuItemSelected function,
+and a content lambda function.
+In the lambda of our scaffold,
+we invoke the content,
+and everything else
+remains the same.
+Now, how do we call
+our new function?
+The Nav Controller
+piece is easy.
+We just create that using
+rememberNavController
+and pass it in.
+For the NavHost, if we just pass
+it into the content portion,
+we would still need to
+implement the NavHost every time
+we call a new function.
+So we need a way to
+extract it out and ensure
+we use the same NavHost across
+different function calls.
+For this, we need to
+declare the NavHost inside
+of a movableContentOf function.
+What is movable content?
+Let's say you have
+a composable lambda
+that you use multiple times
+during a single composition.
+Each time you use
+that lambda, it
+is a new instance unaware
+of any preserved state
+from the previous calls.
+Placing that composable lambda
+inside of a moveable content
+wraps it in another
+lambda that keeps up
+with the state of the
+original composable lambda.
+Now, using the new lambda, the
+state of the composable lambda
+is preserved each time
+the lambda is executed.
+MovableContentOf is
+an experimental API
+added in Compose version 1.2.0.
+It allows state to move
+within the composition
+by converting the composable
+lambda into a lambda that
+moves the state and
+corresponding nodes
+to any new location
+that is called.
+When the previous call
+leaves the composition,
+the state is
+temporarily preserved.
+And if a new call to the
+lambda enters the composition,
+then the state and
+associated nodes
+are moved to the
+location of the new call.
+If no new call is added, the
+state is removed permanently,
+and remember,
+observers are notified.
+For this, we can declare
+the NavHost inside
+of a movableContent function.
+Movable content allows us to
+declare the function just once,
+and whenever the variable
+holding that function
+is called, Compose will
+continue to use the same object.
+So our calls to the
+bottom bar layout
+simply calls our
+NavHost function
+as part of the content.
+We can do the same
+for navigation rail.
+Define the navigation
+rail layout function
+that takes a destination
+and onMenuItemSelected
+function and the content,
+and keep everything
+in the function the same,
+only replacing our NavHost
+implementation for the
+content invocation.
+Now that we've simplified
+our implementations
+of both functions,
+deciding which one to use
+is straightforward.
+Using a when statement that
+takes into consideration
+the width size, if
+the size is compact,
+we should use our
+bottom bar layout.
+Otherwise, our screen size is
+considered medium or expanded,
+and we should use our
+navigation rail layout instead.
+Since these components are
+outside of the NavHost,
+they are all considered
+external state
+and have to be
+managed separately
+from Navigation,
+which is why we need
+to hoist the Nav Controller.
+In the future, with the
+use of shared elements,
+it will be possible
+for these components
+to be part of the
+destinations and just
+shared between destinations
+that care about them.
+We've now taken care
+of the components
+outside of the
+NavHost and ensured
+that we always used the
+proper components no matter
+the screen size.
+What about inside the NavHost?
+Inside the NavHost
+consists of anything
+within our bounding box.
+So any interactions you do as
+part of creating your graph
+or interactions within the
+composable destination that
+is part of your graph, each of
+these composable destinations
+should be able to handle
+every screen size.
+Adapting each destination
+to different screen sizes
+might be as simple as swapping
+out a list for a grid.
+But sometimes, the
+best use experience
+requires larger changes like
+adopting a list-detail view.
+A list-detail view
+describes the implementation
+of two screens, a list
+containing multiple elements
+and a detail screen
+that corresponds to each
+of the elements in the list.
+With a compact
+window, these items
+are thought of as two
+different composables, list
+of items for the list
+screen and item detail
+for the detail screen being
+stacked on top of each other,
+with only one content
+showing at a time.
+The user starts out on the list.
+And once the item is
+selected, the window contents
+are replaced with
+the detail view.
+But with a larger window, both
+the list and detailed content
+are displayed at the same
+time in one ListAndDetail
+composable.
+The ListAndDetail
+composable combine
+both the list of
+items and item detail
+composables together in the
+row so they are displayed side
+by side.
+When the user selects an
+item on the list view,
+the detail pane updates
+based on the selected item.
+Now, how do we combine both
+of our solutions to ensure
+we can handle every screen size?
+What if we were to
+combine both solutions
+into a single composable,
+say ListDetailRoute, that
+selected the proper destination
+based on the given window size?
+If we have a large window size,
+we display the ListAndDetail
+composable.
+And if not, we display
+either the list
+of items or item
+detail composables.
+Which one we display depends
+on whether there is a currently
+selected item or not.
+We now have a responsible
+composable destination,
+but there is a problem.
+What happens if we are
+inside our ListDetailRoute
+and the user wants to go back?
+Well, if we're using an
+expanded window size,
+our list and detail are
+inside the same composable,
+so pressing back should go back
+to the previous destination
+in the stack.
+But when using the compact
+window size, where the detail
+screen replaces the list screen,
+pressing back from the detail
+screen should take
+you to the list, not
+the previous destination.
+Because of our separation
+inside the ListDetailRoute,
+if we are on a
+smaller window size
+and the item detail composable
+is displayed in the NavHost,
+we can set a BackHandler
+to intercept back press
+to make the
+ItemDetail composable
+return to the list
+of items composable.
+This type of state
+manipulation in the NavHost
+allows our app to achieve the
+proper responsiveness no matter
+the screen size.
+But wait.
+Now that your list-details
+are all set up,
+what if you are
+on the detail pane
+and you want to navigate to
+some content that replaces
+your ItemDetail composable?
+This is a rare
+scenario where you
+should use a nested NavHost.
+By making the detail
+pane its own NavHost,
+you can define the
+destinations that should only
+be reachable from
+the detail screen
+and allow for the maintenance
+of a separate backstack.
+If you wanted to deep link to a
+destination in the inner graph,
+you would need to find
+a deep link destination
+in the inner graph as well as
+on the parent destination that
+is hoisting the nested NavHost.
+This ensures that
+the outer graph
+has a path to the
+destination that you
+are attempting to deep link to.
+Here, we cover a
+specific scenario
+where there are a few things
+you should be doing in general.
+The Android X Compose
+Material 3 Library
+offers the window
+size class APIs,
+which allow you to
+determine the width and/or
+height of the current composable
+and classify it as compact,
+medium, or expanded.
+Ensuring you are
+properly hoisting state
+will allow your
+app to disseminate
+the proper
+information, no matter
+which composable
+is being displayed
+at any particular time.
+Using the LazyVerticalGrid,
+LazyColumn, and LazyRow APIs
+will help you take advantage
+of Compose's built-in support
+for handling adaptive
+layout without needing
+to do extra work on your part.
+Check out our other talks, like
+Compose Implementing Responsive
+UI for Larger Screens
+talk, for more ways
+to make your
+composables responsive.
+Again, these things are
+general practice for Compose
+and not specific to Navigation.
+So we need to manage
+the external state
+outside of our NavHost
+by using the given window
+size to determine
+the proper navigation
+element to be displayed.
+In conjunction, we
+should also ensure
+that the inside
+of the NavHost is
+configured so that
+each destination is
+responsive as well.
+By doing so, we can
+develop apps that
+can truly use Navigation
+Compose on every screen size.
+Please check out our content
+on developer.android.com,
+and thank you.
+[MUSIC PLAYING]

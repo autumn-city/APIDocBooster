@@ -41,13 +41,20 @@ To set the ROUGE evaluation, please follow [this instruction](https://stackoverf
 ## Running the pipeline
 
 We provide our proposed tool APIDocBooster. 
-To use this tool, firstly you're required to train the transformer model for the classification model. 
+To use this tool, firstly you're required to train the transformer model for the classification task. 
 You can also fine-tune the model with your own data.
 Please refer to our code in the ``src/classification``.
 
 Then please kindly refer to our code in 
 ```
-src/summarization/our_approach/upsum/src/biased_summarization.py
+src/extractive_summarization/our_approach/upsum/src/biased_summarization.py
 ```
-for summarization stage.
+for extractive summarization stage, which generates extractive summaries for each API documentation.
+
+Finally, please kindly refer to our code in 
+```
+/storage/chengran/tosem_submission_api_doc/APISUM_replication/src/abstractive_summarization/call.py
+```
+for abstractive summarization stage, which generates abstractive summaries for each API documentation. 
+Note that, to use our abstractive summarization script, please kindly register an OpenAI key and replace the key content in the script. 
 

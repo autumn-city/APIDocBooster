@@ -1,0 +1,644 @@
+Hey there and welcome to this video! Today we will 
+talk about the MLP-Mixer which was introduced in  
+the paper "MLP-Mixer: An all MLP architecture 
+for vision". What you see on the screen is the  
+official github repo, however, it seems like it 
+is still work in progress. It lies on a branch  
+called "linen" and I'm not really sure what the 
+status is and what modifications will need to be  
+done before merging to master. For that reason I 
+decided to use the code that the authors included  
+in the appendix of their paper which you can see 
+here. Amazingly, it all fits on one page! Just to  
+be clear it only contains the definition of the 
+forward pass. Things like the training loop and  
+evaluation are of course not included. However, 
+we don't really mind because in this video we'll  
+only study the architecture. To make things more 
+fun we will rewrite this Flax code from scratch.  
+I will try to add comments and explanations. 
+Once we are done we will implement the forward  
+pass in PyTorch. Feel free to check out the 
+description where I provide time stamps for  
+different sections. This way you can just jump to 
+whatever part you find interesting and ignore the  
+rest. Before we start, I just want to state that 
+I'm not affiliated with any of the authors and  
+I would definitely encourage you to check the 
+original paper since this video might contain  
+misinterpretations and mistakes. So what is the 
+MLP-Mixer? It is an architecture that is purely  
+composed of multi-layer perceptron blocks which in 
+essence means that it is only composed of linear  
+layers. According to the paper the MLP-Mixer can 
+perform almost as well as convolutional neural  
+networks and vision transformers on the task 
+of image classification and that in itself is  
+pretty amazing because the MLP-Mixer is not using 
+any convolutional or self-attention layers which  
+are traditionally believed to be necessary for 
+creating good classifiers. Let us now look at  
+the diagram. It describes the forward pass that 
+starts with an input image and ends with a class  
+prediction. Similarly to a vision transformer we 
+split the image up into small patches and we embed  
+each of them. Now comes the novel part! We 
+take our embedded patches and feed them through  
+multiple so-called Mixer layers. Similarly to 
+self-attention the output of this mixer layer  
+will have exactly the same shape as the input. The 
+forward pass then continues with a global average  
+pooling that is going to average over the patch 
+dimension. Finally, we send this average tensor  
+through the classifier head to get the class 
+predictions. Let us now focus on the upper  
+diagram where we can see what is happening inside 
+of a single Mixer layer. The input is a 2D table  
+where the rows represent different patches and the 
+columns represent different channels of the patch  
+embeddings. The idea now is to learn two mappings. 
+One that takes a single row and maps it to a new  
+row of the same shape and similarly a second 
+mapping that takes a single column and maps it  
+to a new column of the same shape. These mappings 
+will be represented by two separate multi-layer  
+perceptrons. The process of mapping all rows using 
+the first MLP is called channel mixing and its  
+goal is to combine features inside of a single 
+patch. Similarly, the process of mapping every  
+single column using our second MLP is called token 
+mixing and its goal is to accumulate information  
+over different patches. The mixer block performs 
+one token mixing followed by one channel mixing.  
+I guess the code will make this more clear. Before 
+we start let me give you a very quick introduction  
+to Flax. I will focus only on the concepts that 
+will be necessary to understand the forward pass.  
+If you're wondering what the difference is between 
+Jax and Flax, Jax is an auto differentiation  
+tool among other things and Flax is a deep 
+learning package that is built on top of it.  
+Let us now instantiate a Dense (or linear layer).  
+Since we only provide the output features when 
+we construct the Dense layer there will be need  
+for shape inference. Note that Flax modules 
+are fundamentally different from Torch ones  
+because they are not stateful. That means that 
+constructing the Dense module did not actually  
+trigger any initialization of weights. This 
+initialization needs to be done separately and I  
+guess this is in line with Jax philosophy of being 
+functional. To actually initialize our parameters  
+and do shape inference we first need to generate 
+a random key. The key is a random state that  
+will guarantee that we can get reproducible 
+results. What is very different compared to  
+Torch is that whenever there is a function 
+that initializes an array randomly you need  
+to provide a key. So now that we have the key 
+we can initialize the parameters of our module.
+We use the method "init" that takes in a random 
+key and a dummy array. The reason why I call it  
+the dummy array is that what really matters is 
+the shape rather than the values themselves. The  
+shape of the input will be used to automatically 
+do shape inference on all parameters that are  
+inside of our neural network. These parameters 
+are actually a returned by this "init" method  
+and as you can see it's a frozen dictionary 
+which means that you're not supposed to modify  
+it. Also its values are DeviceArray"s and you 
+can think of them as immutable Numpy arrays and  
+when it comes to the actual contents we can 
+see that it holds the trainable parameters  
+of the Dense layer which is the kernel 
+and the bias with the correct shapes.  
+Note that these parameters are not stored 
+inside of the module as some internal state  
+and therefore not only you will have to 
+keep track of your module but also of  
+the trainable parameters. To run inference 
+on our module we use the "apply" method.
+We can see that each row is identical 
+because our input was just ones  
+and as expected the shape of the output 
+is going to be the number of samples  
+times the number of output features. If you 
+are interested there is this following method  
+which is nothing else than a merge of the init and 
+the apply method so you can initialize the model  
+and run inference at the same time. For debugging 
+purposes you can make the module stateful by  
+using the "bind" method. The main difference 
+compared to the vanilla module is that it  
+actually internally stores its parameters which 
+corresponds to the behavior of PyTorch modules.
+You can access the parameters 
+under the attribute "variables".  
+Another benefit of the stateful module is 
+that you can just call it to run inference.  
+With the original module it doesn't 
+work. However, with the stateful one  
+it works. The last topic I want to cover is 
+defining custom modules. The most important  
+thing is that Flax modules behave like Python 
+dataclasses. One implication is that you're  
+supposed to define hyperparameters as class 
+variables. Let me show you a minimal example.
+We define two hyperparameters - "a" "b" as 
+class variables and we also provide their type.
+We choose to use the "__call__" method to define 
+the forward pass and we decorate it with this  
+"nn.compact" decorator. This will allow us 
+to define submodules inline. Note that you  
+could also define the submodules explicitly 
+but I would refer you to the documentation  
+if you want to know more. By the way this is 
+nothing else than a multi-layer perceptron.  
+We instantiate our AmazingModule, however, as 
+mentioned before instantiating this Python object  
+is not going to trigger instantiation 
+of the trainable parameters.
+Here I use the convenience method 
+"init_with_output" and know that  
+the input features can be anything. In this case I  
+set it equal to seven and the reason why 
+input features can be literally anything  
+is that Flax will do shape inference for 
+us and when we defined this AmazingModule  
+we never hardcoded any input features 
+ourselves. So in a way it's more flexible.
+As you can see the parameter dictionary 
+is storing both of the dense layers that  
+we defined inside of our "__call__" method 
+and looking at the kernels and the biases  
+the shapes were correctly inferred. Let 
+us now write the Flax implementation.  
+I'm not going to add any extra annotations or 
+docstrings to this code since I will keep it  
+for the PyTorch implementation. Let's 
+create a script called "official.py".
+All right so we will use einops to 
+conveniently rearrange dimensions of tensors  
+then we import the linen subpackage of Flax that 
+will be used to define deep learning blocks and  
+finally we import jax.numpy that behaves more or 
+less like Numpy. Here we define a simple two-layer  
+multi-layer perceptron. Note that the number 
+of output features of the second dense layer  
+is equal to the number of features of our original 
+input. This means that the inputs of this MlpBlock  
+are going to have exactly the same shape as the 
+outputs. More specifically we will be always  
+dealing with three-dimensional arrays. The first 
+dimension is going to be the batch dimension and  
+the second and the third dimension will be the 
+tokens and the channels of the patch embeddings.  
+Note that the last two dimensions correspond 
+to the diagram that I showed you and their  
+exact order will depend on whether we're doing 
+channel mixing or token mixing. Let me quickly  
+show you how dense layers behave in Flax. When we 
+give them multi-dimensional input. Note that the  
+behavior is exactly the same as in PyTorch and 
+that is it is the last dimension that matters.
+So we instantiate the Dense layer by 
+providing the number of output features.  
+We initialize the trainable parameters 
+and as the dummy array we provide  
+a one sample array with the number 
+of input features equal to three. The  
+sample dimension doesn't really matter 
+for the initialization. What matters  
+is the number of input features so as you can 
+see Flax did the shape inference and it prepared  
+the kernel and the bias trainable parameters. 
+What I want to show now is that we can actually  
+keep the trainable parameters the way they are 
+and just add dimensions to our input tensor.
+So here we provide a two-dimensional array. 
+However, we just changed the number of samples  
+compared to the dummy array and not surprisingly 
+Flax was able to deal with it. What I want to show  
+is that you can actually create tensors with 
+arbitrary many dimensions and the inference  
+is going to work as long as the last dimension 
+is going to be equal to the input features. So  
+as you can see we simply iterate through the 
+initial dimensions and then the dense layer  
+is applied using the last one. By changing the 
+size of the last dimension we break things...
+Now we will implement the MixerBlock which 
+is the most important part of th MLP-Mixer.
+We define two hyperparameters. The 
+first one is the "tokens_mlp_dim"  
+which is related to the token mixing and the 
+"channels_mlp_dim" which is related to the  
+channels mixing and they determine the size 
+of the hidden layer inside of our MlpBlock.
+If we disregard the batch dimension the rows are 
+going to be different patches and the columns are  
+going to be different channels of our embedding. 
+First of all, we apply layer normalization.
+Here we swap the patch dimension 
+and the channel dimension  
+and we do it because we are getting ready 
+to do token mixing and as described it is  
+the last dimension that matters when it comes 
+to applying the dense (or the linear layer).
+We perform token mixing and then we 
+swap back to have the original shape  
+and we take the resulting tensor and 
+add it to the input as a residual.
+We again apply the layer norm and we do  
+channel mixing and we take the result and 
+add it as a residual and that's it. The  
+final class is going to be the MlpMixer and 
+will represent the entire neural network.
+Here we have all the hyper parameters most 
+notably the patch size and the number of blocks.
+So first of all we use a 2D convolution to create 
+the patch embeddings. We take the resulting tensor  
+and rearrange it such that we only have three 
+dimensions. Note that these three dimensions  
+represent the batch, the tokens and the channels 
+exactly like we saw in the diagram. Here we  
+instantiate multiple Mixer blocks always using 
+the same tokens_mlp_dim and channels_mlp_dim. As  
+discussed before the input shape and the output 
+shape of the Mixer block is identical. Ae apply  
+one last layer norm. We apply the global average 
+pooling by averaging over the token dimension.
+And finally we apply a dense layer that has the 
+number of output features equal to the number of  
+classes and it serves as the classifier. And we're 
+done! 50 lines of code! Now, I will implement the  
+MLP-Mixer in PyTorch and here I will try 
+to provide more details and explanations.  
+We start with the multi-layer perceptron block.
+So the first parameter will represent the 
+dimension of the input and the output. The actual  
+value will depend on whether we are doing token 
+mixing or channel mixing. "mlp_dim" represents the  
+dimension of the hidden layer. Internally, we will 
+instantiate two linear layers and one activation.  
+If the "mlp_dim" is not provided 
+just set it equal to the dim.
+We instantiate two linear 
+layers and one activation  
+namely the Gaussian error linear unit and 
+now we're ready to write the forward pass.
+The input tensor can have two different shapes. If 
+we are inside of a token mixing the last dimension  
+is going to be the number of patches and if we are 
+inside of a channel mixing the last dimension is  
+going to be the number of channels. As discussed 
+before the last dimension plays an essential role  
+because it's exactly that dimension that 
+we applied the linear module to. When it  
+comes to the remaining dimensions we just iterate 
+through them and we reuse the same linear module.  
+The output tensor will have exactly the same 
+shape as the input one which is very convenient.  
+We apply the first linear layer and what you see 
+in the comment is the final shape. Note that I'm  
+using the asterisk symbol because I did not want 
+to give a name to this dimension. As discussed  
+before, the dimension that really matters is 
+the last one. We applied the activation and  
+the shape stays unchanged and that is because 
+activations are always applied elementwise.
+Finally, we apply the second linear 
+layer and we end up with a tensor  
+that has exactly the same shape as the input 
+one. Now we will implement the Mixer block.
+So the first parameter is the number of patches 
+we split up the image into. "hidden_dim"  
+represents the hidden dimensionality of 
+the patch embeddings and then as described  
+we will have one MLP for the token mixing 
+and one MLP for the channel mixing and each  
+of them needs to have some hidden dimension 
+that is controlled by these two parameters.  
+Internally, we will have two layer 
+norms and the two MLP blocks.  
+As always we instantiate the parent class 
+in order for the PyTorch magic to work.
+Here we instantiate two layer normalizations 
+and what is important is that we will do this  
+normalization along the patch embeddings hidden 
+dimension. I already explained layer normalization  
+in one of my previous videos so I will link 
+it in the description if you're interested.
+Then we instantiate the 
+token MLP block to do token  
+mixing and also the channel MLP 
+block to do the channel mixing.
+So the input to the forward method is a tensor of 
+the shape number of samples, number of patches and  
+hidden dimension. Note that if we disregard the 
+first batch dimension for now, number of patches  
+times the hidden damage and is nothing else than 
+the table that we saw in the diagram where the  
+rows represent different tokens and the columns 
+represent different channels of the token or  
+patch embeddings. By the way, if you're confused 
+about the terminology patches and tokens are used  
+interchangeably. By the way, if you look at this 
+shape then you can right away see that we would be  
+ready for the channel mixing, however. if we just 
+transposed or swapped the last two dimensions we  
+would be ready for the token mixing. Anyway, the 
+resulting tensor has exactly the same shape as  
+the input which is again really convenient 
+and is very reminiscent of self-attention.  
+First of all, we apply our normalization and 
+similarly to the linear layer what really matters  
+is the last dimension. We then swap the last two 
+columns which will result in the patches being  
+the last dimension we perform the token mixing 
+using our predefined multi-layer perceptron.
+Here we undo the swapping that we did and 
+the channels are again the last dimension  
+here we take the result of the token mixing and 
+we add it as a residual to the input. We continue  
+with the second normalization layer. Then we 
+apply the channel mixing and we again add it as a  
+residual. As you can see this chain of operations 
+led to an output of exactly the same shape as  
+the input. The forward pass is done but before 
+we continue let me talk about one interesting  
+property of the Mixer block. The authors point out 
+that one can implement both the channel mixing and  
+the token mixing using convolutions so one can 
+actually make an argument that the MLP-Mixer is  
+nothing else than a convolutional neural network. 
+Let us now try to rewrite both the channel and  
+the token mixing using convolutions. So 
+we will start with the channel mixing.  
+We create a tensor that has three dimensions that 
+are the batch, the channels and the patches or  
+tokens. Note that this shape is very convenient 
+when applying convolutions in Torch because it  
+always expects you to have the channel dimension 
+as the second dimension. However, in the forward  
+pass that we just wrote the channels were actually 
+the last dimension because this shape is really  
+convenient when we are applying the linear layer. 
+Now let us instantiate two different modules.  
+So this module_linear can be thought 
+of as the multi-layer perceptron  
+and this convolutional module is a 1D convolution  
+where we set kernel size equal to 1. Note 
+that the stripe is by default also equal to 1.  
+In what follows I will try to show you that 
+they are basically doing the same thing.
+They seem to have the same number 
+of trainable parameters and these  
+parameters are actually contained 
+in the bias and the weight arrays.  
+As we can see it's almost matching 
+except for the weight for the module_conv  
+where there is one extra dimension at the end. 
+Since these arrays were randomly initialized  
+when we instantiated the modules you would 
+now want to make sure they are identical.
+Now we will take our input tensor x and we 
+will run it through both of these modules.
+In the case of the linear layer we permute 
+just before running the forward pass and  
+that is because the linear layer always uses 
+the last dimension of the tensor. However,  
+after the forward pass we just undo it we 
+run the forward pass for the conv_module.  
+It seems like they have the same shape. 
+Now let us compare them elementwise.  
+It seems like they're identical. So to 
+summarize channel mixing is nothing else  
+than applying a one-dimensional convolution 
+with kernel size equal to 1. Now we would  
+like to implement the token mixing using 
+convolutions. The main idea here is to  
+use the so-called depth-wise convolution. It 
+takes the input tensor and it applies filters  
+to each channel separately. Additionally, we would 
+like our filters to span across all the tokens.
+So we provide the hidden dimension 
+which is nothing else than the input  
+channels of our tensor. The kernel 
+size will be equal to all the tokens  
+and finally k can be any number 
+representing the output features.
+We create two parameters: the weight and the bias  
+and they are going to be shared 
+across all the input channels.  
+We replicate the bias and the weight 
+across all the input channels.  
+We then run the one-dimensional convolution and 
+note that the groups is equal to the number of  
+hidden dimensions which will result in a depth 
+wise convolution. To summarize the same filter  
+is going to be applied to all input channels. 
+So let us now define a couple of parameters.
+We instantiate this custom convolutional layer 
+that we have just written and note that the kernel  
+size is equal to the number of patches. This 
+way we're going to span across all the tokens.  
+We also instantiate a linear layer that more or 
+less represents the multi-layer perceptron that  
+does the token mixing in the original code and 
+our goal is to show that these two are equivalent.
+When it comes to the number of learnable 
+parameters they are equal. Unfortunately,  
+these parameters were initialized in a different 
+way so we just want to make them equal.
+So now we take our input tensor and 
+we run it through both of our modules.
+Let us check out the shapes as you 
+can see the shapes are identical.
+And if we compare them elementwise. They also 
+seem to be the same. To summarize token mixing  
+can be written as a depth-wise convolution 
+where the filter is shared across all the  
+channels. So we're back in the implementation 
+and we indeed saw that we can rewrite the  
+token mixing and the channel mixing with 
+convolutions. However, in my opinion using  
+linear layers and transpositions is way simpler 
+and honestly I'm not even sure if i implemented  
+those convolutions correctly. Now it's time to 
+put everything together and write the MlpMixer.
+The first parameter is the image size and here we 
+assume that we are dealing with a square image.  
+Patch size will denote the size of our patch. 
+Again we assume it's a square. Additionally,  
+we also assume that the image size and the patch 
+size is perfectly divisible. These two parameters  
+we've seen before they represent the hidden 
+dimensions of the multi-layer perceptrons.  
+Hidden dimension will be the dimensionality of the 
+patch embeddings. In the diagram it represents the  
+number of columns of the table. Number of blocks 
+represents the number of Mixer blocks we will  
+have in our architecture. Internally, we will have 
+the following objects. The first parameter is the  
+patch_embedder and it will be a Conv2d module and 
+it is one way of taking an input image, splitting  
+it up into small patches and then embedding these 
+patches. Blocks will be a module list holding  
+Mixer block instances. We will have one layer norm 
+that will be applied just before the classifier  
+and finally we will have the classifier head 
+which will be just a simple linear module.
+First of all, we compute the number of patches. 
+Again here we're assuming that the image size  
+and the patch size are divisible and the number of 
+edges is going to stay constant across the forward  
+pass. It represents the rows inside of the table 
+that you saw in the diagram so this patch_embedder  
+will help us split the image into patches and 
+then embed them. To do this we are using a 2D  
+convolution with kernel size equal to the patch 
+size and also the stride equal to the patch size  
+and note that we are hard coding that there will 
+be three input channels inside of our tensor.
+Here we instantiate multiple mixture 
+blocks that will have independent weights.
+Finally, we create a layer norm and a linear 
+layer that will serve as a classifier.  
+Now the only thing left is 
+to write the forward pass.
+The input is nothing else than a batch of images  
+and the output is going to be a class 
+prediction for each of the samples.
+We apply our patch embedding and it 
+will be a four dimensional tensor.  
+One way to think about it is that each pixel 
+in this new tensor represents one patch  
+and the channel's dimension represents the 
+patch embedding. However, we would like to  
+rearrange this tensor a little bit in order for 
+it to be able to go through the Mixer blocks.
+So here we did two things. We collapsed 
+all the patches into a single dimension  
+and then we just made sure that the channels are 
+the last dimension. Let me show you an alternative  
+way of creating the patch embeddings 
+that is not using any convolutions.
+We defined a couple of initial parameters. 
+Now we just construct a batch of  
+input images let us now take the 
+sensor and rearrange its dimensions
+So here we're using einops and we say that the 
+input is nothing else than a mosaic of patches  
+as specified before the arrow. What comes 
+after the arrow is the desired rearrangement.  
+Note that after this rearrangement we will have 
+a three dimensional tensor. First dimensions are  
+the samples, the second dimension represents the 
+tokens and the third dimension represents the  
+flattened patches together with all the channels. 
+And as you would probably guess we actually want  
+to take this last dimension and apply a linear 
+mapping to it and thus performing the embedding.
+Here we instantiated two modules first of all we 
+have the linear module which is supposed to take  
+the last dimension of our rearranged tensor 
+and map it into the hidden dimension. Second  
+module is a 2D convolution and it corresponds 
+to the patch embedding that was included in  
+the official code and our goal is to show 
+that these two modules are doing the same  
+thing. When it comes to the number of 
+trainable parameters they are equal.
+All the trainable parameters 
+lie inside of the weight array  
+and the bias array. The weight array of the 
+linear module and the convolutional module  
+has a different shape, however, the number 
+of elements is equal. These tensors were  
+randomly initialized during instantiation 
+and our goal would be to make them equal.
+Let us now run our input tensor through 
+both of these layers and see what we get.
+Now that we took the output of the 
+convolutional module and we rearranged it  
+such that the channels are the last dimension 
+and also we collapsed the height and width of the  
+patch image into a single dimension. This single 
+dimension will have a size of number of patches.  
+So when it comes to shapes they seem to 
+be identical and if you do an elementwise  
+comparison it is also the case. All right 
+so we're back in the implementation and  
+as you've just seen it's not necessary to use 
+the 2D convolution to create patch embeddings.
+We iteratively apply all of our mixer blocks.
+We then apply one last layer normalization  
+and then we perform the global average pooling 
+by averaging across the tokens dimension.  
+Then we just run our linear 
+classifier and we are done.  
+Now we would like to verify whether the Flax 
+implementation and the Torch implementation  
+are equivalent. I guess the correct way to 
+do this would be to compare the trainable  
+parameters or arrays one by one and check whether 
+the inference gives the same output. However,  
+I do not want to spend too much time mapping 
+the Flax trainable parameters to the Torch  
+trainable parameters and instead I'm just 
+going to write a check that compares the  
+number of trainable parameters. It is definitely 
+not bulletproof and it might totally happen that  
+it is not going to detect possible bugs in 
+my code. However, it's better than nothing.
+We load both the Torch and the Flax implementation 
+and name the Flax implementation the OfficialMixer  
+and the Torch implementation OurMixer and now 
+the idea is to create a grid of parameters  
+that will be used to construct the 
+modules. We will just use pytest's  
+mark.parameterize to brute force 
+over multiple different permutations.
+Let us start with the Flax model.
+Note that when we construct it we don't need 
+to provide the image size because it's going  
+to be implied automatically. We generate two 
+random keys. Here we just generate a random  
+array. We are going to have 11 samples in our 
+batch and our images will have three channels.
+This I believe should compute the number 
+of parameters of our Flax model. The idea  
+behind this is that we first call the tree_leaves 
+function that is going to give us a list of all  
+parameter arrays and then we take each of these 
+arrays and we just compute the number of elements  
+by computing the product over all dimensions. 
+Here we run inference and then we store the  
+shape of the output array. Let us now 
+do the same thing for the Torch model.
+Let us count the number of parameters. Let us run 
+one forward pass with a random array similar to  
+what we did in Flax. One notable difference is 
+that the channels in Torch are always the second  
+dimension. All right and now we can finally 
+write the assertions. We want the number of  
+parameters of the Flax module to be exactly equal 
+to the number of parameters of the Torch module.  
+We also want to make sure that the output 
+shape for both Torch and Flax is equal to the  
+number of samples times the number of classes. 
+That's the test and now we just want to run it.
+It seems like everything passed and when 
+it comes to the number of parameters the  
+implementations seem to be equivalent. Anyway 
+that's it for today. All the credit goes to  
+the authors of the paper and I hope I managed 
+to convey some of their ideas without making  
+too many mistakes. Thank you very much for 
+watching the video. If you enjoyed it don't  
+hesitate to subscribe and if you have any ideas 
+for improvement or topic suggestions I would  
+be more than happy to read your comment here 
+on YouTube or on Discord! See you next time!

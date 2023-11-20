@@ -1,0 +1,817 @@
+[music playing]
+Welcome to the session
+Gain Better Insights
+While Training Machine Learning
+Models with SageMaker Debugger.
+My name is Nathalie, and I'm
+an Applied Scientist at AWS.
+First, let's look at why debugging
+and profiling is important.
+When we train
+machine learning models,
+then this is typically a difficult
+and compute-intensive task.
+When we create training scripts
+for our
+machine learning model training,
+then it may frequently happen that
+these training scripts contain bugs.
+These bugs may lead to a model
+training that is not converting
+because the model may suffer
+from over fitting,
+under fitting,
+vanishing gradients or other issues.
+Trying to find the root cause
+of such problems is not always easy,
+and for sure
+it's very time consuming.
+When we train machine learning models
+such as deep neural networks,
+then they are usually trained
+on large compute instances.
+State of the art
+deep neural networks
+consist of millions of parameters,
+so we may have to train them
+on multi-GPU instances.
+Trying to use these instances
+as efficiently as possible
+is not always easy
+and requires lots of tuning.
+To train deep neural networks
+takes a long time,
+and because of all that,
+we want to ensure
+that we use existing
+compute instances
+as efficiently as possible and find
+training bugs as early as possible
+so that we can use our given training
+budget as efficiently as possible.
+Let's take a closer look
+on debugging
+in the machine learning lifecycle.
+machine learning is not just
+about creating and training models,
+but there are many
+different steps involved.
+One of the most important steps
+is data preparation.
+Only if we have high-quality
+training data sets,
+we will be able to train a model
+that achieves high accuracies.
+During data preparation, we have
+to do this feature engineering,
+deal with missing and corrupted data,
+and do data pre-processing.
+Debugging at this stage
+should help us
+to find data
+set related issues.
+For instance, if the data is not
+correctly pre-processed or normalized
+then this may lead to a model
+that may not train well.
+Once we have high-quality
+training data sets,
+we are ready to train
+and create machine learning models.
+This is typically an iterative
+process
+where we try out different model
+configurations,
+different hyperparameters.
+And it may frequently happen
+that we end up with a training script
+where the model training
+does not converge.
+Debugging at this stage
+should help us
+to find these issues
+as early as possible
+and we also want to be able
+to auto terminate training jobs
+that would otherwise lead
+to sub-optimal models.
+Debugging should also help us
+to get more insights into our model.
+For instance, trying to understand
+what are the kind of features
+the model is learning.
+Once we have a decent
+machine learning model,
+the next step in the pipeline
+is hyperparameter tuning.
+During that step, we try to find the
+best combination of hyperparameters
+that yields
+the best model accuracy.
+It may happen that we end up
+with a combination of hyperparameters
+that leads to a model training
+that does not converge.
+Again, we want to be able
+to automatically detect these issues
+and terminate training jobs
+ahead of time.
+Once we have a good
+machine learning model,
+we are ready to deploy the model.
+During deployment, what can happen
+is that the distribution
+of the inference data
+may be significantly different
+than the distribution of the data
+the model has been trained on.
+If this happens, then it may mean
+that the model does
+a lot of incorrect predictions.
+Debugging at this stage
+should help us
+to understand
+false model predictions.
+For instance, if you have deployed
+an image classification model,
+then you may want to use techniques
+such as saliency maps
+that show you what your model
+is paying attention
+to when it's doing predictions.
+That can help to understand
+better false model predictions.
+Now I would like to show you how you
+can use Amazon SageMaker Debugger
+to address the debugging challenges
+in the machine learning lifecycle,
+as well as how to find issues
+related to resource underutilization.
+SageMaker Debugger is a feature
+that allows you
+to automatically capture tensors
+from your model training.
+We support what we call
+zero code change.
+That means as a user you do not
+have to modify anything
+in your training script
+nor in your model.
+When you start your SageMaker
+training,
+you simply specify the kind of
+tensors you want to have omitted,
+tensors such as weights, gradients,
+and Debugger
+will take care of the rest.
+The data will be uploaded
+in real time
+to your Amazon S3 training bucket,
+and it will be stored there
+in a persistent way.
+Which means you can either fetch
+the data
+while the training
+is still in progress
+or after the training has finished.
+We have added a new capability
+to SageMaker Debugger
+that supports real-time profiling.
+This feature is useful to find
+hardware resource underutilization.
+You can monitor our system metrics
+such as utilization per CPU,
+GPU,
+network memory and I/O,
+as well as you can profile
+the kernels running on the GPU.
+Debugger comes with a set
+of built-in rules
+that you can use
+for automatic error detection.
+There are two types
+of built-in rules.
+One, to find model related issues
+such as overfitting,
+vanishing gradient, underfitting,
+and many more.
+And the second type of rules
+you can use
+to find resource utilization issues.
+You can also specify actions
+and alerts list of rules.
+For instance, you can
+automatically stop the training
+or send an email
+and SMS notification.
+We also introduced a rule
+that creates a profiling report.
+This profiling report gives insights
+into the resource utilization issues,
+and also recommendation
+of next steps.
+You can also use Debugger
+for real-time monitoring
+and real-time visualization.
+You can either use
+Debugger's library as a debug
+to fetch the data on your Notebook,
+and inspect and visualize the tensors
+while the training
+is still in progress.
+You can also use SageMaker Studio
+to create interactive visualizations
+of the performance data.
+Let's take a look
+on the architecture.
+When you're on training
+on Amazon SageMaker,
+then the training is running
+inside a training container.
+Debugger will now ensure that
+the tensors that you have specified
+will be automatically emitted
+to your Amazon S3 training bucket.
+If you run your training on these
+pre-built rules
+then SageMaker will automatically
+spin up
+the pool containers
+that run on a separate instance.
+This means that the rule analysis
+does not interfere with the training.
+You can specify multiple
+built-in rules that run in parallel.
+The rules emit metrics
+to Amazon CloudWatch.
+So whenever a rule triggers,
+the metrics get emitted
+to Amazon CloudWatch
+and you can specify
+CloudWatch alarms.
+You can then connect
+the CloudWatch alarm
+to a lambda function
+to trigger certain other actions
+or to just create
+some custom workflows.
+The rules use the Amazon
+simple notification service
+that you can use to specify
+notifications such as SMS
+and email whenever
+a rule identified an issue.
+You can also use the real-time
+monitoring capability.
+While the training is still
+in progress,
+you can already start
+fetching the data
+and perform all sorts
+of visualization and analysis.
+Let's take a closer look
+on the real-time monitoring feature.
+smdebug is the open-source library
+of SageMaker Debugger.
+It's a library that allows you
+to access,
+query and filter the tensors
+recorded by SageMaker Debugger.
+You can find the library on PiPY,
+so on your Notebook instance you
+can choose to pip install smdebug.
+If you run your training
+on Amazon SageMaker,
+then in the SageMaker Python SDK,
+you can now define
+a DebuggerHook config.
+In the DebuggerHook config
+you basically tell Debugger
+which kind of tensors to capture.
+It supports default collections
+such as gradients and weights,
+but you can also create
+your own custom collection.
+In this code snippet,
+I select now the gradients
+and my own custom collection
+for the ReLU activation outputs.
+I simply have to specify a regular
+expression
+of the tensor names
+of one I have included.
+So I select here convl_relu.
+Once the training is running,
+I can now use the smdebug API
+to access and query the data.
+smedebug provides a function
+create trial
+that you will have to point
+to the Amazon S3 path
+where the debugger data is located.
+Once you have the trial object,
+you can start iterating
+over the data.
+With these trial steps you get
+the different iterations
+that have been recorded by Debugger.
+By default, Debugger with
+capture tensors every 500 steps.
+Trial to tensor is the function
+that you can use
+to access the actual tensor.
+You pass in the tensor name.
+In my case, I want to access
+the real activation
+outputs of the first
+convolutional layer.
+With this top value
+and a specific step number,
+I'm accessing now the tensor
+at the recorded iteration.
+smdebug will retrieve the tensor
+as a NumPy array,
+which means I can use tools
+such as Matplotlib, NumPy,
+SciPy to create visualizations
+and further analysis.
+Here I'm using the Matplotlib
+histogram functions
+to visualize the activation outputs
+of my first convolutional layer
+across the training time.
+What we can see here
+in this visualization
+is that as
+my training is progressing,
+the distribution moves more
+and more towards zero,
+which means my model is actually
+suffering from the dying
+ReLU problem where more and more
+neurons are outputting zero values.
+And with just few lines of code
+can now easily create
+this kind of analysis.
+Now let's take a closer
+look on the demo.
+In the demo, I will show you
+three different use cases.
+First, we will look
+at how we can use
+Debugger to collect tensors
+and select built-in rules
+to identify poor training jobs.
+In the second use case,
+I will show you how you can use
+Debugger to collect
+performance-related data
+to identify how well was
+the training instance utilized.
+Last but not least, we will look at
+how we can now select actions
+to auto terminate training
+whenever a rule identifies an issue.
+Let's take a look at the Notebook.
+You can use Debugger to capture
+any kind of tensors from your model
+training, such as the model inputs,
+the gradients, weights,
+activation outputs,
+loss values, and accuracy metrics.
+And in the case of XGBoost,
+Debugger can also measure
+the depths of the tree
+as well as feature importance.
+In order to run Debugger
+with built-in rules enabled,
+you use now the SageMaker Python SDK,
+and select a rule_configs subpackage.
+The rule_configs allows you to access
+any of the available built-in rules.
+As I mentioned in my introduction,
+Debugger provides two types of rules.
+Rules to find model-related issues
+such as vanishing gradient,
+loss not decreasing, overfitting,
+underfitting, class imbalance,
+and it provides
+profiler-related rules
+that you can use to identify
+performance-related issues
+such as CPU and I/O bottlenecks,
+underutilization,
+workload balancing and many more.
+You can now select any of these
+rules from the list here.
+In my demo, I select now the loss
+not decreasing rule.
+This rule will measure if
+the training loss
+is decreasing
+throughout the training.
+And if it does not decrease
+by a certain percentage,
+the rule triggers.
+Next, I select the class
+imbalance rule.
+This rule takes the labels
+into the loss function
+and determines
+how many class instances
+has the model seen
+throughout the training.
+Next, I select the dead ReLU rule.
+The dead ReLU rule will measure
+the number of dying
+ReLUs in the model.
+ReLU is a rectified linear unit.
+It's an activation function commonly
+used
+in many state-of-the-art
+deep neural networks,
+and it can suffer from the dying
+ReLU problem.
+The dying ReLU problem refers
+to the situation
+where a neuron will only output
+zero values,
+and then receive zero gradients.
+If you have too many neurons in your
+model that suffer from the problem,
+then it cannot effectively run.
+For each rule, you can also specify
+ReLU parameters that allow you
+to tweak the rule
+for your specific use case.
+Now, I specify the DebuggerHook
+configuration.
+And as I mentioned
+in my presentation,
+Debugger supports default collections
+such as weights, bias, gradients,
+but you can also create
+your own custom collection.
+And the DebuggerHook configuration
+would basically tell Debugger
+which kind of tensors to emit.
+And this is useful if there are
+tensors
+that are not already collected
+through the rule configuration,
+which tensors that you want
+to monitor to be able to perform,
+for instance,
+some real-time visualizations.
+Now, I'm ready to start
+a SageMaker training.
+I'm going to train PyTorch model.
+I use the SageMaker PyTorch
+estimator API.
+My training is defined
+in a train.py file.
+I run around the training
+on a P2 instance.
+And in order to enable Debugger,
+I just have to pass
+in the DebuggerHook config,
+as well as the list of rules.
+Now I start the training.
+I just call it estimator fit.
+Behind the scenes, SageMaker will now
+spin up the training container,
+and Debugger will ensure
+that the tensors
+that I have specified
+in the DebuggerHook config
+will automatically be emitted
+to Amazon S3.
+SageMaker will also automatically
+spin up
+the rule containers
+for the class imbalance to dead ReLU,
+and the last non-decreasing rule.
+Those rules will run in a separate
+container on a separate instance,
+so the rule execution does
+not interfere with the training.
+They fetch the data from Amazon S3
+and perform the analysis.
+As a user, I can now check the root
+status from the Python SDK
+by accessing rule job summary.
+Or I can go to the experiment view.
+When you open experiment,
+and then select your training job,
+you will get this experiment view
+here where there's a Debugger tab
+that shows you which kind of rule
+has been running
+and which issues were found.
+In my case, the class imbalance and
+the loss not decreasing rule trigger.
+Now let's go to the next use case
+where we look
+at the performance data.
+We will use Debugger
+to capture system metrics
+and identify resource
+underutilization.
+Debugger can capture metrics
+such as the utilization per CPU core,
+GPU,
+I/O, network and memory,
+and it's also capturing information
+from the training itself,
+such as the time spent in data
+loading, data pre-processing.
+You can enable Python profiling
+for the training script.
+As well, Debugger can measure
+the operators
+that have been running on GPU.
+When we look at
+the machine learning pipeline,
+the first step is to read
+the input data
+that is either available on a local
+or remote storage component
+and read it onto the local CPU Ram.
+The CPU will typically do the data
+pre-processing,
+prepare the data batches
+that are then sent to the GPU.
+At the GPU they perform the training,
+and a very common performance issue
+is CPU bottleneck.
+This means GPU is waiting for data
+to arrive from the CPU,
+so the utilization drops,
+but at the same time the utilization
+on the CPU is very high
+because it's busy
+pre-processing the data.
+To collect the performance metrics,
+you define now a profiler conflict.
+And a profiler conflict will tell
+Debugger to select system metrics
+at 500
+millisecond sampling intervals.
+We also specify a framework profile.
+The framework metrics refer
+to the metrics captured from this
+in the training script.
+And here we collected for two steps.
+What Debugger will do is it
+will take those metrics
+from different data sources
+and correlate them.
+For instance, it can now take
+the system metrics like here
+the GPU utilization,
+and we can see
+that there are certain timestamps
+when the utilization drops to zero.
+Debugger can now identify
+what has been happening
+at the same time
+in the training script
+to identify potential performance
+root causes.
+In this example, we see that
+the drop in utilization
+correlates with data preprocessing.
+The root cause could be an issue
+in the data pipeline.
+We can now use the profiling report,
+as well as the visualizations in
+Studio to get some more insights.
+In order to open the Studio
+visualizations,
+you go in experiment view
+on your training job,
+and then, you select
+open Debugger for inserts.
+Let's take a look.
+The Studio visualizations provide
+first a high-level overview
+of how long did your training run.
+When did it start?
+How long did it run?
+How much time was spent
+in the training loop,
+initialization and finalization?
+The initialization is the time
+from when the training job
+started to when the first forward
+pass was performed in a model.
+Typically, you want the
+initialization time to be minimal
+because the actual training
+when the GPU will be used
+is mainly during the training loop,
+so you want the training loop
+to be the phase
+where it's in for the most time.
+The overview panel also provides
+an overview
+of the system resource utilization.
+This is aggregated by working node,
+and we see that the total
+GPU utilization never exceeded 75%,
+and the median utilization
+was always around 63%.
+So the bias is GPU was underutilized.
+We also see that the CPU utilization
+was not very high.
+The median utilization was only
+about 24, 25% and never exceeded 80%.
+The overview panel also provides
+some information
+about the resource
+intensive operations listed by
+and sorted by the time.
+And you will also see
+the executed rules,
+and which of them triggered the most.
+In my case,
+this was the step outlier rule.
+We can now go to the node overview
+to get some more insights
+into the performance data.
+Here we see the time series charts
+for CPU utilization,
+as well as GPU utilization,
+across the training drop time.
+We see that CPU utilization
+never really exceeded 24%,
+and in case of the GPU, we can see
+that it's highly fluctuating.
+Biasely, our training suffers
+from some performance issues.
+We can now download
+the profiling report.
+We can also access the profiling
+report directly via Amazon S3.
+The profiling report gives us
+some further insights.
+In the beginning it provides
+a similar high-level overview
+like SageMaker Studio,
+like operators with CPU and GPU,
+the resource, summary, statistics.
+And for each rule it will provide
+some further insights.
+For instance, we have seen
+a step outlier rule trigger.
+The profiling report indicates
+that the average step duration
+of 0.02 seconds.
+It then also provides a histogram
+of the step durations,
+and the rule trigger because
+there were certain separations
+that took significantly longer.
+Debugger will then take
+those timestamps
+and correlate it with what has been
+happening inside
+the training script at the same time
+to find potential root causes.
+The profiling report also gives
+some more insights
+into the GPU utilization.
+It provides boxplots as well
+as workload histograms.
+The workload histogram shows us
+the GPU utilization on the x-axis,
+so from zero to 100%.
+And then, it counts how often
+has the GPU been utilized, at 0%,
+50, 60, 80, 100%.
+And this kind of visualization
+is especially useful
+if you have multi-GPU training,
+and you can then more easily identify
+how well was the workload
+balanced between multiple GPUs.
+What we basically see here
+is that the usage,
+the utilization
+never went beyond 75%.
+The profiling report also includes
+some more details
+about the data loading part.
+So for instance, on my training
+instance,
+I had eight CPU cores available.
+But I was only running
+one data loader,
+so this could have been optimized.
+Furthermore, the rule found
+that I did not use pin memory,
+which is a feature that can
+greatly impact the performance
+because it enables faster data
+transfer between CPU and GPU.
+The profiling report also provides
+a histogram
+of the data loading times.
+We see that there are a lot of
+outliers,
+so it's not like
+a uniform distribution.
+It may indicate that there is
+some data loading issues.
+The profiling report also gives
+some insights into the batch size,
+whether this could have
+been increased or not.
+So in my case it's recommending me
+to potentially increase
+the batch size,
+and Debugger will measure
+the GPU memory,
+the GPU utilization as well
+the total CPU utilization
+to determine whether the batch size
+could be increased.
+For instance, I see here
+that the GPU memory,
+it's not really fully utilized.
+It's basically less than 12%.
+At the same time,
+the GPU utilization is small,
+which means my training
+was not GPU bound.
+So by increasing the batch size
+I would not only increase
+the memory footprint on the GPU,
+but also the utilization because more
+data will be processed in parallel.
+The profiling report will also
+give some more insights
+into whether the training suffered
+from CPU and I/O bottlenecks,
+which was, however,
+not the case in my training.
+So now we have learned how to use
+Debugger to find model-related,
+as well as performance-related
+issues,
+now let's go to the search use case.
+Now, I would like to show you how you
+can use Debugger to enable actions.
+For instance, we have seen that
+the loss not decreasing rule trigger.
+Now, I use the action list,
+and I can select
+either stop training email or SMS.
+And for each rule,
+I can specify its own action.
+In the case of loss not decreasing,
+I want to stop the training
+when the rule triggers
+because trying to train a model where
+the training does not convert anymore
+would be wasted compute time.
+And as Debugger, I can automate
+its action
+by just specifying this action list.
+And in my case, when I run now
+the training, this auto termination,
+I can basically see
+on the loss curves
+that my training was terminated
+around 1500 steps.
+I only run the training
+in half the time
+compared to the training where
+I ran this out of the termination.
+In this demo, you have learned
+how to use Debugger
+to find training issues early on,
+and how to auto-terminate
+the training.
+And we have seen how we can use
+Debugger to get real time insights.
+I highly recommend you to check out
+our recent publication.
+In this paper we describe in detail
+the architecture
+of Amazon SageMaker Debugger,
+as well as all the available
+built-in rules,
+the kind of issues that can detect,
+and also we describe how you can
+possibly fix your transcript
+to mitigate some of these issues.
+We also describe several use cases
+of how you can use SageMaker Debugger
+in end-to-end analysis workflows.
+If you would like to learn more
+about machine learning on AWS,
+then please check out
+our online courses.
+Thanks a lot for attending
+this session.

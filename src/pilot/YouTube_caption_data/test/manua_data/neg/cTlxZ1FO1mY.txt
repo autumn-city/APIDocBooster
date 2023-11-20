@@ -1,0 +1,303 @@
+ All right, let's now implement again in pytorch. So here we
+ will start with a simple can, with fully connected layers
+ trained to generate handwritten digits. And I hope this will
+ make these types of things clear that I tried to explain in the
+ previous video. It's very, it's a lot of mathematical
+ notation, it's maybe a bit overwhelming. But you will see
+ in the code example is actually quite straightforward. I
+ implemented several GANs, honestly, it took me quite some
+ time to get a good GAN working. And they're also not great. So
+ they're just simple GANs. So they're not that great. But even
+ then, it took me quite some time because training GANs is quite
+ challenging. So I will in the next video, go over some tips
+ and tricks for that. But even if you consider these tips and
+ tricks, it can still be hard compared to, let's say, just
+ training a classifier. So one of the reasons is, so here, let's
+ say, go over our regular imports and everything. But one of the
+ reasons is that we have now two neural networks that we have to
+ train. So before, we only had, for instance, one learning rate
+ for training a classifier, now we have two models. So we need
+ also two learning rates and can also be hard to find the good a
+ good kind of, I would say ratio between the learning rates. We
+ make this a bit bigger here. So before, we only had to tune one,
+ now we have to tune to the generator learning rate and the
+ discriminator learning rate. And also, we have to find the right
+ relationship, for instance, it could be that this has to be
+ much larger than this one other way around. So again, this is
+ something that has to be tuned, and that just increases the
+ complexity. Alright, so this is just a general setup, besides
+ having no two learning rates. So here we have the data set. Again,
+ nothing special, I'm using the MNIST data set. And here, I'm
+ normalizing the images between minus one and one worked a
+ little bit better than 01. And we are only using the training
+ set here, we are not using the test set for MNIST because GANs
+ are also unsupervised algorithms. So we only need, we
+ don't need labels or something like that. You could technically
+ merge training and test data into one single data set. So you
+ have more data, but I was lazy here. So I'm just using the
+ training set for simplicity. I'm just checking that everything
+ works correctly. Now I'm using this torch vision utils dot make
+ grid function, which is a pretty nice function to make
+ visualization quickly. So
+ okay. Here, it's plotting 64 images and an eight by eight
+ grid. Pretty conveniently. It's just Yeah, basically one or two
+ lines of code, three lines of code. So here, this is a
+ function I will also use later to visualize the results. It's a
+ quite useful function for just making visualizations quickly.
+ So here's just how some of these handwritten digits look like.
+ Okay, so here's the interesting part, the model. So we have now
+ a generator and a discriminator. So I implement this as
+ follows, I use the sequential API for the generator and also
+ the sequential API for the discriminator. So this is a
+ fully connected, again, so I have a linear layer, you have a
+ leaky relu at the dropout. I tried different types of dropout
+ with and without it worked better with with with dropout.
+ But well, it's another thing to tune. It's kind of tricky. Yeah,
+ and like I said, we are using fully connected layers. And
+ because I normalized my input images to be on the minus one
+ one range, we have also a 10 h here, so that the pixel outputs
+ are also in the minus one and one range that they are
+ comparable to the input range. So this is the output from our
+ generator. So the output here are our generated images,
+ essentially, the discriminator is just a classifier. So it
+ receives an input image, we just flatten it so that it goes into
+ our fully connected layer, which has the size image height, image
+ width, and color channels, the number of features, if we
+ flatten an image has been a long time ago, but this is something
+ that you probably remember from the multi layer perceptron
+ class. And then we have a leaky relu here, dropout and output
+ layer with one output node, because we are using the binary
+ cross entropy, we have a binary classification problem here, we
+ could have two output nodes and use the multi category cross
+ entropy. But yeah, for here, I for simplicity, I'm using the
+ binary cross entropy, which is essentially like a regular
+ logistic regression. Okay, so for each for both the generator
+ and for the discriminator, I have a forward function, I have
+ the generator forward here, and the discriminator forward. So
+ the generator forward, the generator will receive input
+ image from noise. So the way I implemented my training
+ function, because I implemented it with convolutional auto
+ generators in mind, I have in the training function, something
+ that creates a noise vector that is in the shape color channels
+ height width. So I'm just flattening it here, that is just
+ a vector. And then this noise vector, this is a noise vector
+ from a random normal distribution. It goes into the
+ generator. So this part is executing this year, this
+ pipeline, which will produce a new image generated image. And
+ since the last day is a fully connected layer, I'm just
+ reshaping it that it outputs also the dimensions, color
+ channels, image height and image width. So what goes into here is
+ also color channels height and width, which is why I'm
+ flattening this year. So let me put this maybe here. Z has
+ dimension CHW. And the output also has a dimension CHW, of
+ course, also the batch size, so we can maybe also add that
+ here. So n, n, c, h, w. Okay, and the discriminator is a
+ little bit simpler here, it's just receiving the input image,
+ which has the flattening here, and then returns the logits for
+ the predictions that this is a real image. Okay, so then we
+ initialize. So this is our model, I will show you the
+ training loop in a few moments. Then one more thing is here, we
+ are initializing our model. And then here we are initializing
+ our optimizers. Here is one important aspect. So first, I'm
+ using Adam for both some people recommend using SGD for I think
+ the generator, I tried different things, this happened to be the
+ best working version that I could get. So you may find
+ better settings in the next video, we'll go over some
+ tricks. But this happened to work well for me took me a long
+ time to find anything that worked at all. Anyways, so one
+ important thing here is that of course, we use the generator
+ learning rate for the generator and the discriminator learning
+ rate for the discriminator. But the more important thing is that
+ we also use the right parameters here. So we have an optimizer for
+ the generator that should only update the generator parameters.
+ And the discriminator here should only update the
+ discriminator parameters. If we had something like this. Well,
+ this would not work well in practice, because then it would,
+ when we take a step here for the optimizer, it would update both
+ the screen and the generator. And this is not what we want. So
+ because if I go back to my slides, long time ago, but in
+ the first video, I think talked about this might be the second
+ video. So we train the discriminator first, while we
+ keep the generator frozen when it gets the fake images. So we
+ only train the discriminator. And then we freeze the
+ discriminator and only to train the generator. So in order to
+ achieve that, we have these two different optimizers where we
+ for one optimizer only train the generator where here, the
+ discriminator remains frozen. And here we only train the
+ discriminator where the generator remains frozen. And
+ then we have the training function here. So I have this in
+ a helper file, because then I can reuse it across my different
+ notebooks. Let me open this here. So should probably at the
+ bottom because it was the last thing I implemented. So here
+ this my training. So this is the training I'm using here. So let
+ me now explain how the training looks like. First of all, we are
+ using binary cross entropy with logits. Why? It's because we
+ have the output here is the logits. And then we are
+ sampling. So we are sampling in each. So first, sorry, we are
+ generating here a fixed noise vector, I'm calling it fixed
+ noise, because we are reusing that one to monitor the progress
+ during training, this will become clear after the epochs.
+ So for now, maybe ignore this part. Let's focus here on the
+ epoch iteration during the training. So for each epoch in
+ the number of epochs, we want to train. This is the same as
+ before, like in any neural network we trained before. Now,
+ we just get the batch size as a variable, so it will be easier
+ to read. And here, we are only concerned with the real images,
+ we don't need the labels. Usually, we had something like
+ the labels here, but we're not using them. So I'm just using an
+ underscore. And Python, the underscore is just like an
+ indicator that this variable is not used. So here we have the
+ real images. And now we create our real labels. So the real
+ labels are ones. So here, real, real is equal to one, and fake
+ is equal to zero. So we create our real labels here. Now, we
+ also generate fake images, this is for the discriminator
+ training. So we create them from noise, right? So here, I have a
+ random normal distribution, I have my batch size. So if I
+ have, let's say 64 real images, I'm creating now 64 fake
+ images as well. And these are from a noise vector, that's the
+ latent dimension here. So if I go back to my slides, this is
+ this noise. Sorry, this noise vector here, sampled from a
+ random normal distribution, you can also use a random uniform
+ distribution, but practically in practice, random normal Gaussian
+ works better. So this is, let's say, if we have a 100
+ dimensional embedding, this would be a 100 dimensional
+ vector. So by default, I set it to 100, I think here, I didn't
+ set it here. Let me see. Yeah, I set the latent dimension to 100
+ here. This will create a 100 dimensional vector. And here I'm
+ reshaping it to an image format. So it's format. And so this is
+ sorry, I was actually here, but the fixed size vector is created
+ the same way. So it's a format in color channels, h w was the
+ other one here. So we are sampling from this random
+ normal distribution with 100 latent size, this is our color
+ channels, because I implemented that with the convolutional
+ autoencoder generator first, and then I did the fully connected
+ one. But this one gets reshaped on this gets reshaped here, so
+ that it will also work with a fully connected layer. So you
+ don't have to worry about this. Okay, now we are generating
+ these fake images from our noise vector, we are calling generator
+ forward, this will generate our fake images. And then we will
+ create our fake labels, which are zero. So fake real labels,
+ label is one. And fake labels, this label is zero, right? This
+ is our fake label. And we will also create our flipped fake
+ labels. So this is our trick that we discussed. Where was it
+ we discussed that here, where we had our flipped labels. So the
+ flipped labels flipped fake fake labels are the real labels. So
+ here, okay, let's do this real label. fake label here. fake
+ labels is one. This is that we use for fooling the
+ discriminator when we train the generator. Now we are training
+ the discriminator here. First, like always, we zero the
+ previous gradients of the model of the discriminator. This will
+ only do that for the discriminator ones. And here, so
+ here, again, we generated the data for training. And here we
+ carry out the actual training. So what we do is we now get the
+ predictions. These are the logits. And the logits would be
+ in the form n times times one, right? So we convert that just
+ to n. Instead of having n times one, we just convert to n, it
+ will be just a vector, instead of n by one matrix, just easier
+ to handle, we're just removing the last dimension, I could have
+ also done a squeeze here. It's maybe easier. It doesn't matter.
+ Okay. Then here, we have the loss, the loss for the real
+ images. So we want the discriminator to predict real. So
+ how we compute the losses as a loss function, again, is if we
+ don't specify anything, it's the binary cross entropy with
+ logits. So we have the prediction logits that's from
+ the discriminator. And this is the real labeled. So these are
+ the ones so we these are the labels, the ones and we want
+ this also to become one. So this is the loss to predict one given
+ that the labels are one. So the real images, and then we do the
+ fake images here, it's the same as before, except now that we
+ have the predictions for the fake images, they were obtained
+ on the fake images here. And here I have the detach because
+ otherwise, it will influence the generator gradient, it's
+ complaining about that. So I'm just detaching it from the
+ generator graph, because I could have probably Yeah, no, it's
+ fine. So yeah, it's fake images.
+ Detaching it from the graph. So I'm not optimizing the generator
+ here, right? The generator is frozen. And then I'm computing
+ the loss here, fake prediction with a fake labels. And these
+ are so fake labels are zero, and we want to make them zero to.
+ So again, we are just using binary cross entropy between
+ labels, we just want to make these labels similar to these
+ labels, the ones and we want to make the fake prediction similar
+ to the fake labels, which are the zeros. Then I mean, we could
+ technically back propagate here and here. But instead of calling
+ backwards twice, it's more efficient to just add them
+ together here, and then call backward once. So I'm just
+ combining the loss on the real labels and the fake labels. So
+ combining that from here, and here, adding it up, it's
+ actually not necessary to have the point five, but why not, and
+ then call the backward and then we update the discriminator. So
+ this whole thing is training the discriminator. Now we are
+ training the generator. So we are now using the flipped
+ labels. So here, we obtained now the predictions on the fake
+ images, right? So I must before, so this is the same as before.
+ But now we are using the gradients for the generator. We
+ want to keep the gradients. So I'm not detaching anything here.
+ And then I'm computing the loss between the fake predictions and
+ the flipped fake labels. So the flip fake labels are one right
+ if I go up again, they are one. And here, the prediction. So the
+ discriminator will output if it's a good discriminator will
+ output a zero. But we want to fool it. So we want it to
+ output a one. But we are not training the discriminator here,
+ we are training the generator here only. That's why we are
+ using optimizer generator here, right. And this is also why I'm
+ not detaching anything here. It's the discriminator here
+ remains frozen, we are only updating the generator, because
+ when I go back here, we have only the generator parameters in
+ our optimizer for the generator. So we are only updating the
+ generator here, not the discriminator, and the generator
+ will be updated such that in the next iteration, and will be
+ better at fooling the discriminator here to output
+ ones, because the ones will be then similar to these ones here.
+ So it's trying to make these similar. Alright, so this is
+ essentially how things work. And then the rest is just logging
+ purposes. Just printing some results, saving some results. Oh,
+ maybe one more thing I wanted to mention is I mentioned earlier,
+ I had this fixed noise here, right? So why am I using the
+ fixed noise? I'm actually using that in each epoch. So if I
+ scroll down again, so in each epoch here, I am using my fixed
+ noise and make a prediction. And then I'm saving my image grid to
+ just a list. So I have a list here, just to call this images
+ from noise per epoch. And I'm appending to this list. And then
+ we can take a look at the generated images during
+ training. Okay, so let me go to my training here. So this
+ is training. So you can see the generator discriminator losses
+ here. So they start out pretty balanced, and they keep kind of
+ balanced. But honestly, looking at this is not very informative,
+ except that you don't want to have one going to zero and one
+ going really high. But other than that, it's really hard to
+ tell just by looking at these numbers, whether it's training
+ well or not, you want them to be not going crazy, you don't want
+ to, like I said, going them going to really infinitely high
+ or become zero. But except that usually, there's not that much
+ information you can gain from looking at this. Okay, trained
+ for 100 epochs. And then here's a loss function. So sorry, loss
+ plot, I saved everything in this locked dictionary. And then we
+ have the discriminator loss per batch and generator loss per
+ batch that I'm showing you here. So kind of, they are pretty
+ stable here, actually, that's actually good. Oops, somehow, I
+ don't think I can fix it here, because I didn't run it. But it
+ should have been an epoch. So that's why it's not showing.
+ This year was 100 epochs. Anyways. And then the
+ visualization is the more interesting part. So here, I'm
+ visualizing these generated images per epoch, and then the
+ last one. I'm not sure if this is necessary, could have added
+ actually, plus five here. Anyways, was just lazy. Just
+ copy and pasting. So this is just train. So plotting from the
+ fixed noise these images, so you can see the generated images at
+ epoch zero. So at the beginning, the generator is not able to
+ produce anything useful. You can see that here. Then after epoch
+ five, things look a little bit better. Epoch 1015, 20, so
+ forth, you can see it becomes better and better. Now you can
+ even see these are sevens. This is a nine. So actually, things
+ look pretty good. So let's scroll down to the bottom. This
+ is the last epoch. So you can see, I didn't really improve
+ that much. You have no issues like here and here. So training
+ it for longer might not improve. But it's actually given that
+ this is a very simple, fully connected again, images look
+ quite reasonable. So not all of them look great, of course. But
+ well, it's not terrible. I mean, it's learning something, right?
+ If you compare to the first epochs here, it is learning
+ something, right? So yeah, this is our first GAN. And training
+ GANs is tricky, to be honest. So in the next video, I will go
+ over some tips and tricks for training GANs.

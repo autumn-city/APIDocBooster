@@ -1,0 +1,642 @@
+hello my name is Adam lair and I'm gonna
+be talking about PI torch big graph
+which is a system for training
+embeddings of very large graphs and this
+is joint work with Liddell wujin Chen
+and average Evo's who are here as well
+as some other colleagues at Facebook AI
+research so first I'm going to talk to
+you a bit about what graph embeddings
+are and why you should be interested in
+training embeddings of very large graphs
+and then i'm going to talk about some of
+the modifications that we make to
+traditional graph embedding systems in
+order to scale to very large graphs and
+then finally we'll look at some
+experimental results about the scaling
+of this system so first of all an
+embedding is a learn map that maps from
+some kind of entity to a vector of
+numbers that encode some notion of
+semantic similarity between these
+entities so most people who have heard
+of embeddings would probably have heard
+of word embeddings like word Tyvek and
+then word Tyvek that type of embedding
+you learn a vector of numbers for each
+word such that you can predict a word in
+a in a corpus of text from its context
+and what what happens there is it's this
+unsupervised method where you just train
+it on a corpus of text and you learn
+features for each word that encode the
+semantics of those words and you have a
+similar notion for graph embeddings and
+in graph embeddings what you're trying
+to learn are vector representations of
+each node in a graph and you train them
+again with stochastic gradient descent
+on these vectors with the objective that
+nodes in the graph that are connected
+have more similar embeddings than
+unconnected then nodes that are not
+connected in the graph since actually in
+this paper we're going to be looking at
+multi relation graphs it's a little bit
+more complex than that but essentially
+you're computing a similarity metric or
+some score for edges in the graph that
+should be higher for edges in the graph
+that that exists then potential edges
+that do not exist I also want to mention
+because I got some questions about this
+that graph embeddings are not the same
+as graph neural networks graph neural
+networks are parametric supervised
+learning method on graphs where you have
+labels for nodes and you're trying to
+predict them based on
+features of the nodes whereas graph
+embeddings are actually trying to just
+take in a graph and learn features for
+each node that that encode this
+similarity based on the context that
+these that these nodes occur in so the
+reason that you might be interested in
+in learning graph embeddings is that
+there are form of unsupervised learning
+on graphs and what you end up with is a
+set of task agnostic node
+representations or features that you can
+use for a number of downstream tasks
+because like most ml tasks like
+classification and clustering you can't
+operate directly on graphs but they can
+operate on features that you can learn
+from these graphs and things like
+nearest neighbors are semantically
+meaningful so you can you can take these
+features from this graph and say I know
+about you know this note I'm interested
+in tell me other nodes that are like
+this so this is the only slide that's
+gonna include math so I just want to
+give a little bit more of the formalism
+of these models I've included references
+to some of the models that are going to
+be encompassed by this kind of general
+class but what you're basically doing is
+you're computing some loss between the
+score for an edge that exists in the
+graph and a negative sampled edge some
+edge that doesn't exist in the graph so
+here I'm showing a margin loss F where F
+of E is the score for an actual edge in
+the graph and F of E prime is an edge
+that doesn't exist in the graph and here
+you're just trying to optimize a margin
+loss that tries to make the score for a
+real edge higher than the score for a
+non-existent edge and the way you
+compute the score is some similarity
+matrix similarity metric between that
+combines the source embedding the
+embedding of the source node the
+embedding of the destination node and
+and some embedding of the type of
+relation you're encoding so in this
+example you look at the cosine
+similarity between the embedding of the
+source node and the sum of the relation
+and the destination embeddings and the
+way you construct these negative samples
+is by taking a real node in the graph
+and replacing either the source of the
+destination entity with some other node
+so for this this node BC which is in
+your data set you're going to
+negative samples like B II and BA as
+well as negative samples such as AC and
+DC so these multi relation graph
+embeddings are studied across a number
+of different types of datasets the way
+it's most commonly studies and is in
+terms of knowledge graphs so for example
+if you considered freebase as the
+structured information or wiki data is
+like the structured version of Wikipedia
+that shows all the connections between
+the entities of Wikipedia like Hawaii is
+a state in the United States Barack
+Obama is the president of the United
+States and so on but people are also
+interested in a similar problem for
+recommender systems which is a more
+supervised task where you have
+connections between like you know
+ratings of movies and also for social
+graphs where you're interested in
+propagating kind of the attributes of
+people in some social graph based on him
+awfully based on the fact that people
+who are connecting a social graph have
+similar attributes but the graphs that
+we're interested in are slightly
+different you know they're part somewhat
+related to this class but the the type
+of graph that we're more interested in
+is like imagine you have a music
+streaming service you really have this
+very large graph where you can think of
+all the users and all the songs and
+genres and albums and artists as nodes
+in this graph and then you have a number
+of different types of relations where
+you can look at an edge in this graph
+for like every song that a user has
+listened to or bookmarked or bought and
+you also have parts of the graph that
+for different types of entities that
+correspond to like an artist to produce
+a song or how artists collaborated and
+if you train a single embedding of all
+of these different entities in a single
+space you can ask really interesting
+questions like you know tell me what
+genre czar similar even though you don't
+have any explicit information about the
+genres or you know I have these five
+songs in French
+tell me about some more songs that are
+in French I want it like to predict
+other songs that fit into the same class
+just by using like nearest neighbors for
+example on these embeddings but the
+thing about these types of online inter
+interaction datasets is that they're
+very they're really big data so web
+companies have datasets like this that
+have could have billions of nodes and
+trillions of edges if you think of a
+that has two billion nodes and you just
+pick a an embedding size of 100
+dimensions you now have an 800 gigabyte
+model which doesn't fit in even CPU
+memory let alone on the GPU and then
+when you look at graphs of this size
+training speed is also an issue when I'm
+trying to like train on a data saw data
+set of size 1 trillion training speed is
+also obviously an issue so we want to
+ameliorate both these problems so the
+main approach we take with PI torch big
+graph is you know a similar approach to
+many graph ways of you know speeding up
+graph algorithms which is you do a
+matrix blocking to subdivide the graph
+so what you do is you take every node
+and you pick some way of sharding them
+into n groups so you could just say you
+uniformly assign an index 1 through n
+for each node and what this means is
+that every bucket is divided into every
+edge is now divided into one of N
+squared buckets based on the source and
+destination node shard so you know if
+you think of bucket 3 1 here in red that
+is the the edges that belong in there
+have their source node in shard 3 and
+their destination node in shard 1 and
+what this buys you is that if you for
+example if it is that if you want to
+train in a single machine you get this
+temporal locality property where you can
+train on this whole bucket of edges in 3
+comma 1 and you only need to store part
+of your model in memory like the
+embeddings for shard 3 and shard 1 and
+everything else can be swapped out to
+disk and then it also means that you can
+do distributed training because
+different buckets that use different
+parts of the model can be trained in
+parallel without having to do any
+synchronization after every SGD step
+with the parameter server you just do
+them completely you can do them almost
+completely in parallel and you only have
+to do communication between the machines
+when a machine starts working on a
+different bucket because then it has to
+transfer the that part of the model from
+one machine to another so I would point
+out that this is not a lossless
+modification to the training objective
+there are two ways in which this
+modifies your training one is that
+you're no longer sampling edges
+independently because you're working on
+one bucket of edges at a time and there
+are theoretical results that say that
+this kind of non iid sampling of your
+data still converges to the same result
+but it may converge slower and second of
+all the distribution of negative samples
+change because if I'm looking at an edge
+in one bucket I can only construct
+negative edges out of that same bucket
+so we we do have to validate empirically
+that these modifications still produce
+similar quality models so I'm going to
+talk a bit about how we we do the
+distributed training in PI George big
+graph basically we need to do three
+different types of communication between
+the machines and this is all coordinated
+when you launch the trainers on the
+different machines they all launch
+sub-process servers that are able to do
+all these different types of
+communication so the first thing is that
+you have to synchronize which machine is
+working on which bucket of edges and
+this is done with a lock server that
+assigns buckets to machines and the way
+it does is basically just trying to
+greedily maximize machine partition
+affinity so if a machine has worked on
+partition bucket three comma one maybe
+it will next work on bucket three comma
+five so that so that it doesn't it only
+has to exchange one one partition of the
+data instead of two the second thing is
+you actually have to exchange the model
+partitions and the way this is done is
+that when partitions of the model are
+not in use they're stored in a sharded
+partition server that's charted across
+the training machines and finally
+there's a very small number of model
+parameters that can't actually be
+charted in this way specifically the
+embeddings of the relations and this
+isn't you know you don't have very many
+different relation types so this is just
+kilobytes or a couple megabytes and
+model parameters and these are handled
+with you know your traditional parameter
+server and just they're just updated
+asynchronously with a standard parameter
+server model but that's just a few like
+a megabyte of parameters as opposed to
+the gigabytes of node embeddings and
+this is all implemented with the MPI
+like PI torch distributed primitives
+that are used you can construct sort of
+model parallel training or model
+parallel structures in in pi torch and
+this runs on top of MPI or TCP whatever
+year you're running on for your
+distributed architecture so there's one
+other thing that that we do in pi torch
+big graph in order to improve training
+speed and that is it's based on the fact
+that training time is generally
+dominated by the negative sampling edges
+because for every edge in the real graph
+you typically don't just compute one
+negative sample you compute 10 or 100
+negative samples and so you're kind of
+dominated by the time in the random
+access lookup of those embeddings and
+the computation of the scores for those
+embeddings so what we do is we say what
+if we corrupt take a sub batch of a
+hundred real edges and use the same set
+of random nodes to construct 10,000
+negative samples instead of using
+different random nodes to corrupt each
+of those hundred edges in the batch what
+we what this does is first of all it
+reduces the random access memory
+bandwidth by a factor of 100 for
+negative sampling and also you can
+notice that if the similarity metric is
+based on a dot product or a cosine
+similarity then the batch of negative
+sports scores can just be computed as a
+matrix multiply between the node
+embeddings of the positive source node
+embeddings and the negative destination
+embeddings which is ends up being a lot
+more efficient and what you find as a
+result of this is that if you do
+traditional negative sampling that your
+training speed is and you know previous
+work is reported this your training
+speed is basically inversely
+proportional to the number of negative
+samples you use whereas you know with
+this optimized negative sampling you get
+pretty much constant training speed up
+to about a hundred negatives so the
+first thing we did now I'm moving on to
+the experimental section the first thing
+experimentally we looked at is just like
+this knowledge graph of freebase which
+is basically the standard for for
+looking at these multi relation graphs
+and they typically work on this very
+small subset of freebase that has 15,000
+entities and what we find is when we
+implement it
+models including the state-of-the-art
+complex model that in PBG we replicated
+or get higher accuracy on a basically
+linked prediction or knowledge-based
+completion task as the original papers
+the only thing that we're not
+replicating here is this one paper which
+was from a co-author that's just like
+uses huge embeddings and is really fancy
+and so even the co-author said that it's
+not worth reproducing this because the
+fact that you can get very high
+knowledge based completion doesn't
+necessarily mean that these embeddings
+are necessarily useful on a downstream
+task we actually can reproduce these but
+we don't report them here but then what
+we do is we train these embeddings on
+the full freebase graph and I think this
+is the first at least reported result of
+embeddings on the full freebase graph
+which has 51 million nodes in 1 billion
+edges so on the right you see at east
+knee plot of some of the nodes based on
+the full freebase embedding and what you
+see is you have a clustering at the top
+of different professions a clustering of
+numbers a clustering of countries and
+this is just a very small subset but you
+have like basically every entity in
+Wikipedia embedded in the same space and
+what we show is that as you partition
+the graph more finely you use less
+memory down to you know we with 16
+partitions you use you know 8 X less
+memory while achieving the same
+performance mean reciprocal rank which
+is the metric used for these tasks next
+we look at parallel training and the
+results here are more mixed on knowledge
+graphs because we find as we get you
+know reasonable parallelization up to 4
+machines but then we start to observe
+model degradation above that and in
+general we found that for knowledge
+graphs parallel training is quite
+finicky for a couple reasons one of them
+is that you have a very large number of
+relations compared to most of the graphs
+we look at and so the parameter server
+has to synchronize all of those and just
+the structure of these graphs is quite
+complex and so when you actually look in
+terms of time the improvements are kind
+of modest and I wouldn't necessarily use
+this on a knowledge graph too I wouldn't
+necessarily use parallel training for
+knowledge graphs
+however across a number of different
+data sets that we tried that were more
+like social graph datasets for example
+Twitter we find that
+they're not finicky in the same way and
+pretty much like no matter how we train
+them we get close to linear speed ups
+with no degradation in model quality
+with partition and parallel training we
+speculate there are several reasons and
+why these graphs are different but I'm
+not going to speculate too much on that
+here but say that we kind of leave that
+to future work of untangling the
+different causes of model degradation in
+knowledge graphs and maybe ameliorating
+them but to be honest knowledge graphs
+are not really the purpose of Hydra
+graph and we found in most of the data
+sets that were actually interested in
+that this hasn't been a problem some
+other things that were that I think are
+interesting future work one is looking
+at how to do parallel training for
+graphs that have feature eyes nodes or
+like either bag of words you know if you
+have a node that's a description of song
+right then you would want to do bag of
+words embedding of that text as part of
+the graph and we do actually support
+this for single node but thinking about
+how to paralyze that as an interesting
+direction for future work as well as
+like dense node attributes and finally I
+think that there's a really interesting
+direction of future work where you can
+apply the same techniques to also do GPU
+training because currently this only
+runs in the CPU because GPUs have like
+another 10x lower memory capacity but
+you could do the same kind of matrix
+blocking hierarchically and so on each
+machine you're then going to subdivide
+the nodes even further and you know do
+parallel training on multiple GPUs where
+you've swap the different shards across
+the GPUs to do multi-gpu multi machine
+training so that's basically under my
+talk the code and embeddings just got
+released the code in embeddings for wiki
+data which is this knowledge graph we're
+release today so please check it out I
+just want to mention that I think the
+world is full of big graphs
+things like online interactions Bitcoin
+transactions medical records purchases
+biological networks and so on and we
+really only looked at a couple things
+here and so I hope people try this out
+for other kinds of large graphs
+hydravid graph is really designed for
+graphs that are quite a bit bigger than
+even the largest currently available
+public data sets so I also we kind of
+hope that this Spurs people to work on
+even larger larger data sets and look at
+graph embeddings for for bigger data
+thank you just a general question
+he's graph embedding is this is I mean
+normally people use distributed graph
+frameworks or graph databases to solve
+problems on graphs what what this will
+give what these kind of techniques will
+give more than what's existing today
+like yes so there are a lot of I mean
+you can do you can do a lot of things by
+by these distributed children sure
+frameworks was yeah graph databases and
+so hmm yeah that's true
+so for a lot of like traditional graph
+metrics if I want to find like the min
+cut of a graph or even an SVD of the
+graph which is which is somewhat similar
+to what we're doing here there are
+existing kind of distributed graph
+frameworks that do this but what this is
+basically providing is first of all
+these kind of multi relation graphs
+aren't really handled by any existing
+system and it's not clear that they
+could be and in in general what we kind
+of want here is that you can put in any
+kind of loss function you want for SGD
+and you can train kind of generic multi
+entity multi relation graphs of you know
+for where in pi torch like you have
+automatic differentiation so I pick any
+model I want right just write down your
+model and then what you get here is that
+you can train kind of generic models via
+SGD with automatic differentiation and
+negative sampling these aren't really
+capabilities that are built into these
+other frameworks even though they might
+use some of the same kind of
+distribution methodology yeah hi means
+yeah from my you really nice work so my
+question is what's the opinion about
+those graphing batting algorithms based
+on random
+something such as the deep work and no
+to vac and can paragraph actually
+support that very easily or you think it
+requires a significantly like different
+system design yeah that's a good
+question and we do talk a bit about this
+in the paper so deep walk there are kind
+of two different classes of algorithms
+for for graph embeddings one of them
+kind of looks more like word Tyvek where
+you do random walks in the graph and and
+try to construct embeddings based on
+that or or this one which is more for
+knowledge graph embeddings the deep walk
+stuff has been more used for social
+graph embeddings and it's kind of
+earlier work and we actually compared
+unlike some of the datasets right out of
+the deep walk paper and we found that
+both on the original tasks they proposed
+and for downstream unsupervised tasks
+that that these knowledge graph
+embedding methods performed as well or
+better than the deep walk type
+embeddings they performed a lot better
+actually on downstream unsupervised
+tasks and we found that they were like
+orders of magnitude faster so I actually
+have some plots here about this so here
+we compared a deep walk actually and we
+find that the red line is like our graph
+embeddings and this is looking at link
+prediction which you may not say is
+necessarily fair because that's what
+Deepak not necessary what do you plug is
+made for but if you look at like the
+YouTube data set which is what they
+actually test on we also do better than
+that at like downstream tasks so I think
+there are classes where the deep walk
+type embeddings might be better but for
+the things we've looked at they haven't
+done I say so another more like a
+technical question this when you're
+doing negative sampling and the way you
+process one Nadja block how can you
+avoid like get these detective samples
+that it appears in other edge blocks
+right so we don't actually the negative
+sampling doesn't explicitly exclude
+edges that are in the training set so
+what you find is that these graphs are
+very sparse so it's not usually an issue
+of just like picking random negatives it
+is the case that how you choose your
+negatives is one of the most important
+things and there's stuff we talked about
+about exactly what distribution just
+like in word to vac like the
+distribution of negative
+samples that you choose 10 ends up being
+very important for how generalizable
+these are in downstream tasks so we
+talked about that a bit in the paper
+thank you do you confirm UC Berkeley so
+the interesting thing about graphs is it
+I'm particularly interested in how you
+sharted them so graphs have a huge
+number of nodes that have very little
+information very little edges and few
+nodes that have lots of edges etc did
+you take that into account when
+determining the sharding I'd love to
+hear more about what things you tried
+with the charting what works what didn't
+yeah it's a good question and it's
+something that we thought quite a bit
+about but actually there's a bunch of
+trade-offs and how you do that what we
+end up doing is just uniformly sharding
+nodes but another thing you could do is
+like shard by degree and there's kind of
+trade-offs there but for example you'd
+think that like sharding one thing you
+end up with if you shard not uniformly
+is that you get load imbalance across
+your different part across the different
+buckets we're just something you don't
+want but one thing that we've thought
+about might be better about sharding
+let's say by degree is if you first do
+the high degree edges first then you
+might get a better layout of the
+embedding space
+and then you can add in the lower degree
+edges which don't affect the final
+layout as much and that's something that
+we're experimenting with eligible for
+going into the embedding that's a good
+question it's not thing that we explore
+in the paper but it's definitely
+something that we've looked at you know
+internally in it there's a interesting
+trade-off that I think is a important
+direction for future work about like
+where do you cut off like first of all
+where do you cut off kind of how do you
+prune what you use for the embedding and
+then how do you propagate the embeddings
+from the part of the graph you do train
+it's it's a little bit more obvious in a
+single relation graph that you can just
+sort of average the embeddings of your
+neighbors to get the embedding so the
+things that have low degree it's less
+clear for like a multi relation graph
+how to do that or what's the optimal
+strategy for doing that but that's a
+great question and it's cool so let's
+thank the speaker again
+[Applause]

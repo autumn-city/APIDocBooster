@@ -1,0 +1,1364 @@
+- All right, welcome to
+scaling up resources production
+with PyTorch and MLflow.
+I'm Joe Spisak, I'm the PyTorch
+Product Lead at Facebook.
+I look after all things PyTorch
+here within the company,
+whether it's research,
+whether it's production usage
+by partner teams like Oculus or Instagram.
+But also probably my most
+passionate part of the role
+is building community around the project
+of which we have a very large community.
+So, agenda for this talk,
+I wanna give everyone an
+overview of what PyTorch is,
+if you haven't heard of it,
+I'll give you a little bit of a primer.
+A view on the amazing community we do have
+which spans from the independent
+developer all the way
+through to industry labs
+and top trillion dollar cap companies
+that are using PyTorch for
+research and production,
+a bit about how Facebook uses PyTorch
+within its own products.
+And I'm actually gonna
+dive into some challenges,
+and work from developer experience,
+all the way through to training at scale
+and deployment scale.
+And then I'll finish
+up with some resources
+on how to get started.
+So if you didn't know, PyTorch
+is an open source project
+and it resides on GitHub.
+And you can see the GitHub page here.
+This is the readme
+and you can see we have
+over 1400 contributors now.
+I think this is an
+older snapshot at 13.99.
+And it's been around for
+about just under three years.
+Again, 100% open source.
+Everything is operating in the open.
+We do RFCs,
+we have our community members from Nvidia,
+from open AI, Google, Microsoft
+and a whole lot of other people.
+And if you kinda look at PyTorch
+in kind of areas we invest
+or kind of attendance for the project,
+and fundamentally, it's
+as eager in graph mode,
+graph based execution.
+So, one of the things
+that's really cool about it
+is it feels like it's
+Python so that gives you
+this kind of eager
+imperative pythonic front end
+but we also have this
+bridge called TorchScript,
+which I'll talk about a little bit later
+and allows you to create a
+graph that can then be executed,
+in our case at Facebook,
+trillions of times a day.
+It's also dynamic.
+So, if you look at the
+kinda the next generation
+or even the previous
+generation of neural networks,
+they're highly dynamic.
+So things like control flow,
+you know, or neural networks
+with variable length data.
+You know, this is kind
+of the world we live in
+with the transformers
+and all these really funky architectures
+that are coming out of research
+that are pushing the state of the art,
+we wanna get those into production.
+Thirdly, distributed training.
+This is something that is been supported
+for quite some time in PyTorch
+but, you know, what we've
+seen is really a need for,
+especially model parallel
+in really scaling up,
+especially as of late when
+you look at, for example,
+GPT-3 which just came out
+a few days ago for open AI,
+it's 175 billion parameters.
+And I'll talk more about those
+types of models later on.
+Fourthly, her acceleration,
+we definitely live
+in this heterogeneous
+accelerator type world,
+whether it's a GPU or a TPU
+or FPGA or whatever.
+And then lastly,
+probably the most important
+tenet for the project
+is this concept of
+simplicity over complexity.
+And the goal here is to
+basically get out of the way
+of the developer or the researcher.
+Make it easy, make it something
+that is really enjoyable to use
+and kind of just generally
+gets out of the way
+and accelerates whatever
+you're trying to do.
+So when we take a step back
+and we think about, you know,
+our overall arching mission,
+it really is this research
+to production paradigm.
+So how do we take the
+most cutting edge research
+that's being prototyped
+by some of the top labs in the world,
+maybe it's Tesla, maybe
+it's Facebook, others
+and be able to provide this
+production deployment path.
+So really creating that flywheel
+from resource to production.
+And really, when you look
+at PyTorch, to enable that,
+we created a number of
+API's and libraries.
+So, you know, PyTorch
+itself is kind of like,
+really cool project
+and people kind of see
+the end results of it.
+But, you know, when you look at actually
+what's inside of it,
+it's actually a number
+of API's and libraries.
+So torch.nn, which is really
+this neural network library,
+which provides things like
+layers or in our case modules,
+there's things like torch.optim
+which gives you maybe a
+Stochastic Gradient Descent
+or some some type of optimizer
+when you're training
+your network utilities,
+for example, like torchdata
+for loading data sets.
+And then down at the bottom
+here, things like autograd.
+So, kind of the beating heart of PyTorch
+is really this concept
+of auto differentiation.
+You know, which basically
+gives you a very easy way
+to do back propagation.
+And then, as an example, torchvision,
+but we also have torchtext and torchaudio
+for things like models and data sets
+as well as transformations.
+And then when we think
+about our production story,
+we have this library set
+of API's called torch.jit.
+And this is that bridge
+I talked about between
+that eager pythonic mode over into
+this kind of graph production
+large scale type mode.
+Okay, so I'm gonna talk
+about the community now.
+So, one of the things that
+gets me really passionate
+about this project is
+really building community
+and the community that I
+personally get to engage with on,
+frankly, a daily basis.
+And so, when you look
+at the community itself,
+it does span kind of
+everything from academia to,
+you know, these power users
+to community builders,
+like say, Jeremy Howard.
+And you can see like the tweets
+and the messages here it's,
+you know, it really is a
+broad spectrum of folks.
+So it could be, you know, for
+example, some of the examples
+that are at our DEF CON
+last year we did this,
+we do annual developer
+conference, whether it's Dolby
+or whether it's under Karpathy from Tesla
+or it's like the partnership
+that we launched with Google
+and Salesforce around cloud TPUs
+and supporting kind of the latest
+and greatest hardware out there.
+You know, this was a build but, you know,
+you can kind of get the gist of it here.
+So, one of the things we found is,
+you know, the community just
+absolutely loves the project
+and especially researchers,
+when you look at O'Reilly
+and the numbers they've gathered
+and the polls they've done
+around the community.
+For networks is a Japanese
+company, pretty large startup,
+and they developed a really
+great library called Chainer,
+which is, you know, now
+migrating over to PyTorch.
+And then lastly Open AI.
+So I think everyone's heard of Open AI,
+they have made PyTorch
+their framework of choice
+and they're building all their
+AI on that going forward.
+So let's talk numbers.
+So, I mentioned the contributors earlier.
+We are over 1400 now,
+that's actually, you know,
+when you put it in perspective,
+over 50% year over year growth.
+So, from a contribution perspective,
+our communities is growing rapidly.
+We also have PyTorch forums.
+So this is basically a discourse
+on site that we moderate and
+manage with community members
+that answer questions and
+moderate and admin the site.
+And this is incredibly
+fast growing as well.
+We're, you know, now close
+to 30,000 forum users.
+You know, this is something
+that is really amazing to watch.
+It's just keeps growing.
+We don't really use Stack Overflow,
+we use this forum and the
+community does come together
+and they cover anything
+from mobile deployment to,
+you know, how to use
+TorchScript in production
+to just general question and answer.
+Okay, and another set of metrics,
+so, if anybody hasn't gone
+to http://paperswithcode.com,
+you know, this is
+actually a great resource
+if you're into machine learning.
+And if you go to
+http://paperswithcode.com/trends,
+you'll actually see this graph.
+And it gets generated on a daily basis.
+And what it does is actually,
+looks at the paper implementations
+grouped by framework.
+And you can see in the case of PyTorch,
+it does continue to grow.
+You can see it in red
+there, the blue is actually,
+the blue is actually other
+frameworks besides PyTorch
+and then the orange is the
+other framework by Google.
+But overall the project continues to grow
+and the number of implementations
+out there continues
+to grow as well.
+Okay, so switching gears,
+I wanna talk about PyTorch
+briefly at Facebook.
+So we do use it for quite a
+few different applications,
+whether it's computer vision,
+whether it's translation,
+NLP, reinforcement learning.
+Again, this was kind of an animation
+but you get the picture.
+You know, in this case,
+we use it for search.
+You know, we apply ML for translation.
+So for example, FairSeq
+is a library of use, you know,
+for sequences to sequence
+and translation applications,
+of course, ads, feeds
+and you see face tagging.
+So quite a few different
+areas we apply ML,
+a lot of it does use PyTorch.
+And then this is also something
+that you should definitely check out.
+So if you haven't used a portal before,
+they're pretty incredible
+and the camera that they have
+is actually an AI driven camera.
+So, it uses under the
+hood see computer vision.
+Namely a variant of Mask R-CNN,
+and actually does a
+really nice pan and follow
+and resize along with how you
+kinda engage with the screen.
+If you're moving around
+and the image will actually
+follow you quite nicely.
+It's really great for video conferencing,
+with spending time with family.
+I use it all day every
+day, probably meetings,
+so I've gotten used to it.
+I'm actually disappointed when
+a camera doesn't follow me
+so I definitely recommend
+checking out the portal.
+And by the way, all of this
+actually runs on the device.
+So neural networks is actually
+running resident right there
+on the device.
+So it's not actually sending
+anything to the server,
+so your latency is super low
+and it's not sending any data anywhere.
+Okay, so I wanna actually
+to the meat of things here
+and talk about some of the the challenges
+that I see in scaling AI.
+That's really the heart
+of this presentation.
+And so, the first challenge I wanna get to
+is really the developer experience.
+And so, I think you can make
+something really powerful,
+you can make it really,
+really performant but if
+your developer experience
+isn't such that it makes people delighted
+and want to use it, frankly,
+they won't end up using it.
+So when we think about PyTorch itself,
+we think about really three
+areas when it comes to dev ex.
+And one is really giving someone
+the full freedom to iterate
+and explore the design space.
+So whether that's in NLP in
+large scale transformers,
+you know, or it's maybe
+something like computer vision
+and object detection,
+you know, we want to give them,
+you know, that ability
+to kind of use PyTorch
+with full extent to be able
+to kind of express any idea they have.
+Second is clean, intuitive APIs.
+So in PyTorch, it's really,
+you know, in most cases,
+one way to do something.
+There might be a couple
+different ways depending on,
+you know what you're trying to do
+but largely, we try and make sure
+that it's an intuitive way to do things
+and that the API is clean,
+it doesn't have a lot of
+kind of extra sugar in it.
+And then thirdly, you know,
+there's a rich ecosystem
+of tools and libraries.
+So we try not to keep
+too much in the core,
+we try to keep it clean
+but then have a really rich ecosystem
+of kinda things around PyTorch.
+So whether you wanna load
+data from vision's datasets
+or you wanna do Bayesian optimization,
+there's a really nice
+set of tools around it
+so that the core library itself,
+actually can stay nice and lean.
+So I do wanna walk through some code here
+to kind of give you an idea
+of how nice the API is.
+And then I'll talk a little bit more
+about some of the other
+things around PyTorch.
+And if you notice in this case,
+we actually have Python on
+my left and C++ on my right.
+So first thing you should notice
+is that the API's are very, very similar.
+This is actually, by design
+of course, we thought,
+you know, long and hard about
+how a C++ API should look.
+And we really wanted
+this to be as intuitive
+as the pythonic interface.
+Obviously, there's a few more
+colons in the C++ version
+and you have to compile it
+and all that good stuff
+that is required with C++
+but it does give you this feeling
+like you're still writing Python,
+but you get all the performance
+and all of the capabilities of
+actually operating C++ land.
+So starting on the left,
+I'll just walk through
+briefly on the Python side.
+So, first thing I'm gonna do
+is import torch of course.
+Then I will setup this class called Net,
+which inherits the torch.nn module API.
+And then I will start to define a network.
+In this case, it's pretty simple.
+It's two fully connected layers using
+the torch.nn.linear layers,
+which comes from the module API.
+I will then define a forward method,
+which gives me my
+non-linears and maybe my,
+you know, my dropout layers and such.
+So, I'll define a rectified
+linear unit here based on the,
+you know, that first
+fully connected layer.
+I'll apply a dropout with
+a probability of dropping
+out nodes at 50%
+then I will do a sigmoid
+nonlinear based on
+the second fully connected layer
+and then I'm gonna return that at x.
+And you can see on the right,
+basically, it looks pretty much the same.
+So C++ is basically very intuitive.
+And so moving on we
+actually, we have our net,
+which equals the net
+that we defined based on
+the previous function there.
+We are now going to
+set up our data loader.
+So our dataloader comes from
+our torch.utils.dataloader.
+In this case, we're
+coming from torchvision,
+which is a really handy library
+for loading computer vision
+data sets you can load MNIST
+into the ./datafolder.
+We are going to define our
+optimizer in this case,
+Stochastic Gradient Descent.
+And then we're gonna set
+up our training loop.
+And in this case, our training loop
+is basically one to 11 epochs,
+which is iterations over the data
+or that data we will
+leverage our data loader
+to then first zero our optimizer.
+Excuse me, zero our gradients.
+Do a forward pass.
+So basically, you know, zero
+out then do a forward pass,
+then we're gonna do basically
+a backward pass later.
+But first we define our loss function.
+So in this case,
+we're using a negative
+log likelihood loss based
+on our kind of y and y net,
+so prediction and target.
+We'll then do a loss backwards,
+which basically is a back
+propagation through the network.
+And then we do an update,
+so an optimizer.step.
+And then we have an if
+statement at the end,
+if we wanna actually do a checkpoint.
+And we in this case, we're
+using the torch.save API.
+And that's basically it
+that actually gives you,
+that will give you a trained network
+at some checkpoint depending on
+where you choose.
+So, obviously this was
+a very simple example.
+And if you go to http://pytorch.org,
+there are incredibly complex versions,
+whether it's reinforcement
+learning around NLP.
+But that kind of walks you
+through the basic structure
+of PyTorch programme.
+Next are tools and libraries.
+So if you, for example,
+we would like to do Bayesian optimization,
+if you have a number
+of hyper parameters you wanna sweep over
+and you wanna do it in
+a better way that's a,
+you know, that's not a,
+you know, a grid search
+or random grid search,
+this is a great way to do it.
+There's also frameworks
+for example, like 3D
+or differentiable rendering AI,
+like PyTorch 3D or Private AI with Crypton
+or interpretability with Captain.
+And then if you go to http://pytorch.org
+and you click on the ecosystem,
+you'll see dozens more really
+great libraries and frameworks
+from the community.
+So, pretty much whatever you need there,
+it's definitely out there,
+someone has built it,
+somebody is working on it and
+there's a great set of tools
+and a community to leverage.
+Okay, so switching into
+challenge number two.
+So model size and compute needs.
+This is a really
+interesting one especially,
+you know, for where we are in
+kind of progression of things.
+So, as I mentioned previously,
+the GPT-3 model just dropped
+this week from Open AI.
+This actually isn't updated in this slide
+but you can definitely see
+over time the parameter counts.
+At the time of creation of this slide,
+you can see the terminology,
+17.5 billion parameter model
+from Microsoft was actually the largest.
+We had actually open source
+the Blender Bot a few weeks back,
+which is there's a couple
+different versions of them.
+Network of 7 billion,
+now there's an 11 billion
+parameter version.
+But the point is that parameter counts
+are continuing to grow and
+they're not slowing down.
+And we've obviously just taken
+an order in magnitude leap
+just like in the last couple days.
+So, this is a problem
+that we will be facing
+for quite some time.
+So how do you take these models?
+How do you run something that
+state of the art like this
+and actually do inference
+and actually deploy it
+at any kind of reasonable scale?
+So the answer is actually
+of course model compression
+or model distillation or
+model quantization or pruning.
+And so, PyTorch actually
+has quite a nice set
+of API's for this.
+We'll start with the pruning
+API, which was new for,
+I believe 1.4.
+In this case,
+you know, these over parametrized models
+are really, really hard to deploy.
+If you look at,
+you know, for example, like Blender Bot,
+you know, which is nearly
+10 billion parameters it's,
+you know, today, you know, our
+researchers have looked at,
+you know, what it takes to
+actually do an inference
+and we're actually running up into
+the four volta level compute
+just to do inference,
+which is kinda crazy.
+So really, the goal here
+with pruning is to identify,
+you know, areas where we can
+reduce the number of parameters
+without sacrificing accuracy.
+And there's a bit of an
+oversimplified code snippet here
+on the right.
+Of course, we have our trusty LeNet,
+which is an old school
+network from Mr. Yann LeCun.
+And a couple of if statements so based on,
+you know, the modules.
+They are kind of contained
+within the network,
+you can actually define what percentage,
+you know, of the actual model weights
+that you actually want to prune.
+And if you look at just the
+first if statement here,
+will be at torch and then conv 2D,
+which means I'm actually
+gonna be pruning weights
+on the 2D convolution layers.
+In this case, 20%.
+And you can see in the second,
+the second there,
+we're actually doing a
+prune of the linear layers.
+So I will do a, you know, else if
+and to find the torch.nn layer.
+And then, you know, in this case,
+I'm gonna prune actually 40% of it.
+So, this is a really nice way
+and very easy API for somebody
+to go off and prune away
+and experiment and figure out,
+you know, hey, maybe I can
+prune a little bit more here
+from these layers, maybe I can prune with
+the less than those layers
+and reduce the overall
+parameter count of the model
+and get it to be much
+more efficient than it is
+as it stands today.
+Another technique that's very popular,
+especially with hardware
+supporting things like integer
+and sometimes even lower
+precision computations
+is quantization and,
+I mean, fundamentally,
+you know, inference is expensive,
+especially when you start
+to get on to mobile devices
+and Raspberry Pi's and
+other types of places.
+There's limited resources,
+there's some limited memory,
+there's some limited compute,
+there's typically not the,
+you know, the resources you
+would have in say a cloud
+or data center.
+And so, you kinda have
+to do with what you have.
+And so what we found is,
+you know, quantize models,
+really does enable inference at scale.
+We've been deploying quantize models
+at Facebook for years and years now.
+And mainly on servers but
+also certainly on devices
+as well like phones.
+And you can see on the right here,
+this is again, a highly
+simplified walkthrough the API.
+But what I'm doing here
+is actually importing a ResNet 50 model,
+which is a pre chained model.
+And we're actually loading the state dict,
+which basically gives you a
+fully loaded set of weights.
+I'm gonna prepare doing this using
+the quantization.prepare API,
+which basically makes
+essentially a copy of the model.
+I'm gonna load down a config,
+a q configure, quantize config,
+which basically tells PyTorch, you know,
+what layers I want quantized
+in what configuration
+and what libraries it's gonna be using.
+So in this case, it could
+using like Q and PAC or FPgen.
+And then what I'm gonna do
+is actually run this for loop
+which actually gathers some statistics
+and then I use the quantization.convert
+to then use the statistics
+that are gathered
+as well as the cube config,
+to then output a quantized model.
+So, it's a pretty nice API.
+This is all done in eager mode today.
+And in the future, we
+have a graph mode version
+that we plan to bring into
+one of the upcoming releases.
+And when you look at the
+results from quantization,
+it's really interesting.
+So, you know, here's a
+couple of models here,
+starting with ResNet 50,
+which we just talked about.
+Top one imagenet is 76.1% accuracy.
+We lost .2% but we
+actually improved over 2X
+on CPU inference.
+MobileNetV2 we saw big game,
+a little bit of a loss
+.3% top one imagenet,
+using Quantization Aware Training,
+which is a little more complex.
+That's actually doing quantization,
+kind of fake quantization
+while you're actually training
+the network in order to gather statistics
+and then doing quantization.
+What's the trend?
+Using that information,
+we actually saw 4x speed up improvement.
+And then lastly FairSeq,
+this is really a translation
+or seq to seq model.
+In this case,
+we're aiming for basically
+no loss of BLEU score,
+which is how translation is measured.
+And in this case, we lost a
+really nothing in BLEU score,
+using Dynamic Quantization
+we saw 4x improvement in
+for running on Skylake.
+So pretty impressive overall,
+this is available today.
+Okay, so the next challenges is really
+how do we train models at scale.
+So, in this case,
+we've already touched on training models
+at scale quite a bit.
+I do wanna talk about it
+a little more in depth
+and actually jump into
+some of the libraries
+that we're actually using here.
+So in this case, you know, this
+is a really nice progression
+that we've seen for example,
+like our ads and ranking models,
+starting with decision trees,
+going to these first linear regressions
+over to deep learning, to
+sparse and then of course,
+we're actually beyond that now
+and we're working on
+some other crazy stuff.
+But the point is
+like these ideas are
+getting even more complex
+and the models themselves
+are getting larger and larger
+and even more complex.
+And so, we needed to actually
+develop a number of tools
+to be able to address this.
+And to give you kind
+of an idea in context,
+just looking at like the
+computer vision space,
+you know, starting out with
+like ResNet 50 takes maybe,
+takes a couple of days to train,
+ResNet 101 takes maybe
+four days, you know,
+like the ResNet 101 larger
+model takes about maybe seven,
+moving to a larger ResNet take 14 days.
+And actually some of the
+things we're seeing with,
+especially these large video
+data sets and video models
+is something that actually can take months
+to actually train.
+So we're kind of running into,
+you know, a situation where,
+you know, if it's running for
+months and we get some issues
+or you run into maybe infrastructure
+that maybe a no go zone,
+we could actually be in real trouble.
+The other thing to mention is, you know,
+is we actually have to deploy
+heterogeneous hardwares
+to actually run training
+at this kind of scale.
+So we actually have to think about things
+and kind of HPC land,
+like how do we scale over,
+you know, a faster
+interconnect or larger CPUs,
+larger GPUs or ASCIs.
+And if you look at some of
+the cloud TPUs stuff we've been working on
+with Google and Salesforce,
+this is exactly that.
+It's really taking the HPC mindset
+and be able to scale it on
+this heterogeneous hardware.
+The other thing that to
+consider is, you know,
+these types of jobs like ML
+is not a regular type job
+from the classical infrastructure mindset.
+So these data pipelines
+that can be, you know,
+pretty predictable, et cetera,
+those are great but they're
+definitely not like ML jobs.
+What we see is more ad hoc jobs.
+So these are large long running jobs.
+Basically, you know,
+that frustrates the hell out
+of our infrastructure people
+and anyone trying to predict
+any of the demand that we have.
+We also see cost and
+efficiency challenges.
+So, the ROI on these jobs
+is really hard to estimate.
+So how do you estimate the ROI
+and maybe running 1000
+GPUs for several weeks
+and maybe potentially
+not even getting a result
+that you can actually
+deploy in production.
+And then fundamentally,
+when you're running it,
+this sub-linear scaling plus huge scale,
+so maybe I'm not getting,
+you know, all of the efficiency
+out of the hardware itself,
+but I'm using a lot of it,
+it's a really easy way to waste resources.
+You wastes power, you waste,
+you know, precious time,
+you know, there's environmental
+impact, et cetera.
+So there's a lot that can be really wasted
+when you're running these
+jobs and a lot of them.
+So one of the things we did
+is we built something
+called PyTorch Elastic,
+which is used by a
+number teams at Facebook.
+And what it really allows you to do
+is run in this kind of fault tolerant kind
+of elastic environment.
+So when you're running these jobs on say,
+maybe hundreds of servers,
+potentially thousands of servers
+and you're running some
+of these really large,
+say transformer jobs,
+you know, being able to operate
+when maybe a server goes
+down, maybe a disk gets full,
+you know, maybe there's
+in the data center,
+you know, one of the servers
+itself had a power spike
+or something along that line
+and it was actually, you know, an issue
+and that actual server goes down,
+do you want that job to die or not?
+In this case, we actually
+allow for that full tolerance,
+which is very similar to how
+things operate in the cloud.
+In the case of dynamic
+capacity management,
+when you're kind of leasing this capacity
+that can be preempted.
+Maybe somebody took that server from me,
+maybe preempted my job
+like in the case of say,
+an AWS spot instance
+or maybe a Google Cloud
+preemptle instance,
+you know, how do I keep
+running my training job
+when I was trying to like
+leverage that spot instance
+because it's much, much
+cheaper to run nodes.
+And then of course, how do I auto scale?
+How do I dynamically adjust,
+you know, my job basically when
+maybe that node comes back up?
+So, this is really handy stuff.
+And it's great for production teams,
+especially when these mission critical,
+you know, jobs they're trying to train.
+So I'd definitely check
+out PyTorch Elastic.
+Most recently, we
+integrated with Kubernetes,
+along with working with
+Amazon as well as Microsoft.
+And so there's a nice
+Kubernetes controller there
+that is supported by EKS at
+AWS as well as on vanilla EC2.
+And then of course, Azure
+also uses it and supports it.
+But what if my skill is really large?
+So what if I'm in the 10s of
+billions of training examples,
+my models are larger
+than the machine itself,
+I might wanna run hundreds of experimental
+you know, jobs and they're
+all competing for resources.
+This is actually,
+well, definitely an understatement
+from Facebook's perspective but
+what if I'm running 1000 plus
+different production models?
+You know, this is actually,
+another problem you might wanna solve.
+And elasticity in fault
+tolerance doesn't solve that.
+So we built this thing called PyTorch RPC
+or Remote Procedure Call.
+And basically, what this
+does is enables applications
+to run functions remotely
+and automatically handles
+that autograd and everything
+that goes along with
+that autograd, if needed.
+So for example, I could be
+running, you know, these like,
+I could be running parts of my network,
+like maybe a sub-graph of my
+network on a remote machine,
+I could be running the autograd,
+the auto differentiation,
+and so on all on all remotely.
+Some of the applications that we've seen
+if you're doing this, for example,
+large scale parameter server,
+reinforcement learning,
+maybe you have like
+these multiple observer,
+streaming states and rewards
+that you're trying to train.
+And then of course, if
+you're running, for example,
+the distributed model parallelism,
+which is more of a canonical use case
+for something like this.
+So maybe I have this really large model,
+maybe it's on the order of
+100 or plus billion parameters
+and I wanna be able to kind
+of slice and dice that model
+and run it over multiple
+machines 'cause it just won't fit
+on my large machine that I have.
+So let's talk more about
+what's actually encompassed
+in this API.
+So this was released initially
+in http://pytorch1.org,
+which was earlier this year.
+And basically, there's four
+things that are made up here.
+And really the RPC, which
+is really the user code
+that you give arguments to
+and you have a specified destination,
+pretty straightforward,
+there's this concept
+of a remote reference,
+which basically tracks
+and maintains all the objects
+owned by remote workers,
+there is a an API for
+distributed autograd.
+So as I mentioned,
+like PyTorch has this concept
+of auto differentiation,
+that it basically tracks things in a graph
+as it executes and back
+propagate through that graph.
+In this case, it does the same exact thing
+with a very similar lost backward API
+but actually over remote resources.
+And then fourthly a distributed optimizer.
+So much like the distributed autograd
+has a distributed optimizer.
+So for example, I'm doing, again,
+Stochastic Gradient Descent
+and I wanna be able to actually run
+that over maybe distributed
+compute resources
+or remote ref key resources,
+I can actually use a very
+similar API to torch.optim,
+which PyTorch offers today.
+So it does all of that automatic handling
+of remote references of subnets
+and makes it feel like
+you're just writing PyTorch
+but maybe you're actually
+running it on remote resources.
+Okay, last challenge I wanna go through
+is deployment at scale.
+So I think we talked
+about the user experience,
+we talked about how to optimize models,
+we talked about training at
+scale these large models,
+how do we deal with that.
+Let's talk about once we're
+actually ready to deploy,
+you know, what types of
+challenges we're dealing with.
+I think this is something
+that's a bit of a forgotten,
+people tend to forget about this.
+They wanna train large models,
+they want to offer other
+models, but when actually,
+which you actually if want
+to get into production,
+there's a lot of things to be considered.
+So, first thing is really loading
+and managing multiple models
+on multiple servers or endpoints.
+So in this case, like it's not
+just one model, I might have,
+you know, five different
+versions of that model,
+I might have, you know, 20 models
+or five versions of those models,
+I wanna be able to just
+manage those depending on
+what use case or the environment
+or maybe there are geographic
+concerns with different models
+or more geopolitical
+applicable for different areas,
+especially when you talk about languages.
+And then also, we're gonna be
+running on multiple servers.
+So, how do I handle all those?
+And by the way, some of these
+might actually run on device
+in an iOS or Android device.
+How do I handle the pre
+and post processing code?
+So I think we all tend to
+fixate on the model itself
+and those training weights but there are,
+you know, when actually doing predictions,
+you actually do some level
+of pre and post processing
+to handle those requests.
+How do I log, how do I monitor,
+how do I secure these predictions
+so that someone can't actually hack my API
+and make it do things that
+I don't want it to do?
+And then of course, what
+happens when you hit scale,
+which is, you know, a problem I'd say
+for a certain number of companies today
+but I think the expectation is that
+this will be a universal
+problem very quickly.
+So one of the things we did,
+this is in partnership
+with Amazon especially AWS,
+we launched this as
+part of the 1.5 release.
+So TorchServe, it's an experimental.
+You can see kind of a block
+diagram on the upper right here,
+taking from multiple models on through
+to a restful endpoint,
+you know to be able to
+serve these multiple models
+and be able to manage them
+through a couple of different API's,
+specifically the inference API
+as well as the Management API
+and then be able to handle all the login
+and metrics to go along with it.
+It has a number of default
+handlers for things
+like image segmentation,
+text classification,
+but then you can also very
+easily create a custom handler,
+give a specific use case,
+there's model versioning,
+which is great even for prototyping,
+if you're trying to just do
+like, for example, AV testing,
+you can create a quick model,
+a version of what you're doing,
+create and train another model
+and then just wanna
+versionize that as well
+and you'll do a quick comparison.
+There is automatic batching,
+you know, cross HTTP requests
+and there's also a logging
+with common metrics
+as well as custom metrics
+that you can actually
+go and define yourself.
+And then of course, there
+are API's for managing,
+you know, both the management
+of your models in production
+as well as the inference itself.
+And this is again, a very new project.
+Partnership between Facebook and Amazon
+but we were hoping to grow
+a community around this
+and really take this project
+to something that is can scale,
+you know, for larger use cases
+and be used in the enterprise space.
+And then of course, you know,
+I mentioned MLflow in the title
+but I haven't mentioned MLflow yet.
+This is a really great community
+that has done some really
+amazing things around,
+you know, model management and
+really lifecycle management.
+And there is a support built in today
+with mlflow.pytorch, you
+know, for things like logging
+and loading PyTorch models.
+It does use torchsave which
+basically pickles your model
+and serializes it through pickle.
+We are looking at adding
+TorchScript support that's,
+you know, something we plan to work on.
+If you wanna contribute
+to that, let us know.
+We also are looking at
+integrating with TorchServe,
+which is what I mentioned previously.
+So you should basically take
+this lifecycle management,
+you know, log, load models
+into the MLflow format
+and then be able
+to basically seamlessly
+serve those in TorchServe.
+That's coming soon.
+Again, if you're interested
+in collaborating on that,
+feel free to reach out.
+We'd love to work with
+folks, we love contributors.
+So please do reach out.
+Okay, those are the four challenges.
+Now I'm gonna give everyone an
+update on the latest PyTorch
+as well as how to get started.
+Okay, so if you haven't seen PyTorch 1.5,
+was released in late April.
+It had over 2200 commits.
+So it's a pretty big release for us.
+A couple of key features
+that came along with it,
+I mentioned TorchServe,
+this was a partnership
+with AWS, it's experimental.
+We also released the
+TorchElastic Kubernetes operator
+that is supported by AWS as well as Azure,
+which is really cool.
+So Elastic Kubernetes training
+jobs in the cloud on PyTorch.
+Also, the stable support for Torch RPC
+for things like distributed
+model parallel training.
+We added experimental support for
+the new high level autograd API.
+So for example, if you're
+doing jacobians or hessian
+or jacobian and vector products
+or vector jacobian products
+or hessian vector products
+or and so on and so forth,
+these are really great
+if you're doing research.
+Some of the work out of Optim
+Ninth Mars lab at Caltech
+is an example.
+So definitely check those out.
+We also brought the C++ front end API,
+which I talked about earlier on this talk
+to parody with Python.
+And that sounded stable point.
+We also added support
+for custom C++ classes
+in TorchScripts as well as
+Python, that's an experimental.
+And lastly, we've deprecated Python 2,
+that was the last release previously
+that we supported Python 2.
+So we are 100% Python 3
+from this point forward.
+I know that will make
+a lot of people happy.
+We also released a number
+of domain libraries,
+so check these out.
+So, I won't go through the details here
+but torchvision, torchtexts
+and torchaudio all have releases.
+If you go to http://pytorch.org,
+you can get started.
+So we have really nice interfaces
+for getting started locally
+as well as on the cloud.
+So you can click here, you
+can do a little selector,
+it selects what maybe
+version of CUDA you want
+or what platform you're using,
+as well as when you
+click on cloud partners,
+there's some nice links
+into the various cloud
+providers including AWS, Azure,
+Google, as well as Ali, Ali cloud.
+If you're looking to get educated,
+we have a tonne of resources.
+So Udacity has been a
+longtime partner of PyTorch.
+They pretty much built everything,
+all their classes are Nanodegrees.
+At least a large, large
+percentage of them on PyTorch,
+which is great.
+We did build a free course a while back
+and there are other free courses available
+in Private AI one.
+But if you do wanna get
+started with PyTorch
+and you're a beginner,
+this is a fantastic class.
+It's completely free.
+It takes you I think around two months.
+And if you basically know
+Python, you can learn PyTorch.
+So definitely check that out.
+There's also a number of books
+and actually more books coming,
+if you're familiar with
+Jeremy Howard's book
+but in this case, we're
+showing you the NLP book
+by Delip Rao really, really great book,
+as well as the Deep
+Learning with PyTorch book
+by Eli Stevens and Luca Antiga.
+Another great book that
+we had a nice chance
+to review and support.
+So, if you're looking for
+books, those are on Amazon,
+those are available I think
+there's digital copies
+and PDFs as well through,
+through both O'Reilly as well as MEAP.
+And I mentioned Jeremy Howard already,
+but fast.ai provides a really great set
+of free course courses as well,
+with these kind of MOOCs that Jeremy does,
+as well as the fast study of libraries
+and he has an V2 out there.
+And of course, his book is coming.
+So, definitely check that out.
+He has an amazing community.
+And then if you're looking for Chinese,
+we also have partners,
+community members in China,
+you can go to http:/pytorch.apachecn.org.
+You can see tutorials and docs
+converted over to Chinese.
+So, really great, we have a
+really great community in China.
+And then I'll leave you
+with this last slide.
+So we have a number of channels.
+We have http://pytorch.org
+which is our main site for docs tutorials.
+There is a blog there,
+although we use it mainly for releases
+but we definitely have
+some deeper tech posts,
+some of the community members have done.
+We have a Twitter channel
+that is very, very active.
+Our YouTube channel is also very active.
+We have Facebook and then
+we have relatively new
+from last year, we started
+a Medium channel as well,
+which is, you know, two to
+three posts a week at least
+that we're seeing.
+So, incredibly active.
+So, definitely check those out.
+And, you know, become
+part of the community.
+Let us know.
+Tag us on Twitter if you have a question,
+we'd be glad to answer that
+or engage in any way, if there's interest.
+Thank you so much.

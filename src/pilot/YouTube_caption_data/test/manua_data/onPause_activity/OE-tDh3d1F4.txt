@@ -1,0 +1,632 @@
+[MUSIC PLAYING]
+IAN LAKE: Hi, my
+name is Ian lake,
+and we're here to talk to
+you about the good parts
+of fragments.
+Fragments were one of the
+first libraries provided
+by the Android team that was
+unbundled from the Android
+framework, with
+the goal of having
+a consistent developer
+experience no matter what
+device you were running on.
+That consistency part
+has remained the same
+and was a big reason behind
+finally deprecating the Android
+platform version of fragments.
+But the role of fragments
+has changed drastically
+since that initial release.
+Fragments started essentially
+as miniature activities.
+This meant that they had
+their own view, lifecycle,
+SavedInstanceState, callbacks,
+like onConfigurationChanged
+and onActivityResult, and
+even support for loaders
+if you can remember
+that far back.
+And in many cases, overriding
+a method in a fragment
+was the only way to
+get those callbacks.
+The role of fragments
+today, however,
+has changed significantly.
+A fragment still owns a
+view, but now that view
+can be implemented with Android
+views or with Jetpack Compose.
+Other responsibilities
+are handled
+by separate components
+you specifically
+choose to use only when needed.
+Does that mean that the good
+fragment APIs aren't actually
+fragment specific APIs at all?
+Absolutely.
+If you look at the
+fragment class itself,
+we've been deprecating
+APIs release after release
+as we move from
+fragment specific APIs
+to separate testable
+components that fragments
+happened to integrate with.
+This has a helpful side effect
+of also making those components
+usable when building a
+pure Jetpack Compose app,
+for example, where
+you shouldn't need
+to reach for fragments at all.
+So instead of talking about
+brand new fragment APIs,
+let's talk about what these
+other testable components are
+and how to use
+them in fragments.
+One of the most
+important components
+that fragments give you
+access to is lifecycle.
+The AndroidX lifecycle
+provides a consistent, nested,
+re-entrant safe way of
+working with a simplified
+set of states, created,
+started, and resumed.
+One goal we've
+had with fragments
+has been in
+deprecating APIs that
+look like lifecycle methods
+but have none of the guarantees
+or behavior actually associated
+with a lifecycle event.
+Instead, we're leaning more
+into the observable AndroidX
+lifecycle.
+One example of this
+is with a view pager.
+When you are swiping
+between different fragments,
+it's important to have some
+signal inside the fragment
+for when it becomes the focused
+element so that you can start
+expensive operations like
+listening for the user's
+location on the map fragment
+only when the user is actually
+looking at that fragment.
+Now, when you start thinking
+about only loading data
+during a particular
+visible state,
+you might start thinking
+about custom coroutine scopes,
+or cancelation when
+the user swipes away.
+Complicated, but this used
+to be the only way to do it.
+Nowadays, though, we
+rely on lifecycle.
+In the original ViewPager and as
+the only option in ViewPager 2,
+only that current
+fragment is resumed.
+The other fragments
+are capped at started.
+This means that collecting
+a Kotlin coroutine flow only
+when the fragment is the current
+fragment in the ViewPager
+can be done with a call
+to repeatOnLifecycle
+with the resumed state.
+As soon as the user swipes
+away, your fragment is paused
+and the repeatOnLifecycle block
+is canceled automatically,
+all without needing to track
+some additional state that's
+custom to fragments.
+By relying on
+AndroidX lifecycle,
+you gain a consistent,
+reliable scope,
+but that lifecycle is tied to
+the existence of the fragment
+or the fragment view.
+This means that if you want
+something that lives longer,
+say, across
+configuration changes,
+you shouldn't be reaching for
+a fragment for that use case.
+This is why the guide
+to app architecture
+splits the UI layer
+into two layers.
+The UI elements
+that in this case
+are what are owned by
+the fragment itself
+and the separate
+layer of stakeholders
+that talk to the other
+layers of your app.
+This state holder layer
+is what provides UI state
+to your fragment and processes
+events from your fragment that
+update the UI state.
+This separation is
+exactly why fragments
+integrate with
+another architecture
+component, ViewModels.
+Each fragment implements
+the ViewModel store owner
+interface.
+This indicates that you
+can associate one or more
+ViewModels to the fragment.
+This means that
+they automatically
+get cleared when you pop the
+fragment off the back sack.
+For a ViewModel associated
+with a single fragment,
+this is that link between your
+fragment's UI and your domain
+or data layers.
+Your fragment
+shouldn't be talking
+to the network or loading data.
+Instead, it's your
+ViewModel layer
+that coordinates that
+and provides, say,
+a Kotlin flow or
+other observable data
+source to your fragment
+to apply to your views.
+But a ViewModel can also
+be a shared resource
+just by using a different
+ViewModel store owner.
+If that ViewPager 2 was
+inside another fragment,
+every page could access
+the same ViewModel
+by using the parent fragment
+as the ViewModel store owner.
+The same thing applies to
+activity scope ViewModels
+or when using the navigation
+component with fragments
+to navigation graph
+scoped ViewModels.
+Sometimes, however, you don't
+need a whole shared ViewModel.
+You just want to
+pass some information
+from one fragment to another.
+For example, to return the
+result of an operation right
+before you pop back to
+the receiving fragment.
+Historically, this has
+always been a bit awkward,
+since often the
+receiving fragment
+wants to update its
+views with the result.
+Thankfully, the fragment
+result APIs take advantage
+of lifecycle to fix this.
+The fragment result
+APIs don't rely
+on keeping a hard reference
+to another fragment,
+but instead relies on
+the fragment manager
+to mediate setting the
+result from one fragment
+and receiving it in
+the other fragment only
+when that receiving
+fragment is started.
+This means that the fragment
+result listener can always
+assume that the fragment's
+view is already created.
+Because these
+results are events,
+you're guaranteed to only
+get at most a single callback
+to a listener for each call
+to set fragment result.
+Obviously, if you
+set multiple results
+before the other
+listener started,
+you won't get those
+intermediate results.
+When passing results between
+two sibling fragments, two
+fragments in the same
+fragment manager,
+we can use those nice Kotlin
+extensions on fragment.
+But the actual APIs are
+on the fragment manager,
+which is responsible for
+storing those results
+until the listener is ready.
+Besides allowing
+you to pass results
+between the child and
+the parent fragment,
+this also makes it easier
+to test those APIs using
+fragment scenario.
+So to test our fragment that
+sets a result, we launch it
+with fragment scenario and
+get a reference to its parent
+fragment manager.
+This is where the
+result will be stored.
+Our test can then add
+its own fragment result
+listener using a test lifecycle
+owner that's always started.
+Now, click on our
+button and assert
+we got our result.
+Separating a fragment
+from its external dependencies
+is a critical part to ensuring
+that each fragment is
+testable in isolation,
+and that has permeated a
+lot of our API evolutions.
+To talk about a few
+more of those cases,
+I'll hand it over to
+my coworker, Sanura.
+SANURA N'JAKA: Thanks, Ian.
+Hey, everyone.
+I'm Sanura, and I'm going to
+talk to you a little bit more
+about testability,
+which as Ian mentioned,
+is extremely important.
+APIs like FragmentFactory
+for custom constructors
+and integrations with Hilt
+help build a testable fragment,
+but they still need the set
+of interfaces and classes
+that can be faked for tests.
+A good rule of thumb when
+considering testability
+is how reliant are you on
+things you don't control.
+Something as simple as
+starting an activity
+actually kicks off a whole set
+of activity manager code that's
+completely out of your control
+and should be avoided whenever
+possible in your tests.
+This focus on
+testability was actually
+one of many integral reasons for
+the activity result APIs, which
+are part of AndroidX activity
+library and are also one
+of those separate components
+that integrate with fragments.
+Let's say we want to
+test this fragment that
+lets users write a new email.
+One of the features is
+this Add Attachment button,
+which as you might guess,
+lets the user attach
+a file to their email by
+opening up the system provided
+file picker activity.
+There's two parts to
+the activity result API.
+First, you need a
+listener for a result.
+That's the
+registerForActivityResult part.
+That's where you choose
+what type of contract
+you'll be launching.
+In this case, we'll be using
+the GetContent contract.
+It's the contract that builds
+the intent on your behalf based
+on type-safe inputs
+and parses the return
+intent into a type-safe output
+to pass to your listener.
+That registerForActivity
+callback
+gives you an activity
+result launcher.
+This object is what we
+actually call launch
+on when we want to launch
+the other activity.
+For GetContent, we pass in
+the MIME type of the file
+we want to allow selecting.
+In this case, any
+type is fine, so we'll
+use the wild card MIME type.
+So how do we test this?
+Well, just like
+any test, we want
+to be explicit on our
+external dependencies.
+For this example, we'll use
+fragment factory directly,
+which lets us do constructor
+injection into our fragment,
+and we'll pass in our own
+activity result registry,
+rather than relying on the
+default activity result
+registry.
+Then we want to update our call
+to register for activity result
+and use that passed in
+activity result registry.
+If you're using Hilt,
+the same kind of approach
+would apply, where you just
+call your register for activity
+result as part of On Create.
+Now, we can write our
+fragment scenario test.
+There's three parts here.
+First, creating our expected
+result which is the fake
+URI we want to pass
+back to our fragment.
+Second, creating our fake
+activity result registry
+that doesn't launch any
+activity at all, but instead,
+just returns our expected
+result immediately.
+And lastly, our test itself,
+which hits the Add Attachment
+button and then asserts that the
+result is our expected result.
+Now, we aren't calling
+through to any code
+that we don't control.
+This idea of injecting
+in external dependencies
+is a best practice in any
+case, and fragments are not
+an exception to that rule.
+Here, the ability to inject your
+own activity result registry
+makes it possible to move from
+an applied external dependency
+to an explicit one.
+Another area where explicit
+external dependencies
+and testing heavily overlap
+is with how fragments interact
+with menus and the AppBar.
+Our guide to working
+with the AppBar
+talks about the two
+recommended approaches
+available to fragments.
+Either the fragment
+owns its own toolbar
+and uses the toolbar
+APIs or your fragment
+adds menu items to the
+global menu that's provided
+by the activities action bar.
+While the toolbar case is
+at least straightforward,
+for example, there's no
+external dependencies,
+the action bar case
+is much less so.
+Because of this,
+we've been iterating
+on an extraction layer
+around this called MenuHost.
+MenuHost is an
+interface that allows
+you to abstract where
+your menu is coming from
+and inject that abstract
+interface into your fragment,
+rather than relying on
+fragment-specific APIs which
+force you into a complicated
+world managed by the fragment
+manager.
+This means your real
+dependency injection setup,
+for example, here using
+Hilt, could get a MenuHost
+from your activity,
+while your test
+could provide a mock
+or fake implementation
+of this interface
+specifically for testing.
+So our fragment no longer needs
+to call menu APIs directly
+but can interact
+with menus solely
+by using the MenuHost interface,
+which allows your fragment
+to add a menu provider.
+Importantly, this menu
+provider is lifecycle aware.
+That means it will
+automatically clean
+itself up when the
+lifecycle is destroyed
+or when it drops below
+the lifecycle state
+that you provide.
+For example, this
+example here uses
+the resume state, which if you
+remember from our ViewPager
+example before, would mean
+that the menu items provided
+by the MenuProvider
+will automatically
+be removed from the MenuHost
+as soon as you swipe away
+from that page.
+If you've used any of
+our menu APIs before,
+implementing the
+MenuProvider interface
+should be very familiar.
+You would use onCreateMenu
+for creating the menu
+and onMenuItemSelected to handle
+the selection of a menu item.
+Of course, this
+menu code no longer
+has to live in the
+fragment itself,
+nor does it depend on
+any fragment APIs at all.
+You could easily move this into
+its own separately testable
+class that depends
+solely on the MenuHost
+and the appropriate lifecycle.
+Separate testable
+components means
+less dependency on
+fragments themselves
+and avoids coupling
+multiple responsibilities
+into one class, keeping
+you on the happy path.
+When it comes to following
+these best practices
+and staying on
+the happy path, we
+know that does not
+happen overnight.
+That's why even after
+something is deprecated,
+we maintain both binary
+and behavior compatibility.
+Upgrading your
+fragments should never
+break the behavior of your
+app, and while Android Studio
+and Lint give you the
+compile time information
+about your code, fragments also
+provide a fragment strict mode
+API.
+This API can provide
+runtime verification
+that not only your code but also
+code from any libraries you use
+is following these
+best practices
+and avoiding
+deprecated API usages.
+While you can set a
+FragmentStrictMode policy
+at the individual
+fragment manager level,
+the most typical usage would
+be at the application level
+by setting a default policy.
+The first part of a
+FragmentStrictMode policy
+is one or more detect calls.
+Each one enables the
+detection of a specific what
+we call violation
+that you should
+work to remove from your code.
+When first enabling
+a specific violation,
+you can add calls to the
+method allowViolation
+to temporarily exclude
+known cases in your code,
+while making sure that new
+violations are being penalized,
+which brings us to the
+last part of the policy.
+Which type of penalty
+should be triggered when
+a violation occurs at runtime?
+penaltyLog is perhaps
+the least aggressive,
+while penaltyDeath will let you
+know right away that something
+is wrong.
+However, the most
+useful is perhaps
+the ability to set your own
+listener via penaltyListener,
+which allows you to
+hook FragmentStrictMode
+up to your own
+logging framework.
+By ensuring that both your code
+and the library code that you
+don't control is
+on the happy path,
+you can make sure
+your app is using only
+the good parts of fragments.
+By refocusing fragments
+away from custom
+fragment-specific
+APIs, we're working
+to reduce the amount of
+special behaviors and quirks
+you see from fragments and
+give you a reliable, consistent
+experience.
+So enable FragmentStrictMode
+in your app,
+replace deprecated APIs
+with testable components,
+and look through our
+updated documentation
+on developer.android.com
+for information
+on the good parts of fragments.
+Thanks.
+[MUSIC PLAYING]

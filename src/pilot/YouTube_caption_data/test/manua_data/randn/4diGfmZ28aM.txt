@@ -1,0 +1,290 @@
+- Hello, everyone.
+This is Yanli Zhao.
+I'm a software engineer
+from Facebook AI.
+Today, I'm going to present
+four new APIs
+that have been added
+to PyTorch distributed package.
+First, I will introduce
+the two new data
+parallel APIs called
+Zero Redundancy Optimizer
+and fully sharded data
+parallel API.
+After that,
+I will briefly show
+CUDA RPC primitive support
+and its performance improvement.
+Lastly, I would like
+to show one example
+to explain the concept
+of sharded tensor
+and its future vision.
+First of all, let's see what
+PyTorch distributed package is.
+PyTorch distributed package
+is a set of features
+that facilitate training models
+in distributed systems.
+Usually, distributed training
+can be categorized
+into data parallel
+and model parallel.
+PyTorch distributed data
+parallel usually trains model
+in each device independently
+for different batches of data
+and then synchronize
+the results
+at the end
+of each training iteration
+and the synchronization is built
+on top of collective calls.
+Model parallel usually is
+a process of splitting models
+across multiple devices and
+creating pipeline computation
+to train models across devices.
+To utilize this to communicate
+intermediate results
+between machines,
+and this communication
+is usually built outside of RPC
+or point-to-point calls.
+The first newly added data
+parallel API in PyTorch
+this year is called
+Zero Redundancy Optimizer,
+also called ZeRO.
+The original idea
+is from DeepSpeed ZeRO.
+In PyTorch even in a distributed
+data parallel training,
+also called DDP training,
+each process leads
+to hold parameters,
+gradients and optimizer local
+states of the replicated model.
+Thus it consumes
+quite a lot of memory
+and limited the model size
+that can be trained
+in a single device.
+It is observed
+that local state size
+of some commonly used optimizers
+could be very large.
+For example, I-LAN optimizer
+local state
+consumes two times memory
+than model size.
+Based on this observation,
+ZeRO shards optimizer
+stays among data
+parallel processes
+to reduce memory footprint.
+The higher memory
+efficiency of ZeRO
+allows larger scale of models to
+be trained in a single device.
+The right example shows
+how a training loop looks like
+by combining DDP
+with ZeRO optimizer.
+Just like a normal DDP
+training loop,
+it first defines a model then
+wrap the model using DDP API.
+Then it defines a ZeRO optimizer
+that wraps regular
+optimizer class.
+After that,
+it's ran slo-mo, forward,
+backward pass in optimizer step.
+In the optimizer step,
+ZeRO will update the sharded
+parameters and local states
+and then forward pass the
+updated states to peer processes
+so that all the processes
+have the same state
+at the beginning
+of next iteration.
+As you can see,
+ZeRO can help training
+larger model in a single device,
+but the scale is still limited
+because each process
+still needs to host
+the whole model parameters
+and gradients.
+To further scale
+larger model training,
+fully sharded data parallel also
+called FSDP API is built up.
+The FSDP API is originally built
+by Facebook [Indistinct]
+team. We're upstreaming the API
+and planning to launch it
+with some improvements
+in PyTorch 1.11.
+FSDP shards parameters,
+gradients and optimize
+states across
+all data-parallel processes.
+Layers are usually wrapped
+with FSDP in a nested way.
+Wrapped layers are sharded
+evenly across devices.
+After all layers are sharded,
+each process will hold one shard
+of the whole model.
+Before first layers
+compute forward computation,
+AllGather is called to
+gather weights for that layer,
+and the gather weights will be
+freed after forward computation
+is done
+so that the freed memory
+can be used for
+next layer's computation.
+In this way,
+peak memory is saved
+also because of CUDA
+sync operations, next layer's
+AllGather can be overlapped with
+previous layers' computation
+and thus can achieve good
+training performance.
+Similarly,
+in backward pass weights
+are gathered before computation
+and are freed after computation.
+Gradients are synced after each
+layer's backward computation.
+After the whole model
+backward pass is done,
+optimizer will update states
+for the local shard.
+Our experiments showed that up
+to 1 trillion dense
+transformer parameters
+can be trained
+on 256 GPUs using FSDP API.
+Also, the PyTorch FSDP API
+can automatically wrap layers
+in a nested way.
+So as you can see
+in the right example,
+for normal DDP training loop,
+users can just simply
+swap DDP API with FSDP API
+to train large-scale models
+in a distributed system.
+Above are two new data
+parallel APIs
+added in PyTorch distributed.
+Next, I will briefly introduce
+the CUDA RPC prim team.
+RPC API supports point-to-point
+communication calls.
+Usually, there is a sender
+and a receiver.
+Sender usually sends a remote
+function call with input data.
+This function with data
+are serialized
+into payloads and tensors.
+Once a receiver
+received the message,
+you can deserialize the message
+back to function calls and data,
+execute the function and send
+the results back to sender.
+During message transmission,
+TensorPipe back end can choose
+the optimal connection channel
+to achieve best
+communication performance.
+In CUDA RPC, TensorPipe
+can directly send the tensors
+from local CUDA memory
+to remote CUDA memory.
+One experiment showed
+that there is 34 X speedup
+compared to CPU RPC.
+To enable CUDA RPC, device map
+is required to be defined.
+As you can see
+in the right example,
+work zero on CUDA zero needs
+to make a remote function call
+on work one that is on CUDA one.
+Then it specifies the device map
+from zero to one.
+With this device map, TensorPipe
+will enable direct CUDA
+communication and significantly
+improve the performance.
+CUDA RPC is an important
+communication primitive
+for model parallel
+like pipeline parallelism,
+so its performance improvement
+can greatly improve
+the model parallel training.
+Now lastly, I would like to show
+something for example
+to explain the concept
+of sharded tensor
+and its future vision.
+Sharded tensor is an abstraction
+and is a single process,
+multiple device style
+implementation of a tensor
+that is sharded across
+multiple devices.
+The vision is to enable
+generic interlayer parallelism.
+Users just need to annotate
+a tensor with ShardingSpec,
+and the sharded tensor
+will take care
+of all the distributed
+computations.
+The right example shows
+simplicity of interlayer
+parallelism implementation
+for linear model
+using sharded tensor.
+First, linear layer is defined,
+and it specifies a sharding spec
+to chunk the data
+among four devices.
+The sharding spec is annotated
+for the weight parameter.
+Then the code runs
+as a normal linear layer.
+Underneath,
+sharded tensors are built,
+and a gather operation is called
+before the forward computation.
+Because of these sharded
+tensor APIs,
+users do not need to change
+their model construction codes
+to achieve
+interlayer parallelism.
+Users just need to make
+a minimal change
+in the training process.
+So we are envisioning sharded
+tensor
+could be a generic abstraction
+to help users implement
+parallel algorithms
+easily in the long-term.
+This is today's talk.
+Thank you for listening.

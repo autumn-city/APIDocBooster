@@ -1,0 +1,2652 @@
+[Music]
+[Music]
+[Music]
+[Music]
+[Music]
+[Music]
+[Applause]
+[Music]
+[Applause]
+[Music]
+[Music]
+okay backup plan okay so we're kicking
+off the industrial the industry lab
+section here our first speaker is Andrey
+Carpathia from Tesla thank you okay
+hello everyone I'm super excited to be
+here I've actually been a long user of
+one-time user of torch back in a day and
+then I briefly flirted with tensorflow
+for a while but when pipe torch came out
+it was kind of like the love at first
+sight and and we've been happy together
+ever since so it's really exciting to
+see that it's really maturing and
+attracting a large developer kind of
+community and I'm really excited to be a
+part of it okay before I dive into my
+talk I would like to briefly thank
+Sanjeev Satish especially and a lot of
+other people at Tesla who have really
+laid all the groundwork for everything
+that I'm going to talk about today some
+particularly I'd like to talk about
+engineering practices for software 2.0
+now just to break this down a little bit
+all of us are training neural networks
+and you know we're training we're
+training on neural networks but actually
+like I'd like to argue that what's going
+on is actually much deeper than just
+training some machine learning models I
+think what's going on is that we're
+actually fundamentally changing a
+programming paradigm or introducing a
+new programming paradigm and working
+with it so just to break down the the
+term a little bit normally what you
+would be familiar with is you want some
+kind of a program that performs
+something that is desirable for your
+application and you would just
+specifically write the C++ code or
+JavaScript code or supplying that and
+instead we're doing what we're doing now
+with machine learning is that we are
+instead defining a set of programs that
+we are going to search over then we
+introduce a data set that kind of
+constraints or gives like soft
+constraints on desirable behavior of the
+program and then we are using
+optimization to actually like write that
+code so stochastic gradient descent is
+really writing the code and that code is
+in weights of a neural network instead
+of something like C++ and so a lot of
+these models that are kind of written in
+this new programming paradigm are kind
+of taking over and a lot of the 1.0 code
+that we've seen and worked with so far
+is not being transitioned into the 2.0
+stack and so these two code bases really
+like meld and you can port functionality
+from one to the other and so in
+particular the the point i'd like to
+make is that this is not just like
+training an image
+model or something like that when you
+are working with these networks in
+production you are doing much more than
+that you are maintaining the code base
+and the code base is alive just like the
+1.0 code in particular you have new
+feature demands for the 2.0 stack the
+stack contains bugs and you need to
+clean them up and this code base really
+requires iteration and and love overtime
+to get it to work in your application
+except the knobs that you have with
+respect to programming in in this new
+stack is you are not writing the code to
+actually fix your bugs but you are
+iterating on the data set you're
+iterating on the model class and you're
+iterating on the optimization that
+you're using to actually train your
+model so so we use these neural networks
+of course extensively at Tesla in
+production for the auto pilot and we're
+working with a lot of Norse input in
+them in production and was really
+important and interesting for us is to
+talk about the kind of engineering
+practices around how to work in this new
+paradigm so in particular we know what
+the best practices are for the Wampanoag
+and viewing machine learning through the
+lines of programming immediately
+suggests kind of analogies between how
+we can take the best practices from 1.0
+code and port them over to 2.0 code so
+in particular I'd like to go into a few
+examples one thing that we're finding is
+extremely interesting is this notion of
+test-driven development so traditionally
+what you would do is industrial
+development framework is you would write
+your test first and then you would write
+the code that implements those tests and
+we want in a 2.0 stack we're training
+neural networks and we want to kind of
+adopt the same framework and what's
+interesting is that you might think
+naively that this is your test set your
+test set is kind of like the unit tests
+but you have to be very careful because
+your test sets normally are constructed
+in very naive way like normally ideally
+you would take what normally would take
+a data set and you would split it like
+90 10% and your 10% of the test is your
+test set and the problem with that is
+that what we are finding is that your
+test that is actually extremely
+important and should be manually curated
+and extremely rich varied and clean and
+it's really important because we don't
+we aren't just interested in the
+expected performance of that model like
+when you are working on a test-driven
+development framework you are not
+writing your unit tests that say
+something along the lines of your code
+works 90% of the time a little bit like
+that's not the kind of unit test that
+you have you have a complete unit test
+coverage of your
+program and you're trying to like
+especially care about the edge cases and
+around your code and really cover all of
+this possible educators and so we find
+that the same is true for the 2.0 stack
+we actually massage just the data set
+and we care a lot about all the edge
+cases and especially for example when
+you find a bug in your code that is that
+kind of corresponds to a neural network
+that is does not make a correct
+prediction and so what you are going to
+do in that case if you find such a
+mistake is you want to take that mistake
+and incorporate it into your into a unit
+test and you want to make sure that that
+is covered in the future and then the
+way you actually go about fixing that
+problem of course is not just by writing
+code you go about fixing or completing
+that unit test by either incorporating
+more examples most most commonly or by
+changing the model architecture or by
+the optimization but you can kind of
+adopt the same framework and really what
+it means is you have to care a lot more
+about your your test set and massage it
+carefully I'd like to also talk about a
+concept of continuous integration which
+is very common and useful in the 1.0
+stack so in particular the traditional
+CI workflow would look as follows
+you would try to automate your build you
+would like to make sure that you always
+run and kick off your unit tests and for
+every commit you submit you actually
+want to immediately test your unit test
+so that you can spot bugs if you
+introduce them you wanted to build to be
+extremely fast this can run on all the
+commits for example and you wanna make
+it easy to kind of deliver releases and
+things like that to other people and you
+want to potentially automate the
+deployment if you trust your unit test
+coverage enough and so all of these
+actually have an equivalent in a 2.0
+stack in particular if we're talking
+about automating the build in this case
+the build is really the optimization you
+want to train your neural network and
+that basically takes your data set and
+compiles it into weights and so it's
+kind of just like neural network
+training you want to run the unit test
+immediately as in 1.0 sack every commit
+should be built in this case the subtle
+issue is that not only do you have your
+PI tag repo or something like that where
+you want to you have commits in to the
+Patrick repo but actually the data set
+is now part of your code and any change
+to your data set which is something
+you'll be doing very often in any kind
+of production environment because you're
+adding labels subtracting labels
+or or adding datasets and images and so
+on those are all committed to your code
+base because they influence the final
+code as you actually have to like keep
+track of this and rebuild every time you
+change your training set you want the
+bill to be fast so of course you want to
+say large-scale disability training and
+you want to make sure that you minimize
+your wall clock time of training and
+network make it easy to do deliver the
+latest and greatest we keep a pretty
+comprehensive model zoo internally for
+ourselves and there's something you want
+to do and of course you want to automate
+the deployment if you trust your unit
+tests completely the other thing that I
+found interesting is in version control
+so of course we all use and love version
+control I get or something like that for
+our 1.0 stack but again in this paradigm
+version control actually extends to data
+sets as you actually want to do version
+control and data sets and we think about
+this quite a lot at Tesla so in
+particular what's interesting is most of
+the programming is by adding data of
+certain type and so anytime you add data
+you're changing the code and what's kind
+of complicated is that your label set
+and your image set actually change over
+time and so you really want to make
+think of every single change to a label
+as I commit and so we are very careful
+with our data labeling team how they
+label our data and every single commit
+that they make by putting Donny boxes
+around things and so on it's carefully
+tracked time stamped logged so say with
+the user etc because we actually want to
+really think of those as commits to a
+code base and and treat them as kind of
+first-class citizens in the Frick and
+the entire kind of approach and finally
+the the concept of mana repose is also
+kind of interesting mana repos are
+basically these giant repositories that
+big tech companies often use such as
+Google Netflix Twitter I believe
+Facebook as well
+not one person sure and really the
+benefits here are that you are sharing
+all the code base all the dependencies
+and you are simplifying the dependency
+management and we kind of find that
+there are similar equivalents to that
+when you're working with the software to
+find a stack so in particular you want
+to kind of have a single code base which
+is kind of like your neural network and
+that supports many different tasks and
+what's very tempting to do in a
+production environment is that people
+like to take those networks and they
+like to like fine-tune their things on
+top of the network
+and so I take the network that's a
+release I fine-tune my own task someone
+all takes that and find you is their
+task and you end up with this kind of
+like chain of fine-tuning and it just
+kind of can very quickly disintegrate
+and so you have to be very principled so
+what we find is because those are
+equivalently like those are equivalent
+to basically different repos so you want
+to make sure that everything sticks
+together you retrain your network from
+scratch every time and maintain a single
+model and we find that this is also
+incredibly helpful in working with this
+stack and eliminates a lot of headaches
+so in summary I'd like to argue that we
+should treat deep nets like code and we
+we are able to borrow a lot of ideas
+from good software engineering practices
+from the Wampanoag to the 2.0 and so in
+particular we adopt a lot of test-driven
+development ci version control and we
+like to Train we like to automate all of
+this and really have a broad unit test
+coverage and really think of this as
+programming except you're just not
+writing explicit code you're iterating
+over the data set model and the
+optimization and so I think collectively
+since this is so new and people that
+aren't used to thinking of this as
+programming it's it's really just we're
+barely just scratching the surface but I
+think collectively it's exciting to
+really explore what what the best
+software engineer actus is are for
+iterating on this code and programming
+this new paradigm so yeah that's it
+thank you
+[Applause]
+[Music]
+hello everyone i'm brian Catanzaro and i
+lead applied deep learning research and
+NVIDIA I'm really excited to be here and
+share the joy of Pi torch 1.0 with all
+of you were really big fans of Pi torch
+in my group and at Nvidia and so I
+wanted to kind of talk about that now
+they told me not to give a GPU sales
+pitch and I promised I wouldn't so but I
+did want to say I love GPUs and I'm
+really excited about the future of
+custom hardware for AI but my talks
+actually gonna be about what we're doing
+with pi torch at Nvidia to make our
+products better to find new ways of
+using deep learning that makes Nvidia
+products more interesting and NVIDIA
+more efficient so andr Inc has this idea
+that the limiting factor for progress
+and research is the latency of
+generating an idea and the way it works
+is that we come up with a new idea every
+one of you wakes up in the morning with
+a whole bunch of new ideas you have to
+test our hypotheses you have to write it
+up in code and then you have to run some
+programs train some models do some
+evaluations and that tells you what's
+wrong it gives you some new ideas and
+then you can iterate on that that gives
+you new ideas right and so there's a
+cycle that we go around and as we're
+working on research the latency that it
+takes for us to go from idea to idea is
+really what gates progress and pi torch
+has been an incredible tool for us to
+reduce that latency I think you know
+it's simple it's easy to get started
+it's also fast so when we're training
+our models we can train them fast and
+it's also extensible you know at
+in-video we're always inventing new
+kinds of kernels and new kinds of GPUs
+we need to figure out how they're gonna
+work and it's really great to be able to
+plug our latest code into PI torch just
+extend it and and get started and so
+that's that's one of the reasons why you
+know we spend a lot of time doing PI
+torch at Nvidia and all of the projects
+that I'm highlighting today we're all
+implemented in parts they're all trained
+in PI torch and I guess they're there pi
+torch native projects
+the first one is called deep learning
+super sampling so I don't know how many
+of you saw we released a new GPU a week
+or two ago and it's called touring the
+architecture is called touring and one
+of the things that's really amazing
+about it is that it has tensor cores
+throughout the whole lineup so we have
+really high AI throughput even in
+consumer GPUs that people are using for
+video games so that begs the question
+what can we do with a AI to make
+real-time graphics better and deep
+learning super sampling is one of our
+first attempts to do this we're really
+excited about it
+I don't know it's it's probably too dark
+to see on the slides here but there's a
+lot of reviews on the web where you can
+go out and actually compare the pixels
+between a traditional way of rendering
+graphics and the deep learning super
+sampled way of rendering graphics and
+the thing is that we can use neural nets
+to do super resolution and to do
+aliasing removal make the pictures look
+better make the game more interactive
+because it's actually running faster
+thanks to the power of tensor cores and
+and so we can we can now apply deep
+learning to to real-time graphics and
+that's that's pretty exciting for us you
+know and you know wouldn't have been
+possible without Pi torch we have a
+large team of people that are constantly
+iterating on this training new models
+evaluating different loss functions and
+the standard things that you do when
+you're working on a deep learning
+problem and and PI torch has really made
+that possible ok the next project I
+wanted to talk about is in painting with
+partial convolutions and you'll forgive
+me for working on ernest borgnine's face
+over here while we talk the idea here is
+you know can we actually edit images
+with a smart retouching brush that can
+remove things that we don't want to see
+in the image and replace them with
+content that's plausible semantically so
+with Ernest Jeremy neck cloth out his
+eye and give him some new eyes now those
+eyes actually the reason the model knew
+how to drew eyes is because it was
+trained on a database with lots of
+people in it in fact trained on the
+celeb a face data set some of you guys
+may know which has a lot more women in
+it than men which is you know the reason
+why his eyes ended up looking the way
+they do but you know the thing
+it's really cool is that we're able to
+use deep learning to actually understand
+the semantics of an image and what
+content should be synthesized in order
+to fill in the gaps there's a demo
+website research taught in video comm
+slash in painting you guys can pull it
+up and try it on your own photos so
+here's another one we're really excited
+about image and video synthesis this is
+open source on github and it's also
+published at cvpr and nips this year and
+the idea is we're replacing the
+traditional graphics rendering pipeline
+with a generative model so all these
+faces right here the input is on the
+left it's a very high-level
+representation of the scene and then the
+output is on the right of what what's
+coming from our neural network so we can
+go from edges to faces or we can go from
+poses to people the idea is that it
+should be something easy to create we
+can have a simple graphics engine that
+maybe just creates edges edge maps or
+maybe it just creates poses and then we
+can use that to actually be the input to
+our model that should make it possible
+to create new virtual environments much
+more cheaply because we can train them
+it's a data-driven approach to creating
+a virtual world instead of a sort of
+manual artist driven approach and we're
+really excited about you know what does
+it look like to make a game where the
+whole game is being rendered by a neural
+net let's see if I press this clicker if
+something will happen here okay here's
+another project that we published a
+couple weeks ago at EC CV which is on
+frame prediction on the left is a ground
+truth video and on the right is a video
+where every other frame is being
+predicted given past frames and
+basically this is a neural net that get
+that takes in as input sequence of past
+frames as well as some optical flow
+which we were using flown at to to do
+that and then we predict for every pixel
+a vector that says where from from the
+source frames should we take our our
+data and then we also predict a sampling
+kernel that we use to convolve the pass
+frames with in order to produce the
+output and you know we're really excited
+about about these results obviously
+there's a lot of ways that we can use
+frame prediction to make video games
+look better
+okay some other projects text-to-speech
+so
+wavenet I don't know how many of you
+have ever used wavenet before but it's
+this really cool model for generating
+audio samples came from deep mind and it
+has really high quality a lot of people
+are interested in deploying wave nets
+one of the problems with that is that
+the inference procedure for wave nets is
+very sequential and for awhile people
+actually thought it wasn't possible to
+do them on GPUs in fact there was some
+papers published that said we tried
+really hard and it was running slower
+than real time on a GPU and even at a
+batch size of one so so that was kind of
+disappointing but some people had Nvidia
+had some ideas about how to improve that
+and we actually created a new wave net
+inference implementation that can run
+320 voices of the the deep voice net
+from Baidu deep voice paper at 16
+kilohertz and actually it could actually
+go up to a maximum sample rate of 48
+kilohertz which which is pretty good and
+so we went ahead and open sourced PI
+torch implementations of both tako Tron
+2 which is the the part of them it's
+talk Tron 2 basically takes as input
+text and then as output is a mel
+spectrogram and then we can go use the
+wave net to go from that mel spectrogram
+to actual sound and so those are all
+open source on github and you know
+they're all PI Georgia native ok so the
+last thing I wanted to highlight is this
+project that we have going on
+unsupervised language modeling on the
+right you can see some tweets about our
+new GPU our marketing department is
+always interested in like finding better
+ways of understanding sentiment online
+figuring out what people are saying
+about our products and our company and
+there's this this great idea from
+opening eye from Alec Radford and some
+other people with this idea of training
+an unsupervised language model on the
+large amount of text and then using that
+as a feature extractor to solve concrete
+problems like sentiment analysis and we
+we really liked that idea so we went
+ahead and reproduced their result and
+open sourced it
+at the URL above in you know and we were
+able to take the training time for this
+unsupervised model from a month down to
+about four hours by using mixed
+precision arithmetic FP 16 ft 32 on 128
+voltage GPS and we also you know once so
+once you have that language model it can
+be used for a lot of different tasks but
+you for example you can use it as a
+feature extractor and then on with a
+small amount of labels you can train
+something like sentiment analysis and so
+that's that's what we've done and you
+know it's been really helpful for our
+marketing team to have access to a
+better sentiment analysis one thing that
+I wanted to mention about this work is
+that we used by georg extension called
+apex to do the mixed precision training
+one of the problems that people have
+when they're trying to get started using
+mixed precision is that some operations
+are unsafe
+like for example batch norm if you do
+batch norm in FP 16 you're gonna run
+into all sorts of numerical problems
+because batch enorm is a little bit
+finicky and so what amp does it's a part
+of part of apex amp actually has a white
+list and a black list of different parts
+of a neural net that should be done in
+FP 16 using tensor Corazon voltage GPUs
+or on on turning GPUs or which parts
+should actually be done in FP 32 and
+then it will automatically insert the
+appropriate casts to make your model
+safe and so when we were working on this
+we we use use this and it really helped
+get us to a safe fast implementation
+using mixed precision so that's it I
+just wanted to highlight these projects
+and videos doing a lot of stuff applying
+deep learning to a lot of different
+projects and a lot of ways and PI
+torches at the center of a whole day
+thank you
+[Music]
+all right hello everyone my name is
+Brian McCann I'm one of the research
+scientists at snow sports research and I
+focus mostly on transfer learning and
+multitask learning in the context of
+natural language processing and I'm
+excited to share some of our most recent
+work in multi task learning for NLP we
+call it the natural language Decathlon
+and just kind of walk through our
+approach kind of what we did and give
+you a sense of the code that we put out
+there everything's in pied torch so you
+can get a sense of how to get started
+with it this project really came out of
+the observation that we as a community
+are really good at taking a single task
+and designing a model for that single
+task and as long as we have enough data
+and have concrete enough metric we can
+hill climb on that and we can get to
+human performance in a lot of cases over
+the course of a year maybe two years but
+then when we have another task that
+comes along a new dataset something like
+that we mostly start over we have some
+pre trained word vectors maybe some
+contextualized word vectors but a lot of
+things just sort of from random and a
+lot of the design decisions the things
+that we learn about the modeling process
+don't necessarily carry over to other
+kinds of tasks and NLP so from our
+perspective we wanted to explore the
+idea of making more general and all P
+systems and we see multi task learning
+as a blocker in this setting for us you
+know we can use language do a lot of
+different things gives us a lot of
+flexibility but our models don't
+necessarily have this it's quite
+difficult to get them to share
+experience in knowledge with each other
+so the natural language decathlon or
+deca NLP because I'll call it sometimes
+you can think of this as a benchmark for
+multi task learning and then I'll talk a
+little bit about it as a framework and
+our
+approach to the decathlon as well we can
+start out as the benchmark this is kind
+of the easiest way to think about it the
+decathlon is well a set of ten tasks and
+it's a set of ten quite disparate fairly
+difficult tasks things like
+classification are in there but also
+tasks that require generation like
+machine translation you have to do
+question answering abstractive
+summarization and the challenge here is
+that really the one thing that we really
+know and multitask learning is that
+related tasks tend to help each other
+and unrelated tasks tend to hurt each
+other within a single model but again
+this is we chose diverse tasks because
+we want to we want to tackle this
+problem we want to we see this as a
+blocker we want to make progress on it
+so the decathlon allowed us to measure
+progress on this and helped guide our
+design decisions you can check out the
+website for more information about any
+of the specific tasks or there are ten
+of them and I'm not going to get into
+the specifics of each but you also find
+that we have the leader board where you
+can find the performance of the current
+decathlon champion you can see a
+breakdown by task then you can also see
+a summary score that takes all the
+different metrics for all the different
+tasks and just adds them up and sums
+them up into a decathlon score so that
+we can use this to determine when you
+know we make changes that maybe help
+question-answering but hurt translation
+is this something that's really worth
+doing overall is this a general change
+that we're learning about in the
+modeling space or is this something
+that's just helping us on that specific
+task or maybe even that just a specific
+data set or takes advantage of a
+specific quirk of us of a kind of data
+set the more exciting kind of in the PI
+torch setting is the framework in the
+code the models that we released around
+this work and this really centers around
+duhkha NLP as a place where you can
+study multitask learning the way that we
+did but you can also study things like
+transfer learning zero shot learning
+domain adaptation
+we spent a lot of time thinking about
+different training strategies and
+working optimization strategies so even
+though multitask learning is kind of the
+core focus of our benchmark the
+framework that's around it is really
+useful for all of these kinds of things
+as well and just as some examples pulled
+out it's very easy to train on a single
+data set like the Stanford
+question-answering data set squad but
+you should also be able to seamlessly
+switch between a single task learning
+and multi task learning so you can add
+translation tasks in there you can add
+all ten of course and it's really easy
+to train on the decathlon explore
+different training strategies and I
+would really encourage you to kind of
+dig in and see how easy it is to all of
+a sudden try out your models
+in this multi task setting of course
+it's also easy to evaluate we want to
+make that as easy as possible and with
+these tasks everything tends to have its
+own metric there's blue for translation
+Rouge for summarization classification
+accuracies f1 this normalized f1 is
+logical form exact matches and we wanted
+to package all this up so that everybody
+could have access to this super simple
+and you can just run things in one
+command and about your models and we
+also wanted to package up our pre
+trained models because in the research
+that we found the models trained on the
+decathlon ended up being better and more
+efficient at learning new tasks like new
+language pairs we trained it on English
+to German translation but if you wanted
+to train it on English to check the
+decathlon train models will actually
+better as pre train starting points but
+over like random initialization when
+you're training that or if you're
+training part of speech or any are model
+on top of it as well and it what's fun
+about this is that you can also add your
+own custom data sets fairly easily as
+well it's just simply a JSON file and
+all you have to do is somehow formulate
+your task as having an input like a
+context maybe a question defining the
+task or and an answer as well and that's
+that's all it is you can add this into
+the decathlon and see how your task
+interacts with all the other tasks there
+you can try our pre train models out on
+that
+and this is kind of hinting at the
+approach we took which was really a kind
+of a combination of a sequence to
+sequence and question-answering approach
+to our model where the encoder side
+looks a lot like a question-answering
+model but the decoder side is generative
+and outputs words one at a time over
+many time steps this allowed us to unify
+things like classification and
+generation and it allowed us to get
+things running on all ten tasks it also
+kind of conveniently got us you know
+good performance in a single task
+setting for some tasks as well even
+though we weren't designing specifically
+for those tasks and we set ourselves
+it's kind of the extreme case and the
+extreme constraints where we wanted to
+make sure that the model didn't have any
+human intervention
+there's no tasks specific settings or
+you know all of them all the parameters
+are shared all the time and this really
+gave us the ability to do some
+interesting domain adaptation and even
+some zero shot behavior and to kind of
+give a sense of what this looks like I
+want to switch to a live demo so we'll
+see if we can get this up and give you a
+sense of what this model looks like so
+because we have our pre trained models
+up there nice and easily we just wrapped
+it this is a research demo you know it's
+not a not a product demo so it's just
+wrapped up in docker and then wrapped up
+in a web server and you can do things
+that are fairly intuitive so
+question-answering is one of the tasks
+that we have in the decathlon so you can
+look up basic wikipedia pages and you
+can use the URL here for kind of revi
+purposes and you can ask things like
+what is pi torch and as long as the
+internet holds up well find out that
+okay pi torch is an open source machine
+running library for python and what's
+nice about this is that we can also you
+know demonstrate some of the other
+decathalon abilities like pi torch 1.0
+big exciting development and if we look
+at like a press release for this
+we can do a few things that are kind of
+interesting here I don't we're just
+gonna push the Euro again and then we
+can ask things like you know is this
+sentence negative or positive so this is
+this is pretty unnatural and for us this
+is the sentence that the question that
+we used when we were training sentiment
+classification and as long as I didn't
+make any typos there you'll see okay
+this press release is I guess kind of
+positive but what's nice about this
+approach is that we can do the same
+thing and we can actually switch up the
+question even though we didn't train on
+questions like this because the model is
+learning to use language more generally
+we can try some more interesting things
+like is this release pessimistic or
+exciting and finds out it's exciting
+even though it hasn't really learned or
+trained on anything like that it knows
+that it can use the question to
+constrain the science or space
+differently and there's lots of
+interesting things here you can play
+around with I would encourage you to try
+out our pre train models and see where
+this breaks but for now I'll just switch
+back to the slides and mention that this
+multitasks project you know is kind of
+part of our dream of maybe one day
+developing a multi task model in
+research for lots of different things
+and then deploying that single model
+into production and that's how we see it
+fitting into PI torch giving us the
+ability to streamline that process
+because currently it's it's kind of
+difficult but if we could have a multi
+task model and deploy that single model
+for many things that could that could
+make things a lot more a lot more
+interesting in the long run Thanks
+[Music]
+hi I'm Fritz Obermeyer and I'm going to
+tell you about pyro which is a deep
+Universal probabilistic programming
+language we've built at uber AI Labs
+this is the pyro team we have five core
+research scientists and engineers and
+were led by Noah Goodman who's a
+Stanford professor we built by row to be
+a platform for research in modern
+Bayesian machine learning methods and in
+these methods neural networks are often
+used both in modeling and in inference
+our goals in Cairo were to be universal
+scalable flexible and minimal most of
+these are a lot of these are achieved
+just by building on top of PI torch PI
+torch is a great platform to build a
+probabilistic dropping language on top
+of both because it has a D dynamic
+compute graphs and it's built on on
+Python we also achieve scalability by
+targeting machine learning methods that
+allow data subsampling to achieve
+flexibility and minimality we we've
+built a three layer architecture where
+we have a probabilistic programming
+language interphase an effects handling
+library that's mostly used internally
+for non-standard interpretation of the
+language and then a set of inference
+algorithms on top of the effects library
+the language consists of just a few
+primitives that are on top of that R can
+be in inside your Python programs then
+the effects library has a number of
+effects that allow the non-standard
+interpretation and by by having the
+effects library in between we can build
+composable inference algorithms and
+entrance algorithms they can be embedded
+within each other and it's really nice
+for developing fancy inference
+algorithms so let's look at the
+economics of the the pyro
+language the the basic statement is the
+pyro sample statement here you can see
+that at the top we sample a number X or
+a tensor X from a Bernoulli distribution
+so this Bernoulli distribution is just
+part of the torch distributions library
+and in keeping with PI torches
+convention pyro has eager semantics so
+the X is actually a tensor it's not a
+random variable object it's actually a
+tensor and the second line here you can
+see that the observed statement is like
+a sample statement but when you're
+conditioning on on data that you've
+already seen the third statement is a
+declaration that a particular part of
+your program is differential or
+optimizable and we can also optimize
+with respect to constrained parameters
+by specifying a constraint and the
+constraints are just part of the PI
+torch constraints library we also have a
+couple language constructs to express
+statistical independence among variables
+so these can be either statistical
+independence among variables that are
+packed into a tensor and we wrap that in
+a in a context manager object called
+arrange or they can be statistical
+independent it's among objects that then
+have different dynamic downstream
+control flow for example if we have
+compute graphs in different branches or
+different indices of a for loop and we
+wrap that in a generator so how do we
+wrap these primitives up into a in a
+into a model in pyro of a model is just
+a Python function here's a model where
+idiomatically we passed the data in as a
+parameter to the to the model and the
+first line we declare our parameter and
+this parameter will be differentiable in
+the second line we can we can sample
+from a distribution that depends on that
+parameter and the third line we have
+some control flow and some and some
+observe statements and we can even use
+helper functions here you see the the
+helper function below
+and by building on Python functions this
+way we can leverage all of pythons great
+organization of code and create large
+models that span multiple files or
+multiple teams in an organization so
+here's an example of a more complex
+model these models are you can think of
+them as generative models of data so
+here's an example of like an amnesty
+digit generating model where it's it's
+like a V a E but we've disentangled the
+latent variables of style and the digit
+that we're generating so first we define
+a decoder network this is just a pie
+chart and in module and we conduct we
+can declare that module in PI the row
+with a pirate module statement that's
+just a fancy pirate params statement
+that recursos through the parameters of
+a module and you can see that we have a
+couple sample statements and then
+finally sample from a Bernoulli an image
+that that depends on the style and the
+digit so whereas the the generative
+model used a neural network to generate
+data we uh we also use inference
+networks here we call this a guide which
+is just the inverse Network and just
+like in a VA this uses a neural network
+to infer the Layton's given observed
+data so the guide also inputs the image
+and we have two different encoders one
+encoder for the digit and one encoder
+for this style we can call though the
+the digit encoder based on the image and
+then conditioned on the the digit and
+the image we can infer the latent style
+and the latent style can be all of the
+the messy embedding parameters whereas
+the digit has a nice interpretation to
+Train one of these pyro models with with
+both a forward and an inverse model we
+can use stochastic variational inference
+this is the most common inference
+algorithm we use in pyro
+here we create a stochastic variational
+inference object with the model the
+guide an optimizer and a particular loss
+function here we're using the elbow loss
+which is like a KL
+and then we can train the model using
+just atom or SGD using mini batches of
+data once we've trained the model we can
+then use the the inverse guide this
+guide for serving predictions we can use
+it as a classifier or we can even pull
+out one of those encoders as a
+classifier and use it completely
+independently of pyro so this is just a
+rough map of the pyro and pi torch
+architecture and I want to make two
+points here one is that we work really
+closely with the PI torch team on the
+distributions transforms and constraints
+library that torch distributions library
+and that integrates very closely with
+pyro to make pyro models
+broadcast correctly and and deal with
+and and and fully support the PI torch
+duet the other note is that users and
+application code typically write three
+our users typically write three types of
+code one is just the models that we saw
+before these Motley's generative models
+and the inference networks but there are
+also two other types of code one is
+custom inference algorithms and these
+can be composing say local inference
+that uses second-order optimizers maybe
+multiple steps for local variables and
+then some other global optimizer for for
+for global variables so one is custom
+inference algorithms and another type of
+code we write is distribution objects so
+distribution object is a it it has a
+sample and log problem methods but a and
+and together these allow you to wrap
+arbitrary Python code for use in the
+probability monad so that you can use it
+inside pi grow programs so we can we can
+we tend to write lots of different
+custom distribution objects these can be
+hand coded feature models or they can be
+inference algorithms that use some other
+inference method that isn't just SVI
+so if you're interested in in learning
+more about pyro check out pyro AI or
+stop by our poster the whole team is
+here today to chat with you and we'd
+like to thank all of our open source
+contributors and thank the fire torch
+team in particular for lots of help
+getting para to work well with the
+distributions library and JIT compiler
+so thanks so hi everyone my name is Mark
+and I'm from the Allen Institute for
+artificial intelligence in Seattle where
+I do you kind of research in engineering
+and I'm one of the lead developers on
+Allen NLP our platform for deep learning
+for natural language processing so we
+kind of had this vision when we were
+deciding to build this project that we
+wanted to you create like an open-source
+library with the most useful deep
+learning abstractions for text available
+for anyone to use and kind of part of
+that was building great reference
+implementations of standard models so
+people could pick them up and run with
+it and also use them as kind of black
+boxes if if you want a dependency party
+you can come to an NLP and know that
+you're getting a state-of-the-art model
+also we had in mind that we wanted to be
+able to leverage research that we were
+doing in word representations in this
+case particularly Elmo which is a method
+for using language model pre-training to
+develop contextual embeddings for
+sentences and be able to leverage those
+easily across lots of different natural
+language processing models really easily
+and then also we just wanted a framework
+that would allow us to continue to drive
+our research forward on paragraph
+understanding and semantic part so we
+actually originally built this framework
+on top of chaos and then we rebuilt it
+on top of Pi toge and you kind of heard
+a lot about the first two already today
+from kind of almost every speaker but
+one thing I don't think that's been
+particularly noted enough is that we
+found the PI torch community really kind
+of engaging and active and really eased
+our transition to tip I touch when we
+decided to make the make the switch so
+we were kind of you might be thinking
+right so you chose to use PI torch why
+didn't you just start building models in
+PI touch why do we need kind of an extra
+framework well we were one main thing
+was we were really jealous of the
+reinforcement learners who had these
+crazy crazy demos of people doing
+backwards roles to run really fast and
+we wanted our own kind of high quality
+demos which people could play with and
+figure out how how these models break
+under and various different assumptions
+we also found a kind of batching and
+padding a little bit a little bit
+lacking because we really want to
+support for a structured data and nested
+data you know in some of the semantics
+pausing work we've been doing we've been
+doing things like embedding grammars
+which quickly gets quite quite tricky if
+you're trying to batch that together and
+then also we wanted to create this kind
+of JSON specification for changes in
+model architectures that are very common
+and you want to kind of change something
+and know that nothing else has changed
+in your code so for instance we we
+leveraged this JSON specification to be
+able to add ELMO embeddings to any of
+our models just by changing additional
+specification and not having to write
+kind of lots of if statements inside of
+insider models
+so here you can see some of the pure
+Python modules that you can find inside
+an RP lots of lots of modules very
+specific to NLP so conditional random
+fields and transformers
+here's a full JSON specification for one
+of our models so you can kind of get an
+idea that there's lots of ways you can
+configure these and change them we've
+got really easy to use pre-trained
+models which I'll show you in a minute
+we actually also have very high test
+coverage and we use kind of lots of pipe
+and best practices for development so
+python 3 type hints my PI type checking
+static type checking so hopefully if you
+take a look inside our repo you'll find
+the code easy easy to get started with
+so here's an example of what we kind of
+set out to do originally which was make
+it trivially easy to package up a Python
+model sorry a PI touch model
+specifically for NLP so this is one of
+the one of the best named entity
+recognition models you can get at the
+moment it uses Elmo and you can import
+this directly from an NLP pre-trained
+very easily and start making predictions
+and here's a kind of little
+visualization which you can find on the
+website and the same again for a
+reference model and these are all kind
+of fundamentally build on neural
+building blocks they have contrasty some
+Stanford Corrine RP models all clear an
+RP models so now we're just going to
+jump to one of our actual live demos so
+for getting bored with the talk you can
+go there now and have a play around with
+it so here's a dependency parser and we
+can type in anything you want you'll
+very quickly be able to break this if
+you go there and start playing with it
+and you get these kind of first-class
+visualizations of tree structures which
+you can expand and play with and see
+kind of actually what these models are
+doing
+and I mean the other thing we kind of
+found out that when we when we built
+these demos is that it's actually very
+it makes it makes where the models go
+wrong very clear so here's a here's a
+machine comprehension model so if we
+there's a little passage about the
+matrix so we ask few stars in the matrix
+[Music]
+we'll get a little span back if we
+connect the inter mmm maybe we're not
+okay so it's his by def is great
+extracting extracting the people and you
+can see a little attention
+visualizations which we've built and
+which are really great for debugging but
+then as soon as we start to play around
+with this a bit you'll see that this
+breaks and a fairly spectacular fashion
+and this is kind of part of the work
+that we we're the research that we're
+doing in the an animal peak where you
+put a or two as to is to fix problems
+like this if we okay so you know that
+may well be true but it's certainly not
+true in the context of this paragraph so
+yeah this is the sort of thing that
+we're kind of looking to develop new
+models particularly for paragraph
+understanding a semantic pausing to to
+fix these kind of problems because
+that's pretty embarrassing so if we jump
+back to the slider yeah so kind of one
+of the main reasons we're excited about
+an animal P is that we we actually use
+it so we you can access Elmo from an MLP
+and lots of the research that we're
+doing comes directly out of the library
+and also researchers at AI to using it
+as a library and particularly from the
+Aristo group that work on science
+question answering semantics colleges
+and academic search engine and the new
+AR to common sense project and then
+obviously we also want everyone in this
+room to
+start picking up and seeing what I can
+do and seeing how it breaks so we're
+gonna see Eleanor piece sitting in this
+mid ground between commercial NLP
+platforms like Stanford NLP and Spacey
+but also with a lot of the functionality
+of things that you need for a for an NLP
+research work for it's so dynamic the
+dynamic nature of things like pie
+torching dinette and then also modern
+deep learning technology well we use the
+one from pie touch yeah and then just
+more abstractions designed for NLP
+making model saving which is more
+complicated with NLP models more
+straightforward we're really excited
+about pie touch 1.0 because I mean we
+actually had some experience writing C++
+extensions for some custom custom lsdm
+architectures in it and I mean it worked
+but it was a was painful and now we can
+just completely scrap that and go
+directly to just-in-time compilation so
+really excited that that we're also
+excited to see where developer tools for
+machine learning goes so how how type
+hints for Python 3.6 can be integrated
+into things like just-in-time
+compilation is kind of quite exciting I
+don't know if he has seen quite a quite
+a kind of decent uptake since since we
+launched a mix of commercial companies
+and academia using it for instance NYU
+just released a big representation
+learning framework built on top of NLP
+coming out of Sam Bowman's group which
+is great and so definitely check that
+out if you have time and then looking
+ahead the MLP team is working broadly on
+out of domain generalization so how can
+we make these models work for science
+text how can we make them work for
+different languages adding new datasets
+to NLP and then external adoption as
+well so that's it you can check out our
+demo
+Elpida org
+can chat to us on Twitter there you can
+install the library just by a pip and a
+bit of a shameless plug we're also
+giving a tutorial and writing PO for NLP
+research MLP so if you're going to a man
+dopey definitely check it out thank you
+[Applause]
+[Music]
+[Music]
+[Music]
+okay last session before the panel so
+one of the trends we've seen in AI is
+really the democratization of AI
+learning which is pretty exciting anyone
+can learn kind of at the cutting edge
+the latest not have to get PhD from the
+top university in all deference to
+everyone who spoke today what's even
+more exciting about this trend is
+actually a lot of is being built on PI
+torch so the next two talks are actually
+from Udacity and fast AI to innovators
+in AI learning and we're gonna kick it
+off with Stuart Frye VP partnerships
+from Udacity
+[Music]
+hi everyone I'm Stuart fried from
+Udacity at a conference all about AI
+it's only fitting to go back to how you
+dasa T started with introduction to AI
+or cs2 21 taught by Sebastian throne and
+Peter Norvig
+at Stanford these guys were colleagues
+at Google and Co professors of this
+Stanford course introduction to
+artificial intelligence when they
+decided to put it online for free for
+anyone to take at the same time they
+were going to teach it on campus at
+Stanford to about 200 students some
+really interesting things happened
+160,000 people from all around the world
+signed up for this course and it
+happened so fast that they were they
+kind of got a little bit freaked out
+stopped enrollments at 160,000 the next
+really interesting thing that happened
+was that 23 more than 23,000 people
+finished the online version of the
+course alongside the 200 folks at
+Stanford and that was an aha moment for
+Sebastian and Peter and really the
+genesis of Udacity as a company because
+that 23,000 represented a scale of
+learning and a democratization of
+Education like that's more people than
+learned AI in all the other AI classes
+and all the other universities around
+the world that semester right just in
+that one online classroom the next
+really interesting thing that happened
+is we gave those 23,000 people the same
+final exam we gave the 200 Stanford
+students on campus and then Sebastian
+stack rank the results of the final exam
+and the first Stanford exam came in at
+the four hundred twelfth spot in that
+stack rank list now that's not to say
+anything against Stanford or any of the
+other amazing institutions in the room
+today what's that
+it reaffirms something we all know that
+talent is equally distributed but
+opportunity is not the opportunity to be
+on campus at Stanford the opportunity to
+learn from Sebastian Thrun or Peter
+Norvig not everybody has those
+opportunities that's why we created
+Udacity and that's why organization
+like fast AI that you're going to hear
+from exists to make access to this kind
+of education broader and more available
+to more people around the world so
+Udacity kept on making these free online
+courses or MOOCs but we also started
+making something we called a nano degree
+now this is just a word we made up
+because we wanted to connote the
+shortest possible path from where you
+are today to this new skill set or this
+new job you want to be doing and these
+are more rigorous than a MOOC or a free
+course for a couple reasons one is there
+much longer and more involved but more
+importantly they consist of projects
+they're project-based curriculum and you
+work on real-world projects you submit
+code that code gets reviewed by a real
+person with real feedback and you keep
+doing it till you build this project to
+spec to give you a better sense for what
+I mean I'll pull some examples from our
+self-driving car engineer nano degree
+program so for those of you in local you
+might recognize this strip of Road it's
+280 heading south from San Francisco
+towards Mountain View and for the very
+first project in our self-driving car
+program we give students this data and
+they use computer vision techniques to
+find lanes and that's in the first week
+so you just we really believe you learn
+by doing and this is the first project
+we give you they scaffold up in
+difficulty in complexity so that by
+about month three when you're working on
+your fifth project you're you're on the
+same strip of 280 doing an advanced lane
+finding vehicle tracking see the car
+coming around the side and this is real
+student project that they've submitted
+and then for the final project the
+eighth project and the nanodegree you
+give us your code we put it on our
+self-driving car and you can see this
+the camera is that car driving through
+an obstacle course we've designed and
+we've got our fingers crossed that
+you're ready for this project because
+it's an expensive car so so that's the
+sense I just wanna give you a sense for
+this we teach by doing and we we think
+projects are an important part the the
+AI is an area
+are super interested in building a lot
+of nano degree programs in right now and
+our school of AI starts with AI
+programming with Python aimed at those
+with minimal exposure to coding minimal
+exposure to AI it's really an
+introduction to this world to get more
+people interested and we think it's an
+important step and in broadening access
+getting a more diverse and inclusive set
+of people learning about this and then
+scaffolding up to very advanced
+specializations in computer vision
+natural language processing even
+applications like AI for trading pipe
+torch is an important and increasingly
+more so component of our school of AI it
+is woven through four of the eight nano
+degrees in the School of AI and we will
+continue to build out pi torch pathways
+as we launch new programs and update
+existing ones a great example of an
+update we did recently was to our deep
+learning nanodegree program where we did
+a complete overhaul and relaunch so into
+in pi torch throughout that program in
+addition to tensorflow which it was
+originally built in so we really like pi
+torch when it comes to teaching because
+you don't really have to teach by torch
+we can focus on teaching deep learning
+concepts and not teaching syntax or
+documentation you know it for us we
+spend a lot of time in those entry-level
+early programs helping our students
+build up proficiency in Python and numpy
+and in pi torch fits very seamlessly
+very naturally into this Python data
+workflow so our students can just jump
+right in to fun projects and iterations
+another reason we like working with Pi
+torch is because the partners and
+researchers that we collaborate with to
+build our nano degree programs like pi
+torch right so in this overhauled deep
+learning nanodegree program we have a
+whole section on image to image
+translation right and so in Goodfellow
+teaches about Ganz and
+then juyeon comes up and teaches about
+cycle gana and the work he and the team
+did there you know we we look at all the
+creative ways cycle gain has been used
+like going from black bear to pedobear
+and then of course we bring cats into
+the mix and have our students work on
+their own project after they've heard
+from these researchers and been exposed
+to cycle game models and Gans and we
+give them a big old data set of ragdoll
+cats and burning cats these are two
+closely related species you'll notice
+ragdoll cats if you're not familiar have
+that kind of upside-down triangle of
+light fur whereas the Berman cats have
+the darker fur all around the nose and
+eyes and and what they do is so we give
+them these data sets and then they
+compress a real image and generate a
+fake image of the opposite species using
+convolutional and transpose
+convolutional layers in pi torch going
+from ragdoll to Berman and then Berman
+back to ragdoll a very fun project and
+we like cats another really cool PI
+torch project is this automatic this is
+in our computer vision nanodegree so a
+different one than the deep learning
+this is an automatic caption generating
+project where you know we we get we give
+students again a big data set of
+pictures and captions and they train
+they they train a CNN to recognize
+patterns in a particular image and then
+RNN to generate a descriptive caption of
+those pictures and these are some of the
+results right like one is my desk set up
+at home a computer monitor sitting on
+top of a desk or a train coming down the
+tracks near station so some really
+exciting hands-on applications that are
+a fun way to use pi torch as you can
+probably tell we like teaching pi torch
+we like teaching with pi torch and so it
+made a lot of sense to team up with
+Smith and the folks at Facebook ai Smith
+Joe and some other folks are going to
+help us teach introduction to deep
+learning with pi torch this is going to
+be
+free course one of the MOOCs on the
+Udacity platform in the School of AI and
+it's gonna cover the gamut from an
+introduction to deep learning and PI
+torch all the way to deployment with PI
+torch and implementing your first deep
+neural network so really excited to
+launch this course you can sign up to
+get notified about when this will launch
+but it's coming out on November 9th so
+keep an eye out between now and then
+equally excited to partner with Facebook
+to introduce a PI torch scholarship
+program applications for this program
+opened today and this is a scholarship
+challenge that'll have ten thousand
+scholarships globally for the first
+phase of the scholarship which is a
+challenge program it takes that PI torch
+course layers on some projects than some
+direct support from the Udacity team and
+the school of AI team and a dedicated
+community for a two month challenge as
+you work through the course and the
+related projects top performers from
+that scholarship that phase will get an
+additional scholarship a full nanodegree
+scholarship to our deep learning nano
+degree program that I've talked a little
+bit about today all of this funded by
+Facebook AI super excited to be working
+with them so the timeline is
+applications for the scholarship and get
+notified for that course went live today
+on November 9th the scholarship program
+will kick off or if that's not
+interesting to you you can just take the
+free course which will go live on the
+9th as well and then the full nano
+degree scholarships will be awarded in
+early 2019 again really really glad to
+be here appreciate the opportunity to
+tell you about some of the efforts we
+have to democratize education especially
+when it comes to learning ai you can
+head over to udacity.com / FB - PI torch
+to learn more about that scholarship
+program in the free course for those of
+you who have learned with Udacity thank
+you for learning with us for those of
+you who haven't I hope you come check it
+out we'd love to learn alongside you
+thanks everybody
+[Applause]
+[Music]
+hi I'm retail Thomas I'm co-founder a
+fast AI really excited to be here today
+I love pi torch and so a fast day I our
+goal is to make seed of the art deep
+learning more accessible and we do this
+through four different channels and
+there's a lot of overlap between these
+one of them is software today we
+announced the release of the fast day I
+library which is built on top of Pi
+torch also through education our free
+practical deep learning for coders
+course as well as through
+state-of-the-art research and supportive
+and engaged community and I'm gonna talk
+about how we use pi torch towards all of
+these goals so software so we have a
+blog post announcing the release fast AI
+version one this library is a in the
+same spirit as Karros it provides it's
+the first kind of deep learning library
+to provide full support for text vision
+tabular data and collaborative filtering
+all in one place you can make
+state-of-the-art models in just a few
+lines of code our relationship with and
+I should say you can find this at fast
+on AI or you can check out the docs at
+Doc's fast a I our relationship with Pi
+torch goes back much further we first
+tried a version 0.1 of Pi torch when it
+came out in spring 2017 at the time we
+were trying to do attentional models
+with teacher forcing and these are
+important techniques for NLP and we were
+finding it difficult and Karason
+tensorflow
+we tried pi torch and just loved it from
+the start we switched all of Pi torch or
+switched all of fast fast AI to PI torch
+about a year ago and our reasons for
+that are I love that it's a dynamic
+framework as opposed to a static
+computation graph it makes for easier
+debugging and as a researcher and
+developer ease of debugging is my number
+one priority easier debugging
+has resulted in more rapid iterations
+and easier experiments and this in turn
+results in faster and more accurate
+models as well as more complex models in
+fewer lines of code and then a third
+thing as someone who's coming from an
+object-oriented programming background
+in Python
+I think pipe torches structure kind of
+feels feels more natural and intuitive
+so in fast AI we always start lesson 1
+of our course with dogs versus cats this
+is a computer vision challenge to
+identify if a picture is of a dog or a
+cat and it's been a cago competition
+twice and here is a comparison we did
+with fast AI on top of Pi torch
+comparing to Karis on top of tensorflow
+and I should note that I love Karros the
+reason we're comparing ourselves to
+Karros is because we consider it a gold
+standard and you can find more details
+about kind of the specifics of these
+tests in the in the blog post but just a
+few lines so we're we're using transfer
+learning here of a network that was a
+ResNet pre-trained on image net just a
+few numbers to note the lowest error we
+could achieve with Karros was 0.8%
+with fast AI that was 0.3 percent so
+ninety-nine point seven percent accuracy
+and we were able to do that in fewer
+lines of code with sorry fewer lines of
+code and faster in less time and these
+are three metrics you really care about
+our accuracy speed and lines of code the
+simplicity for for writing it fast AI
+has already been deployed at fortune 500
+clients it's in use at github
+engineering there was a great blog post
+recently on how github is using fast AI
+on top of pi torch for semantic code
+search senior machine learning scientist
+who worked on that said that this is
+just the tip of the iceberg
+people in sales marketing and fraud at
+github are all using fast AI in pi torch
+so education who here has taken the fast
+day I course or watched any of
+videos for it okay nice so this course
+is available for free online course
+faster I if you're in the Bay Area we'll
+be teaching an in-person version
+starting in late October that's one
+evening a week it'll be completely kind
+of newly updated but our course teach
+you takes you to the state-of-the-art in
+a very hands-on impractical way the only
+prerequisite is one year of coding
+experience there are no advanced math
+prerequisites and this is done in
+partnership with the University of San
+Francisco's data Institute our motto is
+making neural and that's uncool because
+being cool is about being exclusive and
+our goal is to make the field more
+accessible and more inclusive so a
+number of our students work on social
+impact projects there was a great Forbes
+article about several of our students
+around the world working on social
+impact projects and this covered several
+students including sahil's Singla so
+he'll worked with farm guide in India to
+develop better agricultural lending
+models for farmers most farmers there
+can't prove how much land they own or
+what type of crops they're growing and
+using publicly available satellite data
+Ceylon this team could develop better
+lending models the other great thing
+about this article is that it was
+written by a fast AI alum Maria Yao
+Maria is the author of a best-selling AI
+book as well as CTO of meta maven and
+just won an NSF grant despite not having
+a graduate degree and then while we have
+a lot of social impact projects we also
+have a lot of more playful projects Tim
+on Glade was one of our students he
+works for the HBO television show
+Silicon Valley and he built the hot dog
+not hot dog app while taking our course
+and he was nominated for an Emmy for
+this work a fun project that came out
+recently from Christine McVie Paine
+she's a fast day I alum who went on to
+become an open AI scholar is a neural
+net music generator and we play a little
+bit
+this music was written by a neural net
+christine has a background as an
+award-winning classical musician as well
+as a high performance computing expert I
+mean she check out her blog post but she
+wrote this using fast AI and pi torch
+and she said one of the things she loves
+about fast ein PI torch is how flexible
+they are and she was able to repurpose
+code that had originally been written
+for a natural language so research we're
+really trying to disprove the myth that
+you need the fanciest most expensive
+computers or the fanciest background to
+do state-of-the-art work earlier this
+year a team fast AI students competed
+and a competition hosted by stanford
+against engineers from Google and Intel
+who had a lot more funding and more
+expensive computational resources and
+fast AI one which is really exciting
+this was covered in the verge and the
+MIT tech review I'm really proud of this
+and also just to show that that anyone
+can can do state-of-the-art work and
+then this is a some research from a
+co-founder Jeremy Howard who will be
+speaking next along with Sebastian
+Reuter that came out earlier this year
+applying transfer learning to NLP
+so we've seen a lot of a lot of
+breakthroughs with the use of transfer
+learning for computer vision it's much
+newer for it to be applied to NLP and
+you can find this work on the archive or
+laypersons version at an LPA AI and
+again this was using using fast AI and
+pi torch and they achieve state of the
+art on six text classification tasks in
+many cases improving it by 18 to 24
+percent over the previous state of the
+art and then we have we're fortunate to
+have a really supportive and engaged
+community you can check out on our
+forums there people always asking for
+help offering help sharing interesting
+links or projects and I wanted to
+highlight just one forum thread in
+particular this is the language model
+Zoo
+this is a thread of people applying
+Jeremy and Sebastian's work to languages
+all over the world and it was almost too
+much to fit on a single slide but
+Bengali Chinese Danish Estonian Finnish
+Hebrew Hindi Italian Indonesian and
+there more and in this threat people are
+sharing best practices and tips also
+linking together and groups to work on
+it I particularly want to highlight the
+teams working on polish and Thai for
+achieving state-of-the-art in their
+languages the group in Polish won the
+top polish NLP competition and Polish is
+a morphologically rich language which
+means it can be pretty challenging for
+NLP but so this is an interesting
+resource if you're interested interested
+in that yeah so finally I'm just thank
+you thank you for having me I am so
+excited about where pi torch is headed
+and have really really enjoyed the event
+today and be sure to be sure to check
+out our new fast AI side software
+library
+[Music]
+[Music]
+[Music]
+[Music]
+[Music]
+[Music]
+my god okay hi so it's been a long day a
+really long day and the final session we
+have is having a small panel to discuss
+from a set of very opinionated people
+what the future of deep learning
+software the software of the AI stack
+itself would be and then we're gonna
+have a great poster session with 40
+posters I think 40-ish and so let me
+start off with the invitees for the
+panel the first one is my homeboy Yan
+Cheng Jia who is director of engineering
+at Facebook ki and he you might know him
+as the creator of cafe cafe - onyx and
+also now part of creating fighters 1.0
+and the second person on the panel is
+gonna be noah goodman who is an
+associate professor stanford where he
+runs the computation cognition lab but
+he also runs the probabilistic team at
+uber which built a virtual pyro that
+that you saw talk about the third person
+on the panel is Jeremy Howard who who
+built faster day I along with Rachel who
+just spoke to you and Jeremy was also
+the CEO of analytic which was a medical
+imaging company and before that you
+might know him as the president of Kegel
+which I don't need to introduce to you
+what cargo is and the last but
+definitely not the least panelist is
+Chris Latner from Google and you might
+know Chris by accidentally using LLVM or
+si Lang or as the person who built Swift
+and also he led the developer tools
+group
+Apple somewhere on that timeline I guess
+where he built Xcode which again you
+probably are very very familiar of it
+without further ado I invite the the
+panelists to come onto stage
+all right so some questions are going to
+be a little hard to answer and some are
+easy I'll start with an easy one let's
+say let's say each of you goes to a
+party and you have to tell someone
+what field you work in do you say
+artificial intelligence or machine
+learning starting from right to left at
+NOAA I say human and machine
+intelligence I just say AI I don't like
+the term but people know it I generally
+say mo for no particular reason
+alright that was easy
+now to get into depth of I mean the the
+panel was about the future of AI
+software I want to ask some you're
+really talented people on the panel I
+want to ask your opinions and what the
+future looks like one of the one of the
+things that the Python data ecosystem
+has done
+it's basically eat up every machine
+learning framework especially deep
+learning framework and now python is
+pretty much the only language in which
+you can do sensible deep learning how do
+you think this would change over the
+next few years do you think there's a
+good wave to introduce a new language if
+it's the right one sounds like a waste
+of time to me of course there is that
+the only bad thing about PI torch is the
+Python - okay pythons you can say about
+Python that it's better than our but
+it's worse than everything else the fact
+that Python makes it the PI torch makes
+it nice isn't extraordinary effort on
+your part seemeth so I think you're
+aiming this at me
+so I can honestly say I don't know right
+I mean I think the Python ecosystem has
+a ton of great things I don't really
+look at it as an ecosystem language
+other other piece to me I start with
+what are the goals right and for me I I
+personally personally am one of the
+people to believe in Big Data Plus big
+compute plus good algorithms leads to
+progress right and for me it's it's
+about the dream of the interactive
+supercomputer like we have today very
+large boxes that do 100 pedo flops today
+right that that's a thing right and
+driven with that kind of compute power
+you can solve really interesting
+problems and so Python at scale leads to
+some challenges with performance the
+guild lots of things that drive poor
+usability and to me interactive
+supercomputers are really about being
+able to take theoretical flops and turn
+them into practical applied flops that
+solve problems like turning people into
+more effective and more productive
+engineers and scientists and other
+people that are just solving problems
+right I think the people neglect the joy
+part of programming and solving problems
+but to me it's super important and so
+what Swift is about and stuff for
+tensorflow is about is about saying well
+you know a lot of the ideas and a lot of
+the way that frameworks have been built
+have been kind of limited by what can we
+fit into Python right and I'm saying
+okay well this is actually a hard
+problem but what if we just like rip the
+cover off and say let's change the
+language as well well if you do that and
+if you look at that and then you say
+what do you want well you want things
+like amazing auto-da-fé like that's
+super extensible so you can define your
+quaternion tie for whatever else and
+define custom gradients you can do
+gradient surgery you can do like all the
+things that people have known and loved
+40 years ago in the Fortran world but
+the we as an industry have somehow
+forgotten right and it's because you
+need really good language integration
+and once you do that the error messages
+you get the the experience you get of
+using this thing can be really great and
+it's also completely orthogonal from
+tensors but tensors are a really
+important application and you don't end
+up down at some layer where you can't
+dig any deeper and you go like oh at
+that point crude E&N takes over like you
+fifth if it's Swift all the way down
+that would be so cool right and so like
+on a programming model perspective with
+with tensors kind of the Swift way
+looking at this is saying well eager
+eager execution is a good thing that is
+really the right answer for so many
+reasons right
+but the goal here is that the system
+should be able to be in charge of giving
+you good performance and so the way this
+4/10 flow model works is you can think
+of it as just being a really fast
+eager mode with a concurrent very fast
+base language but then when you turn on
+the optimizer does auto clustering for
+you and so now you get graphs
+large-scale graphs so you can feed a
+supercomputer and it just kind of works
+right and yet if you want to be able to
+step through your code or set a
+breakpoint fine you compile with a zero
+and then you do that there's no no
+things to move around and just so you
+get a very nice continuous experience
+the Python ecosystem is super important
+and it's not going to change and so with
+this model you can just import Python
+API is and use them directly no FFI no
+wrappers no build steps you just use
+Python and all the Steiner McLaury and
+it just works it's super nice so I
+there's there's a lot of kind of thought
+and put into this but there's really
+that question which is the social
+question of will the world be ready for
+something that's not Python I don't know
+it'll be really interesting ok Noah as
+someone who built your previous software
+and JavaScript how do you feel about it
+well I love JavaScript not as much as I
+love scheme but more than I love Python
+yeah so I think you know Python is here
+to stay for a while just due to the
+intellectual economics but the
+remarkable thing about it to me is that
+python is this thing where the more of
+your libraries you don't write in Python
+the better your Python libraries get
+that's why PI torch does you know such
+amazing things by pushing everything
+that's useful into C++ and I think
+that's indicative of you know the
+eventual future even though we're at a
+local optimum where it's very hard to
+escape the the goodies that Python gives
+you I talked about the pros of Python
+I think the kana Python that people have
+to talk about is the speed like run
+slowly
+and that's actually one of the key
+reasons pythons very good for machine
+learning because when we go to machine
+learning them we found out that
+accommodations very bulky we run a
+convolution we run missions on vacations
+milliseconds basically and add in a 50
+now second oh it is not too bad
+and then basically that's a very good
+fit and a pretty good trade for
+flexibility and being able to tinker
+around with all kind of stuff like one
+example is my wife is an economist and
+it's really hard for her to learn
+suppose I tried failed she's doing
+Python very happily and that's kind of
+the flexibility that if we bet that
+machine learning or pate or hopefully
+it's gonna be the Starbucks of the
+emotional world then that's comes
+something some flexibilities that we
+need to provide to the users and she
+hasn't my wife hadn't started learning
+fighters yet but hopefully she will one
+day
+soon everyone is to aspire toward soon
+hey you don't get to skip it man what do
+you think I'm really interested do you
+think there'll be a swift torch do you
+think pythons the way will stay there
+there's a reason I wanted to be
+moderator I don't know the answer but
+I'll do whatever people ask
+so we'll see he'll find that so that is
+good does very helpful so the next thing
+I want to ask is so one of the things
+that's happening is every day every
+month the AI landscape is changing and
+we have new models like transformer
+models didn't exist like too long ago
+and now they're everywhere
+some people say probabilistic
+programming will be like the next wave
+after deep learning and if that happens
+I mean first of all do you guys expect
+that to happen something like
+probablistic programming being at the
+center of the next wave of research for
+mainstream applications and if that
+happens how do you see the software
+stack changing do you see dsls coming
+about a core area opinions may be
+starting from the obvious person no yeah
+so the obvious answer is of course
+probably stick programming is the next
+big thing that will take over the world
+and eat your lunch and that's true but
+that's not actually the interesting part
+I think the interesting part is that
+we're seeing a multi-paradigm
+programming so differentiable
+programming over here is why we're all
+in this room and it's amazing and doing
+good things probabilistic programming
+was over here and now it's kind of
+overlapping over here and that's the the
+hypothesis we're exploring with pyro I
+think that's what's really exciting and
+that's the thing that's going to take
+over and change a lot of things so there
+are cases where you really crucially
+want to think about probabilities and
+latent random things that basically give
+you explanations of your data sometimes
+you don't sometimes you do but only a
+little bit and so systems that are able
+to fluidly express those different
+concepts as well as other paradigms like
+logic programming maybe I think that's
+probably going to be the thing but not
+for a couple of years because we have to
+really figure it out before everybody is
+building their
+you know they're new random Google's on
+it only a couple of years well yeah I
+mean long time ago 20-plus years ago I
+was very into what was then called
+systems dynamics which is kind of the
+closest thing to what's now called
+probabilistic programming it's actually
+very close and it was huge for quite a
+while there was a huge Center at
+Accenture it's focused on systems
+dynamics and there's all kinds of
+plugins that you could get for your
+spreadsheet for it and so I've been a
+fan of it ever since I think the current
+methods are really over complex in the
+same way the current deep learning
+software is over complex I think they
+both offer the same thing which is
+machine learning should be about having
+your computer solve your problem for you
+by giving it examples it shouldn't
+require any code at all
+probabilistic programming should be
+about you providing your domain
+expertise to say okay there are some
+pieces of this puzzle where I have some
+belief about what will happen and how
+likely it is to happen or what kind of
+shape of that happening is so these are
+things that they you know should be
+highly accessible to domain experts and
+so the other place to me is combining it
+with what we saw earlier which is that
+domain-specific differentiable layers I
+think these three things together
+hopefully will get us to a point where
+regular people maybe not coders at all
+can can use the information they have
+their knowledge to create you know solve
+a problem and get back you know accurate
+predictions and recommendations and and
+confidence intervals I don't have the
+depth and probabilistic programming but
+I generally completely agree with Noah
+and my view on it is that it's too easy
+to look at things as being is this going
+to win is this gonna eat and solve all
+problems will deep-learning solve all
+problems well solve a lot of really
+interesting ones but not all of them and
+you know in the old days people would
+argue isn't functional programming a
+better way of doing things and the
+answer is yes it is better at certain
+problems and m/l is amazing at certain
+problems and probabilistic is good at
+certain problems and the question is how
+can you pick and choose the problems and
+use the right technology make it easy to
+use
+build the right abstractions building P
+is such that n system so the people can
+pick and choose the technologies without
+having to completely switch to the new
+tech stack to use it if it's the right
+thing but I'd look at it it's very much
+what is a good at what is it
+complementary with and how do we compose
+these goodness these things together so
+to add to Chris's point basically you
+know like I remember back in maybe six
+years ago back at Berkeley there was
+this project called Gibbs Lda where
+probably a graphical model was really
+popular back then and everyone is
+basically drawing you know like circles
+and connections and suffering of the
+papers but once and that was like really
+similar back then and today is that in
+the project of Gibbs Lda we basically
+worked on using GPUs CUDA washi to
+accelerate the comp tations and make
+sense really high performance and just
+really training and stuff like that and
+that basically made the project execute
+and really fast well nowadays Gibbs
+already a or Lda yourself is probably
+not as popular as it was today I hope he
+will come back a little bit later
+because that was my one of my PhD
+projects but the things that we learned
+is basically we need to build software
+that can be shared and can be basically
+like build upon and instead of basically
+building little research code that we
+basically sent around in email
+attachments with zip code without
+version in and we basically just like
+hope that someone is still holding on to
+a version of the code that runs a
+version of how experiments and that kind
+of talks back to Andres earlier comment
+today about software 2.0 and over the
+last few years in a machine learning
+community I think what we learned is
+that we need to put proper software
+engineering practices in our research
+and product pipelines makes sense
+great so leading on to one of the things
+that everyone talks about these days is
+faster and faster and faster hardware
+and what are the consequences of that
+what's happening is not just faster
+hardware but hardware is also becoming
+less general-purpose and more focused on
+deep learning right so do you think
+there are adverse long-term effects to
+the field of machine learning research
+if this trend continues and how do you
+see the software stack changing do you
+mean too much specialization in terms of
+hardware or what do you mean adverse or
+non adverse I mean at by Edwards I did
+mean if it's to locally over fitted
+what's gonna happen to the global
+searches but they could be positives as
+well if it's the right model then you
+accelerate progress as well right any
+any thoughts on how the software stack
+changes what do you think the field it
+definitely changes things right like
+GPUs have had this massive effect that
+they weren't made for deep learning
+everybody knows but they've had this
+massive effect because they provide one
+set of operations that goes super fast
+if somebody had happened to make you
+know some other thing that was happened
+to make parsing in context-free grammars
+go super fast we would all be doing deep
+grammars or something like that you know
+so yeah it'll have an effect but I I
+kind of think that you know the the
+research community always escapes those
+local optima eventually so the more we
+overfit to this particular class of
+things and you know build our hardware
+and software the more there's the
+opportunity for a really great PhD
+thesis or a really great startup that
+you know jumps out and it's like oh
+actually no no so it's in effect but I'm
+not pessimistic okay yeah I mean it's
+interesting sumus like I I've noticed
+throughout my career consistently all
+the people around me are talking about
+how we're at a step change in massive
+data a massive compute so I've been
+hearing that for you know 25 plus years
+and as a result you know we're just
+natural right because when you see
+Hardware improving exponentially it
+always feels like a step change that you
+know that last two years is more than
+the previous 10 so I always to me it's a
+terrible distraction it means that most
+of the engineers I've known working
+around the machine learning field
+throughout that time are focused on
+taking advantage of you know
+lots as many machines as possible and as
+much resources as possible which as we
+all know there's a lot of overhead to
+that instead I would strongly suggest to
+people that pull back and think like
+what can I do on my laptop now you know
+because now you're focusing on like so
+for now I feel like right now I think
+something that not enough people are
+working on is what can you do in
+JavaScript because now you don't need an
+Nvidia graphics card you don't need to
+install in a thing you can have
+something running and everybody's
+browser they can start playing with it
+straight away and you're working with
+something that 10 years ago was the
+giant room of computers and that's and
+it's when you're working under
+constraints that you do amazing work so
+you know like we've tried to publish as
+many pieces as we can showing hey did
+you know that you can train imagenet on
+AWS in 18 minutes for 40 bucks you know
+did you know that you can get a state of
+the art text classification in three
+hours on a single GPU did you know you
+can you know replicate this state of the
+out result in three lines of code it's
+you know to me it's all about simple
+fast cheap I think that's there's not
+enough people working on that problem
+and I think it's the more interesting
+one to me that's a little bit of a
+different perspective I guess I mean I
+actually agree with what you said but
+I'm not I'm less concerned with
+overfitting on hardware and more
+concerned with overfitting on software
+okay like if I look out at the industry
+there's an explosion of hardware going
+on like seems like every startup is
+making an inference chip and every new
+phone has two or three or like
+accelerators built into them if I look
+out there I see JPEG decoders that are
+accelerated I see GPUs obviously TP is
+there they're a tremendous number of
+these things and the hardware is moving
+much faster than software and I think
+that's that's happening for a number of
+reasons one of which is the end of
+Moore's law which is widely widely
+blamed but it's actually true
+is causing a specialization of hardware
+to become much more profitable in terms
+of the way to get performance and it's
+not just mat moles it's also JPEG decode
+and many other
+things that are previously not important
+enough to accelerate become important
+and particularly in high-throughput
+inference scenarios or other things like
+that it's it's actually a critical
+bottleneck and so to me I'm a bit
+concerned about the software stacks that
+are say well ml or AI is all about matte
+moles and convolutions so we'll
+accelerate those while ignoring the
+sparse embedding lookups ignoring the
+JPEG decoder ignoring the image
+augmentation other things like that that
+feed the Machine ignoring Gayo sub sub
+systems that you have to pipeline in
+order to get decent performance and I
+think the holistic software is necessary
+to enable this ignoring the developer
+user experience I mean you and Zoomer
+for three people doing a great job there
+yeah but not really widely studied well
+in I mean I take the perspective from
+the compiler lines of map moles and
+convolutions are really
+disproportionately important right I
+mean they're really really really
+important but they're not enough and you
+need to care about the whole stack and
+be able to cover the whole stack and
+then be able to invest effort and the
+things that happen to be
+disproportionately important today to
+get good performance without giving up
+generality and I think that on machine
+learning models the trend line is
+towards generality like we're still
+struggling with control flow right but
+generality and tree recursive neural
+nets and like many of these other things
+are just not being tapped into because
+the software stack doesn't make it easy
+enough
+I torches exceptional in this case but
+thanks so actually when we talk about
+the proliferation of different Hardware
+pieces is it possible that orders hard
+to apisa that we build in today is
+specifically just trying to optimize
+cnn's and ordnance or maybe locations or
+we actually haven't Hardware built to do
+a stock decision trees or random forests
+or something like that
+also I think that people again there's
+this focus of attention that people like
+to think about GPUs like to think about
+GPUs or they like to think about
+different applications because that's
+what they're charged with thinking about
+but it turns out again each of these are
+really good at solving different
+problems CPUs are really good at walking
+trees
+Yeah right and they're actually like
+designed to be really good at that and
+what we need is software systems that
+allow models to be continuous and take
+advantage of the already heterogeneous
+accelerators that we have that makes no
+sense actually like one thing that I
+kind of wonder is and is it many because
+the hardware evolution is actually way
+longer than the soft revolution past
+cause we've been were joking that we
+burn through like maybe 20 different
+deep learning frameworks over the last
+five years and we've probably seen like
+a couple generations of hardware and
+immediat been doing a really great job
+on this GPU site but we haven't really
+seen too much like varieties of
+different hardware coming up so maybe
+it's also kind of like try to see how we
+can do similar to store away software to
+throw away hardware so that we can do
+like imagine if we do a new chip in two
+days into every month that will probably
+very different from what we have today
+so you should look to mobile because
+they like literally want you to buy it
+and then throw it away two years later
+that day yeah right and so if you if you
+look at mobile I think that there's this
+explosion of accelerators and it's not
+just mobile phones it's also things like
+VR headsets and cars and like this edge
+thing that like it's labeled is is
+actually really complicated and really
+interesting to Chris even in hardware it
+feels in some ways like the innovation
+has has gone away or slowed down like
+when I see all of these explosion of
+hardware's they tend to be digital
+matrix multiplication units where maybe
+the innovation is how many bits were
+used and how those bits are laid out but
+like in the when was that for early 90s
+Intel was selling a mass-market analog
+CPU and unfortunately they had to shut
+it down because you know they s the
+people trying to write the software I
+couldn't quite figure out how to deal
+with temperature issues but I'm thinking
+like what if like you know Intel was
+releasing a analog CPU today where we
+were getting you know or just an
+approximate CPU like well now optical
+does exist yeah they're working on doing
+optical and they are they are great but
+I do think yeah I wish I wish this
+explosion of kind of AI hardware
+companies were doing more things and
+low bit Digital matrix computer seems a
+bit short-sighted to me because it's
+seems obvious it's not the right way to
+but in the bread side yeah I actually
+think AI is very likely to drive that
+novel hardware explosion eventually
+because we're we're very much myopically
+focused on you know oh look at all the
+things we can solve as long as we have
+huge data and huge power but pretty soon
+we're going to have to deal with like
+you know the this thing up here does the
+same thing with pretty small data and
+very low power right and when we start
+focusing on that it's gonna I think
+driving operations per second most spike
+in neurons it's probably another example
+where we can do hardware but the
+software side is not really ready or
+like we don't even know how to actually
+train a spike in New York I know I know
+a lot more now what's gonna happen so I
+know the next things I wanted to ask was
+in in the last couple of years from my
+memory hyperparameters search using
+neural networks whether you take it auto
+ml or there's a series of researchers
+trying to search for our neural network
+architectures themselves or better hyper
+parameters and like there's traditional
+Gaussian processes based stuff that
+that's being revived in this ultimate
+paradigm which has become a bit more
+popular if hardware as you guys say it
+with optical processors or whatever are
+the magical processors becomes like 100x
+faster thousand X faster do you think
+how'd that combine that the auto ml
+stuff that's being popularized would
+change the way people do both research
+and our built products and I
+yes I think so I think I can probably
+provide one example so on like well
+we're learning programming languages we
+have this notion that you know like
+object is a class across an object in
+Python right and we're like what is that
+and and it's kind of the same thing
+today with your with data a massive
+amount of data and we just do models out
+of that but one thing that's interesting
+is the models themselves or the way we
+train models become data themselves for
+us to basically then train mechanism
+semantics or rules and principles for us
+to improve the models and one particular
+example is today we are doing a lot of
+compilers and authorizations order to
+get chris's view on this one as well we
+run them and with the optimization by
+heuristics there's a bunch of rules that
+we derived saying if we run Oh two or
+three these are since we can make it
+faster and if we run in machine any
+models today for some for on you know
+like Jerome mentioned that and for bunch
+of models we run three hundred trillion
+predictions per day imagine if we can
+collect in some way profiles over those
+executions and then get some more
+heuristics using reinforcement learning
+or whatever forces for us to do a more
+profile based or data based optimization
+that would actually open the gate for a
+lot of new technology that we were
+probably thinking about but couldn't do
+in a past in Hardware would probably
+make it much easier as well I mean I
+think to me I look at this is there's
+multiple different phases and different
+kinds of opportunities here as you say
+like compilers are full of magic knobs
+and should I inline this function well
+magic number heuristic hard-coded tweak
+tuned completely the wrong model right
+this is this is the old the old way of
+building things and LVM for example is
+roughly twenty years old and it shows it
+right and there's better ways of
+building compilers these days but I
+think that your bigger question is is
+auto ml the right answer is ml
+development going to be taken over by
+the machines and I don't really know
+obviously but I look at it as it's
+another tool in the box and there's a
+certain class of people that are not
+going to know and understand
+differential programming and they won't
+understand you know the basics of amount
+or models or things like that and I
+think that Auto ml is a great way of
+bringing that to more people and bring
+it to people that have data and have and
+have problems but they don't have the
+expertise I don't think it will be the
+closest fit necessarily to solving the
+problem and so if efficiency really
+matters then it may not be the best
+answer but when you combine that with
+the explosion and compute that's
+happening I think that the only question
+is where where do these lines cross over
+I was inspired by Andres talk with the
+software to do thing I think that you
+know if you think about what if you
+could do your development and have like
+continuous integration of every every
+label update and see what it does to for
+all of your metrics and get that in the
+loop for people doing labeling that
+would be huge right and these kinds of
+workloads are only made possible by
+dramatic amounts of computes good
+integration good software layers and all
+the things design and working well
+together so I don't think that all
+programmers are gonna be out of a job at
+least in the next 5 10 15 20 I don't
+know how many years but but I think that
+I see it as an auto mile is a great way
+to open the field and open the
+technology to new people but you're
+right it really is two things right one
+is one is as a specific tool so that I
+don't know what that knob is figure it
+out for me and that's the sort of thing
+you want your AI dee' to be able to do
+but the other thing is really like you
+know the the pie in the sky generally I
+sort of step of I like to call this
+inference bootstrap right when you
+compose the problem of making your
+inference algorithm better as an
+inference algorithm and actually apply
+it to itself this is a call out to the
+old food amaura projections for
+compilers right then all the sudden you
+know you're in a completely different
+world where you can step back and you
+know hypothetically achieve great things
+that's not at all about the current
+hardware or the tools that's like a you
+know a vision that some day may come to
+pass if we're all lucky to see it so can
+I just put it out there and say I think
+the problem of getting rid of the knobs
+is a problem to solve I think
+called om Elle's totally the wrong way
+to solve it I mean 25 years ago you
+could buy a piece of Windows software
+from the mass-market that would grow a
+neural net for you dynamically we're not
+using it today it didn't go anywhere why
+not
+because at any point you can figure out
+a few heuristics and rules of thumbs to
+get really good performance without
+having the machine try every damn thing
+like the very idea of the word auto ml
+it shouldn't be Auto it should be
+augment ml how do we get the human and
+the computer working well together so
+like this is why I would much rather use
+loosely smiths learning rate finder that
+tries a few batches finds the learning
+rate that works and then you can look at
+it and pick one rather than you know
+have a hundred TP use try every damn
+thing now we're now starting to work on
+extending that to regularization methods
+so to me it's all about like coming up
+with smart thoughtful well curated
+approaches rather than think let's just
+get the machine to solve everything
+because anybody who's working on the
+let's get the machine to will solve
+everything problem the people who are
+working on the curation will always kick
+their ass you know they're always gonna
+have something that's faster and better
+at any generation of hardware so to me
+that that always wins just because they
+always have doesn't mean they always
+will it doesn't mean they always will
+but I don't see why it would change
+because at any point in time you know
+there are reasons that a particular
+learning rate makes sense or a
+particular amount of regularization
+makes sense I think the architectures
+should be developed largely
+automatically but like you know once for
+Images once your handwriting once more
+language models and then we can all use
+it like it's they're too hard but the
+hyper parameters they should be things
+that we have thoughtful rules about you
+know how to pick them I think that's the
+secret when you see the thing and you're
+like actually that's too hard that's
+when we really need more I don't not
+sure auto ml per se but meta inference
+and meta but let's get rid of the grid
+search and Gaussian process and all that
+stuff I think that's silly
+it sells lots of it sells lots of you
+know computing hours so it's good for
+the cloud vendors yeah great
+so we are out of time even though I want
+to ask a lot more questions it's not
+often you have a panel like this come
+together but because we are out of time
+let's thank the speakers and
+[Applause]
+[Music]
+[Music]
+[Music]

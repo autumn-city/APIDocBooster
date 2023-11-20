@@ -1,0 +1,561 @@
+today we're going to talk about using
+convolutional neural nets and LSTMS and
+deep learning techniques to video and in
+particular we're going to do frame
+prediction so this is taking some set of
+frames from a video and predicting what
+the next frame is going to be these
+techniques are generally applicable this
+is our first video on video I guess and
+we can do some more but I really like
+this application even though it's a
+really really difficult application
+because I sort of imagined that maybe
+one day we could use this to
+automatically generate these videos or
+you know maybe you could imagine putting
+a video camera on me and predicting
+where I might go now we're really far
+from that actually in fact the the
+useful applications that we have today
+are really around compression with this
+video frame prediction so people really
+do use it for that and people are
+thinking about it a lot because drones
+and autonomous vehicles they need a way
+it's actually look at the world through
+a camera and predict where things are
+going now one issue with video and why
+we kind of waited to do this till later
+in the series is that it requires a ton
+of compute and so that's not really fun
+for a beginner and a lot of people
+watching these videos I know that you
+don't have access to tons of compute and
+so we tried to make a problem for today
+that would be fun to do even without
+tons of compute so we actually talked to
+our friends at giphy the company and
+they gave us a whole set of animated
+gifs of cats now actually not all of
+them really are of cats these are just
+videos tagged with cat but that makes it
+even more interesting and the goal is to
+take a few frames of these animated gifs
+and predict the next frame so even that
+that might seem simple and in fact you
+know you could even just use the last
+frame to predict the next frame by just
+guessing it and it works okay but even
+doing this kind of simple task that a
+human could probably do without too much
+work we're gonna see is pretty tough for
+the methods today so let's jump right in
+so let's walk through this notebook on
+how we're actually gonna do video frame
+prediction and as always we make all
+this code publicly available for you to
+use and modify and if you do something
+cool with it please let us know so we
+start off by going through and importing
+a whole bunch of files which we're going
+to need as we
+this model and we've had some hyper
+parameters and we load in a data set of
+cats so here we're going to use a
+generator to feed into our fit function
+so we go over generators in detail in
+our data augmentation video but what
+this is going to do is instead of
+loading all of the data into memory it's
+going to load the data into memory in
+batches so in my gender we're going to
+pass in batch size and then an image
+directory and the image directory is
+gonna tell us whether we're building a
+generator on the test data or the train
+data and the bath size is gonna tell us
+how many images are how many videos to
+load so this is a Python generator style
+and what it does is it sets up input
+images and output images and in this
+case it actually flattens all the input
+images into a 96 by 96 by 15 array where
+96 is the image with 96 is the image
+height and then 15 is actually because
+there's five RGB image frame so there's
+15 frames all in a row and then the
+output images is going to be three
+frames in a sense or one frame of video
+where it's RGB values let me divide the
+input images and output images by 255
+I'm to normalize all the data to be
+between 0 and 1 and then we call this
+yield function and so this yield is
+gonna is going to return input images
+which again is this batch size by 96 by
+96 by 15 data structure and then output
+images which is going to be the single
+frame it wants text but there's going to
+be batch size number them so there's a
+matching number of input images and
+output images we're also going to set
+steps per epoch which is going to be how
+many steps we take before we check our
+validation accuracy and validation
+metrics and then validation steps which
+is how much the validation data we're
+going to look at each time that we want
+to measure there our validation metrics
+we're going to set a callback here to
+log the images and then here I have a
+little test for our generator we don't
+need to necessarily run this but that
+this might give you a better
+understanding of how the generator works
+so in this case we set up a generator to
+have a batch size of two and we're gonna
+use the train directory and then the
+next line here we actually call next on
+the generator so that's going to return
+two videos and two next frames so videos
+as I mentioned is actually five frames
+of video with RGB values for each frame
+and so the shape here is going to be 96
+by 96 by 15 and there's actually two of
+these videos and then two of the next
+frames so we could try calling next
+frame shape you might think about what
+that tapes going to be but if we did it
+it would be 96 by 96 by 3 if we called
+next frame 0 dot shape maybe I'll just
+do that alright so let's take a look at
+the data so we can use the incredibly
+useful I am show commands and we can
+look at kind of each frame of video
+that's our input and then finally we can
+take a look at the next frame which is
+the video that we're trying to predict
+and you can see that in this example at
+least the each frame of video is very
+similar right these are successive
+frames and there's not much motion
+happening and then this is the final
+frame they were trying to predict so
+other videos might look differently and
+I strongly recommend exploring this a
+little bit before trying to do on a real
+prediction now one more detail is that
+we're going to set a function called
+perceptual distance and this is because
+if we just actually looked in the
+default loss function which it would be
+the difference between the red values in
+the pixel and the green values their
+green pixels and the blue pixels it
+actually isn't exactly how the eye works
+so for example if you get all the blue
+pixels right but you mess up the red
+pixels that's gonna look pretty bad to
+the human eye in fact that's gonna look
+worse and if you got the red pixels
+right and didn't get the blue pixels
+right so there's many different ways to
+define perceptual distance but we're
+gonna use a reasonably simple one here
+which is kind of based on how the human
+eye works but also pretty quick to
+calculate so now here we set up our
+first model and so what we're gonna do
+is a 2d convolution on our input so our
+input is 96 by 96 by 15 and we're
+actually just gonna take each of those
+frames and we're gonna do a 2d
+convolution across all 15 frames with 3
+output and we're gonna interpret that
+three from output as red green and blue
+we're gonna do a 3x3 kernel and we're
+gonna set padding equal to same here
+which as mentioned in earlier videos
+means that the output size is gonna be
+the same as the input size with zero
+pads the data and our input shape is
+going to be config height my config
+width which is 96 by 96 by five times
+three which is the five frames of three
+RGB values we're going to compile it and
+set the optimizer to Adam the loss to
+mean squared error and we're gonna set
+this perceptual distance metric as
+something for the model to return to us
+as it trains then we're going to call
+fit generator so fit generator is a lot
+like model that fit except that instead
+of taking in tensors as input it takes
+in generators that return tensors so in
+this case we're gonna pass in my
+generator which is initialized with
+config that batch size and then our
+training directory so it returns the
+training input frames and output frames
+and then we're going to set steps for
+epoch and we're going to divide by four
+here just so that we get more data as
+the model runs we could remove this
+later if we want it to go longer between
+checking the validation accuracy we're
+gonna set some callbacks image callback
+in W and B callback so we can kind of
+see what's going on and then we're going
+to also set the number of validation
+steps two divided by four
+just so the model runs a little bit
+faster we set the validation data to be
+a generator this time initialized with
+the same config that baptized but in
+this case the validation directory so
+that we get the validation images for
+the validation data so let's run this
+and see how it does so you can you can
+follow this link here to see how the
+model is training and you can see that
+the model is getting better but actually
+perceptual distance is pretty high so
+right now the perceptual distance is at
+forty three and I actually have no idea
+what that means if that's really good or
+bad but one thing to look at is the
+actual output so here on the Left we
+have the frame that we're hoping for and
+on the right we have our prediction and
+you can see this kind of obviously wrong
+it's it's kind of close but there's
+clearly still some weird artifacts it's
+more blurry the
+are different so it doesn't seem like
+this model is actually performing very
+well so how do we improve it so one
+thing that we noticed looking at our
+input data is that the final frame is
+actually a pretty good prediction of the
+output frame so let's build a model that
+just takes the last frame and our input
+and predicts it as the next frame so
+here's our Kerris model first we
+actually use a reshape layer to change
+our input which was 96 by 96 by 15 into
+96 by 96 by 5 by 3 so what that does is
+it actually pulls out each RGB value and
+kind of puts it in its own slot so
+instead of all the RGB values mashed
+together we have a little more structure
+and what that lets us do is call this
+permute layer and so with permute in
+this case does is it swaps the last two
+dimensions of our data so the input to
+this is 96 by 96 by 5 by 3 the output is
+going to be 96 by 96 by 3 by 5 so now we
+have five sets of RGB values and we can
+call this layer which is a lambda layer
+which you may not have seen before
+and this is a Karass layer that can do
+basically anything as long as it
+operates on tensors so it actually calls
+our function slice in this case we've
+defined a little function up here and
+what slice does is it slices off the
+last frame of our input video so this
+lambda layer is gonna take those five
+frames and it's going to return the
+final one so the output shape is going
+to be 96 by 96 by 3 so this is kind of a
+funny model we wouldn't normally think
+of this as a deep learning model but
+we've defined it as a Karass model so we
+can actually call model compiled on it
+we can give it the same optimizer we can
+give it the same loss function although
+it's not going to matter because there's
+nothing here really to optimize and we
+can even call fit generator and see how
+it does
+so you can see here that in this graph
+right from the start
+predict last frame does much better than
+our 2d CNN model and we can even go in
+and we can look at its predictions and
+we can see that actually it pricked in
+the last frame in many cases is quite
+good it's really close to the output
+frame just because all these frames are
+in such rapid succession but now that
+doesn't feel that exciting it sort of
+feels like a CNN model should be able to
+learn a little bit more in fact a CNN
+model could predict just the last frame
+with the right kernel so it's kind of
+interesting that it's so hard for a 2d
+CNN model to learn to do this predict
+last frame you would think that it would
+do strictly better and maybe over time
+with enough training it would learn to
+do this but we don't have an infinite
+amount of time so we want to help our
+model so our idea is that we're gonna
+take these two models and we're going to
+combine them so we're gonna make the
+baseline be predicting this last frame
+but then on top of that it's going to be
+able to use a convolution model to
+potentially modify it to get higher
+performance so now in order to combine
+two models we're gonna have to get away
+from the simpler Karis sequential style
+and move to a more functional style and
+actually we introduced the functional
+style in earlier video on one-shot
+learning but here it's gonna be really
+useful to us because we're actually
+going to try to do in parallel
+predicting the last frame and a
+convolutional model and this is gonna
+make our model work significantly better
+so before we add the convolutional model
+in I wanted to show how we would take
+this same predict glass frame model and
+just switch it into a functional style
+so this cell here is actually identical
+to the previous cell we looked at except
+it's in the Charis functional style so
+instead of calling modeled that ad we
+set input to be a tensor and then we
+called the same reshape layer on that
+input tensor then we call this same
+permute layer on the output of the
+reshaped layer and then we call the
+lamda layer on the output of the permute
+layer and then finally we set our model
+in the functional style where we set the
+input and we set the output as tensors
+that we've already defined so this
+should behave identically to the
+previous
+model that we built and it's good to
+just check that it does and you can see
+that seems to the perceptual distance in
+this case you know bounces around a
+little bit because there's differences
+in order of the images they get shown to
+it but it does seem to be performing
+identically to the previous model that
+we built so now we can make something
+more interesting we can actually combine
+these two so now we're going to try to
+take the convolutional Network and we're
+going to try to take the network that
+output in just the last layer and
+combine them into essentially an
+ensemble where both methods can make
+their prediction and we can merge them
+into a single prediction and so we do
+the same reshape and we do the same
+permute and then we do the same lambda
+on the output of the permute layer but
+then we also call a 3d convolution in
+this case on the output of their per
+muted layer so it might make more sense
+to do 3d convolution than the 2d
+convolution because we're dealing with
+image data so the 3d convolution is just
+like a 2d convolution but it's going to
+take in a 3d data structure in this case
+it's going to be the 96 width by 96
+height by the 5 frames and so actually
+all we need here is a single 3d
+convolution because it's going to
+operate on the red plane and the green
+plane and the blue plane and then it's
+going to output a 96 by 96 by 3 by 1
+data structure which we're then going to
+reshape into 96 by 96 by 3 so we can use
+it and then we're going to take that
+convolution output and we're going to
+add it to the last layer output and so
+this does this just sums the last layer
+and the convolution output reshaped so
+potentially if the complex output
+reshape is all zeroes it's just going to
+use the last layer but if there's
+information in that comm output reshape
+then it's going to use that information
+so hopefully this combined model will do
+better than either the models alone so
+one thing that you'll notice when you
+run this model is it's a lot slower than
+just running the deterministic model
+you
+so one thing is clear with our hybrid
+model though is that the validation loss
+is not as good as the training losses so
+clearly there's some overfitting
+happening and you know we talked a lot
+about this in previous videos and we
+talked about using dropout which is more
+common but actually with video data it's
+typical to add something called Gaussian
+noise so instead of dropout which would
+take some of the pixels and just set
+them to zero which you could try in this
+case we're gonna add Gaussian noise
+which is just going to add a random
+number that's Gaussian distributed with
+a standard deviation of in this case
+zero point one and it's going to add
+that to every pixel and so in each batch
+the noise and it adds is going to be
+different and this hopefully is going to
+help our model learn to be more robust
+so this is just the only line that we
+added and now instead of last layer
+being a lambda function on per muted and
+convolution output being a confident
+permeated both of these are called on
+the noise layer
+so you can see that as expected the
+validation perceptual distance is much
+better than the training perceptual
+distance because in this case in the
+validation step we don't actually add
+the Gaussian noise which makes the task
+much harder
+but you can see though that immediately
+adding this Gaussian noise actually
+helps her model the the hybrid model if
+guess you know is the blue line here and
+the model without is the orange line the
+3d convolution though can make sense if
+you have a specific number of video
+frames but typically you have a variable
+number of video frames and in that case
+it probably makes more sense to use in
+LS TM but now a standard Alice Kim
+wouldn't really make sense on a video
+because the videos actually have a
+two-dimensional shape and so there's a
+layer we can use is perfect for this
+situation which is called a
+convolutional lsdm 2d so this is just
+like the LS TMS that we talked about in
+a previous video but at each step
+instead of doing essentially a dense
+layer it's doing a convolution so it's
+perfect for this video case and you can
+actually add it with just one line here
+right so instead of that conv 3d we're
+gonna we're going to use a conv LSTM 2d
+layer and it has all the same options as
+an LST M so if we're going to stack
+these we'd have to call return sequence
+is equal true and if that doesn't make
+sense do you go back to the LS TM video
+which is now super relevant for this
+case it's only good actually in this
+case because we didn't call returns
+sequence is equal true it's only gonna
+return the last output and then we're
+gonna run that through a comm 2d to kind
+of get it in the shape that we want
+which is 96 by 96 by 3 and then we're
+going to actually combine the
+convolutional output and the output of
+just taking the last layer so this is a
+very small change just a two line change
+here but it actually makes our model
+significantly more complicated and
+powerful and it's going to make it take
+significantly longer to Train so let's
+get it started
+yeah we should get a shout this cool
+model look at that got a condom LCM 2d
+followed by calm 2d just and the outputs
+you
+there's a lot of different places that
+we could go with this and one direction
+we can go is essentially borrowing from
+auto-encoders so there's a whole bunch
+of papers out there on video processing
+and they use an architecture where they
+essentially chain together
+conv LST m 2d models at first shrinking
+the output and then expanding the output
+so this kind of combines some of the
+stuff from many different videos we've
+done right so first we are using this
+convalesce TM 2d operation which we
+explained earlier which is kind of like
+an LST em but operates on
+two-dimensional data then we use time
+distributed which is actually something
+we introduced in the seek to seek video
+that we did and we're time distributing
+this case max pooling 2d which is going
+to shrink down the output of these
+convolutional STM layers then we're
+going to do another convalesce TM 2d and
+then we're gonna do another shrinking
+down but then we're gonna actually up
+samples so we're gonna we're gonna
+expand out the output of these LSTM 2ds
+so we're gonna build this pretty
+complicated model which has a whole
+chain of LSTM's at first shrinking at
+down the outputs and then expanding the
+outputs and then finally we take the
+output of this complicated thing and we
+concatenate it with the last layer up
+which is a very simple thing of just
+returning the last layer and then we use
+this 2d convolution with a one by one
+kernel so what does that do
+it actually optionally takes the output
+of just the last layer also optionally
+it takes the output of our much more
+complicated model so this is a good way
+to fit this particular data but you know
+this video is being filmed in 2019 and
+things are gonna change over time so one
+of the things that we did was we
+actually built what we call a benchmark
+it'll put a link to this in the comments
+and we let anyone who wanted to modify
+this code and model this data and you
+can actually look at all the different
+people that have edited this benchmark
+and see how well they did so you can
+sort it by Val perceptual distance and
+you can see that the different models of
+the people that actually were able to
+model this particular cat data the best
+and we can zoom in and we can look at
+the models that they built for example
+this is one of the good ones that we see
+right now and we can zoom in and we can
+see that that this
+is actually using three different
+strategies in parallel and then
+concatenate them and then combining it
+with the calm 2d layer so what are the
+awesome things about this benchmark is
+that you can actually contribute to so I
+would love it if you took this notebook
+modified the structure of the model
+maybe find something that works a little
+bit better than what I have here and
+then submit it back to the benchmark so
+other people can see what you did and
+expand on it today we're going to talk
+about applying convolutional neural
+networks and LS TMS to videos and we're
+gonna use this technique to generate all
+the rest of the videos coming forward
+let's so

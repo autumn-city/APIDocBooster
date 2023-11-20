@@ -1,0 +1,1347 @@
+hi and welcome to the video today we're
+going to go
+through how we can fine tune a q a
+transform model
+so for those of you that don't know q a
+is just
+means question answering and it's one of
+the
+biggest topics in nlp at the moment
+there's a lot of
+models out there where you ask a
+question
+and it will give you an answer
+and one of the biggest things that you
+need to know
+how to do when you are working with
+transformers whether that's q a or
+any of the other transformer based
+solutions
+is how to actually fine tune those so
+that's what we're going to be doing in
+this video we're going to go through how
+we can fine-tune
+a q a transformer model
+in python so i think it's
+really interesting and i think you will
+enjoy it a lot
+so let's just go ahead and we can get
+started
+okay so the first thing we need to do is
+actually
+download our data so we're going to be
+using the
+squad data set which is the stanford
+question answering data set
+which is essentially one of the better
+known q a
+data sets out there that we can use to
+fine-tune our model
+so let's first create a folder
+it's going to use os
+and os make there
+we just call it squad obviously you know
+call this and organize it as you want
+this is what i will be doing now the url
+that we are going to be downloading this
+from
+is this
+okay and there are actually two files
+here that we're going to be downloading
+and but both will be coming from the
+same url
+so because we're making a request to url
+we're going to
+import requests we can also use the wget
+library as well or if you're on linux
+you you can just use wget
+directly in the terminal it's up to you
+but we're going to be using requests
+okay and to request our data
+we're going to be doing this
+so it's just a get request
+use a f string and we have the url that
+we've already defined
+and then the training data that we'll be
+using
+is this file here
+okay requests
+okay and we can see that we've
+successfully pulled that data in there
+okay so like i said before there's
+actually
+two of these files that we want to
+extract
+so what i'm going to do is just put this
+into a for loop
+which will go through both of them
+just copy and paste this across
+rename this file
+and the other file is the same but
+instead of train we have dev
+okay so here we're making our request
+and then the next thing we want to do
+after making our request is
+actually saving this file to our drive
+okay and we want to put that inside this
+squad
+folder here so to do that we
+use open
+and again we're going to use a f string
+here
+and we're going to put it inside the
+squad
+folder here and then here we are just
+going to put our file name
+which is file now
+we're writing this in binary because
+it's json so we put wb
+for our flights here
+f and then within this namespace we are
+going to
+run through the file and download it in
+chunks
+so we do four chunk
+and then we iterate through the response
+like this let's use a chunk size of four
+and then we just want to write 2d file
+like that
+so that will download both those just
+add the
+colon there so that will download both
+files
+we should be able to see them here now
+so in here we have
+data we have essentially a lot of
+different topics so the first one is
+beyonce
+and then in here we will see if we just
+come to here
+we get a context but alongside this
+context we also have
+qas which is question and
+and each one of these contains a
+question
+and answer pair so we have this question
+when did beyonce start becoming popular
+so this answer is actually within this
+context and
+what we want our model to do is extract
+the answer from that context by
+telling us the start and end token of
+the answer within that context so we go
+zero and is in delay 1990s and we have
+answer start
+269 so that means that a
+character 269 we get
+i so if we go through here
+we can find it here okay so this is the
+extract
+and that's what we will be aiming for
+our model to actually extract
+but there will be a start point and also
+the endpoint as well which is not
+included in here but we we will add that
+manually
+quite soon so that's our
+data and then we'll also be testing on
+the
+dev data as well which is
+exactly the same
+okay so move on to the data prep
+so now we have our files here we're
+going to want to
+read them in so we're going to use the
+json library for that
+and like we saw before there's quite a
+complex structure in these
+jsons there's a lot of different layers
+so we need to
+use a few for loops to fill through each
+of these and extract what we want
+which is the context
+questions and answers all corresponding
+to each other so
+in the end we're going to have lists of
+strings which is going to be
+all of these and in the case of the
+answers we will also have the starting
+position so it will be a list
+of dictionaries where one value is a
+text and one value
+is the starting position
+so to do that we're going to define a
+function called ribbed squad
+and we'll define our path here as well
+and the first thing we need to do is
+actually open the
+json file so we do with open
+path and again we are
+using a binary file so we're going to
+have b as a flag
+but instead of writing we are reading so
+use r here so rb
+let me just do json load f here so now
+we have our dictionary within this
+squad dict here so
+maybe whilst we're just building this
+function up it's probably more useful to
+do it here so we can see what we're
+actually doing so let's copy that across
+and then we'll fill this out afterwards
+of course we do actually need to include
+the path
+so let's take this
+and now we can see what's inside here
+maybe we can load just a few
+rather than all of them
+or we can investigate it like this
+okay so we have the version and
+data which we can actually see over here
+version and data so we want to access
+the data
+and within data it is we have a list of
+all these different items
+which is what i was trying to do before
+so
+we go into data
+and just take a few of those
+okay and then we get our different
+sections
+for the first one let's just take
+zero which is beyonce
+and then we have all of these so we're
+going to want to
+loop through each one of these because
+we have
+this one the next and we're gonna keep
+needing to just run through all of these
+so let's do that
+we want to do for group
+in squad dict and remember we need to
+include the
+data here
+let's just see how let's say group title
+so we can see a few of those
+okay i'm gonna go through each one of
+those
+so the second part of that are these
+these paragraphs and within the
+paragraphs we have
+each one of our questions
+so let's first
+go with paragraphs and we'll do
+a chop in here
+sorry it's a list there we go
+and the first thing we need to extract
+is
+the easiest one which is our context
+however that is also
+within a list so now if we access
+context we get this
+so we're essentially going to need to
+jump through or loop through each one of
+these here
+then we're going to need to access the
+paragraphs and loop through each one of
+those
+and then here we're going to access the
+context
+so let's write that so we already have
+one group here so let's just stick with
+that
+and we're going to run through the
+passage
+in the paragraphs
+so already here we're going through the
+for loop on this
+index and now we're going to go through
+a loop on
+this index
+let's keep that
+so that means that we will be able to
+print the
+passage
+context
+and there we go so here we have all of
+our contacts so that's
+one of our three items that we need to
+extract
+okay so that's great let's put that all
+together
+so we're gonna take this put it here
+and then we have our context
+okay that's great but obviously for each
+context we have a few different
+questions and answers
+so we need to get those as well
+now that requires us to go through a
+another for loop
+so let's go this passage we need to go
+into the qas
+key and loop through this list of
+question and answers
+so we have this
+and then we have our list so another
+layer
+in our for loop will be for question
+answer
+in the passage qas
+and then let's take a look at what we
+have there
+okay great so we have plausible answers
+question and answers
+so what we want in here is the question
+and answers so question is our first one
+perfect so we have the questions now
+and then after we have extracted the
+question we can move on to our answers
+as we see here the answers comes as
+another list
+now each one of these lists all just
+have one actual answer in there
+which is completely fine so we can
+access that in in two ways we can either
+loop through or we can access the zero
+value of that
+array either way it doesn't matter
+so all we need to do here
+is loop through those answers or if we
+want
+just to go with qa answers
+zero
+so in most cases this should be
+completely fine
+as we can see here most of these
+question and then they have the
+answers dictionary which is fine
+however some of these are slightly
+different
+so if we scroll right down to the end
+here
+see okay we have this which is talking
+about
+physics
+and then rather than having our answers
+array we have these
+plausible answers which is
+obviously slightly different and this is
+the case for
+a couple of those so
+from what i've seen the states that the
+best way to deal with this
+is simply to have a check if there is
+a plausible answers key within the
+dictionary
+we will include that as the answer
+rather than the
+actual answers dictionary
+so to do that all we need to do
+is check if qa
+keys contains plausible answers if it
+does we use that otherwise we use
+answers
+okay
+then we use this one
+otherwise
+we will use answers
+so let's just add all of that into
+our for loop here so we have our context
+and then we want to loop through the
+question answers
+and this is where we get our question
+but then once we're here we need to do
+something
+slightly different which is less
+plausible
+answers okay and then we use this access
+variable
+in order to define what we're going to
+loop through next
+so here we go four answers
+answer sorry in qa
+access because this will switch to
+employable answers or answers
+and then within this for loop this is
+where we
+can begin adding this context question
+and answer to a list
+of questions context and answers that we
+so need to define up here
+so each one of these is just going to be
+an empty list
+and then all we do copy this across
+and we just append everything that we've
+extracted
+in this loop
+and the context
+question
+and answer
+and that should work
+so now let's take a look at a few
+about context okay and
+see we have this and because we have
+multiple question answers for each
+context
+the context does repeat over and over
+again
+but then we should see something
+slightly different when we go with
+answers and
+questions so that's
+great we have our data in a reusable
+format now
+but we want to do this for both the
+training set and
+the validation set so
+what we're going to do is just going to
+put this into a
+function like we were going to do before
+which is this read squad
+so here we're going to read in our data
+and then we run through it
+and transform it into our three lists
+now we need to do now
+is actually return those three lists
+and answers so now what we can do is
+execute this function
+for both our training and validation
+sets
+so we're gonna train contacts
+questions and answers
+okay so that is one of them and we can
+just copy
+that
+and we just want this to be our
+validation set
+like so
+okay so that's great we now have the
+training context and the
+violation context which we can see
+right here
+so here let's hope that there is a
+slight difference
+in what we see between both
+okay great that's what we would expect
+okay so now we have our data
+almost in the right format we just need
+to
+add the ending position
+so we already have the starting position
+if we take like you know
+train answers okay we have the answer
+start
+but we also need the answer end and
+that's not included within the data so
+what we need to do here is actually
+define a function that will
+go through each one of our answers
+and context and figure out where that
+ending character actually is and of
+course
+we could just say okay it's the length
+of the text
+we add that on to the answer and we have
+our answer end
+however that unfortunately won't work
+because
+some of the answer starts are actually
+incorrect
+and they're usually off by one or two
+characters
+so we actually need to go through and
+one fix that
+and to add our end indices
+so to do that we're just going to define
+a new function
+which is going to be add and
+index and here we
+will have our answers and the context
+and then we're going to just feed these
+in so
+first we do is loop through each answer
+and context pair
+and then we extract something which is
+called the gold text which
+is essentially the answer
+that we are looking for it's called the
+golden text or gold text
+so
+simply our answer and within that the
+text so we are pulling this out here
+so we should already know the starting
+index
+so what we'll do here is
+simply pull that out as well
+and then the and index
+ideally will be the
+start plus the length
+of the gold text
+however that's not always the case
+because like i said before they can be
+off by one or two characters
+so we need to add in some logic just to
+deal with that
+so in our first case let's assume that
+the
+characters are not off so if context
+start to end
+equals the gold text
+this means everything is good and we
+don't need to worry about it so we can
+modify the
+original dictionary and we can do add
+answer end into there
+and we made that equal to our end
+index
+however that's not the case that means
+we have a problem it's one of those
+dodgy question answer pairs and so
+this time what we can do is
+we'll add a else statement so
+we're just going to go through when the
+position is off by one or two characters
+because it is not off by any more than
+that in the
+squad data set
+look through those and we'll say okay if
+the context
+and then in here we need to add the
+saw index and this again so let's just
+copy and paste
+that across easier but this time we're
+checking to see if it is off
+by one or two characters so just do
+minus
+n and it's always minus and doesn't it
+isn't
+shifted it's always shifted to the left
+rather than shifted to the right
+so that's this is fine
+so in this case the answer is off by
+n tokens and so we need to update
+our answer start value and also
+add our answer end value
+so start index minus n and we also have
+the end
+so that's great we can take that and we
+can apply it to
+our train and validation sets
+so all we do here is call the function
+and we'll just do train answers
+and train contacts
+of course we can just copy this
+and do the same for our validation set
+okay perfect so now if we have a quick
+look
+we should be able to see that we have
+a few of these ending points as well
+okay so i think that looks pretty good
+and that means we can move on to
+actually encoding our
+text
+to tokenize or encode our text this is
+where we
+bring in a tokenizer
+so we need to import the transformers
+library for this
+and from transformers we are going to
+import the the silbert so the silver is
+a smaller version of
+bert which is just going to run a bit
+quicker
+but it will take very long time
+and we're going to import the fast
+version of the tokenizer because this
+allows us
+to more easily adjust our
+character and then start locations to
+token
+and and start locations later on
+so first we need to actually initialize
+our tokenizer
+which is super easy all we're doing is
+loading it from
+a pre-trained model
+and then all we do to create our
+encodings is to
+call the tokenizer so we'll do the
+training set first
+which is called tokenizer and in here we
+include our
+training contacts
+and the training questions
+so what this will do
+is actually merge these two strings
+together
+so what we will have is our
+context and then there will be a
+separator token
+followed by the question and this will
+be fed into
+the silver during training
+i just want to add padding there as well
+and then we'll copy this
+and do the same for our validation set
+okay and this will convert our data in
+to
+encoding objects so
+what we can do here is
+print out the different parts that we
+have within
+our encodings so in here so you have the
+input ids so let's access that
+and you'll find in here we have a
+big list of all of our samples so
+check that we have 130k
+and let's just open one of those okay
+and we have
+these token ids and this is what bear
+will be
+reading now if we want to have a look at
+what this
+actually is in sort of human readable
+language
+we can use the tokenizer to just decode
+it for us
+okay and this is what we're feeding in
+so we have a couple of these special
+tokens this just means it's the start of
+sequence
+and in here we have a process form
+of our original context
+now you'll find that the context
+actually ends here
+and like i said before we have the
+separator token
+and then after that we have our actual
+question
+and this is what is being fed into bert
+but obviously
+the token id version so it's just good
+to be aware of what is actually
+being fed in and what we're actually
+using here but this is the format
+is expecting and then after that we have
+another separate token followed by all
+of our padding tokens
+because bert is going to be expecting
+512 tokens to be fed in
+for every one sample so we just need to
+fill that space essentially
+so that's all that is doing
+so let's remove those and we
+can continue so the next thing we need
+to add
+to our encodings
+is the start and end positions because
+at the moment we just
+don't have them in there so
+to do that we need to add a
+additional bit of logic we use this
+character to token method
+so if we just take out one of these
+let's take the first one
+okay we have this
+and what we can do is actually modify
+this to use the character token method
+we remove the input ids because we just
+need to pass it the
+index of whichever encoding we are
+wanting to
+modify or get the start and end position
+of
+and in here all we're doing is
+converting from the
+character that we have found a position
+for
+to the token that we want to find a
+position for
+and what we need to add is train answers
+we have our position again because the
+the
+answers and encodings the context in
+question it needs to match up to the
+answer
+of course that we're asking about
+and we do answers start
+so here we're just feeding in the
+position of the
+character and this is answer
+okay so if we name position the
+character and we're expecting to return
+the position of the
+token which is position 64.
+so all we need to do now is do this for
+both of those so for the start position
+and end position
+see here we should get a different value
+okay but this is one limitations of this
+sometimes this is going to return
+nothing as you can see it's not
+returning anything here
+and that is because sometimes it is
+actually
+returning the space and
+when it looks at the space but and the
+tokenizers see that
+and they say okay that's nothing we're
+not concerned about spaces and it
+returns this
+non value that you can see here
+so this is something that we need to
+consider and build in some added logic
+for
+so to do that again we're going to use a
+function to contain all of this
+and call it add token positions
+here we'll have our encodings and our
+answers
+and then we just modify this code so we
+have the
+codings
+we have the answers
+and because we're collecting all of the
+token positions we also need to
+initialize
+a list to containers so
+we'll do start positions
+empty lists and end positions
+and now we just want to loop through
+every single answer
+and encoding that we have
+like so and here we have our
+start position so we need to append that
+to our start positions
+list
+now we just do the same for our mp
+positions
+which is here
+now here we can deal with
+this problem that we had so if we find
+that the
+m positions the most recent one so the
+negative one index is non
+that means it wasn't found and it means
+there is a space
+so what we do is we change it
+to instead use the minus one version
+and all this needs to do is update the m
+positions here
+okay that's great but in some cases this
+also happens
+with the start position but that is for
+a different reason
+the reason it will occasionally happen
+with start position
+is when the passage of data that we're
+adding in here so
+you saw before we had the context the
+separator token
+and then the question sometimes the
+context passage is truncated
+in order to fit in the question so
+some of it will be cut off and in that
+case
+we do have a bit of a problem but we
+still need to just
+allow our code to run without any
+problems
+so what we do is we
+just modify the start positions again
+just like we did with the end positions
+obviously only if it's non and we just
+set it
+to be equal to the maximum length that
+has been defined
+by the tokenizer
+and it's as simple as that now
+the only final thing we need to do which
+is because we're
+using it the encodings is actually
+update
+those encodings to include this data
+because as of yet we haven't
+added that back in
+so to do that we can use this quite
+handy update method
+and just add in our data as a dictionary
+so you have start positions
+start positions
+then we also have our end positions
+and then again we just need to apply
+this to our training and validation sets
+and let's just modify that
+let's add the train encodings here and
+train answers
+we do that again the validation set
+so now let's take a look at our
+encodings
+and here we can see great now we have
+those start positions and m positions
+i can even so quick look
+what they look like
+uh what we've done is actually not
+included
+the index here so we're just taking it
+for
+the very first item every single time so
+let's just
+update that
+so obviously that won't get us very far
+and just update that as well
+and now this should look a little bit
+better so it's lucky we checked
+okay so our data
+at the moment is in the right format we
+just need to
+use it to create a pi torch dataset
+object
+so to do that obviously we need to
+import pi torch
+and we define that data set
+using a class i'm just pass in
+the torch
+utils data data set
+we need to initialize that
+like so
+and this is coming from
+the face transformers documentation
+don't take credit for this
+and we essentially need to do this so
+that we can load in our data using the
+pi torch data loader later on which
+makes
+things incredibly easy
+and then we just have one more function
+here
+or method
+okay and return
+and also this as well and that should be
+okay
+so we apply this to
+our datasets to create dataset objects
+we have our encodings and then the same
+again
+for the validation set
+okay so that is our data
+almost fully prepared all we do now is
+load it into a
+data loader object but this is
+everything
+on the data side done which is great
+because
+i know this it does take some time and i
+know it's not the
+most interesting part of it but it's
+just something that we need to do
+and need to understand what we're doing
+as well
+so now we get to the
+more interesting bit so we just added
+the
+imports in here
+so we need our data loader
+we're going to import the adam optimizer
+with weighted decay which is pretty
+commonly used for
+transforming models when you are
+fine-tuning
+because transform models are generally
+very large
+models and they can overfit very easily
+so this atom optizer with weighted decay
+essentially just reduces the chances of
+that happening
+which is supposed to be very useful and
+and quite important so
+obviously we're going to use that
+and then final bit is
+tqdm
+so
+tqdm is a progress bar that we are going
+to be using so that we can actually see
+the progress of our training otherwise
+we're just going to
+sat there for probably quite a long time
+not knowing what is actually
+happening and trust me it won't take
+long before you start questioning
+whether anything is happening because it
+takes a long time to train these models
+so they are our imports and
+i'm being stupid again here so it's from
+did that twice okay so that's all good
+so now
+we just need to do a few little bits for
+the setup
+so we need to tell pi torch whether
+we're using
+cpu or gpu in my case it will be
+a gpu if you're using cpu this is going
+to take you a very long time to train
+and it's still going to take you a long
+time on gpu so
+just be aware of that
+but what we're going to do here is say
+device
+scuda if cuda is available
+otherwise we are going to use the
+cpu and good luck if
+that is what you're doing
+so once we've defined the
+device we want to move our model
+over to it so we just
+dot model.2 device so this dot 2 method
+is
+essentially a way of transferring data
+between
+different hardware components so your
+cpu or gpu
+it's quite useful and then we want to
+activate our model for training
+so there's two things we have here so we
+have we have
+dot train and eval so
+when we're in train mode there's a lot
+of different layers and different parts
+of your model
+that will behave differently depending
+on whether you are
+using the model for training or you're
+using it for inference which is
+predictions so we just need to make sure
+our model is in the
+right mode for whatever we're doing and
+later on we'll switch it to eval
+to make some predictions so
+that's almost everything so we just need
+to initialize the optimizer and
+here we're using the weighted decay
+atom optimizer
+we need to pass in our model parameters
+and also give it a learning rate
+and we're going to use this
+value here all these are the recommended
+parameters for what we are doing here
+so the one thing that i have somehow
+missed
+is defining the actually initializing
+the model so let's just
+add that in and all we're doing here is
+loading again a pre-trained one so
+like we did before when we were loading
+the transformers
+tokenizer
+this time it's for question
+answering so
+this distilled bit of question answering
+is uh the silver model
+with a question and answering head uh
+added on to the end of it
+so essentially with transformers you
+have all these different heads that you
+add on
+and they they will do different things
+depending on what
+head it has on there
+so let's initialize that
+from pre-trained
+we're using the same one we use up here
+which is distilled base encased
+and sometimes you will need to download
+that
+uh fortunately i don't need to as i've
+already done that but this can also take
+a little bit of time
+uh not too long though and you get a
+nice progress bar hopefully as well
+okay so now that is all set up
+we can initialize our data loader so
+all we're doing here is using the
+pi torch data loader object
+and we just pass in our training data
+set
+the batch size so how many we want to
+train on at once in parallel before
+updating the model weights
+which will be 16 and we also would like
+to shuffle the data
+because we don't want to train the model
+on a single batch and it just learned
+about beyonce and then the next one it's
+learning about chopping
+and it will keep switching between those
+but never within a single batch having a
+good mix of different things to learn
+about
+so it is data sets
+seems a bit of a weird name to me so i'm
+just going to change it
+and they also can't spell
+there we go and that is
+everything we can actually begin our
+training loop
+so we're gonna go for three parts
+and what we want to start with here is a
+loop object so we do this
+mainly because we're using tqdm as a
+progress bar otherwise we wouldn't need
+to do this i've been
+no point in doing it and all this is
+doing it's kind of like pre-initializing
+our
+loop that we are going to go through so
+we're going to obviously loop through
+every batch within the train loader so
+we
+just add that in here
+and then there's this other parameter
+which i don't know if we
+so let's leave it but essentially you
+can add a leave equals true
+in order to leave your progress bar in
+the same place
+with every epoch whereas at the moment
+with every parkway we'll do is
+create a new progress bar we are going
+to
+create a new progress bar but if you
+don't do that you want it to just stay
+in the same place you
+add leave equals true
+into this function here
+so after that we need to go through each
+batch
+within our loop
+and first thing that we need to do is
+set all of our calculated gradients to
+zero
+so with every iteration that we go
+through here
+every batch at the end of it we are
+going to calculate gradients which
+tells the model in which direction to
+change the weight within the model
+and obviously when we go into the next
+iteration we don't want those
+gradients to still be there so all we're
+doing here is
+reinitializing those gradients at the
+start of every loop
+so we have a fresh set of gradients to
+work with every time
+and here we just want to pull in our
+data
+so this is everything that is relevant
+that we're going to be feeding
+into the training process
+so everything within our batch and then
+in here we have
+all of our different items so we can
+actually see
+go here
+we want to add in all of these
+and we also want to move them across to
+the
+gpu in my case or whatever device you
+are
+working on
+and we do that for the attention mass
+start positions and end positions
+so these start and end positions are
+essentially the
+labels they're the targets that we want
+our model to optimize for
+and the input ids and attention mask are
+the
+inputs
+so now we have those defined we just
+need to feed them into our model for
+training
+and we will output the results of that
+training batch
+to the outputs variable
+model
+ids need the attention mask
+and we also want our start positions and
+then positions
+now from our training batch
+we want to extract the loss
+and then we want to calculate loss for
+every
+parameter
+and this is for our gradient update
+and then we use the step method here to
+actually update those gradients
+and then this final little bit here is
+purely
+for us to see this is our progress bar
+so record a loop we set the description
+which is going to be our epoch
+and then it would probably be quite
+useful to also see the loss in there as
+well
+we will set that as a post fixed so it
+will appear after
+the progress bar
+okay and that should be everything
+okay so that looks pretty good we have
+our model training
+and as i said this will take a little
+bit of time
+so i will let that run
+okay so we have this non-type error here
+and this is because within our m
+positions
+we will normally expect integers but
+we're also getting some non-values
+because
+the code that we used earlier where
+we're checking if mposition is
+non essentially wasn't good enough
+so as a fix for that we'll just go back
+and we'll add like a
+a while loop which will keep checking if
+it's non
+and every time it isn't on reduce the
+value
+that we are seeing by one
+so go back up here and this is where the
+problem is coming from
+so we're just going to change this
+to be a while loop
+and just initialize a essentially a
+counter here
+and we'll use this as our
+go back value and every time
+the m position is still none we'll just
+add one
+to go back
+and this should work
+just need to remember to rerun
+anything we need to rerun yeah
+okay and that looks like it solved the
+issue so great we can just
+leave that training for a little while
+and and i will see you when it's done
+okay so the model's finished and
+we'll go ahead and just save it
+so obviously we'll need to do that we're
+never actually doing this
+on any other projects
+so i'm just going to call it the silbert
+custom
+and it's super easy to say if we just do
+save pre-trained
+and the model path
+now as well as this we might also want
+to save the tokenizer so we have
+everything in one place
+so to do that we also just use tokenizer
+and
+save pre-trained again
+okay so if we go back into our folder
+here see
+models and we have this silver custom
+and then in here we have all the files
+we need to
+build our pi torch model it's a little
+bit different if we're using tensorflow
+but the actual saving process is
+practically the same
+so now we finish training we
+want to switch it out of the training
+mode so we use a model eval
+and we just get all this information
+about our model as well we don't
+actually need any of that
+and just like before we want to create a
+data loader so for that
+i'm just gonna call it vowel loader and
+it's exactly the same code as before
+in fact it's probably better if we just
+copy and paste
+some of this
+at least loop
+so what we're going to do here is take
+the same loop and apply it as a
+validation run with our validation data
+so let's paste that there we'll
+initialize this data loader
+this time of course with the validation
+set
+and stick with the same batch size
+now this time we do want to
+keep a log of accuracy so we will keep
+that there
+and we also don't need to run multiple
+epochs because we're not training this
+time we're just
+running through all the batches within
+our
+loop our validation data so this is now
+violation loader and we just loop
+through each of those
+batches so we don't need to do anything
+with the gradients here
+and because we're not doing anything
+with gradients we
+actually add this in
+to stop pie torch from calculating any
+gradients
+because this will obviously save us a
+bit of time when we're processing all
+this
+and we put those in there the outputs we
+do so want this but of course we don't
+need to be putting in the
+start and end positions so we can remove
+those
+and this time we want to pull out the
+start prediction and end prediction so
+if we have a look at what our outputs
+look like before
+you see we have this model output and
+within here where a few different
+tensors
+which each have a accessible name
+so the ones that we care about are
+start budgets
+and that will give us the logits
+for our start session
+which is essentially like a set of
+predictions
+where the highest value within that
+vector
+represents the token id
+so we can do that for both
+you'll see we get these tenses
+now we only want the
+largest value in each one of these
+vectors here because that will give us
+the input id so to get that
+we use the argmax function
+and if we just use it by itself that
+will give us the maximum
+index within the whole thing
+but we don't want that we want one for
+every single vector or every row
+and to do that we just set dim equal to
+one
+and there you go we get a full batch of
+outputs
+so these are our starting positions
+and then we also want to do the same for
+our ending positions
+so we just change start to end
+so it's pretty easy
+now obviously we want to be doing this
+within our
+loop because this is only doing one
+batch
+and we need to do this for every single
+batch
+so we're just going to assign them to a
+variable
+and there we have our predictions
+and all we need to do now is check for
+an exact match
+so what i mean by exact match is we want
+to see
+whether the start positions here which
+we can
+rename to the true values
+whether these are equal to the predicted
+values down here
+and to calculate that so let me
+just run this so we have one batch
+that shouldn't take too long to process
+and we can just write the code out
+so to check this we just use the
+double equal syntax here
+and this will just check for matches
+between two arrays
+so we have the start predictions and
+the start true values so we'll check for
+those
+okay so if we just have a look at what
+we have here we get this
+array of true or faults so
+these ones don't look particularly good
+but that's fine we just want to
+calculate the accuracy here
+so take the sum and we also want to
+divide that by the length
+okay so that will give us our accuracy
+within the template and we'll just take
+it out using the item
+method but we also just need to include
+brackets around this because at the
+moment we're trying to take item of the
+length value okay and then that gives us
+our
+very poor accuracy on this final batch
+so we can
+take that and within here we want to
+append that to our accuracy list
+and then we also want to do that for the
+end prediction as well
+and we'll just let that run through and
+then we can calculate our accuracy
+from the end of that and then we can
+have a quick look at our accuracy here
+and we can see fortunately it's
+not as bad as it first seemed
+so we're getting a lot of 93 100
+81 that's generally
+pretty good
+so of course if we want to get the
+overall accuracy all we do
+is sum that and divide by the length
+and we get 63.6 percent
+for an exact match accuracy so what i
+mean by exact match
+is say if we take a look at a few of
+these that
+do not match so
+we have a 75 match on the fourth batch
+although that won't be particularly
+useful because
+we can't see that battery right now so
+let's just take the last batch because
+we have
+these values here now if we look at what
+start true is
+we get these values then if we look at
+start
+pred we get this
+so none of these match
+but a couple of them do get pretty close
+so
+these final four all of these count as
+zero percent on the exact match but
+in reality if you look at what we
+predicted ever
+for every single one of them is
+predicting just one token before so it's
+getting quite close
+but it's not an exact match so it scores
+zero
+so when you consider that with our
+63.6 accuracy here
+that means that this model is actually
+probably doing pretty well it's not
+perfect of course but it's doing pretty
+well
+so overall that's i mean that's
+everything for this video
+we've gone all the way through this
+if you do want the code for this i'm
+going to make sure i keep a
+link to it in the description so check
+that out if you just want to sort copy
+this across
+but for now that's everything so thank
+you very much for watching
+and i will see you again soon bye

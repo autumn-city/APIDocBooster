@@ -1,0 +1,658 @@
+Hey everybody! Today, we will try to implement a 
+fun paper called "Learning mathematical properties  
+of integers". You can see the paper on the screen. 
+Unfortunately, the source code was not published  
+and therefore all the code in this video is 
+going to be my best guess on what the actual  
+implementation could look like. As always 
+i'm in no way associated with the authors  
+and all credit goes to them and I would definitely 
+encourage you to read the paper. By the way this  
+video has multiple sections so feel free to jump 
+to whatever section you like and if you don't care  
+about the coding part feel free to skip all the 
+way to the end where I show the results and nice  
+visualizations. Anyway, the idea of the paper is 
+really simple! We want to take integers and embed  
+them. Embedding is nothing else than assigning 
+a vector of numbers to each of the integers.  
+So let's say we fix the dimensionality to 5 and 
+this is how the final embeddings could look like.
+Ideally, we would want these vectors to 
+encode all relevant properties of integers.  
+For example their actual value, 
+whether they are divisible by 2,  
+whether they are prime numbers, the number of 
+digits and so on and so on. Now that we understand  
+the goal how do we actually create or learn these 
+embeddings? There are two ways. First of all,  
+we can just take a pre-trained language model 
+that already computed these embeddings for us.  
+Language models embed tokens rather than integers, 
+however, an integer is a special case of a token  
+if we see it as a string. In this video, we are 
+going to look at the BERT embeddings and the GloVe  
+embeddings. Anyway, the second approach 
+is to pick an embedding technique yourself  
+and apply it on a custom data set. We are going 
+to download a bunch of sequences of integers that  
+have patterns in them. What do I mean by this? 
+Let's take the Fibonacci sequence for example.
+As you probably know the pattern here is that we 
+can simply obtain the next integer by summing up  
+the previous two integers. So in order to be able 
+to understand and to predict what the sequence  
+is going to look like you need to understand the 
+concept of addition. What technique are we going  
+to use to get embeddings from our data? There 
+are multiple options. In the paper, the authors  
+benchmark the LSTM network. Latent Semantic 
+Analysis embeddings and FastText. In this video,  
+we are going to focus purely on the LSTM approach. 
+The idea is to process one integer at a time  
+always trying to predict the next one while using 
+the knowledge of what the previous integers were.
+And we're hoping that a network that is trying 
+to solve this task will be implicitly forced  
+to learn meaningful integer embeddings. 
+When it comes to downloading the sequences  
+we are going to be using this website called 
+the Online encyclopedia of integer sequences.  
+It is pretty impressive because it 
+stores more than 300 000 sequences.
+You can use the search functionality to match your 
+sequence to existing sequences in the database.
+And as you can see each sequence 
+has a unique identifier. Anyway,  
+our goal is to actually download every sequence 
+there is and create a training set out of it.  
+To do this download I actually had to look 
+around quite a bit for different solutions  
+and luckily I discovered that there is an 
+API that given a sequence identifier returns  
+a JSON file with all the necessary information 
+including the actual sequence of numbers.
+I wrote a Python script that does 
+this download. Just note that it  
+might take a bit of patience 
+since they have limits on the  
+API usage. Let me show you how the raw 
+data set looks like after the download.
+So I have it lying locally in this pickle file.
+And as you can see there are 340 000 
+sequences. Let's check out some of them.  
+As you can see it's just a list 
+of integers. Another one...
+However, one important thing that we 
+will need to deal with is the fact that  
+these sequences have different lengths in general.
+Let us quickly investigate what 
+is the length distribution.
+The mean length seems to be around 43 integers.  
+However, the standard deviation is quite 
+high: 28. So it can really vary. And the  
+second thing we would like to look into are 
+the actual integers inside of these sequences.
+So here we just concatenate all the 
+sequences into a single huge sequence  
+and as you can see there are 
+more than 14 million integers.
+Here we counted up the number of occurrences.
+And here we can see the 20 most frequent 
+integers and the result is actually not  
+that surprising. However, we can also 
+inspect the least frequent integers.  
+There are these huge integers that 
+only showed up once in the data set.  
+There's around 1.7 million different integers. 
+Let us now write a couple of utility functions.
+First of all, we want to write a utility 
+dataset class that is going to take our  
+raw data set and adjust it so that 
+we can directly use it in training.
+So the first parameter is nothing else than the 
+raw sequences that we just looked through. The  
+second parameter is something we choose and it 
+is going to be the sequence length. There are  
+two possibilities. If the original sequence is 
+longer than this then we will simply cut it off  
+after this specified length. And on the other 
+hand if the original sequence is shorter than  
+this we will just pad it so that it has this 
+sequence length. Finally, there is an argument  
+max_value which is the maximum integer that we 
+allow in the sequence and it is non-inclusive.  
+For example, if we set it to 3 then we only allow 
+sequences that are composed of the numbers 0,  
+1 and 2. And when it comes to the internal 
+attributes we will actually create a numpy array  
+that is going to have a fixed shape. It is 
+going to be two-dimensional and the number  
+of rows is going to be equal to the number of 
+sequences and the number of columns is going to  
+be equal to the sequence length. And the reason 
+why we want to actually have this constant size  
+array is to be able to just stream its rows 
+as samples for our deep learning training.  
+And the fact that all of them will have the 
+same length will allow us to do batching.
+The goal here is to kick out those sentences 
+that had some elements that were below  
+zero or above our max_value that 
+we specified in the constructor.
+And here we just initialize our normalized 
+sequences which is a numpy array and we make  
+sure that the dtype is just int64. And the 
+reason why we populate all the elements with  
+max_value at first is because it will serve as a 
+unique identifier saying that a given element of  
+a given sequence is out of range. Later we 
+will just make sure that all elements that  
+are equal to max_value are not going to be 
+taken into account for the loss function  
+and also we are not going to 
+compute any embedding for them.
+And here sequence by sequence we 
+populate the normalized sequences array.
+Here we just defined the length of the data set.
+And finally, we defined what 
+it means to get a sample  
+and it is nothing else than querying our 
+normalized sequences array at a selected  
+row. Let us now just play around with this 
+custom data set that we just implemented.
+So first of all, let us again load the raw 
+data which is just a list of lists of integers.
+And now let us just investigate how 
+big our custom data set is going to be  
+depending on the two parameters 
+max_value and sequence_len.
+So here we set the max_value equal to 100 
+which means that all elements of the sequence  
+need to be in the range 0 and 100 and we only 
+actually extract the first 20 elements of the  
+sequence. And as it turns out there are around 
+97 000 sequences that satisfy this condition.  
+However, now we are actually going to increase 
+the maximum value which means that there should  
+be more sequences that actually satisfy this 
+requirement and it is indeed the case. Now,  
+we are requiring the first 100 elements to be in 
+the range 0 and 2 000 and actually it is lower  
+than the previous data set which makes 
+sense because it is more restrictive.  
+And here we actually assign the data set to a 
+variable and let us see how the samples look like.
+So as you can see this sequence has 100 elements  
+and the last six elements were padded 
+with the max_value which was 2000.
+The second sequence has again 100 elements 
+and it is going to be the case for all of  
+them because that's how we designed 
+it and here no padding took place.  
+The original sequence had more than 
+100 elements and we just cut it off.
+All the sequences have elements 
+that are large or equal to 0  
+and at the same time they are smaller or equal to 
+2 000. To summarize we use padding and truncation  
+to make sure that all sequences are of the same 
+length and we made sure that all the elements are  
+in a fixed range where the maximum value in this 
+case 2000 will basically tell us that we should  
+not count this element towards the loss function 
+or that we shouldn't create an embedding for it.  
+So we're back in the utils.py script and we 
+would like to implement our neural network.
+The first parameter here is the max_value and 
+we've already seen this parameter with the  
+CustomDataset. It basically dictates how many 
+embeddings we are going to create. Embedding  
+dimensionality just determines the dimensionality 
+of the embeddings not surprisingly. Then we will  
+have an LSTM recurrent network and it has two 
+parameters which is the number of layers and  
+hidden dimensionality. And we will take the hidden 
+states of the LSTM network and we will actually  
+run them through a linear layer and this parameter 
+determines its dimensionality. And internally  
+we'll have a couple of modules. First of all, we 
+will have the embedding module that will actually  
+store per integer embeddings. Then we will have an 
+LSTM network that is going to take these integer  
+embeddings and spit out hidden states. And then we 
+will have a linear layer that is going to take a  
+hidden state and transform it and this transformed 
+hidden state then goes through the classifier and  
+the output of this is the logits 
+over all possible integers.
+First of all, w instantiate the embedding module 
+and we provide the corresponding parameters.  
+What's interesting here is that the number 
+of embeddings is going to be max_value  
+plus one, however, as you can see we 
+set the max value to be the padding  
+index which means that we are not going to 
+learn this embedding and it is going to stay  
+constant zeros throughout the entire training.
+Here we instantiate the LSTM network. 
+Size of the input is nothing else than  
+the embedded dimensionality.
+Finally, we instantiate two linear layers. 
+The first one is just going to transform the  
+hidden states and the second one is 
+going to take these transform hidden  
+states and then output the logits 
+across all the possible integers.
+The forward method is going to take a batch of 
+sequences and what we return is a tensor of logits  
+that holds the probability distribution over 
+all different possible integers of what the next  
+element is going to be. And we would actually need 
+to normalize it to get a probability distribution  
+and this is done with softmax. However, this is 
+going to be done inside of the loss function.
+We run the input tensor through the 
+embedding module and what we get is  
+for each element in our sequence 
+it's corresponding embedding.
+And then we take this embedding and 
+run it through the LSTM network.  
+One way to interpret this is that for each 
+element in the sequence we have a hidden state  
+and this hidden state should encode all 
+the integers that we have come across  
+up until now and it should help us to 
+predict what the next integer is going to be.
+We take these hidden inputs and we actually apply  
+the same linear mapping to 
+each and every one of them.
+And finally we take the dense 
+tensor and we run it through  
+another linear layer but this time 
+the output features is equal to  
+all the integers that we are considering and 
+it is going to be the logits. Let's try it out.
+I define the batch size to be 1, the 
+sequence length 10 and the max value 20.
+We instantiate the network and now 
+we want to create some random input.
+And let's run the forward pass.
+So first of all, we see that it has the 
+shape (batch_size, sequence_len, max_value).
+And what you can see here is the network's 
+prediction of what the first integer could be.  
+This is the prediction on the second integer.
+The third one and so on and so on. 
+Of course the network is not trained.  
+Everything was just randomly initialized so we're 
+getting more or less the uniform distributions but  
+we're hoping that after training 
+this will actually be meaningful.  
+Now we just need to write 
+couple of evaluation utilities.
+So the goal of this function is to 
+take integer embeddings that would be  
+encoded in this X feature array and given a target 
+array let's say representing divisibility by 2 or  
+primality you want to evaluate how good 
+a simple logistic regression classifier  
+is at predicting the target label.
+We create the stratified k-fold. The reason 
+why we want to stratify is because some of  
+the labels will be very imbalanced. For 
+example, if we inspect divisibility by 10  
+then it's only like 10 percent of 
+the data set that has this label.
+Here we create a scikit-learn classifier 
+that is nothing else than a pipeline  
+where we first scale the features and 
+then we run the logistic regression.
+Here we use the cross_validate function from 
+scikit-learn that is going to run cross-validation  
+and it is going to return the accuracy over 
+all folds both training and validation.
+Finally, we compute the average accuracies just 
+by computing the mean over all folds. The last  
+function we want to write is a function 
+that will just create the target for us.
+We just take the numbers that the user 
+provided as input and we create a bunch  
+of binary classification targets. So before we 
+start training the LSTM network let us first  
+try to download some existing embeddings 
+that are out there for free. First ones are  
+the GloVe embeddings. I'll give you a link 
+in the description where you can find the  
+embeddings. I already downloaded them and let 
+me just show you the first line of this file.
+These embeddings have the dimensionality of 
+300 and the way this file is structured is  
+that all the values are space separated 
+and the first entry is always the actual  
+token and the remaining entries are just the 
+floats. For example here it's the token "the"  
+and all the numbers after it represent the 300 
+dimensional embedding. So let us just quickly  
+write a script that parses this data set and 
+also we want to visualize it with tensorboard.
+So we define a command line interface and we parse 
+all the arguments. We create a TensorBoard writer.
+And now the goal is to parse the text file. First 
+of all, we will create this to_find set that is  
+going to consist of all integers 0, 1, 2 all the 
+way up to the max_value_eval and we actually need  
+to cast it to string because when we read the text 
+file everything will be seen as a string. Here we  
+just pre-populate an empty array (numpy array) 
+that is going to store the final embeddings.
+We open our text file and we go through it line 
+by line and as shown before the first element  
+on the line is going to be the token itself 
+and the rest is going to be a vector of floats.
+We just cast it to integer and then we populate 
+the corresponding row of the embeddings array.  
+And once we iterate through 
+all the rows of our text file  
+we just want to make sure that we found 
+all the integers that we were looking for.
+We just create all the consecutive integers 
+from 0 all the way up to maximum value of  
+all and then we use our helper function 
+to create classification targets.
+We just prepare metadata for TensorBoard.
+For each target we train a classifier and 
+compute the train and test or validation metrics.
+And we track all these metrics with TensorBoard.
+Finally, we also add our 
+embeddings plus all the metadata.
+And that's it. Let us now write 
+a script that is going to get  
+the BERT embeddings and track it with TensorBoard.
+So the idea here is that we 
+are going to fix a specific  
+model in our case it is the `bert-base-uncased`.
+We instantiate a summary writer for 
+TensorBoard tracking and then we also  
+load a tokenizer and a model 
+from a pre-trained checkpoint.
+Similarly to what we did with GloVe, we 
+take the integers of interest and we cast  
+them to strings because the vocabulary of 
+the language model consists of strings.
+And we take each of our integers and we try to 
+understand what position in the vocabulary it has.
+Unfortunately, it can totally happen that some of 
+the integers are not in the original vocabulary  
+and they are implicitly 
+mapped to the unknown token  
+and we're only going to run the evaluation 
+on those integers that are in the vocabulary.
+And this numbers array is only going to store 
+the integers that are in the vocabulary.
+So this is basically how we access the embeddings  
+module and then you can just call 
+it to actually get the embeddings.
+We create a couple of different 
+binary classification tasks  
+and then we use logistic regression 
+to solve all of them and then we track  
+the accuracies with TensorBoard and 
+also we visualize the embeddings.
+Yeah that's it. And finally we would 
+like to implement a training loop for  
+our custom LSTM embeddings.
+So we defined the CLI and I guess we've 
+seen all of the parameters before.
+Here we instantiate the device and we also 
+hard code how often we're going to evaluate.
+We instantiate the TensorBoard writer and 
+we dump all the CLI parameters as text.
+Here we load the raw sequences 
+and as you saw before  
+they are just a raw download of the encyclopedia.
+Here we instantiate our custom data set providing 
+both the maximum value and the sequence length.
+Here we create the histogram 
+of the integers in our data set  
+to be able to better understand 
+what the distribution is.
+And here we create a data loader.
+We instantiate our network we make sure 
+all its parameters are on the right device
+Here we instantiate the cross entropy loss 
+and an important point here is that we set  
+ignore_index equal to the maximum value.
+Here we instantiate an optimizer.
+The previous lines are exactly the same thing 
+we did for the BERT and GloVe embeddings.  
+We're just preparing the binary classification 
+problems and embedding metadata for TensorBoard.  
+What's going to be different is that we are 
+actually going to run the classification  
+multiple times during training whenever 
+we evaluate whereas for the GloVe and BERT  
+embeddings we just ran it once because 
+we already took pre-trained models.
+We make sure that the batch of integer sequences  
+is on the right device and we run the 
+forward pass and as output we get the logits.
+And then we just permute them in a way that we 
+can use them directly in the cross entropy loss  
+function and also note that we are discarding 
+the last element of the sequence because we  
+don't necessarily have the ground truth for them 
+because we don't know what is going to happen  
+in the sequence length plus one step 
+because the sequence stops there.
+And when it comes to the target for the loss we 
+always cut off the first element of the sequence  
+because we don't have any predictions for it.
+Finally, we actually compute the 
+cross entropy loss and if I'm  
+not mistaken it should be computed for 
+each element in the sequence separately  
+and then averaged and that's why 
+we just end up with a scalar.
+This is torch boilerplate.
+And here we track the loss after each step 
+with TensorBoard and the only thing left to  
+do now is to write evaluation logic that 
+is going to be run every couple of steps.
+So here we extract our embeddings, however, we 
+only take the first max_value of all integers  
+because we don't want to evaluate on everything. 
+So the reason why we want to evaluate only of on  
+let's say the first 500 integers is because as 
+you saw the data set has a huge sparsity when  
+it comes to higher integers and we just want to 
+make sure that we run the binary classifications  
+on the subset of the embeddings that are 
+probably pretty good because the numbers  
+from one all the way to let's say 500 are integers 
+that showed up in the vast majority of sequences.
+And here we track the embeddings with TensorBoard.
+Again, we iterate through all the different binary 
+classification targets like divisibility by 2  
+and then we fit a logistic regression model. 
+Finally, we track the accuracy with TensorBoard  
+and also we save the current model each 
+time overwriting any previous checkpoints.
+And that is it! That's our training script. 
+Now let me show you the script that we're  
+going to run. First of all, we're going 
+to parse and track the GloVe embeddings.  
+Then we're going to parse and track the BERT 
+embeddings and finally we're going to launch the  
+training script for our LSTM network. Here you can 
+see all the important hyper parameters. Note that  
+the max_value of all is always 500 which means 
+we will be evaluating and embedding the first 500  
+elements which means that we will be evaluating 
+on the first 500 numbers. Unfortunately, BIRD  
+actually does not have some of these integers and 
+in the vocabulary but whatever. l'm just going to  
+launch the training now and hopefully I'll have a 
+result in a couple of hours. First of all, let us  
+take the model checkpoint and try to see how good 
+it is at predicting the next integer in sequence.
+So this is our model, I'm sure you recognize it.  
+And let us now write a helper function that 
+is going to take in an input sequence and  
+it is going to output the prediction 
+of what the next integer could be.
+k will determine the top k results 
+that we're going to display.
+We create a torch.Tensor and we also add the 
+batch dimension. We run the forward pass, however,  
+then we just take the first sample because there 
+was just a single sample in the batch and then we  
+just take the very last prediction in the sequence 
+because we want to predict the next element.
+We take the logits and turn them into a 
+probably distribution by using softmax.
+And we simply extract the top most probable 
+values together with their indices.
+We start with a very simple 
+sequence and as you can see  
+the model got it right. It is 80% 
+certain that the next element is 7.
+Again it got it right.
+When it comes to the powers of 2 it 
+seems to understand what's going on.
+This is just a sequence of primes and again 
+it got it right. Let's try to extend it.  
+19 ... which is correct. 23 ... which should 
+be correct. So as you would probably agree it  
+learned something about the integers 
+and maybe this is just a result of  
+overfitting the training set, however, the 
+training set is huge and our primary goal  
+was to inspect the resulting embedding which we're 
+going to do now. Let's go through the TensorBoard  
+results. First of all, you can see that there 
+are multiple scalers. Most notably there are  
+accuracies of the logistic regression model 
+when we use the integer embeddings as features  
+and the targets represent whether a given integer 
+is divisible by a certain number or whether it is  
+a prime. We only run this classifier on the first 
+500 integers on the left you can see that we have  
+three different models GloVE, BERT and LSTM. And 
+LSTM is the only one that we had to train from  
+scratch and that is why its performance will 
+change over different steps. If you look at  
+the divisibility by 2 we see that there are two 
+plots. The one on the left represents the mean  
+test accuracy and the one on the right represents 
+the mean train accuracy. I guess all these results  
+should be taken with a grain of salt since we used 
+a very basic classifier (the logistic regression)  
+and the number of samples is actually not 
+that far away from the number of features.  
+Anyway, it seems like the LSTM 
+embeddings carry all the necessary  
+information to determine whether an integer 
+is even. The BERT embeddings come second.
+Moving to the divisibility by three it seems 
+like the LSTM embeddings are again the best.  
+Just for more context, if we 
+always predicted that a number  
+is not divisible by 3 then we would 
+have an accuracy of around 66 percent.  
+So that is definitely a benchmark we are 
+able to beat with the LSTM embeddings.
+Same story here. The dummy 
+benchmark would be 75 percent.  
+However, when it comes to divisibility 
+by 5 and 10 it is a different story.  
+Clearly, the embeddings that were trained on a 
+big text corpus are better than our custom-made  
+LSTM embeddings. that were trained on integer 
+sequences. I'm not really sure why that is,  
+however, yeah if you have any 
+ideas feel free to share them.
+Anyway if you look at the prime classification, 
+again our LSTM model is by far the best one.
+And finally here you can see the training loss and 
+maybe I could have continued training, however,  
+I just stopped it after approximately 
+16 hours of training on a single GPU.  
+Here you can see the distribution of integers 
+in the sequences that we used for training.  
+First of all, after filtering we were left with 
+approximately 140 000 sequences. Again, the reason  
+why there are so many integers equal to 20 000 is 
+because we use this value for padding purposes.
+Here we have the GloVe embeddings and they 
+all have the dimensionality of 300. We apply  
+the Principal Component Analysis to extract the 
+three most important directions and as you can  
+see these directions explain 37 percent of the 
+total variance which is a very high number. In  
+a way it is telling us that the glove embeddings 
+actually don't really pay that much attention to  
+integers and instead they focus on semantics of 
+a language. It is obvious that these embeddings  
+clearly understand the order of integers since 
+all the points are clustered by the value.
+So here we have all the small integers and  
+as we move on to the left (or whatever 
+it is) we get the big integers.
+What is interesting is that if we look at the 
+integers divisible by 5 we can see that they  
+are quite clearly clustered together and this is 
+why it was so easy for the logistic regression  
+to solve the classification problem. Moving on 
+to BERT embeddings the first thing to note here  
+is that we only have 390 points and that is 
+because there were 110 integers that were not  
+present in the BERT vocabulary and also the 
+dimensionality 768 which is way bigger than  
+the GloVe embeddings. The total variance explained 
+by the three principal components is 28% which is  
+way less than the one for GloVe and let me also 
+show you the UMAP dimensionality reduction.
+There are multiple clusters here it seems like...
+And again if we highlight the numbers 
+divisible by 5 we see that they are  
+definitely grouped together. And finally, 
+let us look at our custom LSTM embeddings.  
+We were able to embed all 500 integers 
+and the dimensionality is 128 which is  
+the smallest out of the three models. This 
+checkpoint corresponds to the randomly initialized  
+embeddings at the beginning of the training 
+and as you can see there is no pattern here.
+However, if we look at the last checkpoint 
+we clearly see that again the embeddings  
+do encode the actual value of the 
+integer and the explained variance  
+is 7% which would suggest that our 
+embeddings contain a lot of information  
+and by performing a dimensionality 
+reduction we actually lose a lot of it.
+if you look at the UMAP dimensionality reduction 
+it seems like there is a bigger continuity between  
+the embeddings which I would probably attribute to 
+the data set we trained the model on. Anyway, if  
+we annotate our points based on the classification 
+targets let's say divisibility by 5...
+or whether a given number is prime...
+or divisibility by two...
+there does not seem to be any clear 
+patterns. And again that is probably  
+because the dimensionality reduction 
+threw away a lot of useful information and  
+only focused on the directions that 
+encode the actual value of the integers.
+Anyway, that's it for today! As always, I 
+will put the code on github and if you have  
+any feedback especially ideas how to make these 
+videos better then I would be more than happy  
+to hear from you in the comments here or on 
+other platforms like discord. Don't hesitate  
+to subscribe and like the video because that's 
+definitely one of the things that motivate me.  
+Anyway, have a great rest of the 
+day and I will see you next time!!!

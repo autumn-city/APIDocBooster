@@ -1,0 +1,290 @@
+[MUSIC PLAYING]
+ALEX VANYO: Hi, everyone.
+I'm Alex, and I'm an Android
+Developer Relations engineer.
+I'm going to give a quick tour
+through insets, what they are,
+how they impact your app, and
+how you can use the new Compose
+APIs to make your
+apps look their best
+across as much screen
+space as possible.
+Let's first start
+with the basics.
+Insets describe how much
+the content of your app
+needs to be padded
+to avoid overlapping
+with parts of the system UI
+or physical device features.
+Because there are different
+parts of the system UI
+that may be visible
+at any given time,
+there are also different
+types of insets.
+These include the status
+bars, the navigation bars,
+like the taskbar since
+Android 12L, the software
+keyboard, and more.
+System UI is dynamic,
+and therefore, insets
+are dynamic as well.
+How big they are, where they
+are, and how they change
+depends on the
+system configuration
+and windowing environment.
+Depending on your
+device's orientation,
+which physical screen is
+showing, multi-window mode
+setup, or user
+controllable settings,
+insets can change while
+your app is running.
+Because of this, trying
+to use a fixed DP value
+or querying for an
+internal system resource
+to get the status bar height
+or navigation bar height
+will lead to awkward extra
+spacing in the best case
+or make components
+impossible to interact
+with in the worst case.
+Instead, handling
+insets directly
+means you can make full
+use of the screen space
+available to you and improve
+how your app looks and functions
+across form factors.
+You can also update
+your UI with animations
+when the insets change,
+which is especially
+nice for the software keyboard.
+Let's see how you can do that.
+The first two steps are
+calling WindowCompat.set
+DecorFitsSystemWindows with
+false in your activities
+onCreate method and
+setting windowSoftInputMode
+to adjustResize in
+your activity manifest.
+Together, these
+tell the platform
+that you're going to
+handle all insets yourself,
+including the soft
+keyboard insets.
+This allows for the most
+control and flexibility
+over how your UI is sized and
+animated with inset changes.
+The third step is updating the
+navigation and status bar color
+to be transparent.
+This allows the app
+content underneath
+to shine through and fill up
+the full window of the app.
+Our main tool to handle
+insets within the app
+is the windowInsetsPadding
+modifier.
+This acts like a normal
+padding modifier,
+but instead of applying a
+raw DP amount of padding,
+it will pad based on the
+given type of window insets.
+In this case, it will add
+the statusBars as padding.
+The available types
+include all of the ones
+I mentioned earlier
+that match up
+with the underlying
+platform types as well as
+a few "safe" inset
+types, like safeDrawing.
+These "safe" inset types
+represent a combination
+of other inset types.
+safeDrawing, for
+example, is a combination
+of all inset types that might
+visually obscure content.
+Once you've applied the
+safeDrawing as padding,
+you'll be safe to draw content
+without it being obscured
+by any system decorations.
+To see why these "safe"
+combinations are useful, let's
+take a look at what happens with
+multiple window inset padding
+modifiers.
+Here, we have an
+outer box that applies
+a blue background and then
+the status bar padding.
+Then, we have an inner box that
+applies red background and then
+the safeDrawing padding.
+Because safeDrawing
+includes the status bars,
+you might expect that the height
+of the status bars is added
+again as padding, but it isn't.
+The windowInsetsPadding modifier
+communicates with other window
+inset padding modifiers,
+and the status bar padding
+is applied once
+by the outer box,
+consumed, and then
+not added again.
+Therefore, when we
+place a spacer, which
+applies some horizontal
+padding, and finally,
+a white background, it is
+adjacent to the blue background
+from the outer box.
+The red box didn't end up
+applying any top padding.
+When windowInsetPadding
+modifiers
+are applied to
+nested UI elements,
+they will communicate
+to avoid double padding.
+If some portion of
+the window insets
+has already been applied
+by an outer component,
+it won't get applied again
+by an inner component.
+There are convenience APIs for
+the most common inset types,
+and you can also
+get direct access
+to the raw underlying
+inset values
+directly with the
+type objects as well
+as additional information
+about their visibility
+and filter out specific sides.
+All of these values are
+backed by snapshot state,
+meaning that they are observable
+and will cause recomposition
+upon changing just like
+any other composed state.
+Oh, and did I mention that
+they are also all automatically
+animated as well.
+Let's take a look
+at that in action
+for handling insets for the
+software keyboard, also known
+as the IME.
+These are handled in the
+same way as other insets
+with the IME padding modifier.
+Let's apply that
+to our text field
+here, which we are placing
+below a lazy column of items.
+And that's it.
+We now have synchronized
+keyboard animation support.
+And in case you need
+to know whether or not
+the keyboard is visible,
+WindowInsets.isImeVisible
+will do just the trick.
+One more IME specific control
+is the imeNestedScroll modifier.
+Here, we have the same
+code as before but now
+with the
+imeNestedScroll modifier
+applied to the
+scrolling container.
+This will connect
+the scrolling gesture
+to controlling the IME
+opening and closing
+on [? APR ?] versions
+where this is supported.
+To help with handling insets
+automatically out of the box,
+Material Three components now
+have built-in inset support.
+Scaffold, top app
+bars, navigation reel,
+and navigation bar have a
+configurable window insets
+parameter to adjust which insets
+they should internally apply.
+The default insets
+these components
+apply is based on where
+they are intended to be used
+and the role they
+play in your app.
+For example, the
+top app bar applies
+the top and horizontal
+sides of the system bars.
+The navigation rail applies the
+start side and vertical sides
+of the system bars.
+And the navigation bar applies
+the bottom and horizontal sides
+of the system bars, just
+like we saw earlier.
+You can see this
+full implementation
+of going edge to edge in action
+in the Now in Android sample.
+And that's a quick
+overview of insets
+and how Compose
+can help apply them
+to your app with automatic
+updates and animations.
+There are quite a
+few additional APIs
+that I didn't get
+a chance to cover,
+so check out the docs for
+additional information
+about more advanced ways
+to configure the behavior
+to fine tune your app support.
+If you are currently
+using the Insets Library
+from Accompanist, check
+out the Migration Guide
+for converting to these
+new APIs provided out
+of the box with Jetpack Compose.
+The learnings from
+Accompanist have
+been invaluable for
+upstreaming these features so
+thank you to everyone who tried
+them out to give feedback.
+Thanks for watching,
+and happy insetting.
+[MUSIC PLAYING]

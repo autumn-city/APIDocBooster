@@ -1,0 +1,296 @@
+ All right, let us begin by looking at a variational auto
+ encoder for handwritten digits in pytorch. So this is our MNIST
+ data set. Starting simple, I have a bunch of code examples, I
+ will show you one at a time. So starting with the simplest one,
+ this is our variational auto encoder for MNIST. And I
+ implemented it as a convolutional variational auto
+ encoder. Of course, you can also implement it with fully
+ connected layers. But since MNIST is an image data set, why
+ not using convolutional layers. And also, yeah, the structure
+ will be similar to the auto encoder that I implemented in
+ the previous lecture, except of course, that we have the
+ differences with using this mean and log bar vector, and then
+ also having the KL divergence term instead of just a
+ reconstruction loss. All right, one thing at a time. So as
+ usual, I have helper functions so that the notebook is not too
+ cramped. Actually, on the last couple of days, I received a few
+ questions from students regarding these helper
+ functions, whether it's okay to use them in a class project. And
+ yes, of course, it's okay to use them. I mean, I actually wrote
+ them for this class to keep things more organized, because
+ I'm reusing most of them from week to week. And instead of
+ copy and pasting the contents always in that notebook here, I
+ thought it's more organized to have this as separate functions.
+ For instance, in my helper train function, I have still the
+ classifier function that we used before the auto encoder, the
+ regular auto encoder, then the variation auto encoder, and so
+ forth. I feel like instead of copying all that into the main
+ notebook, for all the five auto encoders here, having it one
+ time here, and importing it is kind of cleaner and more
+ organized. And you're of course, welcome to reuse everything that
+ you can find here. Also, with any kind of code you find on
+ GitHub, chances are that you are free to reuse it. Usually,
+ especially in educational contexts, you just have to cite
+ the source. So that's clear that it's not your code that it is
+ not plagiarized, if you make clear where you have the code
+ from. But if you show where you have the code from, then it's
+ usually fine to reuse the code. Of course, there may be certain
+ types of code that have a license that don't permit that.
+ But unless it's stated explicitly for educational
+ purposes, it's of course, okay to reuse that. And yeah, my
+ code is written, I wrote this, especially for educational
+ purposes. So please feel free to use any of that for your class
+ projects. But yeah, I'm moving on. So I have my helper
+ functions. When the time comes in the code, I will explain what
+ they are doing. Here, this is like usual, we have our boiler
+ plate, batch size 256, small learning rate, 50 epochs, we
+ don't need classes, actually, I don't know why headed there,
+ probably copy and paste errors. Then we are using the MNIST
+ data set, we don't need validation data here. Because
+ yeah, we are only you mean, variation auto encoders are
+ unsupervised, we are only using the images. Yeah, here, I'm just
+ checking that the data set works. Again, we don't need the
+ labels. And here, it's the main model where it gets interesting.
+ So similar to the regular auto encoder, I set it up using an
+ encoder and decoder, both cases using sequential here. So this
+ is several convolution layers. And I should say, the latent
+ space is size two. So what I'm doing here is I'm compressing
+ it. And then here, I am reconstructing it into the
+ original space. So MNIST is 28 by 28. Here, I'm having a fully
+ connected layer, followed by convolutional transpose layers
+ or transpose conversion layers. And then I have this trim
+ function, the same one that I used in the regular auto
+ encoder, because it happens that it will be 29 by 29. And the
+ original images were 28 by 28. So I'm just trimming the last
+ pixel here. Okay, so there's one thing I have not talked about
+ that is kind of the essence of this variational auto encoder
+ what makes it makes it different from the regular auto encoder.
+ So for the regular auto encoder, we may have had something, let
+ me put it like here, we may have had something like this, where
+ we had 3136 up to two, if I want to have a two dimensional
+ latent embedding, I would have it like this for my encoder.
+ However, since this is not a regular auto encoder, it's a
+ variational auto encoder, we are going to work with this mean
+ vector, the mu and the log bar vector. So both are used for both
+ fully connected layers to compress whatever this is into a
+ two dimensional one. And the same thing here, so they are
+ separate, separate models, because if I would use the same
+ one, well, then the mean and the log variance would be the same
+ if I use the same linear layer, so I have to have two linear
+ layers. And now let me show you how I actually use them. I think
+ it makes more sense then. So let's take a look at the forward
+ method first, then I will explain you why I have this
+ method. So in the forward method, first, like in the
+ regular auto encoder, I'm calling the encoder first. So
+ this is encoding my image into the two dimensional space. So
+ let me bring up maybe on slides here. So this is encoding into
+ my two dimensional space. But we're not quite here yet. We are
+ somewhere here now in that orange part. And then what we
+ want to do is we want to get this mean vector and the log
+ variance vector. And then we call this reparameterization
+ function. So here, we will have two vectors. So it's maybe a
+ little bit unfortunate that I'm showing it as one, but there
+ would be actually two vectors, mean and the log variance. And
+ then we call the self dot reparameterize here on these two
+ vectors. And what is going on here is that I'm sampling this
+ epsilon from random normal distribution. So here, this is
+ equal to the input size. So if we, if we have a batch size of
+ 256, it will sample 256 of those. Okay, let's see. So that
+ is where we are here, this epsilon. So we are sampling now
+ the epsilon here, that's this one. And then we are doing the
+ reparameterization here, the mean vector plus the epsilon
+ times the standard deviation. So this is the standard deviation.
+ Why is that the standard deviation? That is the lock bar
+ trick, where did I have it here. So this was the lock bar trick,
+ because this allows us to have for this one, positive and
+ negative values, instead of just positive values, it is better
+ for back propagation. And this is essentially so this whole
+ step is, is the step here. Right, so then we are returning
+ z. And this z here is is this z here in the center that I'm
+ showing you. So I'm not showing you the mean and lock bar
+ vector, I'm only showing you the z here that comes out of here.
+ Okay, so reparameterize, then returns or z, I called it here
+ and coded, I could have also called it z. And then we are
+ decoding using our decoder. And our decoder takes this z back to
+ the 300 3136, and then runs through the convolutional
+ transpose layers, and reconstructs our input. Here, I
+ have the sigmoid. So the pixels are in the 01 range. And in
+ where is it? I have to go up. I think now it's in the data
+ loader in a data loader, I should probably show you the
+ data loader that we are that I'm not using any particular train
+ transform and test transform. And by default, I implemented
+ this at cipher 10. Sorry, where is this? Yes, I missed. Same
+ thing. I have this torch to tensor, it will automatically
+ convert images to 01 range. If we use normalize function that
+ such that let's say the pixels are between minus one and one,
+ that would also work. But then we also have to make sure that
+ we use 10 h here, right, because we want the pixel ranges between
+ the input and the output to be on the same range, because we
+ want to have the MSE, right. So if the input pixels are between
+ zero and one, then the reconstructed pixels should also
+ be between zero and one. Alright, so going on here, again,
+ the forward method, I'm calling the encoder, do the
+ repertorization to get my latent space. This includes this
+ epsilon from the random normal distribution. Then I'm calling
+ my decoder, and I'm returning a bunch of things here. That's
+ what I need for my back propagation. I will show you in
+ the training, I need all four of those. Later, I will do some
+ investigation and some experiments. I will show you some
+ interesting experiments later, for which I implemented also
+ this encoding function. So this encoding function is maybe
+ overkill to implement that I, yeah. I mean, why not? So in
+ this way, I don't have to run the decoder every time. So the
+ encoding function just returns z. So it's basically just this
+ part, if you take a look at this, if I just copy it below
+ here, you can see that's the same, same thing here, right. So
+ I just decoupled it for some reason, I could have actually
+ could have called it here on on x, for example, like this
+ should also work, except that I want these two for the loss
+ function. I think that's why I have it as a separate function
+ instead of doing, instead of doing this. But yeah, just a
+ minor implementation detail. So I have this also separately, if
+ we want to do some investigation later with some
+ functions I wrote. So yeah, for here for this notebook, you can
+ actually ignore that it doesn't do anything here. Okay, so
+ explain to you the forward path. So which is now encoder, the
+ reparameterization should probably reparameterization, and
+ then the decoding, and then we're returning these things in
+ the regular auto encoder, we only had this essentially, this
+ was our regular auto encoder. Now we have oops, also this
+ reparameterization mainly, and these two vectors. Okay, that's
+ initialize everything here. And then we run the training. Now
+ let's take a look at the training function. I'm actually
+ here. So that's my training function here. We have actually
+ two losses now. So by default, I'm using the MSC loss, we
+ discussed this briefly in the video why we don't use the
+ binary cross entropy here. The rest is boilerplate like before.
+ So this is just what we used every time, I just use this one
+ here, the underscore, instead of usually we had something like
+ labels or targets here, but we don't need labels or targets,
+ because it's an unsupervised model. So I just replace it by
+ underscore, underscore and Python is a convention that we
+ use if we don't use a variable, but we but the variable is
+ there, we just use an underscore. Okay, so we have
+ the features here from our data set. And then he I'm calling
+ model. So model will call execute for what gives us these
+ four vectors here, which are these returned from here. And
+ then I'm computing now, first, the KL KL divergence term. So
+ this term here that's computed is I had it somewhere here. So
+ this this this term here that I discussed in the video. And
+ notice that I'm using I'm summing here over the latent
+ dimension. So the sum here is over the latent dimension, I
+ forgot to have the index under the sum. But this is for the
+ latent dimension. Not for the batch size, we have then if we
+ want to compute the average KL divergence over the batch size,
+ we call them the mean here. So if I would not have access
+ here, you will probably get really bad results because it
+ will sum over everything. I mean, sure, why not, but you
+ should first sum over the latent dimension, and then you can
+ average over over the batches. Okay. Yeah, and then we compute
+ the pixel wise loss. So this is our reconstruction loss. Here,
+ it's calling loss FN, which is just loss function. And by
+ default, if I don't specify it in my function, it uses the
+ mean squared error loss. And the mean squared error loss is
+ between the decoded ones. So the reconstructed ones, and the
+ inputs. So this part here is really the reconstruction was
+ here. This is what you see at the top here. I'm reshaping it.
+ So that it's the batch size and the vector. So instead of having
+ a tensor, it's now a matrix table, if you will. And then we
+ first sum over the pixels. It's this is equivalent to summing
+ here over the latent dimension. So we are summing first, the
+ squared error over the pixels. So this is essentially the sum
+ here. I haven't done a reduction. Okay, I could have
+ forgot kind of thing it should do it means good. I forgot the
+ square root, but doesn't really matter. So I don't have a
+ square root. I shouldn't be a square root, to be honest,
+ because it's the squared here. We change that.
+ When you can have a square root doesn't really matter.
+ Okay, so that's not the Euclidean distance anymore, but
+ the square Euclidean distance doesn't really matter here.
+ Anyways, um, okay, so we have no pixel wise here, we sum over
+ the pixels, and then we average over the batch dimension.
+ That's where our mean comes from.
+ Okay, then we compute the overall loss and the overall
+ loss consists of two parts, the reconstruction, or sorry, the
+ pixel wise loss and the KL divergence term. And here I have
+ an additional parameter. So I should probably also have that
+ in the code. So let's call that L one is the reconstruction,
+ let's call it alpha. Because it can give us a weight on because
+ it may or may not be clear. I mean, they may not be in the
+ same scale really depends on the images. So it's kind of a hyper
+ parameter. It's like saying, how much should the model focus on
+ the reconstruction loss and how much should it focus on the KL
+ divergence term, if we don't use alpha, if we if we set alpha to
+ one, then there will be equal weight. But it might not work
+ well in practice all the time. So it's another hyper parameter.
+ Okay, um, yeah, this is essentially that then we can run
+ our back propagation as usual. So just to recap, compute the
+ KL divergence term, we compute the pixel wise term, and then we
+ add both together. And we're training it, this is just the
+ logging like usual, nothing new here. So let us take a look now
+ how it trains and see it starts with a high loss and it goes
+ down, which is nice. Because don't move slowly. Yeah, so I
+ actually have two plots here, I have this plot training loss
+ function that I used before. Now I'm doing it with a
+ reconstruction loss per batch, the train, the KL divergence
+ loss, and then the combined loss. So you can see, first is
+ the reconstruction loss, it goes down. The KL loss goes down, but
+ then goes up. Well, and the combined loss. It's kind of a
+ trade off, right. But the combined loss goes down. Yeah,
+ so overall, it goes down. And what we can see is on the
+ autoencoder is able to generate realistic looking images. I
+ mean, kind of. So again, we have the same problem. It's only
+ two dimensional, which is kind of extreme. So you can see, so
+ the top row here is original images, and the bottom row is
+ reconstructed images. And you can see, okay, it confuses for
+ with the nine. But most of the time, it looks kind of okay,
+ okay, it's blurry to hear five and three, it gets confused. But
+ this is really because the space is so cramped. So let's take a
+ look at the latent space here. So I'm also showing the class
+ labels here, you can see, okay, it's a bit cramped, because
+ it's two dimensional. I don't like this overlap that things
+ overlap, but well, it's all what happens here. But it looks
+ slightly better than for the regular autoencoder. Unfortunately,
+ I don't have it here for reference. But what you can see
+ also now is that it's centered at zero, right, the distribution
+ center at zero. And it looks like a Gaussian mixture at some
+ point, I mean, kind of mean, we can't go by class labels,
+ because it doesn't use the class labels, we would have to go by
+ dimensions. It's hard to see here. But I have actually, for
+ higher dimensional one, histograms, looking at the
+ distributions per dimensions, it can be like, it's hard to see,
+ because yeah, we can, it's too much going on here, it's too
+ dense. But it could probably be a multivariate standard Gaussian
+ at some point. I mean, here, we have some not so nice shape. But
+ yeah, with a little bit of squinting, it looks quite okay.
+ Yeah, and then we can sample from that distribution. So we
+ could just take arbitrary points from a standard normal
+ distribution, and then sample. So here, I'm just taking one
+ point at the center should be 0.03 somewhere here, and it
+ reconstruct an eight. So the eight is actually on another
+ nine, it's kind of unfortunate. So it's reconstructing the eight.
+ And here we are sampling now. So yeah, I'm just sampling from
+ random normal distribution. Let me show you that plotting. What
+ was this function called plot images sampled from VAE. It
+ took me a lot of time to implement all that. Mike, I
+ should be plotting. Yeah, this one. So yeah, here, what I'm
+ doing is I'm sampling from a random normal distribution. So
+ rent n is a random normal distribution. I'm sampling a
+ given number of images here, 10. Latent size, I'm setting it to
+ two here, because that's how I trained my auto encoder. Then
+ notice that I'm not using the encoder here. I'm only using the
+ decoder here. It's all I'm using. Um, yeah, and then I'm
+ plotting. So here's just some for loop to do the plotting.
+ This is very similar to the regular auto encoder code. I
+ just copy and paste it and made a small modification. But
+ essentially, this is just plotting these images. And these
+ are just sampled from random normal distribution. You can see
+ they look mostly reasonable. Not all of them. This is garbage.
+ This this but the ones took okay, the sevens look okay.
+ eights look okay. I think many of these problems are that in
+ our case, we only have a two dimensional space. So things
+ don't look great, but doesn't look terrible either. So if you
+ make the latent space a bit bigger, it will look better. But
+ yeah. Okay, so this is our variational auto encoder here.
+ And I will stop this video. And then I will show you more
+ interesting one with face images.

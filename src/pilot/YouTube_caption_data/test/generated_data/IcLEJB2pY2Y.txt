@@ -1,0 +1,1604 @@
+hello everyone welcome to my new video
+in case you are interested in my book
+you can buy it from the link provided in
+the description box
+in this video i'm going to show you how
+to implement convolutional rnn for a
+problem
+like captcha recognition recently
+very good data scientist and also a good
+friend akash nan
+published a tutorial on capture
+recognition this tutorial was in
+tensorflow keras and
+i have added a link to it in the
+description box
+along with linkedin and twitter handle
+of akash so you can
+go and get in touch with them is very
+helpful
+and the tutorial i'm going to present
+today is heavily inspired by this
+tutorial
+except the fact that i'm going to do it
+in pie torch
+and a bit differently and i will tell
+you what the difference is
+so let's get started well the first
+thing that we need to do is
+we need to get some data so this is the
+tutorial
+by akash so you can go and take a look
+here
+so he has already upload uploaded the
+data on his uh github repo so
+what we are going to do we are going to
+use the same data first of all so
+uh let's go to the input folder and we
+can just grab the
+data here so
+uh okay this is this copy paste does not
+doesn't seem to work okay it's working
+now
+so the data set is very small so it's
+not going to take you any time
+and now let's unzip it so we have all
+the
+images in this captcha images v2 folder
+and now we go back and see what what
+else we have we have one
+folder called src which is empty
+as of now so let's go fill it up
+um the first thing we
+always create is a config file
+so some things are going to remain the
+same as previous videos
+but some things are going to be very
+different and
+that's why we are here to learn
+something new so
+inside the input folder all my images
+are in captcha underscore images
+underscore v2
+so i'm just going to say this is my
+data directory
+and then what else do we need we need
+batch size
+so let's say the batch size is eight
+i think akash use a batch size of 16
+uh image width
+let's say the image width is 300 okay
+and we also need size of the
+uh sorry height of the image
+let's make it 75
+okay and then we have other things like
+the number of workers
+so that depends on your machine i'm
+pouring it to eight
+and then you have epochs epochs
+i don't know 200 and device
+which device you want to train on so i'm
+just gonna say cuda
+so we have these few things and um
+and that's your config file
+and if you look at the input so
+input is not very different
+than what we used to have for other
+problems
+so except a few minor things
+so these are the png images that you
+have
+and um the the file name
+is the label so dv fen is the dbf
+so if you're not not familiar with
+captcha just
+you i'm pretty sure everyone is familiar
+with captcha and they have encountered
+it somewhere
+online so this is a captcha image
+and then you have to type the characters
+inside this to verify that
+it's a human so today we are going to
+build a deep neural network
+which can identify capture borders
+so we got the config and now the other
+thing that we need
+uh is the data loader or
+not the data loader but data set so
+let's create a data set dot
+pi and inside this
+um some of the things that we always use
+are going to remain
+the same so uh we will use augmentation
+for augmentations we will use
+torch we will use
+numpy
+we will use pia to read the image
+and we also need from pil
+import image file
+and we just set one uh config for image
+file
+image file dot load truncated images to
+true so in case you have truncated
+images
+they should also be loaded and we should
+not forget about them
+uh otherwise it's going to throw you an
+error
+so it happens from time to time so i
+will i will now write a
+uh class called classification dataset
+because it is indeed a classification
+problem
+in which you have these capture images
+and
+you have to predict the different
+characters so
+def init function so inside that
+you have a few things like image paths
+so the path to different images which is
+a list
+and then you have targets right
+do you need anything else here so maybe
+let's say we want to
+resize the image uh to a fixed value
+that we specified in config file
+so you can have resize to set to none by
+default
+so you have self dot image
+paths now which is image path
+then you have self dot targets
+which is your target and then you have
+self.resize
+which is same as resize and then the
+length of this
+data set that you have to return using
+the len function is nothing but
+the length of image paths
+return length of self dot
+image paths
+okay so we have this and now
+we need to write the get item function
+so
+this is a bit different from
+how it's done in keras tutorial
+we have the get item uh function
+and self and item item is the item
+index that you want so
+now we read the image so our image will
+be
+image dot image dot open
+and then uh here you specify the path to
+the image so
+your self dot uh image paths
+has the path already um so item
+and that's it right so this will read
+the image for you
+but when you read this image you will
+find out that it's a
+four channel image it has alpha channel
+so what we are going to do is we are
+just going to our add
+convert or convert rgb so now we get rgb
+image
+and our targets is self.targets
+and item this becomes our
+um targets so now we have
+we have the target we have the image now
+we what we want to do is we want to
+write a simple
+uh augmentation so you can also um
+add more augmentations to it but what
+i'm going to use this for
+is something very simple
+so uh inside this
+we can add a list of different
+augmentations but i'm going to
+add only one thing uh normalize
+and keeping the mean and standard
+deviation same max
+pixel value same and always apply to
+true
+okay so why one thing i don't understand
+like uh
+these augmentations have always applied
+parameter and also have the probability
+parameter
+set to one i don't know what the
+difference is uh probably i need to
+take a look and figure it out someday
+so now you have you have this
+augmentation
+so i can say image convert the image to
+a numpy array
+and apply the augmentation so
+um
+i i should not write it here i should
+have it
+outside uh this function it will save
+some space
+right so i can try to cheer
+instead okay
+um now we converted image to array so
+we also have the resize parameter so
+let's say if self
+dot resize is not none
+then you want to resize so how we are
+going to use the resize is
+resize is a tuple
+of height and width that's how we are
+going to use it
+so we can write images image dot resize
+and inside that we have um
+when we are using pl pil resize function
+has
+width first so we we have to write
+uh tuple self dot resize
+1 and self dot resize
+zero so this is what we have to do
+and let's close this one and uh
+then you can also use some kind of
+resampling so
+resampling
+resample so you can use a resample
+parameter
+uh of pil and you can say
+uh we use bi-linear resampling
+start by linear let's save this
+okay so this is what we got and we can
+then we converted the image to
+a numpy array and then we have augmented
+image
+so just write augmented self.org
+and inside this your image is image
+and uh then your final image becomes
+augmented
+and then you have image
+okay so we have this and now
+uh you need to transpose it to channel
+first
+so image equal to np dot
+transpose
+image comma 2 0 1
+so channel first dot as type
+and p dot float 32
+okay and then we return the dictionary
+so return so names are important what
+name you choose
+so we are returning images is even if
+it's one image
+but that's because of the model that's
+how we are going to use it in the model
+so torch dot tensor image
+and d type is torch dot
+float okay and similarly we have
+uh targets so we can just return targets
+target star start
+long so what are targets targets are
+also numpy arrays
+and we will come to that and we will see
+that how we
+uh define these targets
+so this becomes our uh classification
+data set
+classification data set and so far so
+good it looks fine
+now i don't see any kind of problem here
+so
+let's see how is it different from the
+keras one
+so when i look at the keras tutorial
+um here
+is the encode single sample so one image
+so
+they're reading the image they're
+converting it to grayscale
+and then float32 which is fine
+they're resizing it the image height and
+width is also different than what we are
+using
+and then transposing the image because
+we want the time dimension to cross
+correspond with the
+width of the image so we are not doing
+that
+and there is a very good reason why we
+are not doing that we are using the
+image as it is so we are not transposing
+and
+transposing the image and then you can
+forget about the label for now
+so why we are not doing this we will see
+that when
+we build our model so first of all so
+so we got this and now what we can do is
+we can
+try to create a simple training file
+and see a few things there so train dot
+pi
+so inside train not pi we don't have
+uh uh we don't have a lot of things yet
+right so
+let's let's import a few things uh we
+only have the classification data
+data set import glob for the files
+then you import torch
+import torch import
+numpy snp we also import a few things
+from scikit-learn
+so from sklearn import pre-processing
+from sk learn import model selection
+and at some point if you want to
+calculate the metrics then uh maybe you
+want to calculate the accuracy so from
+sklearn import metrics
+so we have these things and now
+we have also created some files on our
+own import config
+and import dataset
+okay so we have these things
+and now we will create a
+function called run training so
+what you can do is you can also grab all
+the
+png files and create a csv but in this
+video i'm not doing that
+but if i have to build a model i would
+prefer doing that and making the folds
+beforehand
+but here i'm not doing it so we have
+image files
+now image file says uh glob.glob
+so this is scanning through all the
+files in a given folder
+with a given extension so
+you can just write glob dot cloud and
+inside that you have a
+path name so here path name will be
+we already have the path name um so os
+dot path dot join
+and inside this we have config dot
+data directory comma star dot
+png so all the png files
+are my image files and then we have
+targets orange original targets
+so my original target this is very
+important so look what i'm doing here
+x dot split and i split and i take the
+last element okay and then
+i take all the characters till
+the last fourth element for x
+in uh image files
+so let's say so image files is a list
+and
+this list has um path to the files
+so you have something slash
+something slash whatever and then
+um dot png okay
+so the first part split
+is splitting by uh this uh slash
+and taking the last element so this is
+last element and taking all but the last
+four characters
+in the end gives us this so this becomes
+my target
+so this will be my original targets so
+now what we do is uh these targets are
+strings
+so we create
+another list of list c for
+c in x for xn
+targets original
+okay so now if your
+if your target was abcde
+it becomes a list of targets a
+b c
+like this which is inside another list
+so it's a list of lists
+so now if you look at the images you
+will see that all the targets
+are of the same size five
+uh but let's not go there now
+so this becomes a list of lists and now
+what we have is uh we will flatten it
+so targets underscore flat so which is c
+for c list in targets
+for c in
+um c for c less than targets for c
+in c list
+so this is going to give you uh flat
+targets so you you had a list of list of
+targets
+now you're getting a flat list of
+targets um
+and then we have label encoder
+so preprocessing dot label encode
+label encoder not binarizer
+and we fit label encoder
+on our targets
+flat
+okay so
+we have a few things now i mean you can
+try to
+print uh targets
+try to print
+unique target is underscore flat
+and b dot unique
+targets underscore
+flat and let's see
+in our terminal so python
+train.pi obviously it's not going to run
+anything because we don't have the main
+function
+and then run training
+okay so now you see like you have the
+unique targets
+and you also have the list of list of
+targets
+um and we fit our level encoder
+on the flat targets so now we
+we have the flat targets and now what we
+want to do is we want to create
+encoded targets targets encoded
+[Music]
+will be list of uh
+label encoder dot transform
+x for x in
+um targets
+okay so the list of list of targets you
+are transforming each and every list
+inside that list
+and then we can convert it to a numpy
+array easily
+encoded equal to np dot array
+and here you have targets encoded
+and we are going to do one more thing we
+are going to add one to it
+so your label encoder is encoding from
+0 to n minus 1 where n is the number of
+labels
+and then we are adding 1 to it
+because 0 we want to keep for unknown
+um so now
+instead of printing so we can print
+targets
+encoded and we can also print one more
+thing
+which is label encoder dot
+classes underscore
+let's see how many classes we have
+um
+okay so we are getting uh this array
+with the different classes and we also
+have we have 19 classes
+okay so we don't have a lot of different
+classes we just have
+19 and now what you can do
+is we can try to split this so
+we have train
+images we have test images
+uh train targets
+test targets uh
+train underscore
+orange targets and test
+underscore orange targets
+this will be model selection
+dot train test split
+and see how big this line is and i'll
+show you the magic after this
+uh image files comma
+uh target encoded
+comma target
+orange comma
+test size is equal to 0.1
+random state equal to
+what do you do okay now i save this
+and boom everything has been formatted
+okay so we got everything now what we
+want to do
+is we want to create uh training and
+test data loaders
+so which is also very simple so our
+train data set
+is uh data set dot classification data
+set
+and inside that i have image underscore
+paths
+which is same as train paths
+train images and targets
+the same as train underscore
+targets and resize
+is config
+dot img
+underscore height
+sorry config dot
+img and image underscore width
+so we are taking height first in this
+one and this also saves
+it fine okay we got train data set and
+similarly we have
+uh valid data center test data set so we
+are
+using test um in this video so let's
+just
+call it test um then you have
+test loader or train loader
+which is stores.utools.data.dataloader
+and inside this you have train data set
+and you have other things like patch
+size so
+batch size is config dot
+patch size then you have a
+num workers so config
+that also be saved in config config.nom
+workers
+then you have shuffle to true because
+it's
+training so we can we can have shuffle
+to true
+um so we got this train loader
+and here uh we will have our
+test loader
+and in test loader we don't need trouble
+to true
+okay so we we got everything now
+or we can write one more thing so it
+looks the same
+shuffle equal to false
+okay so uh we got everything and now we
+can
+create our model so now we will define
+the model model equal to
+but we don't have the model yet so
+that's the problem right so we need to
+create
+a model uh but first i will also show
+you
+how the images from this classification
+data
+set loader look like so which is also
+quite simple and easy so
+let's copy everything
+and here i will go here
+and create a new directory notebooks
+maybe uh maybe just let's just go into
+source and
+create a new
+notebook
+and call it view data
+something like this okay so let's copy
+everything
+and here also
+let's copy everything to train data set
+so let's adjust indentation
+okay so now it's giving me everything
+it's also printing some stuff
+which means i should remove it from here
+um
+and here i have train underscore data
+set
+and i'm i can access any element let's
+say i'm accessing zero
+i need a few more things uh
+import matplotlib
+okay so
+this is my image now so inside images
+images and then i can transpose it
+to channel last
+so what was it i think uh
+two one zero
+okay uh okay let's do it later so this
+is my np image
+okay uh so the numpy image okay so i
+also need to
+add this numpy to it and this is how it
+looks like
+and it's shape this should be
+yeah channel first and then you have the
+height
+and then you have the width so 375
+300 and now we need to make the channel
+uh
+to to the end and that means we have to
+transpose the
+image so um and p dot
+transpose
+np image and here you specify
+how you want to transpose it back so you
+can take a look at your
+data loader what did you do there and uh
+you have to do the inverse of it it's
+pretty pretty simple
+and that's just one comma two comma
+zero and let's check the shape
+of this so you now have height width and
+channels and you can easily plot it
+i am sure okay something bad has
+happened
+invalid shape 3 comma for image data
+so something is
+wrong and let me take a look
+what is wrong here everything looks
+okay no shape you don't need the shape
+obviously
+so uh this is your image
+now so you can also multiply it by 255
+and get rid of the
+warning clipping in
+okay leave it
+anyways so you this is your image so it
+seems like some values are not in the
+range but it's okay
+um and you can you can just change it to
+199 so you have a different image so
+now you see like all these are capture
+images so now
+we have to build a model to uh
+try to identify the captcha here so
+we'll go back to our
+vs code and try to create a model now
+so um model here is very important
+but should we create the model first or
+should we just do something else
+first maybe let's create the training
+and evaluation function
+and take the simple things first engine
+dot pi
+so here um import tkdm
+as dictum if you want then you have
+torch
+and we can also import
+config so we got all these three things
+uh and now we will define a train
+function and our train function should
+take model
+data and optimizer
+okay and we put the model in train mode
+so all this is
+has been done so many times define a
+final loss
+our tk is tqdm
+data loader total
+length of data loader and then for
+data in tk0 for
+k comma v in data dot items for every
+batch
+what you do is you're going to put this
+on
+the device which is in use so data k
+is v dot to config
+dot device okay
+and then your model should return two
+things the first thing
+that your model should return should be
+uh the predictions
+so predictions we're not going to use
+here and the second thing should be loss
+and then you uh input all your
+data to models so the variable names
+should be the same
+so this is one thing then you put uh one
+more thing that we forgot is to
+is your rope right the optimizer dot
+zero grad
+and then you do lost or backward
+and um optimizer dot step
+so see that i don't have scheduler here
+because some schedulers
+need to be run now for every bat some
+need to be done after
+some need to be stopped after only after
+um
+every epoch so we are going to use a
+different one and
+i'm just going to add this to fill loss
+plus equal to
+current loss dot item okay and
+return uh fin loss
+so the final loss divided by the length
+of the
+data loader so that's your final loss
+which is being returned
+and i copy the same thing
+create the evaluation function
+so now i need to put the model in eval
+mode
+you also need with torch dot no crad i'm
+not doing it so you do it
+on your own um fin threads uh
+inputs maybe a list so
+here everything remains the same we
+don't need this
+so uh batch spreads
+model lost or backboard optimizer dot
+step is not required
+and what we do here is
+um we just append so fin threads
+dot append batch grid
+so we have not converted to cpu or
+anything we have just upended it and we
+are returning the predictions to
+when we are in the evaluation function
+tqdm is not callable
+from tkdm
+import to qdm
+okay um
+so we got everything here so now we have
+we have our data set file we have
+engine we have a training file
+but now we need the most important thing
+model so let's go and take a look at the
+model now
+the model is also not very difficult to
+create so
+i mean files are not difficult to create
+right
+so now uh we create a file called model
+dot pi so let's import torch
+the things that we need and um
+we also need to input from torch
+import and then and then we define a
+model class so captcha model
+and inside this we have an n dot module
+so it inherits from that and then we
+define
+init function self comma
+number of characters so what are the
+maximum number of characters that you
+have
+and the super captcha model
+comma self dot
+in it okay and now
+we define some uh we can we can write
+some kind of
+uh convolutional model so which is
+pretty simple so just just go ahead and
+write whatever kind of convolutional
+model
+you want you have to be very careful
+otherwise
+things might not work so conf 2d
+and here i have i have input channels
+output channels
+kernel size and strides and padding
+so uh my input channels are three i say
+my output channels 128
+and kernel size is
+three comma three let's say
+and padding is one comma one on both
+sides
+so this is my convolutional the first
+convolutional
+uh layer and now i will add a max
+pooling layer
+so max pool underscore one
+and which is another dot max pool
+2d and inside this i have kernel size
+so kernel size i can do um
+two comma two that's it and
+then i can define another
+a couple of uh layers
+so second convolutional layer and second
+max pool layer
+so now my input is 128
+so max pooling is not changing the
+number of filters you have
+and then
+my i can define some kind of output
+filters so let's say 64.
+kernel size and padding remains the same
+so this is your uh half a model
+okay so what you can do is you can start
+writing forward function
+and try to see
+what your model is generating so it
+should take the same
+name images and targets so whatever is
+coming from your data
+loader because we try to make it very
+general
+and um your targets can also be
+none because when you have inference you
+don't have any targets
+so let's say your target can also be
+none
+and this is giving me some kind of
+batch size channels height and width
+so in the keras tutorial height and
+width has been exchanged but you don't
+really need to do that you just need to
+make a model a little bit different
+that's it and we will come to that
+and this is image dot size
+okay and let's say here you can
+print batch size
+channel all right with okay
+and then you have your first layer so
+first layer what we are going to do is
+we are also going to wrap this
+inside uh um
+uh rectified linear unit so that's
+that's the activation that we are going
+to use
+so from tors dot anon
+import functional
+as f okay so here we have f dot value
+and inside this self dot con1
+and this takes x and now you can
+you can print the size print
+x dot size so always print the size you
+will know
+what's going on inside your network
+and then you here input
+should not be x it should be images
+and x then you have the max pool layer
+so you apply the max pool layer
+uh max pool 1 and x and then
+print x dot size
+okay and you repeat the same thing
+for conf two and instead of images here
+you have x
+and max pool two uh return
+x comma none so we have to return the
+predictions
+and the loss
+and now let's try the main function
+and see what what we have here so we can
+we can create our own
+uh data set right so let's say our
+captcha model
+consists of 19 different characters
+so we had 19 previously so we're just
+specifying that
+and my image is uh torch dot
+rand so random 1 3
+75 300 so that's the size
+we chose uh from config and
+we can just have uh c
+this equal to cm so x comma i can just
+also say loss cm and
+um then you have image and some kind of
+uh target so target
+so what what is the size of the target
+that you with it that we have it's
+uh like if you have single target it's
+one cross five
+so torch dot you you have to do
+random
+integer here but you can also do rand
+and uh you can have any kind of random
+number so be just that we are we are
+just checking it
+okay so we got everything and now we can
+try to
+this should be images uh we can try to
+run this file
+and see what happens so let's go to
+our terminal
+and python model dot by
+so something something is not working
+okay so rand and
+is not working uh okay it needs high low
+high uh but expected one of uh
+and low and high tuple of in size
+okay uh
+and low and high
+and triple of and size so let's say
+like this
+okay so now my when my image comes it's
+of the size
+375 across 300
+and now here we here we have started
+printing our first thing
+so after first convolution
+the size remains the same then we have
+the max pooling which reduces the size
+in half
+uh then after the second convolution the
+size remains the same as the previous
+one but after a second
+um max bulling the size reduces
+in half so what do what do we see here
+the first one is the batch size which is
+one
+and 64 is the number of filters that you
+have 18 is the
+height and 75 is the width now
+so now what you want to do is
+you want to add a new layer
+and this layer will will be
+some kind of iron and layer so that's
+what you want to add but before
+that you have to do a few things right
+so let's see
+let's see what you have to do now
+maybe we can we can just uh
+take this one so i don't know if i can
+copy it
+uh but let's try
+so this is the size here
+no i cannot copy so anyways
+uh let me see 164 1875 right so
+this is 1 64
+18 and 75. so that's your
+again your batch size filters
+with sorry height and width so
+what we are going to do now is we
+are going to perform a kind of
+permutation
+not a kind of permutation but exactly
+permutation x dot permute
+and inside this we are going to
+bring our width
+column sorry
+so 75 is our the width of the image
+right so
+we are going to bring it at second
+position
+so when we permute it zero remains at
+zero
+so third index comes in the first
+position
+and first index goes to second position
+and second index goes to third position
+so
+here this will become
+one 75
+then you have um
+64 and
+18 yeah so
+this thing this order has been changed
+now
+so now what we do is and why we are
+doing it
+because we want to look at the width of
+the image when we
+apply our rnn model
+so now we are going to we can we can
+also print the size
+so always print the size it's very
+useful
+um so now we are going to do is change
+the view so
+x dot view and i'm going to say uh
+my view is my batch size so
+that's that's the number of samples i
+have in one batch and after that x dot
+size um 1
+so which is 75 in our case
+and then -1 so
+just multiply other stuff and keep the
+size same
+okay i
+hope it's not too bad uh let's see
+so we had it till here and then we
+exchanged the 75 came to the second
+position 64 and 18
+were shifted and now we have 75 1152
+so what we can do now is we can we can
+probably try to add a
+another layer self dot linear
+some kind of linear layer
+and then dot linear
+and what was the size that you got
+one one five two so that becomes your
+input size
+so one one five two
+and what are the number of features that
+you want to choose so you can choose
+anything you want
+maybe let's try 64
+and we can also add a
+dropout
+dropout 0.2
+so you have to try different
+architectures you have to come up with
+something
+so x is self dot linear one
+x and dropout is not going to change the
+size
+so we can just add one
+and let's see what two you have now
+so 1152 to 64. it remains the same
+but i mean even previously
+you had you had what you needed to
+create your lstm model
+so we just we just reduced the
+number of filters outputs
+so you have 75 time steps and for each
+time step you have 1152
+values so now you have 75 time steps and
+for each time step you have 64 values
+so now we can add a lstm
+or a group model so let's add a group
+model instead
+so you can also add lstm that's going to
+work fine
+as well so i take 64 inputs
+32 output output filters
+and we will use a bi-directional
+group and um
+we will use the number of layers to two
+so it's a
+it's two layered group so output of one
+goes to the second one
+and we can also use dropout 0.25
+so we got our groove model and in the
+end you can have a
+output so you can you can keep on
+experimenting with different kinds of
+group so group release team
+whatever or gru i like to call it group
+so self dot group and here you have your
+x
+okay so it's going to return uh
+three different things two different
+things so the second one is tuple
+so go take a look at the documentation
+if you don't know that
+and okay so i
+have this self.output
+and everything works fine so we have 32
+but since it's bi-directional it's
+returning
+64. so i can just add
+a linear layer
+and 64 and return the number of
+characters
+plus 1 plus 1 y plus 1 because we have
+an unknown
+now we have to add it right so
+axis self dot
+output x
+and you print the size again in the end
+okay so now you have 20 outputs
+so for each time stamp so now we have 75
+different time stamps and
+at each time stamp it's returning me a
+vector of size 20 so that's
+all all the different kinds of
+characters or
+alphabets that we have in our in our
+data set
+so um now
+we have to also return the loss if we
+have targets so if targets
+is not none
+in this case return the loss and
+that's where things become a bit
+interesting
+so we cannot use we can you can use
+different kinds of flaws maybe you can
+use something
+if multi-label laws but what if you have
+captcha images in which you have like
+and some
+you can have four characters and some
+you can have 10 characters
+and it's a sequence so you should use a
+loss function
+which makes sense with sequences and one
+of the loss functions like that
+is ctc loss so connectionist
+temporal classification so you can you
+can
+read about it uh on this blog so
+it was a paper in um distal
+uh so just read about it so what it does
+is like um you can identify different
+words at different letters at different
+positions
+so uh like
+like if when you have a captcha image
+let let me show you something
+maybe so four um so the first character
+here is four then you have d
+and you have two two and then m so four
+can be
+identified probably in the beginning uh
+beginning two
+and towards the end uh where where the
+character four ends
+and also in the middle right so
+and at certain positions you don't have
+any character to be predicted
+so that's why we have the unknown and
+that's why we
+use this kind of sequence modeling
+so this is particularly useful when you
+have sequence data like
+even with audio data or you can have
+handwritten character recognition so
+these kind of things
+um but if you if you want to go into
+detail and read that
+and take a look it's it's a bit
+difficult
+uh to uh like it was a bit difficult for
+me to implement this
+in pytorch not to implement but to use
+this in partwatch it's not
+straightforward
+so first of all what you need to keep in
+mind is
+ctc loss has been implemented in pi
+torch and you can use it directly but
+it takes log soft max
+so log soft max values
+so you can do f dot log
+underscore soft max then x which
+is your output and accesses to 0 1
+2 2 is the last one where you have all
+the
+classes and then you have to specify two
+things
+like uh called a length of input
+and length of outputs so input lengths
+will be um let's say torch dot full
+and you specify input lens will have the
+same size as the batch size
+obviously and you will fill this
+with uh
+log softmax values dot size
+2. sorry
+log softmax values dot
+size 2 yeah
+yeah it should be two but
+there is one more thing before that so
+you have to permute it again
+so x dot permute one
+zero two so your batch size will
+go to the middle your timestamp time
+steps will be the
+first and your values will be
+the last and that's how ctc loss
+expects it to be
+so you got log softmax values now your
+fill value
+is two size two which is incorrect i
+think
+uh i think it should be zero
+and then you specify a d type so
+the type will can be torch.nbc.32
+so what's happening here we will print
+it and then
+it will be much clearer and for our case
+um we can
+we can have the output lens in the same
+way
+and in our case it's a little bit easy
+or target lens let's call it target lens
+and
+uh size remains the same and fill value
+can be uh
+the size of the target which is
+the same in our case it's five
+right so like this
+um so we have created this and now we
+can calculate
+the loss so losses and dot ctc loss
+and here you have to specify a few
+things so blank is zero
+so if you have zero
+it means blank and we shifted everything
+by one
+in the training file and here it takes
+uh log softmax values
+okay and targets
+input lengths
+and target lengths
+so we got all this all these things
+target lens
+and now you can return x comma loss
+so the best thing to
+see what's happening here would be to
+just print this so print target lengths
+and print
+input lengths
+so this you have to remember you have to
+remember that the timestamps will go
+first then you have the batches then you
+have the values
+and then you also need to take the log
+softmax instead of
+normal sort max yeah
+and let's see
+clear
+okay so my input is a tensor 75
+and output is um sorry target
+input length is tensor of size 1
+and which has 75 in it and output is
+size five so output can have different
+sizes input
+is going to have all 75 so because
+we have a batch size of one let let me
+increase the batch size
+um you can say
+probably we can say five
+okay so now let's see what happens so
+now our bath size is five
+so for the first batch there are 75
+predicted values
+and in target we have five predicted
+values
+and so similarly for the second one you
+have 75 predictor values in the input
+and five
+predictor values in the target so
+this can be different it depends on your
+problem
+and then you then you don't have to
+calculate it then you won't be able to
+calculate it inside uh the model
+you probably have to move it outside you
+lost calculation you have to probably
+move it outside the model
+probably so this is our model
+and now uh what we do is we go back to
+our training file
+and initialize the model
+so from model import a captcha model
+and import
+engine
+okay and here we have um
+here we can add captcha model
+num cars is length of
+label encoder dot classes underscore
+so you got that
+and now
+we send the model to device config dot
+device okay
+and now we can start training the model
+so before we train we need optimizer
+let's say we can choose any kind of
+optimizer you want we can
+probably try with adam starch dot
+adam use all the parameters of the model
+and our learning rate
+2 3 e minus
+4 and we can also add some kind of
+scheduler
+reduce lr on plateau where we have
+optimizer
+uh factor of zero point eight
+patience five overpowers true
+so you can play around with different
+ones if you want
+and we can do for a balkan
+uh config
+range config dot epochs
+here we can define train loss so train
+loss will be
+engine dot train function and inside
+that takes model
+train uh loader
+and optimizer and similarly we have
+um valid threads
+comma we've added loss
+eval function and that doesn't take any
+kind of optimizer
+okay
+so we have everything now and
+we can probably
+try to
+train our model and see what if it's
+even training
+so let's clear this
+python train dot by let's see
+okay tk0 is not defined so
+zero the habit of writing tk0
+okay and then see what happens now
+captcha model object has no attribute
+eval function
+model.eval function okay so there is a
+typo
+um and also we are printing
+a lot of things that we don't need
+anymore
+so
+let's hide them all
+and try it again
+so now it seems to be training okay uh
+it went out of memory it shouldn't have
+been out of shouldn't go out of memory
+let me try it on a different gpu
+it really doesn't like it so maybe i can
+use with
+torch dot no grad right
+that context so let's see
+engine
+let's hope it drains so i have a lot of
+things running at the moment
+maybe that's why it's running out of
+memory
+okay so it seems to be running fine
+right so let's print some stuff
+so print
+epoch
+okay and what we can print
+train loss
+and we can print valid loss
+so
+train underscore loss and
+valid underscore loss
+so let's see what's happening
+so seems to be doing quite well
+it's learning it's a bit slow but it is
+learning
+so we can let it run or we can stop it
+and go to the next step
+which is the last step i know this video
+has been a little bit longer than i
+expected it to be but there's just
+way too many things in this one
+and uh yeah you have to
+you have to you have to very patients
+with this you have to have
+a lot of patience with this kind of
+model so
+now what we are predicting
+is at every step we are predicting
+so whenever we are making prediction we
+are predicting 75 values
+in in this given case we are creating 75
+values for
+each image and at every 75
+values we are predicting a label so
+label can be anything between 0
+and 20 inclusive of 20 i think
+0 and 19 and then we extended it so 0
+and
+20. so
+no we had 19 characters before okay
+anyways so
+zero is our unknown so we can represent
+unknown by
+something so let's represent unknown by
+this
+degree sign okay so this is our unknown
+then
+probably it's uh giving me six six
+six six d d d d d seven
+seven eight h something like this
+and i can also have unknowns in the
+middle
+maybe here was not able to predict
+anything maybe here
+so you you get something like this and
+the size of
+this thing this string
+is 75
+so first thing first thing that you need
+to do is to remove these things
+the unknown uh labels and
+then you can also reduce uh these
+um you can say like if it's repeated
+then we take only one occurrence which
+is very bad because that's going to give
+you
+a quite bad accuracy but anyways
+let's take a look at this how to decode
+the predictions
+so we can create a function
+called the code predictions
+inside this you take takes the
+predictions uh
+from from the validation set or anything
+and
+the label encoder which is let's just
+call it encoder
+so the first thing that you do is
+you do breads start permute
+and permute it back to one zero two
+so you have to batch size first then you
+have the timestamps
+and then you have the predictions and
+then you can do
+a soft max on this
+threads second index access
+and then you can do an arc max
+and here you have reds comma two again
+uh and you can convert it to an ampere a
+red start detach
+dot cpu dot
+numpy
+and now you have i can create a list
+called captcha predictions
+and you have here for j in
+range so i'm doing it in a very crude
+way
+you can probably do much better than me
+so i'm going through each and every
+batch
+each and every image in a given batch
+and for that i'm creating a temporary
+list
+and then i'm going through each and
+every value
+so for k in threads
+so which value was predicted j comma all
+um sorry and then
+i'm subtracting -1 from that value
+because we had added -1 to the label
+which was extra
+so we need to subtract it so now if i
+say if k
+equals
+minus 1 then just choose a unknown
+character which is not in your list of
+characters
+so temp dot append you can
+you can open anything you want so here i
+will just open
+this degree symbol else
+temp uh else you have some kind of
+um real value so temp dot opened
+and here you can open encoder
+dot inverse transform
+and create a list and the list will
+consist of only one
+value so okay and take the zeroth
+element of the list
+so yeah if it's a little bit faster
+then i'm sorry we have to move a little
+bit fast
+so join and temp and
+uh here we can we can just have
+we can just open to our capture
+predictions
+dot opened and here you just open tp
+the predictions that you have created
+temp predictions
+and you return capture predictions
+so this is this is some kind of
+decode function that we have just
+written probably it's not very good
+but it can try to decode something
+right and we can see some some stuff
+so let's see some stuff
+so we have the valid threads we have the
+valid laws
+so i will create a new
+list valid cap threads okay
+and i will go through each and
+every item in valid
+uh threads so my valid threads is a list
+of
+lists right so i will say current
+threads is decode predictions
+so um and then i have
+inside this i have valid
+threads comma label encoder
+okay and then i can
+extend
+validcaprics.extend
+current parts so i can write something
+like this
+and in the beginning we also created a
+test orange target so train knowledge
+targets we don't need
+so we created test or is targets so
+let's try
+and see um
+so we have valid cap threads now that's
+giving me all the capture predictions
+so this should be vp instead
+and we create a
+zip of test storage targets and
+valid cap breads and
+we print some of it
+let's say between six and
+ten let's print only four or five values
+okay and let's train the model now and
+see what happens
+so the model is training and it should
+print something okay now
+yeah so now see that you have
+like 75 of uh these things
+coming in right so
+it would be a little bit hard to see but
+we could we can nevertheless see a lot
+of it
+anyways so let's continue
+maybe we can use b print from
+the print
+and
+let's say let's see we should print it
+better
+i hope
+okay so now at least we can see a few
+things better
+so it's training i will let it train
+and let's see how long it takes
+so you see like it reached
+25 epochs and it's not predicting
+anything
+but after that it starts to to
+predict stuff so you have to be really
+patient
+and you have to wait a lot so
+anyways there are few more things
+that you have to do in this so
+you have to you have to get rid of this
+unknown characters and you have to find
+a way
+to enhance your predictions so
+we can also let it train for some more
+time and see
+if we are predicting any good values
+so you can see the loss has reached
+quite low but we are not predicting
+anything good so something is wrong
+maybe something is wrong in the
+transformation somewhere
+so inverse transform k
+looks good
+it's still training the loss is quite
+low
+but yeah seems like the predictions are
+not very good
+so something is definitely wrong
+somewhere
+we need to check that
+so yeah we have made a big mall blunder
+instead of train
+uh test loader we have used train loader
+so let's fix that that's why it was
+learning so good um
+and now we stop it and try to train it
+again
+i hope this works now
+so now it has been training for a while
+so it's more than
+100 epochs so the training
+is similar to last time it's going to
+take some time but
+uh to when it starts to learn something
+but you see like the loss is quite low
+now
+obviously not like last time when we
+were over fitting um
+but now let's see the prediction so you
+have four fp five six
+and here at every time step it's
+generating some kind of prediction value
+so four
+uh then it doesn't generate for a long
+time then you have four
+f p five and then g
+so similarly you have d six six c n d
+six
+six then you have a lot of z's so at
+different time steps
+generating c again and again and again
+and then you have n
+and the similar thing happens here when
+you have x x coming together
+for the first x and then you have a lot
+of space and then you have the second x
+which is just once
+so you have to write some kind of
+algorithm
+so there are there are some ctc decode
+libraries that you can use
+uh or some kind of search you have to
+build some kind of search
+to figure out what is the best um
+way to extract from this data
+here so that's all for today's video
+i know it has been a long long video but
+uh there was a lot of content in it and
+i hope you like that content and if you
+do like their content press on the like
+button and do subscribe to my channel
+and don't forget to share it with others
+and you can also buy my book and
+i'm also in process of writing a new
+book called approaching almost any nlp
+problem which is going to be really very
+extensive book
+so let's see how that goes later and
+uh thank you very much
+and have a good week ahead have a good
+day
+bye bye

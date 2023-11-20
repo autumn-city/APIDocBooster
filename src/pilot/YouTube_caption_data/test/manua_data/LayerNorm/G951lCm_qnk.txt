@@ -1,0 +1,471 @@
+- Hello, everyone.
+My name is Phil,
+and I'm an engineer at OpenAI.
+Today, I'd like to tell you
+about Triton,
+a language and compiler
+for GPU programming
+that we've been working on
+for some time.
+This talk will be divided
+into three parts.
+First of all, we'll talk
+a little bit about Triton,
+what it is and how it works.
+Then we'll go over some examples
+of how to use it in practice.
+And finally, we'll talk about
+some performance numbers.
+So what is Triton exactly?
+Well, Triton is a new language
+and compiler for GPU programming
+that we've been developing
+at OpenAI.
+The goal of Triton is really
+to enable machine
+learning experts
+and engineers
+that have no CUDA
+programming experience at all
+to write
+their own GPU code
+in a way that's
+productive and fast,
+and the goal in fact
+is that they should be able
+to write code
+that's on par with what an
+expert would be able to write.
+But you might wonder why would
+we even need a new language
+at all since there are already
+quite a few tools
+for programming GPUs.
+Well, I would argue that
+the tools that exist so far
+are not perfect.
+First of all, CUDA is a little
+bit too low level in the sense
+that it's quite
+challenging to write,
+so researchers often have
+to talk to GPU experts
+and provide them with some specs
+that they can implement
+and give back their code.
+And then whenever there's
+a slight modification to do,
+communication
+has to happen again,
+and this can really slow down
+the pace
+of iterative research
+in AI organizations.
+Another issue with CUDA is that
+it's really hard to communicate
+sometimes for GPU programmer
+and machine learning experts.
+For example,
+some GPU programmers
+might have some constraints
+on how they need
+to design their kernels
+such as some data might need
+to be precomputed, for example,
+and it's not always clear
+to the outside eye
+why this should be the case.
+So communication can be really
+difficult when you use CUDA.
+And it's true that there are
+some other languages
+and compiler available
+that are high level,
+for example TVM
+or some dialects of MLIR,
+but these are not
+perfect either.
+One of their problems is that
+users cannot really use them
+to define
+their own data structures,
+so if you have some sparse
+tensor you want to use
+[Indistinct]
+or even some triangular metrics,
+then you're generally
+out of luck
+when you use
+these frameworks.
+And another issue
+that they have is
+that they don't really
+give you control
+over how to schedule work
+across the GPU.
+If you have some
+parallelization strategy in mind
+in terms of what SM should do
+what or how the L2
+cache would be partitioned,
+then it's usually not something
+that you can implement easily
+using these frameworks.
+So how is Trident
+different exactly?
+Well, Trident is
+a little bit
+between these two level
+of abstractions.
+So you still define tensors
+like in TVM
+or like in high-level DSLs,
+but instead of being
+in the DRAM of your GPU,
+they actually reside in the SRAM
+like in CUDA, for example.
+And then you can
+modify these tensors
+using torch-like operators.
+So with this programming model,
+you really get
+the best of both world.
+Machine learning experts
+can be very productive
+and use a torch-like environment
+to program their GPUs.
+And there are three main
+features that go with Triton.
+First of all,
+it's embedded in Python,
+so kernels are written
+completely in Python
+using the syntax
+of the language,
+and then they can be
+JIT compiled for GPU
+using the decorator,
+the triton.jit decorator,
+very much like the
+TorchScript JIT would work.
+Another core tenet of
+the Triton methodology
+is that users retain
+low level control
+of their memory accesses.
+So you still have
+pointers in Triton.
+You can declare tensors
+of pointers in SRAM,
+and then you can reference them
+to get tensors of value in SRAM,
+and then you can use them
+however you like.
+And the final crucial point
+for the Triton language
+is to have an efficient compiler
+because having a very flexible
+high-level language
+really does you no good
+if the compiler
+cannot compile this
+into very efficient binary code.
+So to go over a quick history
+of the project,
+it started in 2018
+during my PhD.
+I worked really hard on it,
+and about a year
+and a half later,
+it was published
+at the [Indistinct] workshop
+at the PLDI conference alongside
+with an open-source prototype.
+I kept working on it,
+and in 2020 about a year later,
+there was a collaboration
+with DeepSpeed
+in which block-sparse attention
+was implemented in Triton,
+and this allowed wider usage
+of the Triton language.
+After that, I joined OpenAI,
+and I kept working on it
+until a few months ago
+when we released the version
+1.0 along
+with a block-positive
+describing the language.
+So now I'd like to go over
+some examples of Triton,
+of how Triton works in practice.
+So the first thing we'll go over
+is a simple vector addition.
+So let's say that you have
+a simple element-wise kernel
+that runs on a single streaming
+multiprocessor of your GPU
+and without
+bounds checking.
+So you would start your kernel
+by importing all the namespaces,
+so there are two
+main namespaces in Triton.
+We have the Triton front end,
+which contains the JIT compiler
+and the autotuner,
+and then you have
+the Triton language,
+which I usually
+abbreviate as TL,
+and anything that you use
+in your kernel
+or the SRAM of all
+tensor functions
+reside in the TL name space.
+And so we'd start by
+declaring our kernel function,
+which in this case
+takes three inputs,
+the two inputs, X and Y,
+and the output tensor, Z,
+as well as the size
+of the vector, N.
+Then we would start
+by constructing
+the pointers in SRAM
+that we want to load from,
+and this can be done using
+a simple arange function
+that we add to the base
+pointers of our tensors,
+and this gives you a tensor
+of about 1K pointers.
+Then we can use
+the tl.load function
+to then reference these pointers
+and get tensors of values,
+still reside in SRAM.
+Then we can do
+our computations with them,
+which in this case is just
+a simple vector addition.
+And then finally
+once we're done,
+we can just write back
+the result
+using the pointers
+to our output.
+So now our kernel is declared,
+and if we want to use it,
+we can just declare
+three torch tensors
+and simply pass them to our
+kernel function as arguments.
+I know that when I pass torch
+tensors to a Triton kernel,
+then the tensors
+are implicitly converted
+to pointers
+to their first element.
+Now just a simple
+vector addition like this
+doesn't get you very far
+because you really need it
+to work on vectors of any size
+and to work
+with bounds checking.
+So what you can do
+to solve this issue
+is just slightly modify
+the pointer arithmetic
+that I talked about.
+So now you have
+your pointer offsets,
+and you can also add
+[Indistinct]
+which corresponds to the offset
+of the particular program
+instance that's running.
+And then when you load
+your tensors
+using the tensors
+of pointers,
+then you can simply
+pass a tensor of boolean
+that just corresponds
+to where the tensor
+should actually
+be loaded from memory.
+And then the only difference
+that you have to make in terms
+of how you run the kernel
+is now the number of kernel
+instances that execute.
+The grid is actually
+not a single element,
+but it actually consists
+of the [Indistinct]
+division of the size
+of your vector
+by the block size
+that you're using,
+in this case 1K.
+Another very useful example
+that we can go over
+is a fused softmax,
+and we will see
+that we can actually write
+the fused softmax kernel is less
+than 10 lines of Triton code.
+So we'd start just as before.
+We import our namespaces,
+and now the functions
+just have four arguments,
+the pointer
+to the output tensor,
+a pointer to the input tensor,
+the stride between different
+rows of our matrix
+and the number of columns
+of our matrix.
+So here our strategy is that
+each particular program instance
+that we're running
+is going to normalize
+a different row
+of our input matrix.
+We just still need to declare
+the tensors of pointers
+just like before,
+and this is something
+that we can do as follows,
+so we can just declare
+the range of rows
+handled
+by this program instance,
+which in this case
+is just given by the program
+ID as well
+as the number of columns.
+And then we can just use
+standard pointer
+arithmetic to offset
+the row that we're processing
+and add all the columns
+indices that we're using.
+And then we can just
+use tl.load as before,
+and then once our data is in --
+once the row of the input matrix
+is in SRAM,
+we can just do our softmax on it
+by first casting a to float32
+and then removing the maximum
+and so on.
+And then once our softmax
+computation is done,
+we can just write back
+the normalized row to DRAM.
+So one thing you might wonder
+is okay, Triton is good,
+and it's relatively easy
+to program,
+but how well does it perform?
+So the simple vector addition
+that I talked about
+is a very low bar,
+but you can see that it actually
+works just as well as Torch,
+and this is because
+memory accesses in Triton
+due to the optimizing compiler
+are vectorized and coalesced,
+so performance
+is unsurprisingly on par
+with what Torch provides
+for [Indistinct]
+element-wise.
+Now for softmax, it's quite more
+challenging of an application,
+and you can see that here
+the PyTorch JIT actually
+doesn't work really well.
+It transfers about four times
+more data than necessary,
+which makes it about
+four times than it should.
+The native
+PyTorch implementation
+is slightly better,
+but on an A100 GPU
+that has about 1,500 gigabytes
+of advertised bandwidth,
+you can see that it only reaches
+about 75 percent of it.
+The Triton implementation
+on the other hand
+fits in only 10 lines
+of Triton code
+and achieves close to the peak
+performance of our GPU.
+You can also do a kernel
+similar to softmax
+that computes the layer norm
+of a given matrix.
+And just as before,
+PyTorch kernels
+are not completely fused,
+and so they transfer
+more data than necessary.
+And even the Apex library,
+which is widely used
+for layer norm
+actually quickly drops
+in performance.
+But with Triton,
+we can write a kernel
+that's much faster
+than both Apex and PyTorch.
+Another much more challenging
+and crucial application
+is matrix multiplication.
+Matrix multiplication
+is a pillar of deep learning
+and often needs to be
+slightly modified,
+so having open-source
+implementations of it
+is extremely valuable.
+You can see that cuBLAS
+as expected achieves
+close to peak performance
+on our A100 GPU.
+But as soon as you try to fuse
+the Leaky ReLU for example,
+you can see that it comes at
+about a 10 percent
+performance cost.
+With Triton, our base
+implementation can reach
+about the same performance
+as cuBLAS,
+and keep in mind I haven't
+shown it in these slides,
+but it actually fits in
+about 25 lines of Triton code.
+And the good thing with Triton
+is when you try to fuse
+Leaky ReLU,
+then it all happens in SRAM,
+so you don't need to transfer
+the activations back and forth,
+and you don't lose
+any performance at all.
+So that's it.
+Triton is an open-source project
+with strong community support.
+The documentation is available
+at triton-lang.org,
+and the GitHub page
+is shown here. Thank you.

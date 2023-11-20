@@ -1,0 +1,191 @@
+Hey! We are back with the 
+dimensionality reduction series.  
+In our last video of the series, we talked about 
+one way to escape the curse of dimensionality  
+through an older algorithm, called PCA.
+Today we will talk about a newer and very popular  
+dimensionality reduction algorithm called UMAP.
+PCA and UMAP are very different: PCA factorizes a  
+matrix characterizing the data, which puts it into 
+company with algorithms like NMF or SVD. But UMAP  
+(like t-SNE if you know it), builds a neighbor 
+graph in the original space of the data and tries  
+to find a similar graph in lower dimensions.
+But how does it do it? 
+UMAP stands for "Uniform Manifold 
+Approximation and Projection". 
+This sounds intimidating. And the paper 
+behind it can be even more intimidating, but  
+do not worry, because we break it down for you.
+The two steps of UMAP are the high-dimensional  
+graph construction and its mapping 
+to a lower dimensional graph. 
+The construction of this high-dimensional 
+graph is what makes UMAP so special  
+compared to its competitors, since 
+it's hard to do it right and fast. 
+And the cool part about UMAP is that its 
+steps are mathematically proven to work. 
+So first, there was the data in the high 
+dimensions and we want to approximate its  
+shape, or topology. Each data point is 
+a so-called 0-simplex. And a certain  
+theorem ensures that the shape of the data 
+can be approximated when we connect these  
+0-simplices (which are our data points), 
+with their neighboring data points forming 1- 
+or 2- or higher-dimensional simplices.
+And with this, we can approximate the topology. 
+So all what we need to do 
+is make these connections. 
+For this, the UMAP algorithm extends 
+a radius around each point and makes  
+a connection between each point and 
+its neighbors with intersecting radii. 
+So far the radii are equal.
+But remember, we want to  
+approximate the shape of the data, so we want a 
+connected graph containing all our data points. 
+But this whish of ours brings in two problems: 
+Firstly, it often happens that in the data  
+there are larger gaps, where there is no 
+next point to connect to in the graph.  
+This happens usually in low density regions.
+Secondly, there are often high density regions  
+where there are a lot of neighbors in the given 
+radius and everything is way too connected. 
+This second problem gets even worse 
+with the curse of dimensionality,  
+where in high dimensional spaces the distances 
+between points become more and more similar. 
+Okay, so then, if we have these 
+two problems with a fixed radius,  
+then let’s use a variable radius instead! 
+This choice is also mathematically supported 
+by the definition of a Riemannian metric on the  
+manifold, but do not worry about that.
+Just keep in mind that there is math  
+proving that the choice of a variable 
+radius does not cause any trouble. 
+So now the radius is greater in low density 
+regions and smaller in high density regions. 
+But UMAP does not estimate density 
+directly as a number but uses a proxy:  
+the density is estimated to be higher 
+when the kth nearest neighbor is close 
+and lower when the kth 
+nearest neighbor is far away. 
+Notice, that this k in kth nearest neighbor 
+is a hyperparameter that we need to choose,  
+because with its help, UMAP makes a density 
+estimation to find the right local radius. 
+If k is big, then more global 
+structure is preserved, 
+if k is small, then the radius decreases,
+and the local structure is more preserved. 
+So the right k could give the perfect balance 
+between local and global structure preservation,  
+but there are rarely any recipes for 
+finding the optimum automatically. 
+Some trial and error is required, since 
+k depends on each dataset individually. 
+But not all k neighbors are 
+equal, since each have different  
+distances from the point we are looking at.
+Then the connections between each point and their  
+neighbors get a weight, a connection probability, 
+where points which are far away, are weighted  
+less and get lower connection probability.
+Now that this high-dimensional graph is  
+constructed, it is ready to be projected to lower 
+dimensions. This graph projection algorithm is too  
+much for Ms. Coffee Bean to explain in detail in 
+this video, but you can imagine this projection  
+as taking the high-dimensional graph, with their 
+edges being springs, where each spring is stronger  
+as the edge probability increases.
+Which means that points connected by  
+high weighted edges are more likely to stay 
+together in the lower dimensional space,  
+because the spring holds these points together.
+And perhaps interesting to notice is that these  
+spring forces are rotationally symmetric
+which leads to clusters sometimes landing  
+on one side after one UMAP run and on 
+the other side after another projection. 
+So UMAP has two main strengths over the other 
+famous graph-based dimensionality reduction  
+technique called t-SNE: It is faster due to its 
+optimizations and strong mathematical foundations  
+and it also has a better balance between 
+locality and globality in clustering. 
+Take for example this visualization from the 
+awesome blog from Google PAIR linked below.  
+We have this mammoth in 3D on the left 
+and we can see side by side how UMAP and  
+t-SNE map this 3D mammoth into two dimensions.
+We can play around with the number of neighbors  
+taken into account when constructing the high 
+dimensional graph and we can clearly see how  
+low numbers focus on the local structure, while 
+higher numbers more on the global structure. 
+The minimum distance parameter allows to 
+specify how tightly the algorithm will map  
+points into the target low dimensional space. A 
+high minimum distance will spread the points more. 
+But it is important to notice that a 
+stepwise change of these two parameters  
+continuously changes the UMAP result.
+T-SNE on the other side is not that  
+great in this aspect, because when changing the 
+parameter of t-SNE, t-SNE's result completely  
+changes. We really recommend you to play around 
+yourself with all examples in this blog post. 
+So far we have seen examples 
+where UMAP maps from 3D to 2D,  
+but the visualizations you have seen so far, 
+are toy examples. They are just for us to  
+get an intuition about the inner workings of 
+the UMAP dimensionality reduction algorithm. 
+What UMAP excels at, is reducing from a lot 
+of dimensions. Here is a real-world example of  
+784 dimensional MNIST data containing handwritten 
+digits. It would be nice if we could reduce their  
+dimensions to two or three so we can visualize 
+this pixel space the digits are living in. 
+For this, we can write a little Python 
+code to load the MNIST data, to load the  
+UMAP package for dimensionality reduction, 
+and a visualization package of your liking. 
+We like babyplots and you will see why.
+We read in the data and we see we have 60,000  
+training instances of 28 times 28 
+pixels, which are together the 784  
+dimensions we plan to reduce from.
+For reducing, we fit and apply the  
+UMAP algorithm. And we do it once for two 
+dimensions, and again for three dimensions. 
+We reduced to 2d and 3d to show you 
+what a cool thing babyplots can do:  
+It takes both the 3d and 2d embedding and 
+can animate a transition between the two. 
+How cool is that? Hereby we can see that UMAP 
+could already cluster almost all handwritten  
+digits together. Meaning that UMAP here worked 
+as an unsupervised clustering algorithm.  
+Also, we can see how useful a 3d visualization 
+can be over just 2d, where more complicated  
+structures and relations can be visualized.
+If you want to visualize these things in 3D  
+yourself in either R, Javascript or 
+Python and load your interactive 3d  
+plots into a PowerPoint presentation to show 
+to everybody, check out the babyplots website! 
+This was it from Ms. Coffee Bean. Read the paper 
+if you are interested in the mathematical theory  
+and proofs behind UMAP. Find it linked in 
+the description below. Or watch the first  
+author (Leland McInnes) of the UMAP paper 
+presenting his UMAP invention linked below. 
+Now go and reduce your dimensions with UMAP!
+Ok, bye!

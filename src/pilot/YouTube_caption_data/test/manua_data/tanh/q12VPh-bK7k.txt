@@ -1,0 +1,830 @@
+All right. Hi, everyone.
+Welcome to Deep Learning Systems, Algorithms and Implementation.
+Today we're going to talk about implementation of recurrent neural networks,
+in particular implementation of an LSTM network.
+As we did with the convolutional neural network example,
+what we're going to do today is we're going to sort of start out
+out by illustrating what the LSTM looks like or what the model looks like and the weights of the
+model in PyTorch. And then we're going to implement a clone of that model using just pure NumPy.
+And the idea here is to show the sort of guts of the implementation and ideally also show that it's
+it's really not that complicated.
+So the basic idea of the LSTM is really quite simple.
+So let's go ahead and get started.
+Here we have our blank notebook.
+And in the homework, of course,
+you're going to implement this in needle,
+but here we're just going to implement it in NumPy
+to give you a basic idea of the operations
+that are involved.
+And then we will, in the, of course, homework,
+you'll have to actually use this
+in an automatic differentiation tool
+to actually run this and train these models.
+All right, so let's go ahead and get started.
+Let's start by importing Torch
+and importing the neural network library of Torch.
+And we'll import NumPy.
+All right, so let's start off with sort of looking at,
+let's put NumPy as NP.
+Let's start off by looking at what a PyTorch LSTM
+actually kind of looks like here.
+So let's set our model to be an LSTM cell.
+We're actually gonna start off just implementing
+a single cell of the LSTM,
+that's sort of one block of the operation there.
+And the arguments for the LSTM cell are the hidden sizes,
+the input size is first followed by the hidden size.
+Let's make the input size,
+let's make it 20,
+followed by a hidden size of, say, 100.
+say 100. Let's look at the sizes that are involved in this. If you look at the model here, there's
+actually going to be two weights that are of importance. There's going to be the weight nn
+and the weight hh and the weight ih. To understand these weights here, let's actually go to a moment
+to look at the LSTM documentation that we see in PyTorch. Let's look at the LSTM documentation
+in PyTorch is actually a bit, it's a bit complicated here. They have, they kind of write this whole
+thing out term by term. They write expressions for all the i, f, t, and they use weight matrices too
+that are like one for each pair of possible things here. But we sort of know from experience that
+this is not actually that complicated, right? So we sort of remember from last time what we really
+said with what's going on here is that what we really have is we have sort of an intermediate
+hidden vector we form. I, T, F, T, G, T, and O, T. And this whole thing is some non-linearity and
+happens to be sigmoid sigmoid tanh and sigmoid
+times sort of one big matrix that multiplies really all these collections of hidden units
+So it's, we called it WHH times HI minus one plus WHX, X,
+I should say T minus one, T plus, we had a BH term also.
+OK, that was how we defined it.
+And to be clear, kind of internally,
+despite the documentation looking like this,
+looking like this. And by the way, this documentation bothers me for many reasons,
+because, for example, the indices are flipped here. This should really be i,
+h. The output is i and the input is h. Regardless, what PyTorch is doing internally,
+just like we wrote it last time, is it's really combining all these matrices into two big blocks
+So what's really happening is that we have model dot weights H, H.
+Let's print the size of this. Let's see what size this is.
+That shape. We see that this is a 400 by 100 dimensional matrix.
+And so what's really happening here is this is actually exactly this matrix here.
+It's actually the transpose of that. They have it in the other, in the flip notation.
+because remember our hidden size is a hundred, this is a hundred dimensional so this thing here
+will be or rather this thing here will be 400 dimensional and that means this matrix here should
+be 400 by 100. This one here by the way should be 400 by 20 and PyTorch exactly stores kind of the
+the flipped versions of these so this one is the 400 by 100. I guess actually no it's not it's
+We're going to flip it later ourselves to do the batch form of it.
+But it's exactly this matrix here.
+And similarly, if we look at model.weight,
+I guess it's, what's it called, ih, that shape.
+This is the 400 by 20 one.
+So these matrices are exactly these two matrices here.
+Actually, exactly these two matrices here.
+Okay, so we can actually look at what this looks like.
+So let's go ahead and now define kind of our implementation
+of a single LSTM cell.
+So single LSTM cell,
+and we're gonna implement this in PyTorch.
+Sorry, in NumPy.
+And we're gonna check that it's doing the same thing
+as the PyTorch version.
+So let's start off by just defining
+the sigmoid nonlinearity.
+There's no built-in function, I think, in NumPy for this.
+So let's just return one divided by one plus x plus negative x.
+That's the standard sigmoid function.
+Now let's define an LSTM cell.
+We're going to define this just sort of functionally.
+And so that means that we're going to give an input x,
+the input h, the previous hidden unit,
+c, the previous hidden cell state.
+I know that really both h and the cell state
+are both the hidden state, but we're going to adopt the convention of the LSTM here.
+And then we're going to pass WHH, and I'll even use the WIH as the conventions.
+I'll forgo things and adopt PyTorch's notation here.
+And then our bias B.
+So that's going to be our conventions here.
+And so, how do we actually go about forming this, right?
+So how do we actually go about forming this?
+Well, we can actually form all i, f, g, and o
+by just taking W hh here and just multiplying it by h
+plus W ih times x plus b.
+But of course, this is, oops, this should be o.
+But of course, this is now going to be a 400-dimensional vector.
+And so to split this into four 100-dimensional vectors,
+we just call np.split into four components.
+Now we have to, of course, apply the nonlinearities.
+If we just run this, it will just be a linear function.
+And we just go ahead and do that by applying
+the nonlinearities to each one.
+So this is sigmoid of i.
+Really, these are sort of the temporary versions of i.
+So this is sigmoid of i.
+This would be sigmoid f.
+This would be tanh of g.
+And this one is sigmoid of o.
+And next, we have the two main equations, really, of an LSTM.
+So that would be these two.
+The cell state is this ft, the forget gate,
+times the previous cell state plus this term.
+Again, it's called the input gate times the cell gate.
+Again, these are just terms.
+It's just intermediate terms, but it's f times c,
+so we say that c out equals f times c,
+the c that was the input to our function here, plus i times g.
+Again, these are element-wise products, so we're just using multiplication here,
+as you would in NumPy, to denote element-wise multiplication.
+and then the output hidden state would be equal to o times,
+sorry, yeah, it would be o times np.tanh of c out.
+Right, now we return the two hidden states here,
+return the out, the hidden state and the cell state.
+Right, this actually is a finished LSTM.
+So let's go ahead and evaluate this, see what this looks like.
+So, let's set X to be a random variable,
+a vector of random Gaussian entries,
+and let's make it actually,
+just so we don't have any issues with PyTorch conversion,
+let's make it a 32-bit floating point number.
+Same for H0, that will be this random,
+but it will be size 100.
+And C0 would be the same thing here.
+There we go. Okay. And now let's actually look at what sort of the right answer is.
+I mean, let's just compute the kind of the right answer, so H star and C star,
+by inputting this into our PyTorch version of the LSTM cell. Okay.
+And so this would actually be the exact same thing we're doing before.
+We just convert to a tensor each of these.
+So torch.tensorX, torch.tensorH0.
+Actually, the convention for these things,
+you have to pass sort of the hidden state and the cell state as a tuple.
+So it'd be torch.tensor H0 and then torch.tensor C0.
+And that will output that sort of true H and C.
+It doesn't really matter what H is here.
+That's H, some torch tensor.
+And this is sort of our reference implementation
+of the LSTM though.
+Now we're gonna check our implementation against it
+and we'll see that it is in fact the same thing.
+One thing I notice here is that I have this one here.
+That's the batch dimension, right?
+So in PyTorch convention for the input to an LSTM cell,
+the first dimension is the batch dimension.
+And this we've implemented at least so far
+for just a single batch.
+We'll talk about batching in a second
+when it comes to LSTMs.
+And so we're just going to confirm that our output here
+is the same as what we got before.
+So let's try calling our LSTM cell
+with x, h0, c0, our weight down here.
+We'll just pass in, sorry, a new line here,
+but model.weight, hh,
+and we have to convert this to NumPy.
+So detach.numpy, and then our next thing,
+which is model.weight,
+ih detach numpy,
+and finally, the bias term.
+And again, Torch does something very weird here.
+So if you look at the actual documentation,
+there are two bias terms here that you add.
+They both get the exact same gradient.
+They're both just added.
+They're both just parameters.
+I have no idea why they're doing this.
+I guess it's not that big a deal
+because ultimately they're just, maybe they're matching some other weird reference implementation here.
+It's very strange. And, you know, I'll use PyTorch's convention to a degree,
+but I see no reason to add two separate bias terms.
+So I'm just going to add those two together. So this is model.bias.
+Let's see, which one is it? It's bias, hh, and then model.bias.ih.
+Add those together, and then detach them, and convert to numpy.
+Great. I think that's it.
+Let's run this. Oops, we're getting an error there.
+Okay, so the size of this is wrong.
+Oh, of course, I have to only pass in
+the first elements here.
+There we go.
+Okay.
+And now what we can see is if we look at
+the difference between our solution
+and the kind of reference solution,
+which is just the zeroth element of that
+because this is, again, gonna be a batch vector.
+If we did everything right here, we should see that it's within numerical precision.
+So we are, in fact, and the same should be true of the cell gate.
+So this is all that the implementation inside of PyTorch is doing itself.
+It's just computing these operations here.
+All right, so let's now move to a slightly more complex version,
+because this here, this is really just computing kind of a single LSTM cell,
+which is not what you typically want to do. Computing a single LSTM cell is
+worth, you have to do this to test out the first block. But, of course, a full LSTM,
+and you can see this, the PyTorch LSTM class, this is the one you typically use, and it applies
+an LSTM to a whole sequence, not just to a single operation. I'm sorry, not just to a single sort of
+hidden state and output state. You apply it to the entire sequence there.
+So, let's take a look at that and see how this would do.
+So, now let's talk about sort of a full sequence version of our LSTM.
+How would we implement that?
+Well, let's start with redefining our model to be PyTorch's LSTM.
+And LSTM, for some reason, I believe, if you look at the docs here,
+the arguments are the input sizes first and the hidden size is second.
+So, unlike LSTM cell, for some reason,
+I can't really understand, they have the hidden size first
+and the other size second.
+Or actually, is that right? Sorry.
+So, it's the input size first and the hidden size second.
+So, that would be 20, 100, whereas this...
+Oh, no, actually, this is the same too.
+Is this the same?
+Okay, yeah. So, this actually is the same.
+I thought maybe it's a different one I'm thinking of.
+So anyway, LSTM has the hidden size and the input size
+and then the num layers argument
+and we want num layers equal to one.
+And so this is now a single layer LSTM.
+And as before we can run it on some data,
+but here we're actually gonna run it
+on a whole sequence of data.
+So rather than running it on sort of a single input,
+we're gonna run this on the whole sequence of inputs.
+I'm going to denote that or sort of emphasize that
+making sure that we use uppercase X here to denote a sequence of say 50 different time steps. So now
+each of the rows of this matrix is going to be a different time step. And the C0 and H0 are still
+just one-dimensional, of course, because they are just the initial state into our LSTM, right? This
+is sort of what we're doing here is we are computing an LSTM, which remember takes in
+takes in sort of an h0 and a c0, c0, using this along with x1 to compute h1 and c1,
+then uses this to compute h2 and c2 along with x2, etc. Okay, so we're gonna
+to write the code that implements this now. All right, so everything here actually looks
+very, very similar to before. Well, actually, I should take that back. It's just leveraging
+the same cell we had before, just applying it in sequence one after the other, right? So that's
+all that's really happening here. So let's define now, rather than just our LSTM cell function,
+and let's define our LSTM function.
+So LSTM, which is taken as input x, still h and c,
+those are the sort of the initial states there,
+same inputs as before, w, i h, w h h, and b.
+Okay, first thing we're gonna do is we're going to
+initialize kind of our set of all our hidden states.
+And actually it turns out that we're gonna kind of
+follow PyTorch convention here where we're only going
+to return the array or the sort of the tensor
+of all hidden states over all times.
+For the h variable, the c, the cell state,
+we will just return the very last one.
+Okay, so that's just sort of convention.
+PyTorch for again, kind of owing to the convention of LSTM
+does not return the whole cell state.
+It just returns the whole hidden state portion
+of the hidden state and then the last cell state.
+And we'll see that at the very end of this lecture
+why we return the last hidden state.
+All right, so h is going to be equal to just,
+we'll start to initialize it with zeros.
+So the zeros should be x.shape, zero,
+so we want the same size as x,
+but then the output would be the same size as h, right?
+So h, it'll be the number of rows in x
+and the number of columns that are in the size of h, okay?
+And now we're just gonna iterate over our whole sequence.
+So for t in range x shape 0, we run our LSTM cell.
+So we set our hidden state and our cell state
+to be equal to the LSTM cell of x, t.
+So let's just take the t-th element of that, h, c, w hh
+w i h, and b.
+And then we're going to set h, t to be equal to h.
+And we're going to return the tensor, really just matrix
+here of all our hidden states and the last cell state.
+OK.
+All right, so now let's, again, kind of run our LSTM first.
+Actually, the call is going to look very similar to this.
+I'm just going to copy this thing here.
+Going to copy that.
+And input here now my whole x, just the first hidden state.
+I'm still using the convention, again, for PyTorch's sake,
+that we have a batch of these things,
+even though we'll, again, get the batches in a second.
+I'm gonna pass this as our inputs there,
+just for simplicity,
+and we're gonna call this instead, though, LSTM,
+and we're gonna get the set of all the outputs.
+All right, so this is our call to our LSTM.
+Make sure that all runs.
+Nope, what are we doing wrong here?
+Ah, right, so the model does not have
+any more of these terms anymore.
+Actually, what the model has is weight hh l0,
+because it's the zeroth layer.
+I just want to replace these all with l0, l0,
+and the same for the biases.
+So it has to replace l0 bias and l0 bias.
+And then it computes.
+OK, so now let's just do the same thing
+for talking about the reference solution.
+Actually PyTorch returns both the full matrix of hidden states
+and a tuple containing the last hidden state and the last cell state.
+So I'll set the last hidden and the last cell.
+I'm actually going to call this CN or something like that,
+like the next hidden state or something.
+And this is going to equal the model applied to the tensor of X.
+Let me just go up and copy what I have here.
+Tensor.
+And these things.
+And if you'll forgive me one bit of trickery for now,
+I'm going to do one more thing here.
+I'm actually going to insert an extra dimension in there
+in the second dimension.
+And we will immediately come back
+to that in the next section while I'm doing that.
+But just know that for now, you have
+to add a zero dimension in the second dimension,
+or a zero column of size one in the second dimension
+here for this to actually match.
+So I'm going to do this.
+And that should work.
+Nope.
+I'll close my brackets.
+And now we can similarly print the difference between,
+let's just print, whatever, I won't bother to print,
+np.linalg.norm of h minus h.
+And we wanna similarly just take this first entry there,
+that detach.
+All right, and let's see what that looks like.
+So again, we're within numerical precision in our implementation.
+So the LSTM model in PyTorch is exactly just calling this thing.
+And we're just going to implement in NumPy now, but you can of course implement the same thing
+as a module in needle, and you'll have a module that does the same thing as your PyTorch LSTM.
+And this is true with one little exception here, which is I'm going to come back
+to this weird batching now, or this weird sort of extra dimension that I have here and
+talk about that.
+And the reason this all comes up and sort of what's going on here, oops, what's going
+on here is related to how we batch LSTMs.
+So I want to talk a little bit about, again, in theory,
+about now that we've seen some discussion about efficient
+implementations also when it comes to the,
+I guess you would say, the internals of matrix
+multiplication, we know that multiplication
+works best when matrices are contiguous together in memory.
+In fact, in needle, the only way that we can really run matrix
+multiplication is by first compacting the matrix,
+then calling multiply, and then having that compact matrix
+be the thing that we multiply.
+And so if your sort of memory is scattered all around,
+then it's really sort of unclear how
+you go about doing the multiplication.
+And this relates to this sort of what's happening here.
+So let me kind of dive into this a little bit more here.
+In some sense, for the case we talked about before,
+we have this setting where we have a matrix X,
+which we defined as being basically T by N, or I guess D.
+Where D here is the size, the hidden dimension.
+Sorry, I guess X is N, right?
+X is this dimension of the input
+and T would be the sequence length, right?
+That's how we define our X input here.
+Now the question is, suppose that I want to process
+multiple batches of this at once.
+Because the problem with this, of course,
+the problem with this call that I'm doing right now
+is that even though I'm processing
+a matrix of Xs as input, I'm still
+doing matrix vector products in my LSTM cell.
+my LSTM cell call is still calling individual, this hidden state at time t is still a vector,
+right? And that, of course, is really sort of fundamental to LSTMs. You can't, you know,
+these things are vectors, right? And so you can't compute h2 and c2 until you've computed h1 and
+c1, right? We'd like, in some sense, to be able to compute all of these simultaneously in one big batch
+But we can't do that.
+These are vectors.
+And the only way to compute these things
+is to do a matrix, i.e., the weights of our LSTM,
+times this vector for each sort of slice of time.
+And we don't want to do that, right?
+Of course, we want to really do matrix-matrix operations.
+That was sort of the whole crux of our linear algebra work
+that we did.
+And we saw that matrix matrix multiplications
+were much faster than matrix-vector products.
+And so the question is, how do we go about doing that?
+So we would like to batch these somehow,
+to add another batch dimension.
+And we want to ask, how would we go about really doing this?
+Well, the most obvious thing we could do
+is take our matrix here, which has the number of times
+and the number of dimensions, and add a batch dimension
+like we are used to.
+Just add a batch dimension, which just describes
+the number of examples in our mini batch.
+And we can do this.
+And this would be kind of normal PyTorch conventions
+for how you set up a matrix, right?
+And in convolutional networks, the batch dimension's
+always first.
+In MLPs, the batch is always first.
+It would make sense for the batch to be first here.
+But let's sort of think about this again, right?
+If we are laying out our memory in this form,
+and then we access kind of this element here, right?
+So if we want to access all the elements at time one,
+that would be kind of this call here, a call like this.
+And unfortunately, if this,
+if we're storing our X matrix,
+and the same goes for the hidden states too,
+if we're storing our X or our hidden states
+or any of the other terms in this form,
+then a matrix like this, which again,
+is sort of all the inputs at time one,
+This would not be contiguous in memory.
+So if we want to do just a batch form of these expressions here,
+apply them to a multiple element of these expressions here,
+apply it to a whole matrix,
+we'd be inputting as x and then eventually as h
+some matrix that looked like this for different t's.
+So we do this, t equals one, t equals two, et cetera.
+And that would not be contiguous in memory.
+And so for that reason, when we batch things for input to an LSTM,
+we switch this around.
+We actually kind of, breaking convention, store the time dimension first,
+then the batch dimension, then the hidden state dimension,
+or the input dimension, or the hidden state dimension.
+You can actually see this in the documentation for PyTorch too.
+PyTorch will talk about the format it uses.
+I guess it uses N for the batch size, L for the length, and HII for the hidden dimension.
+So a little bit different.
+Or H in for the input size.
+H out for the hidden size.
+But normally speaking, this will use this format.
+Unless you pass this batch first equals true flag here,
+but this is actually not the standard convention and you shouldn't do it this way,
+at least not naively if you're using kind of a traditional matrix multiplication routine,
+because if you pass kind of this form of batch matrix,
+you would end up having to process a whole lot of matrices like this,
+which are not contiguous memories.
+You have to copy them over anyway before doing the matrix multiplication.
+And that would not be a very good thing.
+So it's much better to input it in this form, and I guess in PyTorch convention.
+So if you, boy, what, this was TB.
+In PyTorch convention, this is what they call this, I think.
+They call this L, N, H ii. L, N, H ii.
+No, H in.
+Sorry for the little different notation there.
+I think we've used this throughout the class, so we'll keep doing that now.
+But this is what they call it in PyTorch.
+So this is how we're going to pass matrices.
+And the nice thing about that is once we do that, we can just use a call like this
+to get all the batches at time t in a nice contiguous format.
+All right, so the only difference now is that we need to,
+when we just, we have to use a different,
+a slightly different definition of our LSTM cell
+now designed for batching.
+So just to emphasize this,
+I'll sort of give a set of these things.
+So actually, you know what, I'm not gonna bother with that.
+I had to change a bunch of places, so I won't do that.
+But what I will do is define these,
+is define these sort of separately.
+So what we actually have here would be h times ww.
+Our convention is that actually this form
+is the actual form of the matrix.
+The other form was a transposed form.
+So we're going to keep that as the form we actually care about.
+But this is sort of our convention here.
+This form was the form we care about.
+Well, similarly, we'll say X times X W i h.
+We'll then have to actually transpose
+the PyTorch internal arrays to get them to look like this.
+Probably, I really should have written originally like this,
+because we typically said that when we multiply matrix
+tens vector operations, we transpose them.
+But whatever, I already wrote it like this.
+That'll be OK for now.
+But I'll transpose our weights before this.
+Everything else, the same only difference is we have to specify which axis we're splitting over.
+So these are all going to be matrices now. And we want to split over the, like in normal sort
+of convention, the first dimension is going to be the batch dimension, the second dimension is
+going to be hidden dimension, so we want to split over the second dimension, or axis equals one.
+Everything else should stay the same, because these are all element-wise products, we actually
+don't need to change anything here, so we get the same exact form. So let's just redefine our LSTM
+cell like that, and I think we actually can keep our LSTM even the same as before, but
+let me just make sure that's true.
+Where's our LSTM?
+No, we actually have to do a little different there.
+We have to define the size of our hidden state to be different.
+So now our hidden state would be, its first dimension would be x shape zero, but this
+is now the time dimension.
+The next is going to be the batch dimension, like this.
+And then h is also two-dimensional
+in our convention, right?
+So the first would be the batch dimension.
+Second would be this dimension.
+So we want this dimension of the second dimension of h.
+Now we want to go for t in all the time, which
+is still the shape 0.
+This is still the total number of time steps.
+h and c equals LSTM cell.
+That's all the same as before.
+And then ht equals h.
+And I think this all stays the same as before.
+Okay, so now let's go ahead
+and test out our batch version of our LSTM cell.
+Let's create some data.
+Let's say, again, we're gonna have 50 time steps,
+but now let's add a batch size of 128.
+And of course it means we also need to have 128
+different initial hidden states
+and 128 different initial cell states.
+And we'll leave the last dimension here just for the sake of PyTorch.
+OK, so I think that's about it.
+It's actually even easier than before because we don't need to do this,
+play this weird game here with tensor shapes and everything.
+We have all our dimensions for PyTorch to be happy.
+So let's input h, h0, and c0.
+And let's see, okay.
+And now let's make our call.
+So let's take our call of our hidden state
+and our next set of cell states, make this an LSTM.
+We still have to say zero here
+because we still have this weird,
+I guess that's now a batch dimension.
+It's very odd how PyTorch does these things.
+This is like, I get the sequence dimension here.
+So, you know, we have sequence only of one
+for the hidden state, initial hidden state,
+initial cell state, but we'll pass in zeros for those.
+We do have to transpose these.
+So by our convention now,
+these weight matrices are transposed versions
+of their old selves.
+And I think this is, let's see if that runs.
+Okay, great.
+Now the big moment of truth here.
+Let's see if, in fact, these two things
+correspond to each other.
+So let's find h minus h, attach numpy.
+And, oh no, this will be h, which one would it be?
+Let's see what shapes they are.
+So that's that shape, let's see.
+So the same things, oops, there we go.
+Okay, and as long as I don't call a module by accident,
+when I'm trying to call a norm, everything works.
+So these things still work, and we have now a full implementation
+of a batched LSTM exactly the same sort of mirroring
+PyTorch's implementation to numerical precision in, you know,
+what is that, like 10 lines of code here?
+13 lines of code? Not too bad.
+And I could abbreviate it more, right?
+I could cheat some and, like, make it even shorter.
+The point is this is a really, really simple operation,
+and sort of the mathematical form
+might look a little bit hairy there.
+I mean, sort of, you know, looking at these equations.
+It probably would take more lines of LaTeX code
+to write this code out than it takes just
+to write it in code itself to actually implement this.
+That's pretty nice, right?
+OK, now that actually is the majority
+of what I want to talk about that I'm actually
+going to evaluate here in the notebook.
+That's the majority of what I can validate and check
+here without having an automatic differentiation
+tool backing this whole thing.
+But I want to talk a little bit, just sort of writing the code
+but not being able to run it because we're not going to write
+this in needle, about training LSTMs.
+I wanted to just kind of conceptually talk
+about what does it mean to actually train LSTMs.
+And in particular, there is one sort of subtlety
+when it comes to training them, which
+I'll talk about a little bit.
+I alluded to it last time.
+And it had to do with something called truncated back-
+propagation through time.
+But we'll get to this in a second.
+So all right, let me first talk about how
+we might train an LSTM to accomplish some task.
+And the basic idea is that I want
+to be quite simple and straightforward here.
+And it's time to define a routine, like train LSTM,
+that we'll take as input X, H0, C0.
+So that sort of is the input to run the LSTM.
+But then we'll also take Y,
+which is gonna be like the target output
+of our hidden state.
+Now, in reality, what you really might wanna do
+is have an extra layer on top of the LSTM
+that actually computes a projection
+to the same dimension as Y or something like that,
+I'm going to ignore that. Or rather what I'm going to do is bundle that all in some loss function.
+I'm going to give a target Y and then W hh, W ih, b and then something like an optimizer. This is
+all conceptual so I'm not going to worry too much about the details here. What I would do to train
+this LSTM, the nice thing about this is that this is incredibly simple. I would just basically call
+call h and cn equals my LSTM of x, h0, c0, w, hh, wih, b, so I would call my LSTM.
+And then I would compute some loss between my hidden state and my target output.
+And that could be a loss that involves, you know, one more transformation of the hidden
+state by another linear layer or something like that.
+I'm not going to worry too much about that, or it could just be trying to directly predict
+the hidden state from, the y from the hidden state.
+It's something, but it's some loss function,
+sort of a simple loss function just
+compares each sort of individual h and each y.
+And then, in the beauty of automatic differentiation,
+if I've implemented all of these calls in needle,
+so if I just replace this NumPy implementation
+with an implementation in needle,
+and you have to add a few more things to this, by the way.
+You have to add, which you will do in the homework,
+because add things like split and stuff like that.
+You have to add support for that.
+And I mean, tanh actually isn't too bad
+because we already have exponential, so.
+As long as you do all that, implement it in needle,
+then to get the gradients with respect
+to all your parameters, you just call loss.backward
+and, you know, opt.step, right?
+Where opt here would be like an optimizer setup,
+Opt would be something like SGD with, you know, the parameters is equal to like W hh and W ih and b or
+something like that. Again, this is just sort of an illustration. This code will not, of course,
+run. I guess that will run, defining it. I can't call it. Okay. So, that's sort of how I want to
+set things up to start with. The next thing, the only last thing I want to say
+about training is that if we have a deep LSTM, so suppose we have an LSTM that is
+multi-layered, right? So we have, you know, h0 for the first layer going into
+h1 for the first layer, go to h2 for the first layer, etc., and this takes x1,
+and this takes x2, and then I have some other layer here, so h2, that's one, and then h2,
+h, that was actually correct, h22, and then I have some initial hidden state here, h02.
+Here I'm actually going to forgo the LSTM, the cell state portion, I'm just going to
+talk conceptually about a deep, a deep layer here.
+There actually, I have a little bit of options here now, right?
+If I want to compute this element here, I actually have everything I need to
+compute the second layer for this time after
+I've computed this element here, right? So I could compute kind of this whole
+thing layer by layer, and then compute it sort of time slice
+by time slice. So I could iterate kind of layer by layer
+and then iterate time by time, but because the LSTM call
+calls an LSTM over a whole time sequence, it's much more common to sort of compute this whole
+layer here and then use that to compute this whole layer there for a deep multi-layer LSTM
+or a multi-layer RNN in general. So that's what I'm going to do here. I'm going to
+to define, you know, a function like train deep LSTM, and I'll have X, H0, C0, Y.
+These would now be, I guess, arrays of all my H0s and all my C0s, right?
+And then I would have WHH, WIH, B. These are not going to be lists or tensors of all my
+different weights and then I'll still have opt which is like over all of them and so what that
+would be is I would have something like um actually I'm going to yeah so I just set the
+initial state actually even just the x for convenience and then uh that's my the initial
+inputs the first LSTM is of course x and then so for d in range depth, I guess like depth equals
+equals something like the length of W hh or something like that.
+You would say that H and CN equals LSTM apply to H, H0[d],
+the d-th element of that, c0[d]d, and then  Whh[d], Wih[d], and b[d].
+Again, this is all conceptual, so I might be making a typo here.
+Hopefully not, but...
+We would finally compute some loss between our output and the input there,
+in the target there, l equals some loss, and then we would just say l.backward and opt.step.
+That would be our training of a deep LSTM. That actually is it for training except for one
+sort of subtle but actually very important point that comes up when training LSTMs,
+especially on very long sequences.
+So let's suppose that you had an LSTM to train,
+and you want to train it over a sequence x.
+It goes from x1, x2, all the way up to x, like 10,000.
+You could just do this.
+I could call my same call I had before,
+but it would probably run out of memory,
+because I'm creating, you know, all,
+I have to maintain all memory around,
+like, so I'm running, I'm running here,
+kind of, running this all in auto diff framework.
+I have to keep around kind of all my intermediate states
+so that when I call lost dot backward,
+I can propagate through all of it, right?
+And that's not very good, right?
+That's sort of a bad thing.
+That's definitely going to be kind of a,
+you know, sort of a suboptimal thing,
+or we just can't do it, and so there's a few options, right?
+We could, you know, try to use a smaller network,
+just use smaller sequences, whatever,
+but the most common thing to do is to run, again,
+what's called back propagation through time,
+so those training routines that we had,
+you know, computing the gradient, taking a step,
+that's called back propagation through time,
+but what we can do is just,
+and what we can do with this procedure
+instead of running it through the entire time sequence of 10,000 examples, we just
+take some length like a hundred and just sort of truncate there. So there is
+obviously an X 101, but I'm gonna call my LSTM only on the first... and compute the loss
+only on the first hundred. Okay, so again I'm just gonna write this now in terms
+of a generic RNN, so I'm only going to have one hidden state and even a single layer one.
+All right, so I generate those and I make some predictions from that,
+but the point is I'm going to create my RNN with just the first hundred time steps,
+and I'll use like H0, you know, normally like I would of all zeros or something like that,
+because that's the start of the sequence.
+I just truncate things, and I run my loss there.
+And now, I move to my next sort of subsequence.
+Let's say, you know, something like 100 to, I'm hiding that there, but unfortunately it's
+not too important, so this would be 101, to say 200, right?
+I truncate again, so I compute, my H101 to H200,
+and I compute my loss based upon this, and I just do that.
+This is a procedure, kind of generally speaking,
+called truncated back propagation through time,
+because you take your whole sequence
+and you just sort of chop it into chunks
+and train the LSTM on these chunks.
+Now, you're rightly would sort of be right to kind of question
+whether this is a good idea or not, right,
+because, I mean, after all, like,
+if there's a really important connection
+between those two things.
+Like, you're just ignoring it here.
+You're just sort of throwing it out entirely.
+And so this seems like a really bad idea.
+But the reality is it's not that bad an idea.
+Even just doing this where you just ignore entirely,
+just chop it up into independent chunks
+and just train it entirely separately,
+that actually works probably okay.
+Things aren't too bad.
+But we can make it just ever so slightly better
+than just that.
+And what we do to do that is a technique called
+hidden unit repackaging.
+So the idea here, the core intuition here
+is that when we started our LSTM,
+we started at this h0, which is just say equal to 0, right?
+We just initialize it, say, with all zeros.
+And when we trained this first portion,
+we just called it with the h0.
+Again, this is sort of, you know, by h0 here,
+I really mean this h0 fed into this function, right?
+That was just this zeros at first.
+But then the question is, when I feed in my h0 for this portion,
+training this next portion here, what should I feed in as my h0? I could feed in 0 again,
+right? I could just treat the h0 again as 0, you know, so basically you feed, you do something like,
+you know, feed h0 equals 0 into there. That would be fine. But we can do something a little bit
+better, right? We know the value of our hidden state, and for an LSTM we know both the hidden
+and the cell state, of course.
+It's just this.
+We know the last value of the hidden state in that sequence.
+It's just H100.
+And so what we're going to do in what's
+called hidden cell or hidden unit repackaging
+is we want to take this value, and we're
+We're going to copy it into the H0 for this next sequence.
+Now, importantly, we are not...
+I'm going to draw this in red or something like that.
+We are not actually creating one big long compute graph through this.
+What we're actually doing is just taking the value of H100
+and feeding it into the initial value of our next sequence.
+Because of this, no gradients flow through this, so we don't get a sense of how will
+changing the weights affect how X100 affects H101.
+But we do see for the previous weights, for the previous value of the weights, how is
+that X100, whatever effect it has on H100, is propagated through.
+For those that have seen similar calls before, this is also called a stop-gradient call and
+things like this.
+basically keep the value of your last hidden state as the initial value for your next sequence,
+but you don't propagate the full compute graph through. That's the idea of hidden unit repackaging.
+What that looks like is actually very simple. What that looks like would be something like
+the following. And you can actually even call it like you would with a, you can call it by
+sort of calling these training procedures as subroutines now. And the way it would kind of
+work is you would first define the initial H0 and C0 as zeros of some dimension, right, actually.
+I'm going to now officially abandon all attempts to write proper code here.
+And what I would do is I would sort of block my whole sequence into some number of blocks,
+right? So I would say something like rather than iterating over my whole time,
+I would say something like for i in the range of the number of blocks I have,
+that's the total number of dimensions divided by the block size.
+size. Maybe I'll even write that. So like, you know, this is like sequence length divided
+by block size. And what I would do is I would say, you know, I'd do a few things, first
+of all. First of all, I would actually sort of store the old hidden states here. So I
+would actually do something like store the hidden state i, or d rather,
+would be equal to the last value of the hidden state here.
+This is.detach and.copy or something like this, right?
+So I'm going to detach it from my compute graph
+and then just copy the value.
+And then same for the hidden, the cell state.
+Let's just be cn.detach.copy.
+This is, by the way, why PyTorch returned the last hidden state
+and the last cell state for the LSTM,
+so you can detach them and repackage them
+for your training procedure.
+And then I always return my hidden state and my cell state.
+So now in my training loop, I would
+keep track of these things in my train deep LSTM,
+And I would feed into it not the entire sequence,
+but just like the sequence of i times the block size
+to i plus 1 times the block size.
+And then H0, C0, Y with the same size here.
+And, of course, I could also include a batch.
+I mean, this is just the sequence dimension, right?
+This is like the first dimension.
+There, of course, also are batch dimensions after this.
+And then something like the W hh, W ih, b, and opt.
+So, again, this is just sort of conceptual down here.
+but hopefully this convey is kind of the notion
+of what you actually mean
+when you want to really train a LSTM on,
+or really any RNN on a large sequence like this.
+What you want to do is you want to split it up
+into different blocks
+and you want to train each of these blocks,
+you know, with gradients flowing through
+for just the block size,
+but then rather than start completely anew
+with a brand new hidden state,
+You start with the previous hidden state
+and the previous cell state for an LSTM,
+just a version that is kind of detached
+from the compute graph.
+So you're just really copying the value,
+not the whole graph.
+Okay, and that is about what you need to know
+to implement the LSTM on your homework four assignment.
+So next lecture, we're going to move
+to our last sort of unit on different architectures
+in deep networks and talk about transformers.
+See you all then.

@@ -1,0 +1,448 @@
+Hey everybody and welcome to this video! 
+So today we will implement a regularization  
+technique called Mixup. Just for the record it 
+has been around for a couple of years now and  
+it is definitely not as mainstream as dropout or 
+weight decay. However, it is pretty easy to grasp  
+and simple to implement which is probably the main 
+reason why I decided to go for this topic. Anyway,  
+what you see on the screen is the official github 
+repo for the paper called "mixup: Beyond empirical  
+risk minimization". For the rest of the video I 
+will refer to the technique proposed in this paper  
+as input mixup. Here you can see the source code 
+of another paper which is called "Manifold Mixup:  
+Better Representations by Interpolating Hidden 
+States". These two papers are very much related  
+because one can actually see the input mixup as a 
+special case of the more general manifold mixup.  
+Anyway, before I start explaining things in more 
+detail let me just give you a small disclaimer.  
+I did not really spend too much time going through 
+the official implementations and mostly just wrote  
+my implementation from scratch. It is totally 
+possible that there are bugs, misinterpretations  
+and simplifications. You should always refer 
+to the original code and paper. Lastly, all the  
+credits go to the authors and contributors. Let me 
+start with a high level explanation of the input  
+mixing. What you see on the screen is a section 
+from the paper that explains the main idea behind  
+this technique. Most importantly, we are dealing 
+with a general classification problem. We start by  
+taking two samples from our data set and we mix 
+them together. This mixing is done in a linear  
+fashion and what is really important is that it is 
+applied both on the feature vectors and the target  
+labels. Coefficient lambda is sampled randomly, 
+however, it is always going to be in the interval  
+0 and 1. The authors claim that input mixup can 
+help improve generalization of our model and that  
+it can yield smoother estimates of uncertainty. 
+Here we see a section from the manifold mix-up  
+paper that summarizes the method. The major 
+difference compared to the input mixup is that  
+not only we can mix the input features but also 
+an arbitrary hidden representation produced by our  
+neural network. This mixed representation is then 
+reinserted back to the network and the remaining  
+steps of the forward pass are run. Note that here 
+not only we sample the lambda randomly but we also  
+sample the hidden layer where the mix-up will 
+happen. Under this setup input mixup is just a  
+special case of manifold mixup in case we restrict 
+the hidden layer to be 0. Or in other words it's  
+just the input feature vector. The authors claim 
+that similarly to input mixup it helps with  
+generalization and that it leads to smoother 
+decision boundaries. Additionally, they also  
+claim that it has a positive effect on the hidden 
+representations because it flattens them. And here  
+flattening means that the number of directions 
+with significant variance is reduced. Anyway, let  
+us now start with the implementation. I thought 
+it would be nice to visualize how input mixup and  
+manifold mixup behave on a relatively simple 
+but tricky data set. Namely, we will use the  
+two spiral dataset. It is a binary classification 
+with only two features: the x and y coordinates.  
+We will use vanilla multi-layer perceptron and 
+deploy different regularization strategies during  
+the training and then investigate what effect they 
+have. Let us start with writing some utilities.
+First of all we will write our new network and 
+it's going to be a multi-layer perceptron for  
+binary classification. However, we will 
+try to implement the forward method in  
+a way that we could use it for mixup. So the first 
+parameter is going to be number of input features.  
+In our example it's going to be two. Here I keep 
+it general. Hidden dimensions will determine the  
+architecture of our multi-layer perceptron. And 
+finally p is the dropout probability. Note that  
+by default we are going to set this equal to 
+zero and therefore no dropout is going to be  
+applied. Internally, we'll store the hidden layers 
+inside of the ModuleList and each of the hidden  
+layers is going to be a linear layer followed 
+by a leaky ReLU and a dropout module. Finally,  
+after all the hidden layers we will have the 
+classifier layer which is just a linear module.
+Here we create a new tuple that is going 
+to be all the hidden dimensions tuple  
+prepended with the number of input features 
+tuple. Here we just count the number of hidden
+layers. Here we use the ModuleList to 
+store all the hidden layers.And yeah  
+the actual layer is nothing else than a 
+linear module, activation and dropout.  
+Finally, we create the classifier and it takes 
+the last hidden representation and it maps it  
+into a single number and that is because 
+we are assuming that we have a binary
+classification.
+So first of all, we provide our input tensor, 
+however, then we can also specify two parameters:  
+start and end. They will determine what hidden 
+layer we start with and what hidden layer we  
+end with. By default, we are going to go through 
+all the hidden layers and then run through the  
+classifier at the end. However, by changing these 
+parameters we can restrict ourselves to just a  
+portion of the architecture. One special case is 
+when we set both the start and the end equal to  
+zero and under this setup the forward is just 
+going to return the input x. So in a way it's  
+a noop or an identity mapping. As you can see here 
+we slice our hidden layers based on the start and  
+end and then we just iteratively apply all the 
+selected modules. And if the end parameter is  
+going to be none then we also run our classifier. 
+That's it. And this code will actually enable us  
+to implement the manifold mixing because we will 
+just select randomly a hidden layer inside of our  
+network and then we just split our forward pass 
+into two parts. The first part is going to take  
+an input tensor and transform it into a hidden 
+representation. And the second part is going to  
+take hidden representation and classify it. Now 
+we will subclass the dataset class of PyTorch  
+and it is pretty straightforward because we 
+want to take the two classification matrices  
+X and y and we just wrap 
+them inside of this dataset.  
+And this will allow us to do 
+batching and use data loaders.
+First of all, we do input validation 
+and most notably we make sure that  
+all targets are either a 0 or a 1. And finally 
+we just store the X and y matrices internally.  
+The length of our data set is nothing 
+else than the number of samples.
+And when we want to get a specific sample from our 
+data set we return a tuple where the first element  
+is the feature vector and the second element is 
+the target. Anyway, so we have just written a  
+wrapper for the X and y matrices. However, now let 
+us also write the actual data generating function.
+We will specify the number of samples we want 
+to generate and the label distribution is going  
+to be 50 % the first spiral and 50% the 
+second spiral. We can add some noise if  
+we want. We can control how many cycles or 
+revolutions the spirals are going to have  
+but I guess by default we will stick to two. 
+Finally, this function returns the X and y.
+For simplicity we enforce the number 
+of samples to be an even number  
+and as mentioned the two classes 
+will be perfectly balanced.
+One way to understand what I just wrote is 
+to start thinking in polar coordinates. And  
+that means that to specify an coordinate we 
+don't use x and y elements anymore, however,  
+we use an angle and a radius with respect to 
+the origin. If you think about drawing a circle  
+in polar coordinates it means nothing else than 
+keeping the same radius but changing the angle.  
+However, if you want to create a spiral 
+we can change the angle and at the same  
+time we can increase the radius and yeah 
+that's the idea. And the difference between  
+the first and the second spiral is that the 
+second spiral starts at a different angle.
+We just stack both of the spirals together and  
+this way we create the feature 
+matrix for machine learning.
+Here we also define the targets.
+The goal is to randomly shuffle all the data 
+points because currently they are just consecutive  
+because the first fifty percent of the data 
+set is class zero/spiral zero and the rest  
+is the second spiral. And finally we 
+apply the shuffling and also we add  
+random noise to the feature matrix. The 
+last utility function we want to implement  
+is related to generating visualizations and here 
+I was inspired by scikit-learn examples. In short,  
+we want to understand the predictions 
+of our classifier on a grid of points.
+So we pass our neural network and  
+also all the train and test data and we 
+will yield a couple of different figures.  
+And the idea is to use this function every now and 
+then when we're training for evaluation purposes.
+Anyway we applied the device the 
+dtype and we defined some color maps.  
+Here we computed the x and y 
+limits based on the test data  
+and in our case the test data will 
+be way bigger than the train data.
+We generated a rectangular grid of coordinates.
+And we take the entire grid 
+and run it through our network  
+and that way we'll get the logits. And note that 
+here we're not doing any batching and we're kind  
+of hoping that everything fits in memory. 
+Which is the case for our small example.
+Here we turn the logits that 
+were the output of our network  
+into probabilities by running them 
+through the sigmoid activation.
+So the first figure that we're going to return 
+is just the scatter plot of all the test data and  
+know that this doesn't really depend on the 
+model at all and is going to stay constant.
+The second plot that we're going 
+to generate is a contour plot  
+and it will help us visualize the decision 
+boundaries and how confident our model is.
+Finally we overlay the contour plot with 
+a scatter plot of our training data and  
+this will hopefully help us understand 
+why the model made a decision like this  
+and whether it overfits. Now we would 
+like to write our training script.
+Let's create a command line interface.
+Let me point out some interesting arguments. 
+This parameter will determine the range from  
+which we sample the hidden layers and by 
+default it's (None, None) and that means  
+that the hidden layer can be anything. Here 
+you can see that we have a mixup flag and the  
+idea is that we need to specify this flag 
+in order to use this technique. Similarly,  
+the dropout probability is set to zero 
+and we need to specifically change it in  
+order to employ dropout. And finally the 
+same logic with weight decay. By default,  
+it is zero so there is no weight decay and we can 
+modify it f we want. Now we can write the logic.
+So we parse all the arguments and then 
+we define the device and the dtype and  
+note that for this experiment that is 
+enough to do everything on the CPU.
+We set the random generator 
+seed for both numpy and torch.
+Here we use our generate_spirals function  
+that we implemented. We don't 
+introduce any noise whatsoever.
+Here we use scikit-learn's train test split. 
+What's interesting here is that the test size is  
+going to be 90% and we do this to kind of simulate 
+an environment where we don't have a lot of  
+training samples. However, we have a lot of test 
+samples so that the evaluation is more robust.  
+Here, we cast the test features into a torch 
+tensor and we do this for convenience because  
+we need to use it as an input to a 
+torch model. Here we construct our  
+custom data set wrapper and the main 
+reason why we do this is to be able  
+to create a data loader that is going 
+to create batches of training examples.
+Here we create a training data 
+loader and we see that the batch size  
+is actually equal to twice the batch 
+size that we provided through the  
+command line and this is related to 
+how we're going to implement the mixup.
+We instantiate our multi-layer perceptron 
+using some of the CLI arguments.
+Here we instantiate an optimizer.
+Our loss function is going to be the 
+binary cross entropy with logits.  
+Here we create a SummaryWriter for tensorboard 
+and we dump all the CLI arguments as text.
+Here we start writing our training loop. 
+First of all we make sure that both the  
+features and the targets are on the right 
+device and have the right dtype. Here we  
+will have an if statement. First of all, we 
+implement the behavior with mixup and then  
+in the other branch of the if statement we 
+will implement the behavior without mixup.
+First of all, we determine the range of 
+hidden layers that we can randomly sample from  
+and here we sample one of the layers. Then we 
+sample the lambda coefficient that will be used  
+in the convex combination and as you can see we 
+are sampling from the beta distribution where both  
+of the parameters are equal to 2. I mean this is 
+also a hyperparameter, I just hardcoded it what's  
+important is that the support of this distribution 
+is (0, 1) which is exactly what we want.
+Here we track both k and lambda with tensorboard 
+and now we do the first part of the forward pass.  
+We take the input features and we run the forward 
+pass all the way until the k-th hidden layer.
+Now we actually use the fact that our batch is 
+actually twice as big as what was desired and  
+that is because we are going to split it in half 
+and then mix the first subbatch with the second  
+subbatch. And this mixing is nothing else than 
+a convex combination. Another way to implement  
+this would be to have a single batch and then 
+just shuffle the samples inside of it but yeah  
+I just went for this implementation. Clearly this 
+implementation is more memory heavy. Anyway,...
+Here we do the same mixing with the target. And 
+since the targets are either 0 or 1 their convex  
+combination is going to lie in the interval (0,1). 
+And now we take the mixed hidden representation  
+and send it through the remaining hidden layers 
+together with the final classification layer.
+In case we don't want to use mixup we just run a 
+standard forward pass across the entire network  
+and that's it. Note that I threw away half 
+of the samples here to make things comparable  
+to the mixup, however, I'm not sure if it 
+makes sense. It's definitely very wasteful.  
+And here we have the standard torch 
+boilerplate. We zero all gradients,  
+we compute new ones and we take a gradient 
+descent step. Here we track the training loss with
+tensorboard and here every 2500 steps will 
+track a bunch of different things. Specifically,  
+we will make use of the generate 
+prediction image function that we wrote.
+We compute the accuracy on the test set 
+and also the loss on the entire test set  
+and as you can see we do the inference 
+on the entire test set at once without  
+any batching. Again in our small example 
+we are not going to run out of memory.
+Here we track both of the values with 
+tensorboard and finally we switch the  
+model back to the training mode and this is 
+actually relevant for things like dropout.
+I believe we are done. I have prepared a shell 
+script that launches multiple experiments.  
+I use the CLI that we just wrote and yeah let me 
+quickly explain the models. The first experiment  
+applies no regularization. The second one uses 
+weight decay and by the way I was looking for the  
+right number for quite a long time. Here we have 
+a dropout regularization. Here we have the mixup  
+and since we are not specifying any layer range 
+the hidden layer can be anything including the  
+input features themselves. In this experiment 
+we only apply mixup on the input. Finally,  
+in the last experiment we only apply mixup in the 
+hidden layers so no input mixup is taking place.  
+By the way, this SEED determines how the data set 
+looks like and it really makes a big difference.  
+Let us now inspect the results. First of all, I 
+filtered those experiments corresponding to the  
+random seed 123. If we look at the training loss 
+we see that when we apply no regularization (here  
+it is the dark red color) the network is capable 
+of having a loss very close to zero. One can  
+view this as a proof that our network has enough 
+capacity to learn the data set. However, we need  
+to regularize it somehow. And the training loss 
+behaves similarly across different random seed.
+If we look at the test loss we right away see that 
+applying no regularization leads to overfitting.
+Looking at the test accuracy one might be tempted 
+to conclude that dropout dominates all the  
+other approaches. However, this metric seems to 
+change quite a bit with different random seeds.
+Anyway, it seems like in general 
+dropout and mixup give the best result  
+whereas the input mixup leads to underfitting. 
+Here we can see how the hidden layer was sampled  
+during the training for different regularization 
+schemes. Namely, for input mixup it was always 0  
+because we always applied the mixup to the input 
+features. For mixup it was anything from 0 to 3  
+and that is because we have 3 hidden layers. And 
+finally we see that for the hidden layers mixup  
+it was only 1 and 2 and 3 and that is because 
+we disabled mixing of the input features.
+Here you can see the plot of lambda over training. 
+Just to remind you we sampled it from the beta  
+distribution and the values are always in 
+the range 0 and 1. Let us now move to images.  
+First of all this is how the test set looks like. 
+It is the same for all experiments and it is way  
+bigger than the training set because we wanted to 
+simulate insufficient number of training samples.  
+Here we can see the training sets scatterplot 
+together with the model predictions as the  
+contour plot. White regions represent regions of 
+uncertainty or in other words regions where the  
+predicted probability was close to 0.5. So let 
+us inspect each of the experiments one by one.  
+Here we see the model with no regularization. 
+The main thing to note here is that the decision  
+boundaries are very thin and that there 
+are basically no regions of uncertainty.  
+When we look at the mixup we see that a way bigger 
+portion of the plot is occupied by white regions.  
+More specifically, these regions of uncertainty 
+correspond to regions where we did not have  
+enough training samples. Weight decay also 
+seems to introduce regions of uncertainty,  
+however, it might lead to underfitting and as 
+mentioned before the actual weight decay size  
+is a hyper parameter and I had to 
+run multiple experiments to find  
+a reasonable value. So definitely take this 
+plot with a grain of salt because a small change  
+in the value of the weight decay will 
+probably influence the results a lot.
+The input mixup clearly leads to a model that 
+is very uncertain about its predictions. The  
+main reason for this is that the spirals 
+are not a convex set. And what happens  
+during training is that the same input feature 
+vector can have completely different labels  
+at different training steps. Here we see case 
+where we apply mixup to the hidden layers only.  
+It seems like the model gets more confident 
+compared to the standard mixup, however,  
+still less confident than without regularization. 
+Finally, dropout seems to work really nicely  
+for this given data set and as you can see the 
+predictions are actually forming nice regions.  
+Anyway, as mentioned before changing the training 
+set by modifying the random seed or changing the  
+number of samples will have a huge effect on 
+the results. Let me switch to the seed 124.
+As you can see dropout doesn't really seem 
+to do that well this time around. Anyway,  
+looking at these experiments I would conclude 
+that mixup is definitely an interesting  
+and potentially useful regularization technique. 
+Let me also point out that the authors mentioned  
+that mixup leads to flattened representations, 
+however, I did not really cover it and that's  
+all I have for today. I hope you enjoyed it. 
+All the credits go to the authors. Feel free  
+to leave a comment or ask any questions and if 
+you have any cool topics suggestions or you just  
+want to chat I would more than recommend the 
+discord server for this channel. You can find  
+the link in the description. Thank you very much 
+for watching this video and I will see you soon!!!

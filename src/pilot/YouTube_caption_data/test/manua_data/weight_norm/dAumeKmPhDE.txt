@@ -1,0 +1,702 @@
+Michael Taylor: It's my pleasure to introduce to everybody
+Yang You, who's a PhD candidate at Berkeley. His advisor is Jim Demmel, and
+he has been doing a lot of really interesting work on
+essentially crossing HPC parallel algorithms and machine learning, deep learning.
+And he's had a lot of adoption of his work in industry.
+And I will turn it over to him to
+tell you more about it, but before I do, I want to
+fill people in on the, sort of the Zoom protocol here. So, everybody is joining muted, so
+if you'd like to ask a question,
+type something in the chat window, that alerts me, and then I can
+sort of mediate those questions and then
+interrupt Yang at the appropriate moments, and then you can unmute yourself and ask the question yourself again.
+Okay, and so without further ado,
+go ahead, Yang.
+Yang You: Okay.
+Thanks, Michael. Thanks for the introduction.
+So our first like, oh, can you hear me? Can you hear me good?
+Hi, Michael?
+Michael Taylor: Yeah, that's fine.
+Yang You: Okay, good, good. Yeah, so today, my talk is about how to (inaudible) deep learning model very fast.
+So, let's go to my talk.
+So here is an outline of my talk.
+So in the first part, let me briefly introduce,
+so why is deep learning slow?
+So we know, actually in the last three years,
+supercomputers, I mean the HPC high performance computing techniques, are becoming more popular to the leading AI companies.
+For example, Microsoft
+put this supercomputer to the cloud. So now Google has its own
+supercomputer TPU Pod,
+tensor processing unit, a pod. Pod, like, means a bunch of TPUs connected by high-speed network.
+And Facebook made a (inaudible) to the top 500 supercomputer lists.
+So Amazon has HPC cloud, which is for the supercomputing application.
+So here are two quotes from the planning researchers.
+From the two quotes, you can see that actually super computers are becoming more popular.
+Um, so why they like supercomputers?
+(inaudble) Okay, good.
+So why they like super computers? Because, computation of deep learning is very expensive.
+For example, if we want to
+use image (inaudible) to train ResNet-50 model, we need to finish
+19 epochs, so each epoch we need to
+process 1.3 million images, and for each image,
+we need to finish 7.7 billion operations. So in total, it's 10 to the power of 18 operations.
+So if we only use one CPU, it's going to take us several months,
+it's like forever. If we use one M40 GPUs, it's going to cost 14 days. So even we have 8
+powerful P100 GPUs, it will take us 29 hours
+So this, I mean the training, is very time- time-consuming.
+However, you know, in 2017
+I chose the first, best supercomputer can finish the 2 times 10 to the power of 17 operations per second.
+So, the first question is can we just use a supercomputer to finish the ResNet-50 training in 5 seconds?
+The answer is no, because we cannot make full use of supercomputer. And why and how can we make the full use of a supercomputer?
+Let me explain later.
+But before that, let me
+briefly go over the foundation of deep learning and also it's very important to my talk today,
+so Mini-Batch SGD, stochastic gradient descent.
+So I want to make this algorithm as simple as possible at each iteration. We take a bunch of data from the memory and
+we compute gradients of the loss function by the data. And then we use gradients to update the weights.
+So there are some notations here, like batch size, learning rate, weights, samples, loss function, and gradients.
+So here, I just wanted to make this algorithm as simple as possible, it only has three steps each iteration.
+So, let's go to the first question.
+So why we cannot make full use of a supercomputer and how can we make full use of supercomputer?
+So we know now the single
+processor frequency stops scaling, which means we don't have free lunch now. By free lunch
+I mean 20 years ago, we can just wait for 18 months and our code is two times faster.
+But now, if we want to use supercomputer to speed up deep learning,
+modern supercomputers often have thousands of processors.
+So the idea here is how can parallelize deep learning over thousands of processors? I just want to...
+Ok. So actually, there are three different
+approaches to parallelize deep learning over thousands of processors.
+We can parallelize the data, and we can also parallelize within each layer, and across different layers.
+But for now, model parallelisms are limited. So in this talk, I'm going to talk about how to-
+how do the data parallelize?
+So, let me- let's go the first direction how to parallelize the data.
+So here, I just want to give you an example to show you the key idea here, so how to do data parallelism.
+And here, we have 6 data samples. We partition them to each node. Suppose we only have 3 nodes.
+Each node will do a local Forward Pass and Backward Pass on its own data,
+and then each node will get its local gradient.
+And then we do our own reduce operation to-
+for all the gradients and to get the average of all the gradients.
+This average is the global gradient. We send
+this average to all the nodes and each node will use the global gradient to update its local weight.
+So here clearly you can see how to increase the parallelism. We just need to increase the batch size here.
+So large-batch training probably is a solution for this project.
+How can I make full use of super computer for deep learning?
+So here by large-batch training, I mean we fix number epochs and increase the batch size.
+So here, let me give you a table.
+The first column is batch size, and then number of epochs, and the number iterations, nodes,
+and there's single iteration time.
+So, and here, I mean we fix number epochs. We increase the batch side here and assign- because number epochs is fixed,
+we are reducing the number iterations.
+So actually here, t1 is computation time. So t2 is p2p communication time.
+So I mean recently,
+people show t1 can be much much much lighter than t2 for the ImageNet training. So here,
+let's just assume t1 is much larger than t2.
+So actually, you can see, as we increase batch size and also increase the number of nodes,
+so the single iteration time can be roughly constant, right? Because t1 is much much much larger than t2.
+And also, we increase like the number of nodes by p times the
+(inaudible), only increase by log p times.
+So- so single iteration time can be roughly constant and we are reducing number of iterations.
+So which mean the larger batch training potentially can give you a big speed up
+if we do that and increase batch size and increase the number of nodes.
+Okay.
+Michael Taylor: And Yang, just a clarification on that slide, so batch size is the,
+is essentially the number of data points that you, you run through the current version of the neural network
+before you aggregate the error and then you use that to
+update the neural network, is that right?
+Yang You: Yeah, per iteration, every iteration.
+Michael Taylor: So by having a larger batch sizes, you are hoping that you are accomplishing,
+quote, kind of more learning per unit time, and thus will be also to use fewer iterations and converge more quickly.
+Yang You: Yeah, yeah, per iteration and then we wanted to like,
+to learn more from the data, I mean to have a lot more data samples in each iteration.
+Michael Taylor: Okay, great.
+Yang You: Okay, thank you.
+So large batch training is good and it potentially can give us a big speed up.
+So however, actually large batch training is not easy. So here, let me give you a figure. The horizontal axis is number epochs.
+Epochs. The vertical axis is accuracy.
+Let me give you two lines. So first line is a baseline, and the second line large batch training.
+So clearly, by training the same number of epochs,
+very easily large batch training will lose accuracy. Here's the gap between the large batch training and the baseline.
+So here, the challenge is
+we need a good implementation, we need good hardware, but I think we also need a good numerical optimization.
+(inaudible) because large batch training is a hard numerical optimization problem.
+Why? So, because, I mean the accuracy is actually very important to deep learning.
+For example, if we want to use ImageNet to train a ResNet-50 model, we need to achieve
+76%, roughly 76% accuracy in 90 epochs.
+So actually, 76% accuracy is very different from 75% accuracy, because 75% accuracy
+only needs 50 epochs. So here is a quote from move from Andrew Ng. From his quote
+you can clearly- you can see, so the last 1% accuracy is actually very important, but it's very hard to achieve.
+So, the accuracy is very important to deep learning, but we know large batch training you're going to lose accuracy.
+So that means even we can have a huge speed up,
+our results are terrible and our accuracy low. It's not meaningful.
+So we- we need to not only make the deep learning run faster, we also need to make them get the same accuracy.
+I think this is a top priority of this talk.
+How can we make a- make the training run as fast as possible and also get the peak accuracy?
+Yeah, so, next problem let me introduce. So why is- why- why is scaling deep learning difficult? Why is it not easy?
+Okay, so for here, let me introduce two papers.
+So the first paper by Intel, second paper by Facebook. So I want to explain, so why we lose the accuracy.
+Let me- let me introduce the two papers one by one.
+So the first paper by Facebook, idea is it's a generalization problem.
+So here, let me- let me give you a figure, the figure from Intel's paper.
+So there are two lines. So the first line, the black, solid line is training function, and the,
+the- the dashed the line colored red- the red dashed line is the testing function.
+So here, flat minimum means baseline, and sharp minimum means the large batch training.
+So because it's loss function, lower is better, lower is better here.
+So now, let's- let's draw a vertical line at the minimum of the solid line, or a minimum of the training function.
+Let's make a vertical line here.
+So, let's see, where is the intersection
+between this vertical line and the testing function?
+So now we can see something interesting. So for the flat minimum, I mean
+for the base line, for small batch training,
+so if our training loss is low, our testing loss is also low, but for large batch training,
+so even our training loss is low, but our testing loss
+is very high. So, which means even we can train a good model, it's very hard to generalize for large batch training.
+We then get a high training accuracy, but our testing accuracy is low, so that's bad.
+That's the first paper, by Intel.
+So let me also introduce a second paper by Facebook.
+Michael Taylor: So Yang, before you continue, I think we have two questions. One is from Christian.
+Maybe Christian you can
+unmute yourself and ask the question.
+Christian (Audience Member): Yeah, so my question is
+wouldn't this same problem be there for
+small batch training also because there is a shift between training minimum and testing minimum?
+Yang You: I'm sorry, can you say again? So sorry about that, it's not very clear.
+Christian (Audience Member): So my question was wouldn't the same
+minima shift problem be present for both
+small batch training and large batch training? Why is it only for large batch training?
+Yang You: Oh, okay, thanks for asking. So, let me go back to here.
+Alright, so here we have the baseline (inaudible) training and large batch training.
+They are- they are trying to solve the same problem but they get different accuracy,
+which means they give you different solution. So large batch training gave you (inaudible) solution,
+is that clear?
+Can you hear me?
+Christian (Audience Member): Yeah, yeah, I can hear you. So, my question was like why
+the accuracy is different because-
+Yang You: Okay, okay. Okay, good, good. So your question is why accuracy is different there, right?
+Christian (Audience Member): Yes.
+Yang You: Ok, so because, I mean,
+they can't- I mean, by training them you get different the models,
+but because they converge into a different- different local minimum, so the small batch,
+I mean, can vary to a (inaudible) local minimum, large batch converge (inaudible) local minimum. So even the training accuracy
+they're the same, but because large batch training converge into a
+better local minimum, it's hard to generalize. So testing accuracy is low. So, is that a clear?
+Christian (Audience Member): Yes, yes, that's clear.
+Yang You: Okay, thank you so much. Okay.
+Hi, Michael, can I continue?
+Michael Taylor: Yeah, go ahead, continue please.
+Yang You: Okay, thank you.
+Yeah, so let me also introduce a second paper by Facebook.
+So here, the horizontal axis is the number- the batch size.
+The vertical axis is error, the lower is better.
+So clearly, Facebook gave us very exciting results. So they can scale the batch size from
+64 to 8k, you see, they get the same accuracy.
+This line is very flat from 64 to 8k, which means they get same accuracy
+so when you increase the batch size to 8k. So by doing so, now Facebook can use
+256 GPUs and make the training very fast.
+So let me briefly go over the techniques by Facebook. So key idea here is
+how can we auto-tune the hyper-parameter like learning rate?
+So the setting is we want to fix number of epochs
+because we know fixed number of epochs, fixing number of epochs means fixing number of floating-point operations.
+So the first idea is linear scaling.
+So when we increase the batch size from B to kB, we should increase the learning rate by k times.
+So why should we do that?
+Because we increase the batch size by k times. Basically, we are reducing the number of iterations by k times.
+We know the number of iterations equal to the number of updating.
+So basically, we are reducing the number of updatings by k times.
+So to make- make each update more powerful, we just increase the learning rate by k times.
+Yes, that's- that's the key idea. And the second idea is Warmup.
+So the- so after we use a linear scaling, we are going to have a
+huge learning rate after we use a huge batch size.
+However, we know in the beginning of the training, the gradients are changing very fast in the beginning,
+so if we use a huge learning rate in the beginning, very easily our network can diverge.
+So, the idea here is we want to start from a tiny learning rate and increase the limit in the first few epochs.
+That's the second idea.
+So- so Facebook use linear scaling and warmup so they can scale the batch size to 8k.
+So, and they used the ResNet-50 as-
+ImageNet training with ResNet-50 as an example.
+So now, we want to move the project to different model, like AlexNet, and we found something different.
+So- so here, we use this approach to AlexNet and
+we found that when we increase the batch size from 512 to 4K to 8K, we will lose accuracy.
+You see, we can only scale batch size to 1K. So even we use a warmup linear scaling with Tune,
+learning rate, momentum, weight decay, and with data shuffle, data scaling and also with the learning rate decay,
+so they didn't work.
+And let me give you more data.
+According to Facebook, we increase the batch size eight times, we also should be- should be able to increase
+learning rate by eight times, but sometimes- but in some situations, even we increase the learning rate by seven times, the
+network can diverge. So the first
+(inaudible) done the work for other model, like AlexNet.
+So even when you use linear scaling, warmup, and almost all the hyper-parameters, they didn't work.
+Yeah, that's a first concern of this approach. And second concern, let's go back to this-
+the figure from Facebook's paper.
+So you see, so they increase the batch size from 64 to 8k, right?
+They can get the same accuracy. But when you increase the batch size to 16k, we lose accuracy.
+32k, we lose accuracy. 64k, we lose accuracy.
+So the second constraint of this approach
+only works for batch size,
+I mean, below 8k. So if we want (inaudible).
+So that's a second constraint. So we want to have a new approach that can work for a very large batch size.
+And the number three concern, we know deep learning has many other applications like BERT, right?
+So BERT is a state-of-the-art NLP model. So actually the baseline of BERT
+used AdamW as optimizer with a decay. So here is
+Adam optimizer with decay.
+So the baseline used,
+used of a batch size of 512 and F1 score of over 90 for the SQuAD application.
+However, and when we increase the batch size to 16k,
+and no matter how we do the hyper-parameters,
+we cannot reach the F1 score of 90.
+So the best, I mean, even with significantly to the hyper-parameter
+we can only get an F1 score of around 88. We know the last 1% is actually very important.
+So- so numbers (inaudible).
+So can we make large batch training work for other applications like BERT? So can we scale the batch size
+of BERT to very large? So that's number three challenge.
+So in the next part,
+let me introduce our approach to solve this problem, to scale the batch size very large without loosing accuracy.
+And I'm going to- I'm going to explain why they work after I introduce this approach.
+Okay, so we did some numerical (inaudible) and found something interesting. So here, let me just use
+AlexNet as an example because AlexNet only has 8 layers, it's easy to visualize.
+So, let me give you a table. The first row is the layer ID, we have eight layers
+and for each layer, we compute the norm of the weights for each layer,
+and we compute the norm of the gradients for each layer and we compute the ratio between them.
+Now, we found something very interesting.
+For example, for layer six,
+this ratio is over one thousand, but for layer one the ratio is only around six.
+I mean, we know in 2017 almost all the applications- deep learning applications,
+they used the same learning rate for all the layers. So, that's ok for the small batch training,
+but for large batch training can be a problem.
+Because after we use linear scaling, so layer six
+may have a huge learning rate, but if we use this same learning rate to layer one, layer one may diverge.
+So let me give you a better figure to visualize that.
+So here, the horizontal axis is layer ID, the vertical axis is ratio I mentioned before.
+So you see, this visual- so layer six is very high, but
+layer one is visually very low. So here for example, so maybe layer six's case is okay
+but if you use the same learning rate for layer one, layer one will diverge.
+So that's our concern for large batch training.
+So based on this info-
+based on this important information, so we propose the idea of Trust Ratio.
+So here, let me define the trust ratio. There are some notations here.
+So l is layer ID,  and batch size, iteration ID. And also, we compute
+gradients for each data points, and then do the average, and then we get the average of all the- all the gradients.
+And then we use weight decay. So after that, though, we can have something like that.
+We named it trust ratio. So you see, trust ratio for a given layer at each iteration.
+So, trust ratio.
+The first part of trust ratio is the norm of the weights for each layer, and also the norm of gradients for each layer, and also with weight decay.
+So under Standard global Lipschitz condition, so we can treat the trust ratio as-
+as estimate of the inverse of the Lipschitz constant. I'm going explain later why this works. I'm going to explain.
+So- but before I explain why this works, let me introduce our algorithm.
+So we want to use the trust ratio to build a new algorithm.
+So the first algorithm is LARS.
+So here, actually, I want to make it simple because I only included the key updating part.
+So the algorithm also has some initialization, I mean, some trivial parts, so here,
+let me just focus on updating parts.
+So there are notations- there are some notations here. Let me explain them. So batch size, learning rate,
+weights, weight decay, scaling function, the data sample, loss function, gradients, and the
+coefficient of the momentum.
+So let me slowly go over this approach. So within each layer, and at each iteration,
+first we compute the gradients,
+and then we initialize the trust ratio.
+So we compute the first part of the trust ratio by the norm of the gradients, and then we can build the second part of the trust ratio,
+by layer-wise weight decay.
+If the trust ratio is ok, so we use the trust ratio to update the momentum.
+And then we use momentum to update weights.
+So the key idea here is each layer will have its unique learning rate.
+And also, because we know the trust ratio will be changing between different iterations,
+so it can give you kind of adaptive scaling at runtime.
+Actually, I mean, that's our first algorithm LARS.
+We can make it even better. So let me introduce the second algorithm and then I'll explain why they work.
+So the second algorithm is LAMB, layer-wise adaptive moments for batch training.
+So we know in the last few years, I mean,
+optimization of deep learning, I mean, is changing very fast. So here, let me just
+put some new techniques together with the trust ratio techniques. So again, within each layer and at each iteration.
+First, with each layer, we compute the gradients,
+we can build our first moment and second moment,
+and then we do the bias correction for first moment and second moment, and then we initialize the trust ratio.
+So then we compute the first part of our trust ratio,
+we compute the second part of our trust ratio by element-wise weight decay.
+So after the trust ratio okay, we use the trust ratio to update the weights.
+I mean, there are some notations here I introduced in a previous slide.
+So let me just briefly introduce the key idea here.
+So the key idea is
+you can have adaptive element-wise updating on a layer-wise correction because this is within each layer,
+it's layer-wise correction. And speaking of element-wise updating because we know we use a technique, for example, by
+(inaudible). So here, you just use element-wise.
+Kind of, you can get more information. And also, we use element-wise weight decay here.
+That's very important for the huge model like BERT, they have (inaudible) parameters.
+So that's the second algorithm, LAMB.
+So I introduced LARS
+and LAMB, so now the
+one more important thing I want to explain, so why LARS and LAMB work.
+I want to answer three questions.
+So why LARS and LAMB can solve sharp minimum problem? And why they can speed up training?
+And why they can converge faster than SGD? So let me talk about the-
+talk about them one-by-one.
+So first, let me introduce the dynamics
+of LARS. So you see, so the horizontal axis is number of epochs. The vertical axis is the learning rate.
+So here, I use AlexNet as an example here in layer 1, the convolutional part.
+So here is the bias part.
+And here, layer five, also convolutional layer, weight report here, bias part. And we have a batch size of 256,
+batch size 1k, and batch size 8k.
+So the first thing we can see here is for different layer, layer one and layer five, you see learning rate is very different from each other,
+right? So you see, the
+vertical axis is ranging very different and also the curve is very different from each other, for different layer first.
+So even within the same layer, so layer one, weight part and bias part they are also very different.
+And for a different iteration,
+I mean, because the epochs can (inaudible) proportional to iteration, for different iteration,
+you see, the learning rate are very different. And also, a different batch size will use different learning rate.
+So, this is the dynamics-
+this is the dynamics of LARS. They are actually very important to the optimization, so why?
+We know we want to use LARS and LAMB to solve the sharp minimum problem, so the first question is,
+so why small batch can solve this sharp minimum problem?
+Because small batch actually use noisy gradients in the step computation.
+So actually, this noise is very important. This noise can push the
+(inaudible) out of attraction of the sharp minimizer.
+And we know when we increase the batch size to very large,
+we are reducing the noise. And this noise in large batch is not enough to
+to help the optimizer get out of the sharp minimizers.
+So that's why a small batch can avoid a sharp minimizer.
+So the idea here is,
+so can we add some noise to large batch training to make it converge to a better local minimum?
+Yes, I think we should be able to add some noise, but how?
+Actually, we try- we tried that first. We tried adding the common Gaussian noise, and
+also significant tuning hyper-parameters.
+But it didn't work.
+For example, we added noise to the activation, to the weights, and to the gradients.
+And to the output. So we actually (inaudible) to the hyper-parameters, they didn't work.
+So actually, Intel team also did the same thing and also it
+didn't work. If you want more, please check their paper.
+So here, I want to say maybe the dynamics of LARS and LAMB can be a proper noise.
+So if I go back to this slide, you see, I mean,
+these kind of dynamics are kind of a proper noise between different iterations and also in different batch size.
+So, I believe they can be a proper noise. So maybe this proper noise can help with,
+or we might get out of the sharp minimizer.
+So that's our first part of the explanation.
+And the second thing I want to explain, so why they can speed up training.
+So here, let me give you another figure.
+So actually, this figure is a three-dimension figure.
+So here, the first dimension is trust ratio and the second dimension is
+iteration, and number three dimension is the frequency.
+So higher means you have a high frequency of the trust ratio.
+So you can see, so I mean, in a- in a training,
+you see, if we use loss as
+optimizer, so in the beginning, so almost all the trust ratio are tiny, right?
+So we know we use the trust to update learning rate. So after the trust ratio is tiny, so the learning is very slow.
+So actually, because in the beginning all the trust ratios are tiny, so it can be
+natural period warm up.
+And also we can see across the training process, some of the trust ratios are always small.
+So actually, that's also very important because
+this can- encourages stable layers that we use a aggressive learning rate without
+divergence, or without diverging.
+So without trust ratio, I mean, some weak layers may limit overall learning rate.
+Because you use a huge learning rate, I mean, some layers good, other layers
+are more stable, so the weak layers will diverge, so the overall system will diverge.
+So, I mean, that's why trust ratio is important.
+It can allow- it can help the stable layers to use aggressive learning rate without diverging,
+and also give you a period warm up.
+Yeah, that's the second part.
+And next part is convergence rate.
+So actually, in a general nonconvex setting we can prove LARS and LAMB will converge to
+stationary point in general nonconvex settings.
+So I think that's the best thing people can do now because we know the, I mean, the nonconvex optimization
+it's going to be a hard problem,
+so we cannot prove they converge to a global minimum, we can only prove they converge to a stationary point in a nonconvex setting.
+So, and the second part, we can prove with LARS and LAMB can converge faster, actually, in the large batch training
+because of the convergence rate of SGD, we know,
+depends on the maximum of the smoothness across dimension or the maximum of the Lipschitz constant.
+But the convergence rate of LARS and LAMB only depends on average of the Lipchitz constants.
+So, which means the convergence rate of LARS/LAMB is much faster than SGD.
+So if you want more, I have more details in my backup slides, we can talk in a the career session.
+So, let me briefly sum up, so why LARS and LAMB work. Because it has a high convergence rate and
+also, it can be a proper noise to help optimizer
+get out of the sharp minimizer, and also, its- its natural per-layer warmup,
+and it can avoid network divergence, even when you use a huge learning rate. So that's- that's the reasons why they work.
+Ok, so next part, let me briefly introduce experimental results and- and also the applications of our results.
+So as I mentioned before, Facebook's approach doesn't work for AlexNet.
+We can only scale AlexNet's batch size to 1k. But here, if we use LARS,
+we can scale the batch size to 4k, to 8k,
+and we can get same accuracy
+and in the same number of epochs. So even when we add batch normalization, we can get the same accuracy.
+Okay. Yeah, so Facebook's approach for ResNet only scaled batch size to 8k. We can scale to 32k or
+64k. So here is an example of 32k.
+So you see the horizontal axis is number of epochs, vertical axis is testing accuracy, higher is better.
+Clearly, you can see there are two lines. The first line is our
+approach, LARS, and the second line is the base line, you see, by training the same number of epochs now we can get the same accuracy.
+And also, we want to have a comparison between our approach and state-of-
+state-of-the-art approach. So the horizontal axis is batch size, vertical axis is the error rate, lower is better. So you see,
+no matter we change the batch size, our approach is better than the state-of-the-art approach.
+And also, when we increase the batch size to very large, our approach is much better, you see. So here, LARS is better.
+Yeah. So I also want to mention, I mean, the BERT, which is kind of a very important application today.
+So as I mentioned before, we scaled the batch size of BERT to 16k,
+we will lose accuracy. But now, with our approach, you can scale the batch size to 32k or even 64k.
+So here, the first column is the optimizer, second column batch size, and steps- number of steps,
+and also F1 score, higher is better, and the number of TPUs, and the wall clock time of training time.
+So you see, we can actually reduce the BERT training time from three days to 76 minutes
+without losing accuracy, we can get the same F1 score.
+Yeah, so let me give you a better picture to visualize that. So the horizontal-
+Michael Taylor: We had a question from (inaudible).
+Yang You: Okay, okay. Please.
+Audience Member: So I'm wondering what's the difference between LARS and other adaptive optimizers such as (inaudible)?
+Does LARS, like, entirely replace (inaudible), or do they work- kind of work together to (inaudible)?
+Yang You: Okay, very good question, thanks for asking. Let me- let me go back to LARS and LAMB. So here's LAMB, here's LARS.
+Yeah, probably so LARS, you'd build on top of momentum. So actually, you can see,
+so here, the trust ratio-
+so here's trust ratio, right?
+So if the trust ratio is only one, so it's essentially the same weight as
+momentum SGD, right?
+Hello, can you hear me?
+Audience Member: Uh, me?
+Michael Taylor: Okay, what's the-
+Audience Member: I'm just wondering is it the learning rate adjustment on top of Adam?
+Or is on top of purely SGD?
+Yang You: So actually LARS is on
+momentum SGD,
+LAMB is on Adam. So here, LAMB you see,
+I think the different- the difference is here, right? We have the trust ratio,
+so if you just manually set the trust ratio as one, you kind of go back to Adam.
+Audience Member: I see, thanks.
+Yang You: Okay, thank you. Thanks for asking.
+Okay, yeah, so,
+now, I think we can scale
+to 1k TPUs without losing accuracy.
+And here, one is perfect scaling, second one our scaling, you see.
+Sometimes we can even beat the perfect scaling and I think our speed is very good.
+Yeah, so actually there's another challenge here.
+So- so the challenge is, so how can we auto-tune the hyper-parameter
+every time we change the batch size? We know a big company like Google, they have different teams.
+So different teams will need a different batch size, right? For example,
+Google translate may need a batch size of 48k, YouTube may need a batch size of 16k,
+Gmail may need a batch size of 32k.
+So it's really annoying and time-consuming
+when you tune all the hyper-parameters every time we change the batch size.
+So even for an expert auto-tuner it's not that easy.
+So I think the second challenge is how can we auto-tune the hyper-parameters every time we change the batch size?
+So actually, if you use our LAMB optimizer,  you don't need to tune any hyper-parameters.
+So here, let me- let me give you -
+let me give you a table. So the first row is batch size, second row is learning rate, and the warmup, and the F1 score.
+So you see, if we increase the batch size by k times,
+we just need to increase the learning rate by square root of k times, and increase the warmup by
+k times. We can get- no matter how we change the batch size we can get the same accuracy. You see, here we increased the batch
+size two times, two times, two times,
+we just increased the learning rate the square root times,
+square root of two times, square root of two times, and increase the warmup two times, two times. We can get the same accuracy.
+So we don't need to tune any hyper-parameters if we use LAMB.
+And also there are challenges, we know. There- we don't have a general optimizer yet, to the best of my knowledge.
+So the traditional optimizer like Momentum SGD, they work very well for ImageNet
+but they fail the NLP like BERT- the NLP application like BERT.
+On other hand, so Adam- the adapted optimizer Adam, they work very well for a NLP like BERT,
+but they failed ImageNet.
+So, I already showed you, so LAMB worked very well for NLP, but will LAMB work for ImageNet?
+So actually, we did some numerical (inaudible), we found LAMB worked very well for ImageNet.
+So here, the horizontal axis is different optimizers, vertical axis is accuracy.
+You see, so in some- if we increase the batch size 16k,
+so LAMB can even achieve higher accuracy than Momentum SGD.
+So to the best of our knowledge, so LAMB is the first optimizer
+working for both BERT and ImageNet training.
+I mean- so here, I mean, working means that you- you get
+top- the same accuracy. I mean, the best accuracy.
+So in the next part, let me briefly introduce
+the application approaching- I mean, our approach used in real-world applications.
+So we know, in the last three years or so people reduced the ImageNet training time from
+like 29 hours to one minute.
+So here- here in the table is
+ImageNet training speed world records.
+So actually, I'm very happy to say, so since 2017 all of them use my LARS algorithm.
+So for example, the ImageNet training speed world records were
+created by Facebook, Berkeley, Japan PFN Company, Berkeley, Tencent, Sony, Google, Fujitsu, and Google again.
+So you see, so since 2017, all of them use my LARS optimizer.
+So I'm very happy to say that LARS made a contribution in this area.
+Okay. Yeah, and I just want to briefly mention
+so, we won the best paper award of ICPP. So, it's actually the most cited
+HPC conference paper in the last three years. So, it's being used by many leading companies like Google, Facebook, or Intel.
+So, and I want to mention so even for some-
+some, I mean, deep learning researchers, they can implement our approach in their own applications. So here is a coder from
+deep learning research at Stanford. So clearly you can see
+for the- even for the small batch training for the regular application
+you can just implement LARS and can make your training run much faster.
+And recently,
+so even- even Geoff Hinton's team, they used LARS to achieve state-of-the-art ImageNet classification results.
+I mean, the paper published recently. If you want more, please check out this paper.
+So I'm very happy, so LARS can also be used in regular applications.
+And LARS was added to MLPerf, which is an industry benchmark for faster deep learning.
+So yeah, we know that MLPerf includes Google, Intel, and many,
+many different companies.
+And also, we got some media coverages of LARS. For example, Communication of ACM, and National Science Foundation,
+and The Next Web.
+Yeah, so let me- let me also briefly introduce early success of LAMB. So actually, so here,
+this figure is from-
+from the blog post of (inaudible) AI, which is
+(inaudible) for deep learning.
+So, LAMB will help (inaudible) to scale the transformer model
+to 128 GPUs. So here is a quote from (inaudible) AI. So clearly from this quote you can see,
+so even on single machine, so LAMB is much better than Adam. If you want more, please check out (inaudible) AI's blog post.
+And also, so LAMB actually becomes
+an official optimizer of NVIDIA. So here is a screenshot from-
+from NVIDIA, the public github. So according to NVIDIA public github,
+here is the code, right? So LAMB is
+17 times faster than Adam.
+So here's actually a good implementation if you want to use LAMB, please check NVIDIA public github. So according to NVIDIA, so LAMB is
+17 times faster than Adam optimizer, okay.
+And so LAMB helped Google to achieve state-of-the-art results on GLUE, RACE, and SQuAD benchmarks,
+so they are the (inaudible) for NLP, and also it's being used by the
+state-of-the-art NLP model like Albert. If you want more, please check the model and the paper.
+And also, so even some small companies, so they are using LAMB. So here- here's a quote from
+from (inaudible), a small company
+Yeah, so one last thing I want to mention, so
+actually our research, it was mentioned in Google's Production Release. So actually, Google's now
+using LARS and LAMB to make the deep learning run very fast.
+Yeah, so the next part, I have three minutes so let me briefly introduce my future work, okay.
+So, I think that the first direction is a short term- short term research plan. So, it is a natural extension of my current research.
+Because we know so why deep learning is better than traditional approaches, so because we give deep learning
+a larger dataset and make the model larger to give us better results.
+But now, I think we are still here. We still have a lot of potential for deep learning.
+So in the future, I will give deep learning more data and even larger models. We can- I believe we can even get better results.
+So I think, probably in the next five years,
+supercomputers are still very important to deep learning.
+And, for example, actually, I think AI supercomputer is very promising now.
+I mean, for example, there are some exciting projects even from academia. For example,
+HammerBlade from Michael, and also recently, so NVIDIA actually
+put the DGX SuperPOD into production line, and it kind of has 1k.
+I mean- I mean, in the future NVIDIA probably will sell you a supercomputer with 1k GPUs.
+So like, something like SuperPOD. And also, the Google next generation TPU:Pod is four times larger than today.
+So I think that there are so many things to do in this area,
+so we need to build a more scalable and more robust optimizer for the AI supercomputer in the next five years or ten years.
+And a second direction is federated machine learning. So, we know there is currently concern in the deep learning system.
+So we need to collect data from the user. So a user can be a person,
+for example, your photo and your cell phone use are data. The user can also be a hospital, the medical records
+are the data. So probably, because the data is very important, some users
+probably don't want to share the data in the future. So we need a new approach for some applications.
+I think federated learning may be a promising direction, so which-
+because federated learning can help the user to learn their own model without sharing the data.
+But there are several different features of federated learning that can be a challenge. First, there is a massive (inaudible), for example in the future
+Google's apps can help billions of users, I think that's possible. And also, the data is highly non IID.
+So I don't know your data,
+you don't know my data. So it can be a challenge for traditional optimization. And also, the data is unbalanced.
+Some nodes have a-
+have many examples, other nodes have-
+maybe has many, many, tons of examples.
+I mean, other nodes have tons of examples,
+so the load is very unbalanced. And also, the communication is very limited because only a few rounds of
+unreliable communication are possible. So here, I just want to mention,
+so there are some exciting UW projects like Parameter Hub and PLink,
+probably I can collaborate with those folks to make deep learning work for this part.
+And also the async-
+we have asynchronous communication because
+we cannot force users to update at 7 A.M. or 10 P.M.
+And also, my number three direction is energy-efficient machine learning.
+So we know, actually last year, I took a flight from San Francisco to New York-
+(Alarm Beeping)
+Well, let me finish my talk in one minute.
+I'm finishing very quickly.
+So last year, I took a flight from San Francisco to New York,
+we know it's going to cost some energy, right? But this energy cost is much lower than training a deep learning model.
+I thought that was ridiculous. So we need to reduce the energy cost in deep learning.
+Otherwise, it's very hard for us to deploy deep learning in the real-world application.
+So for example, there are projects in how can we reduce tuning efforts? How can
+minimize the cost of data movement and fillidian point operations? And hopefully I can do something and make contributions to TVM.
+And let me briefly introduce, in the last three years or so,
+I did some research to make machine learning run faster on supercomputers. So even for the traditional
+machine learning like SVM become- we can make SVM 16 times faster, so we won the best paper award at IPDPS.
+And we can train ImageNet in 15 minutes on CPUs. So here, on CPUs, we don't use GPUs or TPUs,
+we can finish in 15 minutes.
+So we won the best paper award at ICPP. So we published our research in the supercomputing conference like
+SC or IPDPS, but we can also publish our research in the
+leading AI conference like a NeurIPS and ICLR. I want to mention recently, we
+reduced BERT training time from 3 days to 76 minutes.
+Thanks so much. I'm very happy to take questions.
+Michael Taylor: That's great, thank you.
+Yang You: Thank you.
+Michael Taylor: Do we have any questions from the audience?
+(Silence)
+Michael Taylor: Go ahead.
+Audience Member: Yeah, I'm just curious, so you- this is really, really awesome, super interesting results.
+Um, I'm curious if you have thoughts on how to apply these techniques to last controlled environments, like instead of,
+you know, supercomputer scenarios where you actually have full control of the machine,
+you have more of a cloud-based environment where you have to take into account dynamic loads and changing
+interconnection network behavior and so on.
+Yang You: Yeah, yeah.
+Thanks for asking, I think it's a very good question.
+So I just want to confirm, so you mean, so if I move my project for example to the cloud,
+maybe we should worry about the-
+the performance. Maybe my approach is not accurate or not fast enough. Is that your question?
+Audience Member: Oh, no, I'm not-
+I'm just curious. I didn't mean to imply your results (inaudible). I'm just curious whether you think it applies to
+more dynamic scenarios where you can't rely on a well behaved and well controlled environment of the interconnection.
+Yang You: Okay, thank you so much. Thanks for asking. Yeah, so, uh, I think because we are working on a numerical
+optimization problem, so I think probably it will work on cloud even though
+we have less control. For example,
+we have 100 nodes, I mean, maybe it's a very- very likely
+in the training like maybe 50 or 60 nodes (inaudible) in the middle of training and-
+and I think my project can still give you roughly the same accuracy.
+Is that clear? Did that answer your question?
+Audience Member: That's clear, yeah. Thank you.
+Yang You: Thank you so much.
+Michael Taylor: That's very interesting, I hadn't thought about that, that when you aggregate all the data, you could just drop out nodes that happen
+to have died. That's pretty interesting.
+So I had a question about- so
+in terms of numerical optimization, you know, it looks like your improvement operated like at the layer level. Yeah
+Yang You: Yeah, yeah.
+Michael Taylor: I was wondering, you know, is there the possibility that layers end up being kind of heterogeneous in what they do, like so that you might have-
+you might actually need to optimize different portions of a layer
+differently based on how they are evolving as they get trained.
+Yang You: Yeah. Yeah, I think
+actually, that's a very good question. So,
+I actually do think I'm doing the same thing, I mean,
+in the direction, but because for us different layers, if they are different, so they will
+they will learn at a different speed in our approach.
+Um, I mean, can you say more?
+Michael Taylor: Well, I just mean like, I think you're-
+currently like you are tuning the parameters on the layer by layer basis, right?
+And I'm just wondering if it may be that there's heterogeneity-
+heterogeneity within the layer,
+and you might actually want to tune the parameters like even within a layer you might-
+Yang You: Okay, okay.
+I see, you mean within each layer, right?
+Michael Taylor: Yeah.
+Yang You: Yeah, so because our approach is,
+for example, LAMB approach is built on top of Adam optimizer. So Adam actually already-
+already takes this into account. So for-
+I feel like- let me go back to the last slide and let me explain. Okay.
+Yeah, so- so,
+you see, so here first within each layer. So actually, Adam is doing something elemental wise.
+So here, this operation's elemental wise.
+Michael Taylor: Oh, okay. I see.
+Christian had a question. Why don't you go ahead, Christian.
+Christian: Hey, I had a question.
+I was going to ask whether we need to change anything of the hyper-parameter except for the learning rate and the warm up proportion.
+Yang You: You mean any other parameters should we care about?
+Christian: Yeah.
+Yang You: Okay, yeah. Yeah, so I think
+weight decay actually is also very important.
+I mean, so for this project, we found you only need to care for the learning rate and the warmup
+because warmup and learning rate they are kind of very related to each other, you can treat them as one parameter,
+or hyper-parameters. So another important is weight decay, actually, because
+we know (inaudible) is a sharp minimum problem, it's something like over 15, so I think weight decay is also very important.
+Did I answer your question? Do you want to know more?
+Christian: Yeah, I mean, how do I know how to tune weight decay?
+Yang You: Good question. Very good question.
+So, for now, I don't have a good answer. Usually,
+we start from application. The (inaudible) gave us default weight decay,
+hyper-parameters which tells you the default weight decay. For now, we did not choose the weight decay.
+How about, let me- let me do some studying, maybe come back to you later? Is that okay?
+Christian: Yeah, that's okay. I had one more question.
+Yang You: Okay, okay.
+Christian: You said we need to double the
+warmup if we are doubling the batch size, right?
+So what is the reason behind this? Is the reason that
+the model needs to stabilize more?
+Yang You: So your question is why if you double batch size, you double the warm up?
+Is that your question?
+Christian: Yeah, yeah.
+Yang You: Yeah. Yeah, so
+because, I mean,
+we are- we are- we increase batch size, we are reducing the number of iterations, right?
+So our updating, I mean, is much fewer than before, so we want to make each updating more powerful,
+which means we want to make each- each iteration learn more. So we want each iteration to learn faster, so we want to double the-
+we want to increase the batch size.
+So- but if we increase the batch size, (inaudible) can diverge, so you also want to
+give them a longer warmup period.
+So we want to make it stable.
+Oh, I mean- I mean, the quick answer is that we want them to learn fast but we also want to make them stable.
+Christian: Yeah, okay that answers my question, thank you.
+Yang You: Oh, and thanks for asking. Thank you.
+Michael Taylor: Okay, great. Any other questions before we wrap it up and thank Yang?
+(Silence)
+Okay, great. Well, thank you so much for attending and thank you, Yang, for presenting.
+Yang You: Okay. Thank you. Thank you so much.

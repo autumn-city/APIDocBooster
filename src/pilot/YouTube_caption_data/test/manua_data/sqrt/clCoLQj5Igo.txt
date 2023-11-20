@@ -1,0 +1,237 @@
+Let's get started on using SimpleTransformers! In 
+this video I'll explain the difference between the  
+transformers architecture, and the libraries 
+'transformers' and 'simple transformers'.  
+There'll be some tips for getting started, and 
+then I'll show code examples for classification,  
+regression, and language generation. 
+I'll explain what those are as well.  
+So [a] transformer is a type of architecture that 
+is used by BERT, other modern language models  
+such as GPT-2, RoBERTa... there's a paper called 
+"Attention is all you need" that you can look up  
+some explanations on YouTube, 
+but, from a coding perspective,  
+in this video we're talking about the 
+Python library called 'transformers'  
+which comes from HuggingFace, and the models that 
+are available on the HuggingFace site can all be  
+loaded through this. They're generally compatible 
+with both PyTorch and TensorFlow architectures.  
+The transformers library also is 
+compatible with their 'tokenizers' library  
+which helps you get a large block of text 
+divided up into word and sub-word pieces.  
+Simple Transformers is a library 
+that helped me get started in NLP  
+by being so much more accessible to 
+use, and [framing] problems. The website  
+SimpleTransformers.ai has some documentation. 
+It's based on the transformers library.  
+Because of how it was designed originally, it 
+is only PyTorch and GPU compatible - there's  
+not really TPU support - but it's a lot more 
+accessible and I think when I show you the code,  
+you'll agree that it makes sense. Some things that 
+I'll point out is that PyTorch, Transformers, and  
+SimpleTransformers are made by different groups 
+of people, so sometimes you'll run a notebook  
+that ran perfectly fine before, and you'll get 
+a weird issue. My recommendation - having run  
+a lot of projects with this - is to go to the 
+PyPi.org site - that's the same site that pip  
+uses to install the library - and see if there was 
+a recent release. If there's been an update in the  
+last few days, maybe you need to install an older 
+version, maybe you need to update your existing  
+version for compatibility. If you find the problem 
+is just recently introduced, report the new bug  
+on the SimpleTransformers [GitHub], and they 
+generally have a good response time on that.
+If there's an issue deeper down, [with] 
+transformers, tokenizers, [or] tqdm  
+are not compatible with your current 
+version, see if there's a message in the  
+[debugger] telling you to install a different 
+version, maybe downgrade from their most recent  
+update to transformers, restart your instance once 
+everything's installed... just hack around with it  
+and generally you can get everything to sync up 
+with each other. Let's show some example code. So  
+here, 'pip install simpletransformers' - if 
+you're not familiar with the Google CoLab  
+or notebook system, usually you write Python 
+here, but writing an exclamation point  
+in the beginning means, I'm writing this 
+to bash. It's going to do a pip install.  
+Once that's all loaded up, I copy 
+the CSV files from my Google Drive,  
+and we get a little preview of the first one. 
+Here we have the news description / headline,  
+then we have the English name for the 
+category, and the Tamil name for the category.  
+There are different categories of news in this 
+dataset. The first one here is world news,  
+and the second one is cinema / movie news. It 
+turns out there's six different categories in  
+this dataset - I'll explain how i know that later. 
+So the way that I get from this raw CSV file into  
+a Pandas data-frame that I can use with Simple 
+Transformers is I import pandas, read in the CSV,  
+I filter down the columns to only the ones that 
+I want. The first column should be the text, and  
+the second column should be the category. Don't 
+include any other columns in this data frame. Next  
+the category - we already saw [it] is a word 
+representing the category. We need to turn that  
+into a number, starting at zero. Here on this 
+line I convert it into a categorical [column]  
+and then I set the categorical 
+[value] to its code number.
+Next I use the dropna() function to drop 
+any empty rows, and we see a preview here  
+of what we're looking at. In this case the 
+test dataset is provided as a separate CSV,  
+so I'm going to keep that same train and test 
+split. I follow the exact same process to  
+pull out the headline text and category 
+number values, drop empty rows,  
+and here are the test values. I can see that 
+the number of unique values for 'category' is 6.
+What do we mean by a classification task? 
+As you've seen this is dividing up headlines  
+into six specific categories or labels. 
+Classification is a labeling task. Here  
+we have only one label; there are other systems 
+where you can have multiple labels on the same  
+piece of text, but there are different ways 
+to load that also with Simple Transformers.  
+This is a more [straightforward] example of 
+everything to be labeled in a particular way.  
+Here we show how to run a classification 
+task. I import Classification Model from  
+Simple Transformers, then I select the model / 
+HuggingFace repo that I want to use, and then  
+here I've [set] the architecture that I want to 
+use - BERT in this case. There's also models that  
+use RoBERTa or DistilBERT type models. Here's what 
+else I'm passing - the number of labels which we  
+know is 6, I set use_cuda to True - that's 
+the library that communicates with the GPU,  
+then I passed in these arguments because I 
+found that's the best way to always reprocess  
+the input data, if I've made any changes upstream 
+of this. Train for 3 epochs and then silent = True  
+is something I do to avoid printing out a bunch of 
+progress bars. You can always comment this out if  
+you want to see what's going on as it's happening. 
+Then I pass the train data-frame to train_model.
+Now that it's trained, I want to know if it works, 
+or how well it works. I pass the test data-frame  
+to eval_model here. I have my own system of 
+tallying up the incorrect answers by label,  
+and I found out that I have 74.1% accuracy 
+[in] sorting into these six different news  
+categories. The next thing I want to know is, how 
+does this compare to other models that are around?  
+At the time the only other model I knew that could 
+support Tamil language was Multilingual BERT. This  
+is another model that's hosted by HuggingFace. I 
+did the exact same code, same amount of training,
+same exact test code, and here we 
+can see it only had 53.2% accuracy.  
+More recently Google released a model called 
+MuRIL. Here I commented out the 'silent'  
+parameter so we can see how it did the training.
+Took about 10 - 12 minutes to run everything 
+all together, and that has an accuracy of 81.3%,  
+so this is currently the best model I 
+know for doing classification with Tamil.
+The next one I'll show you is a regression task. 
+[For] regression instead of assigning a label  
+to some text, we want to [estimate] a 
+number. A good example would be, if you  
+had some descriptions for products, or houses, 
+or hotels, and you wanted to estimate the price.  
+When we were doing classification, the difference 
+between a cinema story or a sports story  
+is they're two separate things, 
+whereas if we're talking about  
+housing prices, if I say something is $10k, 
+$11k, $12k, you can say, oh $11k is closer  
+to $12k. You can measure the difference between 
+these different [responses] on a number line.
+For regression, in this case I had star reviews 
+from Amazon. This is a little tricky because  
+[people think], oh there are five different 
+options, 1-5 stars, and so that's a classification  
+problem. But think about this more carefully - 
+the difference between 1 star and 2 stars is very  
+different from a 1 star and 5 star review. So we 
+want to plot these numbers on a number line, and  
+even if we're not sure if it's 1 star or 2 stars, 
+saying 1.5 is a useful piece of information.
+There's not a specific different model 
+name in Simple Transformers - we still  
+import the classification model. We do two 
+different things : we set num_labels = 1 here,  
+the other is we put regression = true over here.
+Great, so I passed the training data, they've 
+collected this took a lot longer to run  
+altogether about an hour 45 minutes, because
+I was running this on a much larger dataset.  
+Instead of a percent accuracy I use [rmse] 
+- the square root of the mean squared error,  
+that means that if this number is lower then 
+that's better. Here we see that Multilingual BERT  
+had - when i did the same measurements 
+was a little bit higher there. So  
+long story short, for regression tasks, to do 
+it you [set] one label and regression = true,  
+and the columns should be the text, and then 
+the second column being the numerical value.
+The final [example] I'll 
+show is language generation.  
+This is when we talk about 
+GPT-2 or GPT-3, or "I gave an AI  
+100 hours of Harry Potter and it generated this", 
+something like that. This is simple - you load a  
+model that's capable of language generation, 
+and then you give it some starting text.  
+The example that I'm currently working on is, 
+if I give it, "Halloween is October ?" it should  
+say "October 31st" - it's not always doing 
+that - which is interesting - but anyway  
+here you see how to get a language 
+generation model out of Simple Transformers.
+People write to me and say, "hey, I see you do 
+this stuff with Tamil, Spanish, Hindi, or another  
+language, let's start generating text!" But 
+these architectures are totally different. GPT-2  
+is English-centric and it's designed to generate 
+text, whereas BERT-based models that I used in the  
+previous examples are designed to fill in words 
+in the middle of a sentence, or just one word  
+at a time. They can be used for classification 
+and various tasks, but generally can't be used  
+for language generation. Even if you did, it 
+would just generate one or two words at a time  
+whereas when you're doing GPT-2, to write a story, 
+you want it to generate dozens to hundreds of  
+words. There are limited number of models that 
+are good at this, so I'd recommend if you're  
+interested in language generation, coming up with 
+new sentences and stories, you might want to start  
+training from scratch, or there's some tutorials 
+where you take the existing English GPT-2  
+and [retrain] it into another language model, the 
+example that I saw [was] a Portuguese example.
+We've covered classification is labeling some 
+text, regression is going from text to a numerical  
+value as close as possible on the number line, and 
+language generation is you feed in some initial  
+writing prompt and then it continues writing.
+In the next video I'll be [talking] about 
+different learning styles you can use  
+when you're getting started with machine 
+learning and natural language processing

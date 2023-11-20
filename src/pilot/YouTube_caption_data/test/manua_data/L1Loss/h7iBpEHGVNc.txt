@@ -1,0 +1,2626 @@
+- Okay so welcome to
+CS 231N Lecture three.
+Today we're going to talk about
+loss functions and optimization
+but as usual, before we
+get to the main content
+of the lecture, there's a
+couple administrative things
+to talk about.
+So the first thing is that
+assignment one has been released.
+You can find the link up on the website.
+And since we were a little bit late
+in getting this assignment
+out to you guys,
+we've decided to change
+the due date to Thursday,
+April 20th at 11:59 p.m.,
+this will give you a full
+two weeks from the assignment
+release date to go and
+actually finish and work on it,
+so we'll update the syllabus
+for this new due date
+in a little bit later today.
+And as a reminder, when you
+complete the assignment,
+you should go turn in the
+final zip file on Canvas
+so we can grade it and get
+your grades back as quickly
+as possible.
+So the next thing is always
+check out Piazza for interesting
+administrative stuff.
+So this week I wanted to
+highlight that we have several
+example project ideas as
+a pinned post on Piazza.
+So we went out and solicited
+example of project ideas
+from various people in the
+Stanford community or affiliated
+to Stanford, and they came
+up with some interesting
+suggestions for projects
+that they might want students
+in the class to work on.
+So check out this pinned post
+on Piazza and if you want
+to work on any of these projects,
+then feel free to contact
+the project mentors
+directly about these things.
+Aditionally we posted office
+hours on the course website,
+this is a Google calendar, so
+this is something that people
+have been asking about
+and now it's up there.
+The final administrative
+note is about Google Cloud,
+as a reminder, because we're
+supported by Google Cloud
+in this class, we're able to
+give each of you an additional
+$100 credit for Google Cloud
+to work on your assignments
+and projects, and the exact
+details of how to redeem
+that credit will go out later
+today, most likely on Piazza.
+So if there's, I guess if
+there's no questions about
+administrative stuff then we'll
+move on to course content.
+Okay cool.
+So recall from last time in lecture two,
+we were really talking about
+the challenges of recognition
+and trying to hone in on this idea
+of a data-driven approach.
+We talked about this idea
+of image classification,
+talked about why it's hard,
+there's this semantic gap
+between the giant grid of
+numbers that the computer sees
+and the actual image that you see.
+We talked about various
+challenges regarding this
+around illumination,
+deformation, et cetera,
+and why this is actually a
+really, really hard problem
+even though it's super
+easy for people to do
+with their human eyes
+and human visual system.
+Then also recall last time
+we talked about the k-nearest
+neighbor classifier as kind
+of a simple introduction
+to this whole data-driven mindset.
+We talked about the CIFAR-10
+data set where you can see
+an example of these images
+on the upper left here,
+where CIFAR-10 gives you
+these 10 different categories,
+airplane, automobile, whatnot,
+and we talked about how the
+k-nearest neighbor classifier
+can be used to learn decision boundaries
+to separate these data points into classes
+based on the training data.
+This also led us to a
+discussion of the idea of cross
+validation and setting
+hyper parameters by dividing
+your data into train,
+validation and test sets.
+Then also recall last time
+we talked about linear
+classification as the first
+sort of building block
+as we move toward neural networks.
+Recall that the linear
+classifier is an example
+of a parametric classifier
+where all of our knowledge
+about the training data gets summarized
+into this parameter matrix W that is set
+during the process of training.
+And this linear classifier
+recall is super simple,
+where we're going to take
+the image and stretch it out
+into a long vector.
+So here the image is x and
+then we take that image
+which might be 32 by 32 by
+3 pixels, stretch it out
+into a long column vector of 32 times 32
+times 3 entries,
+where the 32 and 32 are
+the height and width,
+and the 3 give you
+the three color channels,
+red, green, blue.
+Then there exists some parameter matrix, W
+which will take this long column vector
+representing the image
+pixels, and convert this
+and give you 10 numbers giving scores
+for each of the 10 classes
+in the case of CIFAR-10.
+Where we kind of had this interpretation
+where larger values of those scores,
+so a larger value for the cat
+class means the classifier
+thinks that the cat is
+more likely for that image,
+and lower values for
+maybe the dog or car class
+indicate lower probabilities
+of those classes being present
+in the image.
+Also, so I think this point
+was a little bit unclear
+last time that linear classification
+has this interpretation
+as learning templates per class,
+where if you look at the
+diagram on the lower left,
+you think that, so for
+every pixel in the image,
+and for every one of our 10 classes,
+there exists some entry in this matrix W,
+telling us how much does that
+pixel influence that class.
+So that means that each of
+these rows in the matrix W
+ends up corresponding to
+a template for the class.
+And if we take those rows and unravel,
+so each of those rows again corresponds
+to a weighting between the values of,
+between the pixel values of
+the image and that class,
+so if we take that row and
+unravel it back into an image,
+then we can visualize the
+learned template for each
+of these classes.
+We also had this interpretation
+of linear classification
+as learning linear decision
+boundaries between pixels
+in some high dimensional
+space where the dimensions
+of the space correspond
+to the values of the pixel
+intensity values of the image.
+So this is kind of where
+we left off last time.
+And so where we kind of
+stopped, where we ended up last
+time is we got this idea
+of a linear classifier,
+and we didn't talk about how
+to actually choose the W.
+How to actually use the training data
+to determine which value
+of W should be best.
+So kind of where we stopped off at
+is that for some setting
+of W, we can use this W
+to come up with 10 with our
+class scores for any image.
+So and some of these class
+scores might be better or worse.
+So here in this simple example,
+we've shown maybe just a
+training data set of three images
+along with the 10 class scores
+predicted for some value of W
+for those images.
+And you can see that some
+of these scores are better
+or worse than others.
+So for example in the image
+on the left, if you look up,
+it's actually a cat because you're a human
+and you can tell these things,
+but if we look at the
+assigned probabilities, cat,
+well not probabilities but scores,
+then the classifier maybe
+for this setting of W
+gave the cat class a score
+of 2.9 for this image,
+whereas the frog class gave 3.78.
+So maybe the classifier
+is not doing not so good
+on this image, that's bad,
+we wanted the true class
+to be actually the highest class score,
+whereas for some of these
+other examples, like the car
+for example, you see
+that the automobile class
+has a score of six which is much higher
+than any of the others, so that's good.
+And the frog, the predicted
+scores are maybe negative four,
+which is much lower
+than all the other ones,
+so that's actually bad.
+So this is kind of a hand wavy approach,
+just kind of looking at
+the scores and eyeballing
+which ones are good
+and which ones are bad.
+But to actually write
+algorithms about these things
+and to actually to determine
+automatically which W
+will be best, we need some
+way to quantify the badness
+of any particular W.
+And that's this function
+that takes in a W,
+looks at the scores and then
+tells us how bad quantitatively
+is that W, is something that
+we'll call a loss function.
+And in this lecture we'll
+see a couple examples
+of different loss functions
+that you can use for this image
+classification problem.
+So then once we've got this
+idea of a loss function,
+this allows us to quantify
+for any given value of W,
+how good or bad is it?
+But then we actually need to find
+and come up with an efficient procedure
+for searching through the
+space of all possible Ws
+and actually come up with
+what is the correct value
+of W that is the least bad,
+and this process will be
+an optimization procedure
+and we'll talk more about
+that in this lecture.
+So I'm going to shrink
+this example a little bit
+because 10 classes is
+a little bit unwieldy.
+So we'll kind of work with
+this tiny toy data set
+of three examples and
+three classes going forward
+in this lecture.
+So again, in this example, the
+cat is maybe not so correctly
+classified, the car is correctly
+classified, and the frog,
+this setting of W got this
+frog image totally wrong,
+because the frog score is
+much lower than others.
+So to formalize this a little
+bit, usually when we talk
+about a loss function, we imagine
+that we have some training
+data set of xs and ys,
+usually N examples of these
+where the xs are the inputs
+to the algorithm in the
+image classification case,
+the xs would be the actually
+pixel values of your images,
+and the ys will be the things
+you want your algorithm
+to predict, we usually call
+these the labels or the targets.
+So in the case of image classification,
+remember we're trying
+to categorize each image
+for CIFAR-10 to one of 10 categories,
+so the label y here will be an integer
+between one and 10 or
+maybe between zero and nine
+depending on what programming
+language you're using,
+but it'll be an integer telling you
+what is the correct category
+for each one of those images x.
+And now our loss function
+will denote L_i to denote the,
+so then we have this prediction function x
+which takes in our example
+x and our weight matrix W
+and makes some prediction for y,
+in the case of image classification
+these will be our 10 numbers.
+Then we'll define some loss function L_i
+which will take in the predicted scores
+coming out of the function f
+together with the true target or label Y
+and give us some quantitative
+value for how bad
+those predictions are for
+that training example.
+And now the final loss L will
+be the average of these losses
+summed over the entire data
+set over each of the N examples
+in our data set.
+So this is actually a
+very general formulation,
+and actually extends even
+beyond image classification.
+Kind of as we move forward
+and see other tasks,
+other examples of tasks and deep learning,
+the kind of generic setup
+is that for any task
+you have some xs and ys
+and you want to write down
+some loss function that
+quantifies exactly how happy
+you are with your particular
+parameter settings W
+and then you'll eventually
+search over the space of W
+to find the W that minimizes
+the loss on your training data.
+So as a first example of
+a concrete loss function
+that is a nice thing to work
+with in image classification,
+we'll talk about the multi-class SVM loss.
+You may have seen the binary
+SVM, our support vector
+machine in CS 229 and the multiclass SVM
+is a generalization of that
+to handle multiple classes.
+In the binary SVM case as
+you may have seen in 229,
+you only had two classes, each example x
+was going to be classified
+as either positive
+or negative example,
+but now we have 10 categories,
+so we need to generalize
+this notion to handle multiple classes.
+So this loss function has kind
+of a funny functional form,
+so we'll walk through it in a bit more,
+in quite a bit of detail over
+the next couple of slides.
+But what this is saying
+is that the loss L_i
+for any individual example,
+the way we'll compute it
+is we're going to perform a sum
+over all of the categories, Y,
+except for the true category, Y_i,
+so we're going to sum over
+all the incorrect categories,
+and then we're going to compare the score
+of the correct category, and the score
+of the incorrect category,
+and now if the score
+for the correct category
+is greater than the score
+of the incorrect category,
+greater than the incorrect
+score by some safety margin
+that we set to one, if that's
+the case that means that
+the true score is much, or the
+score for the true category
+is if it's much larger than
+any of the false categories,
+then we'll get a loss of zero.
+And we'll sum this up over all
+of the incorrect categories
+for our image and this
+will give us our final loss
+for this one example in the data set.
+And again we'll take
+the average of this loss
+over the whole training data set.
+So this kind of like if then
+statement, like if the true
+class score is much
+larger than the others,
+this kind of if then
+formulation we often compactify
+into this single max of zero
+S_j minus S_Yi plus one thing,
+but I always find that notation
+a little bit confusing,
+and it always helps me
+to write it out in this
+sort of case based notation
+to figure out exactly
+what the two cases are
+and what's going on.
+And by the way, this
+style of loss function
+where we take max of zero
+and some other quantity
+is often referred to as
+some type of a hinge loss,
+and this name comes from
+the shape of the graph
+when you go and plot it,
+so here the x axis corresponds to the S_Yi,
+that is the score of the
+true class for some training
+example, and now the y axis is the loss,
+and you can see that as the
+score for the true category
+for this example increases, then the loss
+will go down linearly
+until we get to above this safety margin,
+after which the loss will be zero
+because we've already correctly
+classified this example.
+So let's, oh, question?
+- [Student] Sorry, in terms of notation
+what is S underscore Yi?
+Is that your right score?
+- Yeah, so the question is
+in terms of notation,
+what is S and what is SYI
+in particular, so the Ss
+are the predicted scores
+for the classes that are
+coming out of the classifier.
+So if one is the cat class and
+two is the dog class then S1
+and S2 would be the cat and
+dog scores respectively.
+And remember we said that Yi
+was the category of the ground
+truth label for the example
+which is some integer.
+So then S sub Y sub i, sorry
+for the double subscript,
+that corresponds to the
+score of the true class
+for the i-th example in the training set.
+Question?
+- [Student] So what
+exactly is this computing?
+- Yeah the question is what
+exactly is this computing here?
+It's a little bit funny, I
+think it will become more clear
+when we walk through an explicit
+example, but in some sense
+what this loss is saying is
+that we are happy if the true
+score is much higher than
+all the other scores.
+It needs to be higher
+than all the other scores
+by some safety margin,
+and if the true score
+is not high enough, greater
+than any of the other scores,
+then we will incur some
+loss and that would be bad.
+So this might make a little bit more sense
+if we walk through an explicit example
+for this tiny three example data set.
+So here remember I've sort
+of removed the case space
+notation and just switching
+back to the zero one notation,
+and now if we look at,
+if we think about computing
+this multi-class SVM loss
+for just this first training example
+on the left, then remember
+we're going to loop over
+all of the incorrect
+classes, so for this example,
+cat is the correct class, so
+we're going to loop over the car
+and frog classes, and now for
+car, we're going to compare the,
+we're going to look at the car
+score, 5.1, minus the cat score,
+3.2 plus one, when we're
+comparing cat and car we expect
+to incur some loss here because
+the car score is greater
+than the cat score which is bad.
+So for this one class,
+for this one example,
+we'll incur a loss of 2.9,
+and then when we go and
+compare the cat score
+and the frog score we see that cat is 3.2,
+frog is minus 1.7,
+so cat is more than one greater than frog,
+which means that between these two classes
+we incur zero loss.
+So then the multiclass SVM
+loss for this training example
+will be the sum of the losses
+across each of these pairs
+of classes, which will be
+2.9 plus zero which is 2.9.
+Which is sort of saying that
+2.9 is a quantitative measure
+of how much our classifier screwed up
+on this one training example.
+And then if we repeat this procedure
+for this next car image, then
+again the true class is car,
+so we're going to iterate
+over all the other categories
+when we compare the car and the cat score,
+we see that car is more
+than one greater than cat
+so we get no loss here.
+When we compare car and frog, we again see
+that the car score is more
+than one greater than frog,
+so we get again no loss
+here, and our total loss
+for this training example is zero.
+And now I think you hopefully
+get the picture by now, but,
+if you go look at frog, now
+frog, we again compare frog
+and cat, incur quite a lot of
+loss because the frog score
+is very low, compare frog
+and car, incur a lot of loss
+because the score is very low,
+and then our loss for this
+example is 12.9.
+And then our final loss
+for the entire data set
+is the average of these losses
+across the different examples,
+so when you sum those out
+it comes to about 5.3.
+So then it's sort of, this
+is our quantitative measure
+that our classifier is
+5.3 bad on this data set.
+Is there a question?
+- [Student] How do you
+choose the plus one?
+- Yeah, the question is how
+do you choose the plus one?
+That's actually a really great question,
+it seems like kind of an
+arbitrary choice here,
+it's the only constant that
+appears in the loss function
+and that seems to offend
+your aesthetic sensibilities
+a bit maybe.
+But it turns out that this is somewhat
+of an arbitrary choice,
+because we don't actually care
+about the absolute values of the scores
+in this loss function, we only care
+about the relative differences
+between the scores.
+We only care that the correct score
+is much greater than the incorrect scores.
+So in fact if you imagine
+scaling up your whole W
+up or down, then it kind
+of rescales all the scores
+correspondingly and if you kind
+of work through the details
+and there's a detailed derivation
+of this in the course notes
+online, you find this choice
+of one actually doesn't matter.
+That this free parameter
+of one kind of washes out
+and is canceled with this scale,
+like the overall setting
+of the scale in W.
+And again, check the course
+notes for a bit more detail
+on that.
+So then I think it's
+kind of useful to think
+about a couple different
+questions to try to understand
+intuitively what this loss is doing.
+So the first question is what's
+going to happen to the loss
+if we change the scores of the
+car image just a little bit?
+Any ideas?
+Everyone's too scared to ask a question?
+Answer?
+[student speaking faintly]
+- Yeah, so the answer is
+that if we jiggle the scores
+for this car image a little
+bit, the loss will not change.
+So the SVM loss, remember,
+the only thing it cares
+about is getting the correct
+score to be greater than one
+more than the incorrect
+scores, but in this case,
+the car score is already quite
+a bit larger than the others,
+so if the scores for this
+class changed for this example
+changed just a little
+bit, this margin of one
+will still be retained and
+the loss will not change,
+we'll still get zero loss.
+The next question, what's
+the min and max possible loss
+for SVM?
+[student speaking faintly]
+Oh I hear some murmurs.
+So the minimum loss is zero,
+because if you can imagine that
+across all the classes, if
+our correct score was much
+larger then we'll incur zero
+loss across all the classes
+and it will be zero,
+and if you think back to this
+hinge loss plot that we had,
+then you can see that if the correct score
+goes very, very negative,
+then we could incur
+potentially infinite loss.
+So the min is zero and
+the max is infinity.
+Another question, sort of when
+you initialize these things
+and start training from scratch,
+usually you kind of initialize W
+with some small random values,
+as a result your scores
+tend to be sort of small
+uniform random values
+at the beginning of training.
+And then the question is
+that if all of your Ss,
+if all of the scores
+are approximately zero
+and approximately equal,
+then what kind of loss do you expect
+when you're using multiclass SVM?
+- [Student] Number of classes minus one.
+- Yeah, so the answer is
+number of classes minus one,
+because remember that
+if we're looping over
+all of the incorrect classes,
+so we're looping over
+C minus one classes, within
+each of those classes
+the two Ss will be about the same,
+so we'll get a loss of one
+because of the margin and
+we'll get C minus one.
+So this is actually kind
+of useful because when you,
+this is a useful debugging strategy
+when you're using these things,
+that when you start off training,
+you should think about what
+you expect your loss to be,
+and if the loss you actually
+see at the start of training
+at that first iteration is
+not equal to C minus one
+in this case,
+that means you probably have
+a bug and you should go check
+your code, so this is actually
+kind of a useful thing
+to be checking in practice.
+Another question, what happens
+if, so I said we're summing
+an SVM over the incorrect
+classes, what happens if the sum
+is also over the correct class
+if we just go over everything?
+- [Student] The loss increases by one.
+- Yeah, so the answer is that
+the loss increases by one.
+And I think the reason
+that we do this in practice
+is because normally loss of
+zero is kind of, has this nice
+interpretation that
+you're not losing at all,
+so that's nice, so I think your answers
+wouldn't really change,
+you would end up finding
+the same classifier
+if you actually looped
+over all the categories,
+but if just by conventions
+we omit the correct class
+so that our minimum loss is zero.
+So another question, what if we used mean
+instead of sum here?
+- [Student] Doesn't change.
+- Yeah, the answer is
+that it doesn't change.
+So the number of classes is
+going to be fixed ahead of time
+when we select our data set,
+so that's just rescaling
+the whole loss function by a constant,
+so it doesn't really matter,
+it'll sort of wash out
+with all the other scale things
+because we don't actually
+care about the true values
+of the scores, or the
+true value of the loss
+for that matter.
+So now here's another
+example, what if we change
+this loss formulation and we
+actually added a square term
+on top of this max?
+Would this end up being the same problem
+or would this be a different
+classification algorithm?
+- [Student] Different.
+- Yes, this would be different.
+So here the idea is that
+we're kind of changing
+the trade-offs between good and badness
+in kind of a nonlinear way,
+so this would end up actually computing
+a different loss function.
+This idea of a squared hinge
+loss actually does get used
+sometimes in practice, so
+that's kind of another trick
+to have in your bag when you're making up
+your own loss functions
+for your own problems.
+So now you'll end up,
+oh, was there a question?
+- [Student] Why would
+you use a squared loss
+instead of a non-squared loss?
+- Yeah, so the question is
+why would you ever consider
+using a squared loss instead
+of a non-squared loss?
+And the whole point of a loss function
+is to kind of quantify how
+bad are different mistakes.
+And if the classifier is making
+different sorts of mistakes,
+how do we weigh off the
+different trade-offs
+between different types
+of mistakes the classifier
+might make?
+So if you're using a squared loss,
+that sort of says that things
+that are very, very bad
+are now going to be squared bad
+so that's like really, really bad,
+like we don't want anything
+that's totally
+catastrophically misclassified,
+whereas if you're using this hinge loss,
+we don't actually care between
+being a little bit wrong
+and being a lot wrong, being
+a lot wrong kind of like,
+if an example is a lot
+wrong, and we increase it
+and make it a little bit less wrong,
+that's kind of the same
+goodness as an example
+which was only a little bit
+wrong and then increasing it
+to be a little bit more right.
+So that's a little bit hand wavy,
+but this idea of using
+a linear versus a square
+is a way to quantify how much we care
+about different categories of errors.
+And this is definitely something
+that you should think about
+when you're actually applying
+these things in practice,
+because the loss function is the way
+that you tell your algorithm
+what types of errors
+you care about and what types of errors
+it should trade off against.
+So that's actually super
+important in practice
+depending on your application.
+So here's just a little snippet
+of sort of vectorized code
+in numpy, and you'll end up implementing
+something like this for
+the first assignment,
+but this kind of gives you
+the sense that this sum
+is actually like pretty easy
+to implement in numpy, it
+only takes a couple lines
+of vectorized code.
+And you can see in practice,
+like one nice trick
+is that we can actually go in
+here and zero out the margins
+corresponding to the correct class,
+and that makes it easy to then just,
+that's sort of one nice
+vectorized trick to skip,
+iterate over all but one class.
+You just kind of zero out
+the one you want to skip
+and then compute the sum
+anyway, so that's a nice trick
+you might consider
+using on the assignment.
+So now, another question
+about this loss function.
+Suppose that you were
+lucky enough to find a W
+that has loss of zero,
+you're not losing at all,
+you're totally winning,
+this loss function is crushing it,
+but then there's a
+question, is this W unique
+or were there other Ws
+that could also have achieved zero loss?
+- [Student] There are other Ws.
+- Answer, yeah, so there
+are definitely other Ws.
+And in particular, because
+we talked a little bit
+about this thing of scaling
+the whole problem up or down
+depending on W, so you
+could actually take W
+multiplied by two and this
+doubled W (Is it quad U now?
+I don't know.)
+[laughing]
+This would also achieve zero loss.
+So as a concrete example of this,
+you can go back to your favorite example
+and maybe work through the numbers
+a little bit later,
+but if you're taking W and we double W,
+then the margins between the
+correct and incorrect scores
+will also double.
+So that means that if all these margins
+were already greater than
+one, and we doubled them,
+they're still going to
+be greater than one,
+so you'll still have zero loss.
+And this is kind of interesting,
+because if our loss function
+is the way that we tell our
+classifier which W we want
+and which W we care about,
+this is a little bit weird,
+now there's this inconsistency
+and how is the classifier to choose
+between these different versions of W
+that all achieve zero loss?
+And that's because what we've done here
+is written down only a
+loss in terms of the data,
+and we've only told our classifier
+that it should try to find the W
+that fits the training data.
+But really in practice,
+we don't actually care
+that much about fitting the training data,
+the whole point of machine learning
+is that we use the training
+data to find some classifier
+and then we'll apply
+that thing on test data.
+So we don't really care about
+the training data performance,
+we really care about the performance
+of this classifier on test data.
+So as a result, if the only thing
+we're telling our classifier to do
+is fit the training data,
+then we can lead ourselves
+into some of these weird
+situations sometimes,
+where the classifier might
+have unintuitive behavior.
+So a concrete, canonical example
+of this sort of thing,
+by the way, this is not
+linear classification anymore,
+this is a little bit of a more general
+machine learning concept,
+is that suppose we have this
+data set of blue points,
+and we're going to fit some
+curve to the training data,
+the blue points,
+then if the only thing we've
+told our classifier to do
+is to try and fit the training data,
+it might go in and have very wiggly curves
+to try to perfectly classify
+all of the training data points.
+But this is bad, because
+we don't actually care
+about this performance,
+we care about the
+performance on the test data.
+So now if we have some new data come in
+that sort of follows the same trend,
+then this very wiggly blue line
+is going to be totally wrong.
+And in fact, what we
+probably would have preferred
+the classifier to do was maybe predict
+this straight green line,
+rather than this very complex wiggly line
+to perfectly fit all the training data.
+And this is a core fundamental problem
+in machine learning,
+and the way we usually solve it,
+is this concept of regularization.
+So here we're going to
+add an additional term
+to the loss function.
+In addition to the data loss,
+which will tell our
+classifier that it should fit
+the training data,
+we'll also typically add
+another term to the loss function
+called a regularization term,
+which encourages the model
+to somehow pick a simpler W,
+where the concept of simple
+kind of depends on the task and the model.
+There's this whole idea of Occam's Razor,
+which is this fundamental
+idea in scientific discovery
+more broadly, which is that
+if you have many different
+competing hypotheses, that could explain
+your observations,
+you should generally
+prefer the simpler one,
+because that's the explanation
+that is more likely
+to generalize to new
+observations in the future.
+And the way we
+operationalize this intuition
+in machine learning is
+typically through some explicit
+regularization penalty
+that's often written down as R.
+So then your standard loss function
+usually has these two terms,
+a data loss and a regularization loss,
+and there's some
+hyper-parameter here, lambda,
+that trades off between the two.
+And we talked about hyper-parameters
+and cross-validation in the last lecture,
+so this regularization
+hyper-parameter lambda
+will be one of the more important ones
+that you'll need to tune when training
+these models in practice.
+Question?
+- [Student] What does that lambda R W term
+have to do with [speaking faintly].
+- Yeah, so the question is,
+what's the connection
+between this lambda R W term
+and actually forcing this wiggly line
+to become a straight green line?
+I didn't want to go through
+the derivation on this
+because I thought it would
+lead us too far astray,
+but you can imagine,
+maybe you're doing a regression problem,
+in terms of different
+polynomial basis functions,
+and if you're adding
+this regression penalty,
+maybe the model has access to polynomials
+of very high degree, but
+through this regression term
+you could encourage the
+model to prefer polynomials
+of lower degree, if they
+fit the data properly,
+or if they fit the data relatively well.
+So you could imagine
+there's two ways to do this,
+either you can constrain your model class
+to just not contain the more powerful,
+more complex models, or you
+can add this soft penalty
+where the model still has
+access to more complex models,
+maybe high degree
+polynomials in this case,
+but you add this soft constraint
+saying that if you want to
+use these more complex models,
+you need to overcome this penalty
+for using their complexity.
+So that's the connection here,
+that is not quite linear classification,
+this is the picture that
+many people have in mind
+when they think about
+regularization at least.
+So there's actually a
+lot of different types
+of regularization that
+get used in practice.
+The most common one is
+probably L2 regularization,
+or weight decay.
+But there's a lot of other
+ones that you might see.
+This L2 regularization is
+just the euclidean norm
+of this weight vector W,
+or sometimes the squared norm.
+Or sometimes half the squared norm
+because it makes your derivatives work out
+a little bit nicer.
+But the idea of L2 regularization
+is you're just penalizing
+the euclidean norm
+of this weight vector.
+You might also sometimes
+see L1 regularization,
+where we're penalizing the
+L1 norm of the weight vector,
+and the L1 regularization
+has some nice properties
+like encouraging sparsity
+in this matrix W.
+Some other things you might see
+would be this elastic net regularization,
+which is some combination of L1 and L2.
+You sometimes see max norm regularization,
+penalizing the max norm
+rather than the L1 or L2 norm.
+But these sorts of regularizations
+are things that you see
+not just in deep learning,
+but across many areas of machine learning
+and even optimization more broadly.
+In some later lectures, we'll also see
+some types of regularization
+that are more specific
+to deep learning.
+For example dropout, we'll
+see in a couple lectures,
+or batch normalization, stochastic depth,
+these things get kind of
+crazy in recent years.
+But the whole idea of regularization
+is just any thing that
+you do to your model,
+that sort of penalizes somehow
+the complexity of the model,
+rather than explicitly trying
+to fit the training data.
+Question?
+[student speaking faintly]
+Yeah, so the question is,
+how does the L2 regularization
+measure the complexity
+of the model?
+Thankfully we have an
+example of that right here,
+maybe we can walk through.
+So here we maybe have
+some training example, x,
+and there's two different
+Ws that we're considering.
+So x is just this vector of four ones,
+and we're considering these
+two different possibilities
+for W.
+One is a one in the
+first, one is a single one
+and three zeros,
+and the other has this 0.25 spread across
+the four different entries.
+And now, when we're doing
+linear classification,
+we're really taking dot products
+between our x and our W.
+So in terms of linear classification,
+these two Ws are the same,
+because they give the same result
+when dot producted with x.
+But now the question is,
+if you look at these two examples,
+which one would L2 regression prefer?
+Yeah, so L2 regression would prefer W2,
+because it has a smaller norm.
+So the answer is that the L2 regression
+measures complexity of the classifier
+in this relatively coarse way,
+where the idea is that,
+remember the Ws in linear classification
+had this interpretation of how much
+does this value of the vector x
+correspond to this output class?
+So L2 regularization is saying
+that it prefers to spread that influence
+across all the different values in x.
+Maybe this might be more robust,
+in case you come up with xs that vary,
+then our decisions are spread out
+and depend on the entire x vector,
+rather than depending
+only on certain elements
+of the x vector.
+And by the way, L1 regularization
+has this opposite interpretation.
+So actually if we were
+using L1 regularization,
+then we would actually prefer W1 over W2,
+because L1 regularization
+has this different notion
+of complexity, saying that
+maybe the model is less complex,
+maybe we measure model
+complexity by the number of zeros
+in the weight vector,
+so the question of how
+do we measure complexity
+and how does L2 measure complexity?
+They're kind of problem dependent.
+And you have to think about
+for your particular setup,
+for your particular model and data,
+how do you think that
+complexity should be measured
+on this task?
+Question?
+- [Student] So why would L1 prefer W1?
+Don't they sum to the same one?
+- Oh yes, you're right.
+So in this case, L1 is actually the same
+between these two.
+But you could construct
+a similar example to this
+where W1 would be preferred
+by L1 regularization.
+I guess the general intuition behind L1
+is that it generally
+prefers sparse solutions,
+that it drives all your
+entries of W to zero
+for most of the entries,
+except for a couple
+where it's allowed to deviate from zero.
+The way of measuring complexity for L1
+is maybe the number of non-zero entries,
+and then for L2, it thinks
+that things that spread the W
+across all the values are less complex.
+So it depends on your data,
+depends on your problem.
+Oh and by the way, if
+you're a hardcore Bayesian,
+then using L2 regularization
+has this nice interpretation
+of MAP inference under a Gaussian prior
+on the parameter vector.
+I think there was a
+homework problem about that
+in 229, but we won't talk about that
+for the rest of the quarter.
+That's sort of my long, deep dive
+into the multi-class SVM loss.
+Question?
+- [Student] Yeah, so I'm still confused
+about what the kind of stuff I need to do
+when the linear versus polynomial thing,
+because the use of this loss function
+isn't going to change the
+fact that you're just doing,
+you're looking at a
+linear classifier, right?
+- Yeah, so the question is that,
+adding a regularization
+is not going to change
+the hypothesis class.
+This is not going to change us
+away from a linear classifier.
+The idea is that maybe this example
+of this polynomial regression
+is definitely not linear regression.
+That could be seen as linear regression
+on top of a polynomial
+expansion of the input,
+and in which case, this
+regression sort of says
+that you're not allowed
+to use as many polynomial
+coefficients as maybe you should have.
+Right, so you can imagine this is like,
+when you're doing polynomial regression,
+you can write out a polynomial as f of x
+equals A zero plus A one
+x plus A two x squared
+plus A three x whatever,
+in that case your parameters, your Ws,
+would be these As, in which case,
+penalizing the W could force it
+towards lower degree polynomials.
+Except in the case of
+polynomial regression,
+you don't actually want to parameterize
+in terms of As, there's
+some other paramterization
+that you want to use,
+but that's the general idea,
+that you're sort of penalizing
+the parameters of the model
+to force it towards the simpler hypotheses
+within your hypothesis class.
+And maybe we can take this offline
+if that's still a bit confusing.
+So then we've sort of seen
+this multi-class SVM loss,
+and just by the way as a side note,
+this is one extension or
+generalization of the SVM loss
+to multiple classes,
+there's actually a couple
+different formulations
+that you can see around in literature,
+but I mean, my intuition is
+that they all tend to work
+similarly in practice,
+at least in the context of deep learning.
+So we'll stick with this
+one particular formulation
+of the multi-class SVM loss in this class.
+But of course there's many
+different loss functions
+you might imagine.
+And another really popular choice,
+in addition to the multi-class SVM loss,
+another really popular
+choice in deep learning
+is this multinomial logistic regression,
+or a softmax loss.
+And this one is probably
+actually a bit more common
+in the context of deep learning,
+but I decided to present
+this second for some reason.
+So remember in the context
+of the multi-class SVM loss,
+we didn't actually have an interpretation
+for those scores.
+Remember, when we're
+doing some classification,
+our model F, spits our these 10 numbers,
+which are our scores for the classes,
+and for the multi-class SVM,
+we didn't actually give much
+interpretation to those scores.
+We just said that we want the true score,
+the score of the correct class
+to be greater than the incorrect classes,
+and beyond that we don't really
+say what those scores mean.
+But now, for the multinomial
+logistic regression
+loss function, we actually
+will endow those scores
+with some additional meaning.
+And in particular we're
+going to use those scores
+to compute a probability distribution
+over our classes.
+So we use this so-called softmax function
+where we take all of our scores,
+we exponentiate them so that
+now they become positive,
+then we re-normalize them by
+the sum of those exponents
+so now after we send our scores
+through this softmax function,
+now we end up with this
+probability distribution,
+where now we have
+probabilities over our classes,
+where each probability
+is between zero and one,
+and the sum of probabilities
+across all classes
+sum to one.
+And now the interpretation
+is that we want,
+there's this computed
+probability distribution
+that's implied by our scores,
+and we want to compare
+this with the target
+or true probability distribution.
+So if we know that the thing is a cat,
+then the target probability distribution
+would put all of the
+probability mass on cat,
+so we would have probability
+of cat equals one,
+and zero probability for
+all the other classes.
+So now what we want to do is encourage
+our computed probability distribution
+that's coming out of this softmax function
+to match this target
+probability distribution
+that has all the mass
+on the correct class.
+And the way that we do this,
+I mean, you can do this
+equation in many ways,
+you can do this as a KL divergence
+between the target
+and the computed probability distribution,
+you can do this as a
+maximum likelihood estimate,
+but at the end of the day,
+what we really want is
+that the probability
+of the true class is
+high and as close to one.
+So then our loss will
+now be the negative log
+of the probability of the true class.
+This is confusing 'cause
+we're putting this
+through multiple different things,
+but remember we wanted the probability
+to be close to one,
+so now log is a monotonic
+function, it goes like this,
+and it turns out mathematically,
+it's easier to maximize log
+than it is to maximize
+the raw probability,
+so we stick with log.
+And now log is monotonic,
+so if we maximize log P of correct class,
+that means we want that to be high,
+but loss functions measure
+badness not goodness
+so we need to put in the minus one
+to make it go the right way.
+So now our loss function for SVM
+is going to be the minus
+log of the probability
+of the true class.
+Yeah, so that's the summary here,
+is that we take our scores,
+we run through the softmax,
+and now our loss is this
+minus log of the probability
+of the true class.
+Okay, so then if you look
+at what this looks like
+on a concrete example,
+then we go back to our
+favorite beautiful cat
+with our three examples and
+we've got these three scores
+that are coming out of
+our linear classifier,
+and these scores are exactly
+the way that they were
+in the context of the SVM loss.
+But now, rather than taking these scores
+and putting them directly
+into our loss function,
+we're going to take them
+all and exponentiate them
+so that they're all positive,
+and then we'll normalize them to make sure
+that they all sum to one.
+And now our loss will be the minus log
+of the true class score.
+So that's the softmax loss,
+also called multinomial
+logistic regression.
+So now we asked several questions
+to try to gain intuition about
+the multi-class SVM loss,
+and it's useful to think about
+some of the same questions
+to contrast with the softmax loss.
+So then the question is,
+what's the min and max
+value of the softmax loss?
+Okay, maybe not so sure,
+there's too many logs and sums and stuff
+going on in here.
+So the answer is that the min loss is zero
+and the max loss is infinity.
+And the way that you can see this,
+the probability distribution that we want
+is one on the correct class,
+zero on the incorrect classes,
+the way that we do that is,
+so if that were the case,
+then this thing inside the
+log would end up being one,
+because it's the log
+probability of the true class,
+then log of one is zero, minus
+log of one is still zero.
+So that means that if we
+got the thing totally right,
+then our loss would be zero.
+But by the way, in order to
+get the thing totally right,
+what would our scores have to look like?
+Murmuring, murmuring.
+So the scores would actually
+have to go quite extreme,
+like towards infinity.
+So because we actually
+have this exponentiation,
+this normalization, the only way
+we can actually get a
+probability distribution of one
+and zero, is actually
+putting an infinite score
+for the correct class,
+and minus infinity score
+for all the incorrect classes.
+And computers don't do
+so well with infinities,
+so in practice, you'll
+never get to zero loss
+on this thing with finite precision.
+But you still have this interpretation
+that zero is the theoretical
+minimum loss here.
+And the maximum loss is unbounded.
+So suppose that if we
+had zero probability mass
+on the correct class, then
+you would have minus log
+of zero, log of zero is minus infinity,
+so minus log of zero
+would be plus infinity,
+so that's really bad.
+But again, you'll never really get here
+because the only way you can
+actually get this probability
+to be zero, is if e to the
+correct class score is zero,
+and that can only happen
+if that correct class score
+is minus infinity.
+So again, you'll never
+actually get to these minimum,
+maximum values with finite precision.
+So then, remember we had this debugging,
+sanity check question in the
+context of the multi-class SVM,
+and we can ask the same for the softmax.
+If all the Ss are small and about zero,
+then what is the loss here?
+Yeah, answer?
+- [Student] Minus log one over C.
+- So minus log of one over C?
+I think that's, yeah,
+so then it'd be minus log of one over C,
+because log can flip the thing
+so then it's just log of C.
+Yeah, so it's just log of C.
+And again, this is a nice debugging thing,
+if you're training a model
+with this softmax loss,
+you should check at the first iteration.
+If it's not log C, then
+something's gone wrong.
+So then we can compare and
+contrast these two loss functions
+a bit.
+In terms of linear classification,
+this setup looks the same.
+We've got this W matrix
+that gets multiplied
+against our input to produce
+this specter of scores,
+and now the difference
+between the two loss functions
+is how we choose to interpret those scores
+to quantitatively measure
+the badness afterwards.
+So for SVM, we were going to
+go in and look at the margins
+between the scores of the correct class
+and the scores of the incorrect class,
+whereas for this softmax
+or cross-entropy loss,
+we're going to go and compute
+a probability distribution
+and then look at the minus log probability
+of the correct class.
+So sometimes if you look at,
+in terms of, nevermind,
+I'll skip that point.
+[laughing]
+So another question that's interesting
+when contrasting these two
+loss functions is thinking,
+suppose that I've got this example point,
+and if you change its scores,
+so assume that we've got
+three scores for this,
+ignore the part on the bottom.
+But remember if we go back to this example
+where in the multi-class SVM loss,
+when we had the car, and the
+car score was much better
+than all the incorrect classes,
+then jiggling the scores
+for that car image
+didn't change the
+multi-class SVM loss at all,
+because the only thing that the SVM loss
+cared about was getting that correct score
+to be greater than a margin
+above the incorrect scores.
+But now the softmax loss
+is actually quite different
+in this respect.
+The softmax loss actually
+always wants to drive
+that probability mass all the way to one.
+So even if you're giving very high score
+to the correct class, and very low score
+to all the incorrect classes,
+softmax will want you to pile
+more and more probability mass
+on the correct class, and
+continue to push the score
+of that correct class up towards infinity,
+and the score of the incorrect classes
+down towards minus infinity.
+So that's the interesting difference
+between these two loss
+functions in practice.
+That SVM, it'll get this
+data point over the bar
+to be correctly classified
+and then just give up,
+it doesn't care about
+that data point any more.
+Whereas softmax will just always
+try to continually improve
+every single data point
+to get better and better
+and better and better.
+So that's an interesting difference
+between these two functions.
+In practice, I think it tends
+not to make a huge difference
+which one you choose, they tend to perform
+pretty similarly across,
+at least a lot of deep
+learning applications.
+But it is very useful to keep
+some of these differences
+in mind.
+Yeah, so to recap where
+we've come to from here,
+is that we've got some
+data set of xs and ys,
+we use our linear classifier
+to get some score function,
+to compute our scores
+S, from our inputs, x,
+and then we'll use a loss function,
+maybe softmax or SVM or
+some other loss function
+to compute how quantitatively
+bad were our predictions
+compared to this ground true targets, y.
+And then we'll often
+augment this loss function
+with a regularization term,
+that tries to trade off between
+fitting the training data
+and preferring simpler models.
+So this is a pretty generic overview
+of a lot of what we call
+supervised learning,
+and what we'll see in deep
+learning as we move forward,
+is that generally you'll want
+to specify some function, f,
+that could be very complex in structure,
+specify some loss function that determines
+how well your algorithm is doing,
+given any value of the parameters,
+some regularization term
+for how to penalize model complexity
+and then you combine these things together
+and try to find the W
+that minimizes this final loss function.
+But then the question is,
+how do we actually go about doing that?
+How do we actually find this
+W that minimizes the loss?
+And that leads us to the
+topic of optimization.
+So when we're doing optimization,
+I usually think of things
+in terms of walking
+around some large valley.
+So the idea is that you're
+walking around this large valley
+with different mountains
+and valleys and streams
+and stuff, and every
+point on this landscape
+corresponds to some setting
+of the parameters W.
+And you're this little guy who's
+walking around this valley,
+and you're trying to find,
+and the height of each of these points,
+sorry, is equal to the loss
+incurred by that setting of W.
+And now your job as this little man
+walking around this landscape,
+you need to somehow find
+the bottom of this valley.
+And this is kind of a
+hard problem in general.
+You might think, maybe I'm really smart
+and I can think really hard
+about the analytic properties
+of my loss function, my
+regularization all that,
+maybe I can just write down the minimizer,
+and that would sort of correspond
+to magically teleporting
+all the way to the bottom of this valley.
+But in practice, once your
+prediction function, f,
+and your loss function
+and your regularizer,
+once these things get big and complex
+and using neural networks,
+there's really not much
+hope in trying to write down
+an explicit analytic solution
+that takes you directly to the minima.
+So in practice
+we tend to use various
+types of iterative methods
+where we start with some solution
+and then gradually improve it over time.
+So the very first, stupidest thing
+that you might imagine is random search,
+that will just take a bunch of Ws,
+sampled randomly, and throw
+them into our loss function
+and see how well they do.
+So spoiler alert, this is
+a really bad algorithm,
+you probably shouldn't use this,
+but at least it's one thing
+you might imagine trying.
+And we can actually do this,
+we can actually try to
+train a linear classifier
+via random search, for CIFAR-10
+and for this there's 10 classes,
+so random chance is 10%,
+and if we did some
+number of random trials,
+we eventually found just
+through sheer dumb luck,
+some setting of W that
+got maybe 15% accuracy.
+So it's better than random,
+but state of the art is maybe 95%
+so we've got a little
+bit of gap to close here.
+So again, probably don't
+use this in practice,
+but you might imagine
+that this is something
+you could potentially do.
+So in practice, maybe a better strategy
+is actually using some
+of the local geometry
+of this landscape.
+So if you're this little guy who's walking
+around this landscape,
+maybe you can't see directly the path
+down to the bottom of the valley,
+but what you can do is feel with your foot
+and figure out what is the local geometry,
+if I'm standing right here,
+which way will take me
+a little bit downhill?
+So you can feel with your feet
+and feel where is the slope of the ground
+taking me down a little
+bit in this direction?
+And you can take a step in that direction,
+and then you'll go down a little bit,
+feel again with your feet to
+figure out which way is down,
+and then repeat over and over again
+and hope that you'll end up at the bottom
+of the valley eventually.
+So this also seems like a
+relatively simple algorithm,
+but actually this one
+tends to work really well
+in practice if you get
+all the details right.
+So this is generally the
+strategy that we'll follow
+when training these large neural networks
+and linear classifiers and other things.
+So then, that was a little hand wavy,
+so what is slope?
+If you remember back
+to your calculus class,
+then at least in one dimension,
+the slope is the derivative
+of this function.
+So if we've got some
+one-dimensional function, f,
+that takes in a scalar x,
+and then outputs the height
+of some curve, then we
+can compute the slope
+or derivative at any point by imagining,
+if we take a small step,
+h, in any direction,
+take a small step, h, and
+compare the difference
+in the function value over that step
+and then drag the step size to zero,
+that will give us the
+slope of that function
+at that point.
+And this generalizes quite naturally
+to multi-variable functions as well.
+So in practice, our x
+is maybe not a scalar
+but a whole vector,
+'cause remember, x
+might be a whole vector,
+so we need to generalize this notion
+to multi-variable things.
+And the generalization that
+we use of the derivative
+in the multi-variable
+setting is the gradient,
+so the gradient is a vector
+of partial derivatives.
+So the gradient will
+have the same shape as x,
+and each element of the
+gradient will tell us
+what is the slope of the function f,
+if we move in that coordinate direction.
+And the gradient turns out
+to have these very nice properties,
+so the gradient is now a
+vector of partial derivatives,
+but it points in the
+direction of greatest increase
+of the function and correspondingly,
+if you look at the negative
+gradient direction,
+that gives you the direction
+of greatest decrease
+of the function.
+And more generally, if you want to know,
+what is the slope of my
+landscape in any direction?
+Then that's equal to the
+dot product of the gradient
+with the unit vector
+describing that direction.
+So this gradient is super important,
+because it gives you this
+linear, first-order approximation
+to your function at your current point.
+So in practice, a lot of deep learning
+is about computing
+gradients of your functions
+and then using those gradients
+to iteratively update
+your parameter vector.
+So one naive way that you might imagine
+actually evaluating this
+gradient on a computer,
+is using the method of finite differences,
+going back to the limit
+definition of gradient.
+So here on the left, we
+imagine that our current W
+is this parameter vector
+that maybe gives us some
+current loss of maybe 1.25
+and our goal is to
+compute the gradient, dW,
+which will be a vector
+of the same shape as W,
+and each slot in that
+gradient will tell us
+how much will the loss
+change is we move a tiny,
+infinitesimal amount in
+that coordinate direction.
+So one thing you might imagine
+is just computing these
+finite differences,
+that we have our W, we
+might try to increment
+the first element of
+W by a small value, h,
+and then re-compute the
+loss using our loss function
+and our classifier and all that.
+And maybe in this setting,
+if we move a little bit
+in the first dimension,
+then our loss will decrease
+a little bit from 1.2534 to 1.25322.
+And then we can use this limit definition
+to come up with this finite
+differences approximation
+to the gradient in this first dimension.
+And now you can imagine
+repeating this procedure
+in the second dimension,
+where now we take the first dimension,
+set it back to the original value,
+and now increment the second
+direction by a small step.
+And again, we compute the loss
+and use this finite
+differences approximation
+to compute an approximation
+to the gradient
+in the second slot.
+And now repeat this again for the third,
+and on and on and on.
+So this is actually a terrible idea
+because it's super slow.
+So you might imagine that
+computing this function, f,
+might actually be super
+slow if it's a large,
+convolutional neural network.
+And this parameter vector, W,
+probably will not have 10
+entries like it does here,
+it might have tens of millions
+or even hundreds of millions
+for some of these large,
+complex deep learning models.
+So in practice, you'll
+never want to compute
+your gradients for your
+finite differences,
+'cause you'd have to wait
+for hundreds of millions
+potentially of function evaluations
+to get a single gradient,
+and that would be super slow
+and super bad.
+But thankfully we don't have to do that.
+Hopefully you took a calculus course
+at some point in your lives,
+so you know that thanks to these guys,
+we can just write down the
+expression for our loss
+and then use the magical
+hammer of calculus
+to just write down an expression
+for what this gradient should be.
+And this'll be way more efficient
+than trying to compute it analytically
+via finite differences.
+One, it'll be exact,
+and two, it'll be much faster
+since we just need to compute
+this single expression.
+So what this would look like is now,
+if we go back to this
+picture of our current W,
+rather than iterating over
+all the dimensions of W,
+we'll figure out ahead of time
+what is the analytic
+expression for the gradient,
+and then just write it down
+and go directly from the W
+and compute the dW or
+the gradient in one step.
+And that will be much better in practice.
+So in summary, this numerical gradient
+is something that's
+simple and makes sense,
+but you won't really use it in practice.
+In practice, you'll always
+take an analytic gradient
+and use that
+when actually performing
+these gradient computations.
+However, one interesting note is that
+these numeric gradients
+are actually a very useful
+debugging tool.
+Say you've written some code,
+and you wrote some code
+that computes the loss
+and the gradient of the loss,
+then how do you debug this thing?
+How do you make sure that
+this analytic expression
+that you derived and wrote down in code
+is actually correct?
+So a really common debugging
+strategy for these things
+is to use the numeric gradient as a way,
+as sort of a unit test to make sure
+that your analytic gradient was correct.
+Again, because this is
+super slow and inexact,
+then when doing this
+numeric gradient checking,
+as it's called, you'll tend
+to scale down the parameter
+of the problem so that it actually runs
+in a reasonable amount of time.
+But this ends up being a super
+useful debugging strategy
+when you're writing your
+own gradient computations.
+So this is actually very
+commonly used in practice,
+and you'll do this on
+your assignments as well.
+So then once we know how
+to compute the gradient,
+then it leads us to this
+super simple algorithm
+that's like three lines, but
+turns out to be at the heart
+of how we train even these very biggest,
+most complex deep learning algorithms,
+and that's gradient descent.
+So gradient descent is
+first we initialize our W
+as some random thing, then while true,
+we'll compute our loss and our gradient
+and then we'll update our weights
+in the opposite of the gradient direction,
+'cause remember that the gradient
+was pointing in the direction
+of greatest increase
+of the function, so minus gradient
+points in the direction
+of greatest decrease,
+so we'll take a small
+step in the direction
+of minus gradient, and
+just repeat this forever
+and eventually your network will converge
+and you'll be very happy, hopefully.
+But this step size is
+actually a hyper-parameter,
+and this tells us that every
+time we compute the gradient,
+how far do we step in that direction.
+And this step size, also
+sometimes called a learning rate,
+is probably one of the
+single most important
+hyper-parameters that you need to set
+when you're actually training
+these things in practice.
+Actually for me when I'm
+training these things,
+trying to figure out this step size
+or this learning rate, is
+the first hyper-parameter
+that I always check.
+Things like model size or
+regularization strength
+I leave until a little bit later,
+and getting the learning
+rate or the step size correct
+is the first thing that I
+try to set at the beginning.
+So pictorially what this looks like
+here's a simple example in two dimensions.
+So here we've got maybe this bowl
+that's showing our loss function
+where this red region in the center
+is this region of low
+loss we want to get to
+and these blue and green
+regions towards the edge
+are higher loss that we want to avoid.
+So now we're going to start of our W
+at some random point in the space,
+and then we'll compute the
+negative gradient direction,
+which will hopefully
+point us in the direction
+of the minima eventually.
+And if we repeat this over and over again,
+we'll hopefully eventually
+get to the exact minima.
+And what this looks like in practice is,
+oh man, we've got this
+mouse problem again.
+So what this looks like in practice
+is that if we repeat this
+thing over and over again,
+then we will start off at some point
+and eventually, taking tiny
+gradient steps each time,
+you'll see that the parameter
+will arc in toward the center,
+this region of minima,
+and that's really what you want,
+because you want to get to low loss.
+And by the way, as a bit of a teaser,
+we saw in the previous slide,
+this example of very
+simple gradient descent,
+where at every step, we're
+just stepping in the direction
+of the gradient.
+But in practice, over the
+next couple of lectures,
+we'll see that there are
+slightly fancier step,
+what they call these update rules,
+where you can take slightly fancier things
+to incorporate gradients
+across multiple time steps
+and stuff like that, that tend
+to work a little bit better
+in practice and are
+used much more commonly
+than this vanilla gradient descent
+when training these things in practice.
+And then, as a bit of a preview,
+we can look at some of these
+slightly fancier methods
+on optimizing the same problem.
+So again, the black will be
+this same gradient computation,
+and these, I forgot which color they are,
+but these two other curves
+are using slightly fancier update rules
+to decide exactly how to
+use the gradient information
+to make our next step.
+So one of these is gradient
+descent with momentum,
+the other is this Adam optimizer,
+and we'll see more details about those
+later in the course.
+But the idea is that we have
+this very basic algorithm
+called gradient descent,
+where we use the gradient
+at every time step
+to determine where to step next,
+and there exist different
+update rules which tell us
+how exactly do we use
+that gradient information.
+But it's all the same basic algorithm
+of trying to go downhill
+at every time step.
+But there's actually
+one more little wrinkle
+that we should talk about.
+So remember that we
+defined our loss function,
+we defined a loss that computes how bad
+is our classifier doing at
+any single training example,
+and then we said that our
+full loss over the data set
+was going to be the average loss
+across the entire training set.
+But in practice, this N
+could be very very large.
+If we're using the image
+net data set for example,
+that we talked about in the first lecture,
+then N could be like 1.3 million,
+so actually computing this loss
+could be actually very expensive
+and require computing perhaps
+millions of evaluations
+of this function.
+So that could be really slow.
+And actually, because the
+gradient is a linear operator,
+when you actually try
+to compute the gradient
+of this expression, you see
+that the gradient of our loss
+is now the sum of the
+gradient of the losses
+for each of the individual terms.
+So now if we want to
+compute the gradient again,
+it sort of requires us to iterate
+over the entire training data set
+all N of these examples.
+So if our N was like a million,
+this would be super super slow,
+and we would have to wait
+a very very long time
+before we make any individual update to W.
+So in practice, we tend to use
+what is called stochastic
+gradient descent,
+where rather than computing
+the loss and gradient
+over the entire training set,
+instead at every iteration,
+we sample some small set
+of training examples, called a minibatch.
+Usually this is a power
+of two by convention,
+like 32, 64, 128 are common numbers,
+and then we'll use this small minibatch
+to compute an estimate of the full sum,
+and an estimate of the true gradient.
+And now this is stochastic
+because you can view this
+as maybe a Monte Carlo
+estimate of some expectation
+of the true value.
+So now this makes our
+algorithm slightly fancier,
+but it's still only four lines.
+So now it's well true, sample
+some random minibatch of data,
+evaluate your loss and
+gradient on the minibatch,
+and now make an update on your parameters
+based on this estimate of the loss,
+and this estimate of the gradient.
+And again, we'll see
+slightly fancier update rules
+of exactly how to integrate
+multiple gradients
+over time, but this is the
+basic training algorithm
+that we use for pretty much
+all deep neural networks
+in practice.
+So we have another interactive web demo
+actually playing around
+with linear classifiers,
+and training these things via
+stochastic gradient descent,
+but given how miserable
+the web demo was last time,
+I'm not actually going to open the link.
+Instead, I'll just play this video.
+[laughing]
+But I encourage you to go check this out
+and play with it online,
+because it actually helps
+to build some intuition
+about linear classifiers and training them
+via gradient descent.
+So here you can see on the left,
+we've got this problem
+where we're categorizing
+three different classes,
+and we've got these
+green, blue and red points
+that are our training samples
+from these three classes.
+And now we've drawn
+the decision boundaries
+for these classes, which are
+the colored background regions,
+as well as these directions,
+giving you the direction of
+increase for the class scores
+for each of these three classes.
+And now if you see, if
+you actually go and play
+with this thing online,
+you can see that we can
+go in and adjust the Ws
+and changing the values of the Ws
+will cause these decision
+boundaries to rotate.
+If you change the biases,
+then the decision boundaries
+will not rotate, but will
+instead move side to side
+or up and down.
+Then we can actually make steps
+that are trying to update this loss,
+or you can change the step
+size with this slider.
+You can hit this button
+to actually run the thing.
+So now with a big step size,
+we're running gradient descent right now,
+and these decision boundaries
+are flipping around
+and trying to fit the data.
+So it's doing okay now,
+but we can actually change
+the loss function in real time
+between these different SVM formulations
+and the different softmax.
+And you can see that as you flip
+between these different
+formulations of loss functions,
+it's generally doing the same thing.
+Our decision regions are
+mostly in the same place,
+but exactly how they end
+up relative to each other
+and exactly what the trade-offs are
+between categorizing
+these different things
+changes a little bit.
+So I really encourage you to go online
+and play with this thing to
+try to get some intuition
+for what it actually looks like
+to try to train these linear classifiers
+via gradient descent.
+Now as an aside, I'd like
+to talk about another idea,
+which is that of image features.
+So so far we've talked
+about linear classifiers,
+which is just maybe taking
+our raw image pixels
+and then feeding the raw pixels themselves
+into our linear classifier.
+But as we talked about
+in the last lecture,
+this is maybe not such
+a great thing to do,
+because of things like
+multi-modality and whatnot.
+So in practice, actually
+feeding raw pixel values
+into linear classifiers
+tends to not work so well.
+So it was actually common
+before the dominance
+of deep neural networks,
+was instead to have
+this two-stage approach,
+where first, you would take your image
+and then compute various
+feature representations
+of that image, that are maybe computing
+different kinds of quantities
+relating to the appearance
+of the image,
+and then concatenate these
+different feature vectors
+to give you some feature
+representation of the image,
+and now this feature
+representation of the image
+would be fed into a linear classifier,
+rather than feeding the
+raw pixels themselves
+into the classifier.
+And the motivation here is that,
+so imagine we have a
+training data set on the left
+of these red points, and
+red points in the middle
+and blue points around that.
+And for this kind of data set,
+there's no way that we can
+draw a linear decision boundary
+to separate the red points
+from the blue points.
+And we saw more examples of
+this in the last lecture.
+But if we use a clever feature transform,
+in this case transforming
+to polar coordinates,
+then now after we do
+the feature transform,
+then this complex data
+set actually might become
+linearly separable,
+and actually could be classified correctly
+by a linear classifier.
+And the whole trick here
+now is to figure out
+what is the right feature transform
+that is computing the right quantities
+for the problem that you care about.
+So for images, maybe
+converting your pixels
+to polar coordinates, doesn't make sense,
+but you actually can try to write down
+feature representations of images
+that might make sense,
+and actually might help you out
+and might do better than
+putting in raw pixels
+into the classifier.
+So one example of this kind
+of feature representation
+that's super simple, is this
+idea of a color histogram.
+So you'll take maybe each pixel,
+you'll take this hue color spectrum
+and divide it into buckets
+and then for every pixel,
+you'll map it into one
+of those color buckets
+and then count up how many pixels
+fall into each of these different buckets.
+So this tells you globally
+what colors are in the image.
+Maybe if this example of a frog,
+this feature vector would tell us
+there's a lot of green stuff,
+and maybe not a lot of
+purple or red stuff.
+And this is kind of a simple feature
+vector that you might see
+in practice.
+Another common feature vector that we saw
+before the rise of neural networks,
+or before the dominance of neural networks
+was this histogram of oriented gradients.
+So remember from the first lecture,
+that Hubel and Wiesel
+found these oriented edges
+are really important in
+the human visual system,
+and this histogram of oriented gradients
+feature representation tries to capture
+the same intuition and
+measure the local orientation
+of edges on the image.
+So what this thing is going to do,
+is take our image and then divide it
+into these little eight
+by eight pixel regions.
+And then within each of those
+eight by eight pixel regions,
+we'll compute what is the
+dominant edge direction
+of each pixel, quantize
+those edge directions
+into several buckets and then
+within each of those regions,
+compute a histogram over these
+different edge orientations.
+And now your full-feature vector
+will be these different
+bucketed histograms
+of edge orientations
+across all the different
+eight by eight regions
+in the image.
+So this is in some sense dual
+to the color histogram
+classifier that we saw before.
+So color histogram is
+saying, globally, what colors
+exist in the image,
+and this is saying, overall,
+what types of edge information
+exist in the image.
+And even localized to
+different parts of the image,
+what types of edges exist
+in different regions.
+So maybe for this frog on the left,
+you can see he's sitting on a leaf,
+and these leaves have these
+dominant diagonal edges,
+and if you visualize the
+histogram of oriented gradient
+features, then you can
+see that in this region,
+we've got a lot of diagonal edges,
+that this histogram of oriented gradient
+feature representation's capturing.
+So this was a super common
+feature representation
+and was used a lot for object recognition
+actually not too long ago.
+Another feature representation
+that you might see out there
+is this idea of bag of words.
+So this is taking inspiration
+from natural language processing.
+So if you've got a paragraph,
+then a way that you might
+represent a paragraph
+by a feature vector is
+counting up the occurrences
+of different words in that paragraph.
+So we want to take that
+intuition and apply it
+to images in some way.
+But the problem is that
+there's no really simple,
+straightforward analogy
+of words to images,
+so we need to define our own vocabulary
+of visual words.
+So we take this two-stage approach,
+where first we'll get a bunch of images,
+sample a whole bunch of tiny random crops
+from those images and then cluster them
+using something like K means
+to come up with these
+different cluster centers
+that are maybe representing
+different types
+of visual words in the images.
+So if you look at this
+example on the right here,
+this is a real example of clustering
+actually different image
+patches from images,
+and you can see that after
+this clustering step,
+our visual words capture
+these different colors,
+like red and blue and yellow,
+as well as these different
+types of oriented edges
+in different directions,
+which is interesting that
+now we're starting to see
+these oriented edges
+come out from the data
+in a data-driven way.
+And now, once we've got
+these set of visual words,
+also called a codebook,
+then we can encode our
+image by trying to say,
+for each of these visual words,
+how much does this visual
+word occur in the image?
+And now this gives us, again,
+some slightly different information
+about what is the visual
+appearance of this image.
+And actually this is a type
+of feature representation
+that Fei-Fei worked on when
+she was a grad student,
+so this is something
+that you saw in practice
+not too long ago.
+So then as a bit of teaser,
+tying this all back together,
+the way that this image
+classification pipeline
+might have looked like,
+maybe about five to 10 years ago,
+would be that you would take your image,
+and then compute these different
+feature representations
+of your image, things like bag of words,
+or histogram of orientated gradients,
+concatenate a whole bunch
+of features together,
+and then feed these feature extractors
+down into some linear classifier.
+I'm simplifying a little bit,
+the pipelines were a little
+bit more complex than that,
+but this is the general intuition.
+And then the idea here was
+that after you extracted
+these features, this feature extractor
+would be a fixed block
+that would not be updated
+during training.
+And during training,
+you would only update
+the linear classifier
+if it's working on top of features.
+And actually, I would
+argue that once we move
+to convolutional neural networks,
+and these deep neural networks,
+it actually doesn't look that different.
+The only difference is that
+rather than writing down
+the features ahead of time,
+we're going to learn the
+features directly from the data.
+So we'll take our raw pixels and feed them
+into this to convolutional network,
+which will end up computing
+through many different layers
+some type of feature representation
+driven by the data, and
+then we'll actually train
+this entire weights for
+this entire network,
+rather than just the
+weights of linear classifier
+on top.
+So, next time we'll really
+start diving into this idea
+in more detail, and we'll
+introduce some neural networks,
+and start talking about
+backpropagation as well.

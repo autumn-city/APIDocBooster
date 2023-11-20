@@ -1,0 +1,801 @@
+welcome to technical founders my name is
+Carlos Lara AI technical founder and
+today we will learn how to create a
+character level lsdm with PI torch now
+this network will train character by
+character on some text then generate new
+text character by character so we will
+take an input sequence of characters and
+output a sequence of characters in next
+in the sequence like this so as an
+example we will train on Anna Karenina
+the book this model will be able to
+generate new texts based on the text
+from the book so that's it's going to be
+fun fun to do these are very beautiful
+networks your character level LSD ms so
+here's the basic structure here we have
+our our input characters a sequence in
+this simple case word is the word hello
+as as input and it each character is fed
+into the network at each time step so
+it's character at once and it's fit in
+as a one hot encoded vector here so for
+all the unique characters in our input
+sequence in the word hello it's only H L
+and also for let unique letters in there
+in that sequence and we're going to
+generate a one hot encoded vector where
+the corresponding character that that
+happens to court to be has a one and for
+it and then zeros for everything else so
+that so that's how that's the structure
+of a one hunting coded vector so we feed
+in one goes into our hidden layer onto
+lsdm layer and then it produces both an
+output and a hidden state that goes into
+the next the next time step because we
+want to keep track of all the characters
+that have come before that's a whole
+point of using this kind of a recurrent
+neural network so our output here will
+be a softmax output here which will
+output the neck the also this is the
+same shape as our one hunting coded
+vector for and put that a probability
+for each one of those characters and
+initially before training it might pick
+it this is there's something that we
+want a particular character and
+initially the network might not be well
+trained for us we train we'll increase
+the probability for the the actual
+character that we want the next desired
+character
+the basic structure here and we have our
+our weights here connecting the input to
+the hidden layer and then the the
+weights the weight stamps are here
+connecting the hidden layer to itself to
+reach time step and then the the one
+connecting the hidden layer this tensor
+connecting the hidden layer to the
+output layer here so let's go ahead and
+jump right in
+so we'll load our require resources here
+numpy towards etc now we're going to
+load in our our data from our anna
+karenina text file that we have so we're
+going to just say Wed open this this
+text file it's read-only and then we're
+just going to read that text and store
+it in the variables so that's that's our
+text that we are going to be training on
+so first of all we want to create
+dictionaries that map a character to to
+enjoy to an integer unique characters to
+integers and vice versa because for our
+network again we don't just input the
+words directly we input a numerical
+representation of those words as our
+network will learn so here we're from
+our text that we loaded here we're going
+to create a set out of it meaning we're
+just going to get the unique characters
+in that text and then just create a
+tuple out of them so here we have our
+characters now we're going to create an
+integer two character dictionary so here
+basically based on an integer I'm going
+to get a character and then also we want
+a dictionary that takes in a character
+and then gives us a the corresponding
+integer so here we're going to enumerate
+our --power characters tuple so for each
+unique character in ours and our set
+here in our text we're going to assign
+an integer here and then we're going to
+create a dictionary out of that so the
+key will be the integer and then the the
+value will be the character then here
+we'll do the same thing but in Reverse
+for a character to integer so we grab
+our integer 2 character items so we get
+those elements in those dictionaries so
+we can do this this comprehension type
+of syntax here so we have our dictionary
+here and we grab the the index the
+integer and the character and then that
+in our previous dictionary and we just
+flipped them so now that the character
+will be the key and the value will be
+the actual integer so we have our two
+dictionaries here to go back and forth
+between character integer and vice versa
+and
+we're going to create an encoded version
+of our our text so for then again we're
+going to do a list comprehension here so
+for each character ended in the text
+we're going to use that character as the
+key in our character to index to integer
+dictionary and grab that that integer so
+we're going to create a list of integers
+corresponding to the characters in that
+text and that's an umpire right so
+that's our encoded vector so if we just
+print out here the first 100 characters
+we see this the first line in the book
+and according to the American book
+review this is the sixth best first line
+of a book ever so that's how our our
+text in characters and now this is are
+encoded one that we created our encoded
+version of our of our input text and
+it's just it's the same body but for
+each character we have a corresponding
+integer here so that's that's our
+encoded version numeric version of our
+input and that's what we're going to be
+to be working with so now we're going to
+do some pre-processing of of our data so
+as we said before our network is taking
+as input one hot encoded vectors for you
+for each character so here we just
+create a function that does that one hot
+encodes an array an employer right that
+comes in here and feel free to pause you
+to see how how this function is working
+but again it's just curating 100 coded
+vector here remember the length will of
+this of this one hot encoder vector will
+be all of the unique characters the
+length of the unique characters in our
+in your vocabulary here and then you'll
+have a one for the corresponding one and
+zeros for everything else so that's our
+function here okay so our one horn coded
+vectors for input now we also want to
+make training mini-batches
+so here I mean suppose here to keep it
+simple suppose we have a starting
+sequence of 12 characters for our book
+we have a lot more vastly more of course
+but here suppose we have 12 now because
+in general it might be a very very long
+just input sequence we don't want to
+feed it all at once so we still want the
+concept of batching batch size and
+batching our our input sequences here so
+suppose we have 12 here if we choose a
+batch size of 2 it's going to split this
+initial sequence into 2
+so since it's 12 the first one is going
+to be like the six and the second one
+length of six here one six seven twelve
+as you can see but even this may not be
+enough these may still be way too long
+so we want to split them even further so
+we want to also define a sequence length
+so our batches it's not only the
+quote-unquote batch size here it's also
+the sequence length so once we have the
+batches we want to now shorten them even
+more and this is how we're going to feed
+it into our network into these mini
+batches here of a given sequence and
+these batch size and sequence things
+sequence lengths are hyper parameter so
+you can choose that you can tune but
+here we're going to feed it into our
+network in these sequence lengths of 3
+based on our already smaller batch size
+and our initial sequence and that's how
+it's going to go into into our network
+and critters some there's some
+description here on how to create the
+batches may you can pause and just just
+at your own pace see how that works but
+we use this to create our get batches
+function here and this is say a
+generator is going to generate power
+features in our labels so our features
+and labels are both characters and as we
+said we want the the inputs X to be our
+our characters or our sequence of of
+characters and then the labels will be
+so the next characters in the sequence
+suppose for them for the word hello for
+example just keep it very simple so for
+the word age will be the input in in X
+and then the the y the label will be e
+because in the word hello e is the next
+or a letter in the sequence so for our
+text that we have here we're just going
+to create our our x and y here in
+batches so what we're going to do first
+is we're going to grab our our batch
+size and our bad site is actually the
+number of sequence times the number of
+steps corresponding to 2 to these two so
+our batch size is combining these two
+multiplying them not together but that's
+what we call our batch size now we only
+want to keep enough characters to make
+full batches so for our number of
+batches we'll just grab just complete
+make make full batches and from our
+array out from our full input way to
+scrap enough characters to make full
+batches and then again feel free to
+pause see how this how
+we have this function structure but
+essentially were just returning X&Y two
+batches where Y is just shifted by one
+or the same sequence of characters X but
+just shifted by one because we want
+again the it there that's how they're
+structured the input X and the and the
+output Y the the labels the only
+difference is that the Y sequence is
+shifted by one because the output for
+whatever evening given input the output
+the next output is the next character
+and this in that same sequence so that's
+what that's how we create those two and
+here we can just test it out let's go
+let's define our batches get batches we
+pass an hour encoded vector here after
+we turn them into into numbers and then
+we just pass the parameters here which
+are again the number of sequence says in
+the number of steps for how we're going
+to batch it we picked 10 and 50 here and
+let's get our our net let's call next
+here wrap our batches in next so from
+our generator we can get values so we
+get our x and y and let's go ahead and
+print out a section of those of those x
+and y so as you can see we have these
+these numbers and as you can see Y for
+it so this is X and for y it's these
+numbers but just shifted by one so what
+comes after 2876 so we have the 76 what
+comes there 76 36 right and so on so
+view so view to just take a look here at
+these sequences are the only difference
+is that that Y is just X shifted by one
+and that's how we're going to define our
+batches on our data for training so now
+we're going to define our network with
+PI torch and as again as you can see
+here we have our input sequence
+characters one by one and the output is
+the next character in the sequence so
+here it's going to go in for input layer
+and then go in through our lsdm cells
+here and here we have two layers to lsdm
+layers here in our lsdm part of our
+network here so two layers and it's the
+same it's just a little more more
+complex to grab more more more
+information on our sequences and then
+we're going to have a at each time step
+a softmax function that outputs a
+probability distribution here off
+of class scores and we're going to grab
+the one with the highest probability to
+be our next one when we're doing a
+prediction because we're going to be
+generating text and here whenever for a
+trend model our soft max will be
+outputting at this tribution and we're
+going to be grabbing the highest
+probability ones so now we're going to
+define the architecture of our network
+and here for the model structure we have
+we can you can just pause and see see
+what we what we have here just some
+helper text now here for our lsdm as we
+as we I will as we learned before we it
+has several parameters here for a
+particular one we have an input size so
+this is the shape for lsdm the
+vocabulary size and then the the
+dimensions of our hidden layer here our
+hidden layers for our last am layers and
+the number of layers and layers so here
+in the in our case we'll do two and then
+a drop out probability because we're
+going to add some drop out and then so
+let's go ahead and look at the code so
+we'll create a class here call character
+RNN inherits from an endowed module
+standard in pi torch we're going to
+define our constructor here our init
+function it's going to take in this
+parameter so here the tokens is really
+as just the unique characters so that's
+going to be the input then also we have
+our number of steps here 104 when we're
+defining our batches are hidden size for
+for hidden layer 256 and and so on these
+are just some some default values and
+our learning rate of course so we're
+going to save off these out these
+parameters and of course don't forget to
+call the bit the base class initialize
+the base class and now we're going to be
+creating our dictionaries as we did
+before here within our instance of our
+network so we're going to start off our
+characters our tokens as our characters
+and then these are the unique characters
+our set of unique characters so the
+vocabulary essentially and then same
+thing as we did before we're going to
+create our dictionaries into character
+character and character to paint diction
+dictionaries just like before so we can
+go back and forth and now we're going to
+define our lsdm network so from Python
+go grab an LST em past the length of
+this self dot character so the length of
+the unique characters and again the
+hidden dimension the size the number of
+layers drop a probability and then set
+the batch batch first flag to true and
+we're going to define dropout layer here
+to reduce a chance of overfitting so
+we're going to grab a drop out layer
+here from torch and n passing the
+dropout probability that was one of our
+parameters and then define the final
+fully connected output layer so we're
+going to grab from torch n n linear and
+then the the input here that the first
+parameter will be the the output size
+for from our LSD M which is in hidden
+here and then the output will be the
+length of self dot characters because
+the output will be a soft max
+probability distribution so probability
+for each one of those of air for every
+character on on our set and well you've
+won the highest probability and in issue
+let's also save our in it weights
+function here to so we can initialize
+weights as you can see our initial
+Heights weights function pretty standard
+initialize our initialize our weights
+and bias and also here we have a
+function to initialize her the hidden
+state here that tuple so there we go
+that's what we have when we initialize
+now we have a forward function here and
+now the inputs are x and the hidden
+states are to our input tensor and in
+the hidden state so we have our self dot
+LST m and we're just going to pass in X
+here our input tensor and then our our
+tuple here our hidden state that
+contains yet the hidden state in the
+cell memory so and the output will be
+will give us the X will be the output
+again so it's going to be now fitting
+into itself right the state that we'll
+go we're going to be getting a state and
+an output at each at each time step here
+and then we're going to be passing X
+through our dropout layer here and then
+pretty standard and then we're going to
+be passing through our fully connected
+layer so now we have to reshape our
+tensor here so these so we combine these
+two dimensions into one and then for
+this for the second
+here on view were passed a self dot and
+hidden so the size of our of our hidden
+layer here and that's what our fully
+connected layer expects to be the the
+shape of our tensor X so we just pass it
+in so if not fully connected pass it in
+get the output then we're just going to
+return that for a forward function here
+and then we're just going to get to to
+keep doing that that's how we're going
+to be training our net well we'll go to
+training in a moment but that's the
+forward pass of the network and then
+here we have a a predict a predict
+function here so that's how get so given
+a character we're going to predict the
+next character in that and in that
+sequence just so this function is going
+to return the predicted character and a
+hidden state so so pretty standard here
+so we have if so if CUDA we're going to
+to move it to CUDA otherwise CPU
+initialize our hidden state if it's not
+we don't have one now we're going to
+create a numpy array here for for our
+input and we're going to grab our
+character so that we have only one
+character here every time we call
+predict coming in and then we're going
+to grab the integer here from from the
+dictionary and then create an umpire
+right out of that and then we're going
+to one harden code that numpy array so
+we're going so the length of that array
+will be the length so the unique number
+of characters and then we have X so
+we're gonna have a one word for that
+character and then zero for everything
+else so that's how we get our one hot
+encoded vector here and then of our
+inputs here we have to convert it to a
+PI torch tensor so here we have xs/s and
+as an umpire array so just call torch
+from numpy so creates a PI torch tensor
+out of an umpire array so that's our
+inputs so we're using CUDA go to could
+call CUDA on that so it moves into the
+two GPU and then here we're going to
+create our or hidden our hidden state
+here our tuple here and then we're just
+gonna call self that forward here on our
+on our neural network passing the inputs
+here are ten our our PI torque sensor
+that we created and our tuple here the
+hidden state and the cell memory in this
+and we're going to get an output and the
+hidden and the hidden state back and now
+here with the output we want to call F
+dot softmax or remember we get
+probability distribution of class course
+we're going to get to the softmax on
+that along with the dimension one along
+the the possibly the possible along the
+possibilities the classifications here
+so we have our probabilities and again
+this is just simply if CUDA make sure
+that you're coming back to the CPU bring
+and then back to the CPU and the top top
+K is just from all the from the the
+outputs here from our softmax we just
+want to grab the top let's say to the
+top five so does that's what top K
+stands for this and then this parameter
+so how many do you want to take into
+considerations if it's not you just grab
+all of them if otherwise you just grab P
+duck top case we just grabbed the top
+let's say let's suppose it's five you've
+got the top five highest probabilities
+here and the correspondent and the
+corresponding characters and then which
+is going to to squeeze the dimensions of
+size one so the dimensions that we do we
+don't need those extra dimensions we're
+just going to squeeze them out and same
+for top characters and the for the
+probabilities as well turn them to numpy
+and then squeeze those dimensions that
+we don't need those actual dimensions
+now for our actual character for our
+prediction we're going to just do a
+random choice here numpy dot random that
+choice and we're just going to pass in
+the top the top characters and then the
+probability for e2 for each card
+associated for each character the most
+likely will grab the highest probability
+from those from those top five now the
+character corresponding to the highest
+probability and we're going to reach to
+a return and by the way these are the
+when it was this character but it's the
+integer version of the care of the
+character it's just so conceptually we
+understand what's going on but now we
+want to for that integer we want to grab
+the corresponding character because
+that's what we want an actual character
+being returned and of course a state so
+each time you call you call this predict
+function passing in a character it's
+going to return the next character with
+the highest probability
+after the networks have been trained
+ideally so that's that's how we how we
+set up our class here our character RNN
+class so here we're going to now define
+our train function so how we're going to
+train our network and here we have
+several arguments so the first one our
+character RNN Network instance and then
+the text data to train the network
+number of epochs you know our typical
+hyper parameters standard hybrid
+parameter so he pugs
+number of sequences a number of steps so
+we can create patches here learning rate
+and then this clip is for gradient
+clipping you'll see in a moment is just
+to prevent exploding gradient problem to
+click just to clip normalize just very
+large gradients and then validation
+fraction just how much data you want to
+use a fraction of data to use for
+validation because we're not only using
+a trained training doing the training
+worlds of doing validation periodically
+that's pretty standard you'll want to
+have a validation set the new validation
+passes periodically and then of course
+CUDA support so we put our network on
+trained training mode now we're going to
+define our gradient descent optimizer
+here so we're going to grab torch that
+hopped end up Adam so the Adam gradient
+descent optimizer passing the network
+parameters and the learning rate here
+that we that we have and then for a loss
+function our criterion we are going to
+use cross-entropy loss because that's
+what we're doing we have soft Maxim how
+output so we're doing cross-entropy loss
+now we're let's create our training and
+validation data here based based on Oh
+from our input world we're going to
+split it based on the input and the
+validation fraction and again feel free
+to pause any given time just to make
+sure that everything meant just make
+sense listen it takes a moment just to
+to understand and think through it but
+so if it's CUDA we're going to move our
+network to GPU and then for a number of
+characters or who are going to assign
+the length of the characters that we
+stored in our in our network instance so
+the length of her so look how many
+unique characters that we have now we're
+going to do our main loop here so for e
+in the range of epoch so we're going to
+grab so create age so initialize our
+hidden state here for lsdm and now we're
+going to to call to call our generator
+or get matches function that we created
+before and then just get and get an x
+and y here and and get batches and we're
+going to pass in our our data and then
+it's good and and sequences and end step
+so it's going to as we
+learn and we saw before this function is
+going to create our X&Y inputs here for
+our x and y data for our network batched
+in this according to these two
+parameters here now make sure you so
+we're going to one hunting code our our
+vector here our input here based on the
+number of characters and then so this is
+going to return on pi array so just make
+sure that we're actually converting that
+to to a PI torch tensor so-called tort
+from numpy again if it's cuda moving to
+the GPU and then create our our hidden
+state here for for LSD MC or the
+gradients make sure that we're zeroing
+the gradients here and then just call
+the forward method on our network and
+pass in our our inputs here our PI torch
+tensor and the hidden state that we
+created and it's going to give us an
+output in another and the hidden stay
+back now for this output now we're going
+to pass it in an into our criteria into
+our loss function so we're going to
+calculate the loss so criterion we have
+our output here and then we're going to
+compare with the target so what we
+actually wanted it to give us so targets
+we're going to reshape it because this
+criterion is expecting these two to be
+dimensions to go into what we're going
+to reshape it put these two dimensions
+into into one basically the whole the
+real fold that batch size together here
+and it also wants let's say we're
+casting it to a torch CUDA long tensor
+because we're training on CUDA here so
+make sure we we cast it because it's a
+it expects at a long tensor type here we
+back propagate the both the laws here
+and this is we clipped the gradient so
+if some gradients come out too large
+we're just going to clip them and
+normalize them by this factor here one
+of our parameters here that we chose and
+then just do up dot step so our gradient
+descent just take take a step and so we
+can up so we update our our learn about
+parameters and pretty standard here
+periodically every certain amount of
+steps here and we're going to do a
+validation pass and print and print out
+some of the statistics here to see how
+our network is do
+so if you're free to pause but it's
+pretty much the same as before we're
+just doing it with our validation pass
+validation so we're going to be printing
+out some stuff so now it's time to train
+and I already trained it to save some
+time train on on a GPU here and as you
+can see we're printing out periodically
+our training loss in our validation loss
+and they're both going down steadily so
+here we're going to create an issue lies
+our character RNN do we have our network
+passing our characters or you need our
+unique characters our set of unique
+characters and then the size of our lsdm
+of our hidden layer of our hand layers
+which is 512 here and then the number of
+layers which is 2 because again we're
+doing a 2 lsdm layer stacked on each
+other and we're going to print it out so
+we have our character character R and n
+here our class instance that we created
+with our our lsdm and C the number of
+unique characters and all of our text
+here for anna karenina book it's 83
+characters that we have then in hidden
+is in 512 number of layers to bat size
+and our drop out here as well it's the
+default values we have our drop out
+layer before ambit in between the lsdm
+and the fully connected layer and this
+is the linear layer finally that will
+ultimately soften and give us our soft
+max output after the data passes through
+here the output and as you could see the
+shape in makes sense so the input shape
+for a linear layer is the output shape
+here for our lsdm which is 512 and and
+then the output for the linear layer
+will be a a vector of class of of class
+scores your probability distribution for
+all of the the part of the possible
+characters and though that we have which
+is which is 83 so for all of these 83
+for this vector of 83 characters each
+one will have a probability and what we
+want is the highest probability one no
+more pretty things in some some text so
+here we'll just call our train function
+here pass in the end sequence and steps
+for for our batches how we're patching
+up our data epochs are encoded the data
+here that we created before learning
+rate code I set it to true and
+and there we go see here we train for
+425 bucks the loss of skill kept going
+down to now our narrow pass has learned
+and has has trained on this data so now
+so typically we won a wheel so we get
+the the best model so again we want to
+watch the training and validation losses
+these are the hyper parameters feel free
+to pause here to to read through some of
+this a nice nice helper text and here we
+have some advice from Andrea carpet the
+Carpathia the director of AI at Tesla so
+just some tips and tricks on how to
+monitor the validation loss and training
+loss and tune your hyper parameters
+based on on those losses and see how
+when you're overfitting when you're
+under fitting and just some some overall
+strategy in general feel free to pause
+and look through that so after training
+we save the models we can load it again
+later if we need to so here we're just a
+saving our model name saving the check
+point and calling towards dots not safe
+here so saving it to a file in our local
+directory and we're storing here some of
+our hybrid parameters like the number of
+the dimensions of our lsdm the number of
+layers the state dictionaries all of
+those weights and biases all of those
+learn parameters and then the token to
+the unique characters in our in our
+dataset so now we're going to do some
+sampling here so we're going to define a
+a function here that is going to to
+sample so we're going to pass in some
+initial characters and it's going to to
+generate some some text based on the
+size parameter so here pretty pretty
+simple so we're going to use to grab to
+2002 that's how much we want to generate
+so here first of all we're going to run
+through the prime characters so that
+we're going to start our sequence with
+table and then for each character and
+that we're going to grab that's going to
+be our characters and then initialize
+our hidden our hidden state here for our
+lsdm and for each character and Prime
+we're just going to do a prediction so
+each character is going to go in and to
+predict function in our network and it's
+going to give us an output and we're
+going to
+to keep doing that so and then we're
+going to pass in our top K here so hum
+that how many from all those 83 what's
+the top probabilities that we want to
+focus on and now four characters wind
+we're going to append our character so
+initially we only have the and then for
+each character output we're going to be
+appending that and that's how we're
+going to to generate our our sequence
+here and then we're going to just return
+that so here so for for I in the range
+of size here for so whatever we passed
+in this in our case 2000 we're going to
+just go loop through and just keep
+calling our net dot predict and keep
+generating our or about output
+characters in January generate some text
+after our network has learned so as you
+can see here we're generating some some
+text and it's not perfect at times it
+doesn't make that much sense but it's
+amazing that our network has learned how
+to create words as learn how to put
+commas has learned the quotes the
+structure so it's already is even in
+just 25 bucks it's learned quite a bit
+about this Anna Karenina a book and
+texts on how to generate generate text I
+think that's that's pretty amazing and
+we're just focusing on at the top five
+highest probabilities probability
+characters for a given output here from
+our predict function so very very very
+not very nice so this this shows us the
+the power of an lsdm network of
+recurrent neural networks that are able
+to learn from text learn long term
+dependencies long term features in the
+end the sequin in the sequences and
+generate some text that actually makes
+sense so pretty amazing now here just
+real quick you can actually load the the
+check point that you say and just create
+your character RNN based on those
+parameters those that you stored in your
+and your checkpoint file then just load
+this thing dictionary so just load those
+with those learn parameters and you can
+just go ahead and make a prediction on
+your pre train model here and against
+just pass in some parameters for this
+for this sample function
+so here if you passin for example and
+Levin said it's that's it's going to
+generate after that a bunch of text that
+follows that so yeah there you go so
+character level lsdm with PI torch a
+network that is able to generate text
+and learn character by character and
+learn from from text character by
+character so thank you for watching if
+you have any questions thoughts comment
+below and I will see you next time

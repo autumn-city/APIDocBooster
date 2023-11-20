@@ -1,0 +1,642 @@
+so welcome ah today in this lecture we would
+actually be working out on using auto encoders
+for pixel wise segmentation and which is what
+today we also call as semantic segmentation
+problems and for this particular exercise
+i am going to demonstrate it on medical images
+and the class of images which we use over
+here are images of retinal scans so retina
+is predominantly the rear part of the anterior
+the posterior part of your eye and where which
+has all of your photo sensory ah neurons present
+over there now since like it has those photo
+sensory neurons so you have your blood vessels
+also which ah go and carry down blood and
+over here the whole objective is that when
+there is an equipment called as ophthalmoscope
+with which you can actually take an image
+of the rear part of your eye then the whole
+objective is to segment out these blood vessels
+and this goes into a very practical problem
+because say like whenever there is some sort
+of a disease
+so you have some damaged out tissues which
+are also called as lesions and their location
+with respect to this blood vessel is quite
+critical ah for medical diagnosis and while
+there are some techniques which are called
+as angiography where you inject a dye which
+fluorosis within your eye and then ah you
+can track out the blood vessel these dyes
+are typically photo ah like toxic to your
+body and for that particular purpose there
+have been a lot of efforts on the field in
+order to get these blood vessels out extracted
+out quite clearly without having to do this
+extra ah kind of a dye use over there so there
+is a very famous data set this this problem
+has been there on the community for quite
+long and the data set which we use is what
+is called as a drive and the full form is
+digital retinal images for vessel extraction
+so its openly available and in fact you can
+also download and ha have it for your use
+so when you you just need to sign up over
+there with your email id and you would be
+sent out a link to download the whole data
+set it has two different sets over there one
+is called as a training set and other is a
+testing set has in an any kind of a standard
+supervised machine learning problem it has
+ah typically three bunch of images over there
+one image is the actual image of the retina
+there is another image which has all the vessels
+marked out correctly like whatever is a ground
+truth of the vessels there is another image
+which is just called as a mask so what that
+does is the valid regions where you have the
+retinal image taken is what is marked as white
+and rest everything is darkened out so that
+you dont have any issues now for our purpose
+we will just be needing this ah when we are
+training we will just be needing the retinal
+images and the vessel maps over there in order
+to train it and here the point is that its
+no more trying to give a diagnosis out of
+one image
+so its its not like you have one image as
+an input to the auto encoder and you have
+a class cable coming out but here its more
+of like there are multiple pixels on the image
+and you will have to label each and every
+single pixel over there and thats the challenge
+which we are trying to solve over here so
+this kind of a problem where you have a simple
+segmentation approach being solved to mark
+out ah and annotate and classify each and
+every pixel on the image thats whats also
+called as a semantic segmentation so the first
+step of this is what we are going to do with
+an auto encoder now ah as in with any of our
+earlier ones you have your standard header
+where you are just going to import down all
+the libraries and keep it ready for you so
+you just need to run this part and thats ready
+now on my data set what i do is when you download
+the hold folder and then you have everything
+coming down onto a zip ah folder location
+so if you unzip it out so you will see out
+this kind of a structure of the directory
+so within your drive if thats the main folder
+ah which is also the file name of the zip
+file itself you will find down one ah folder
+called as training and within that you will
+have another folder called as images and inside
+that you will have multiple of those images
+available to you the labels over there which
+is pixel to pixel labeling and then something
+where you would see all the vessels in white
+so down the line when we go down i will show
+you one of those images so they are what is
+available in this folder called as first manual
+there is also something called as the second
+manual and in ah in these training sets and
+the whole rationale around with that second
+manual is that there were two annotators who
+were annotating so there were two ophthalmologists
+who sat down and annotated each and every
+single pixel over there
+so the first ophthalmology annotation is given
+in one folder the second is given in another
+folder so for our purpose we are just going
+to make use of one of these annotations not
+both of them ah and and we will just ah keep
+on it whereas you are quite free in fact what
+you can do is if you take down both the annotations
+so you are actually doubling up your training
+data set because your class levels are coming
+down from two different sources and and that
+would make you ah have build up much robust
+system later on when we go towards advance
+once of doing multiple instance learning and
+and also aggregate learning and then online
+learning and how to ah do some sort of a domain
+adaptation problem you would be learning more
+about how to make use of multiple expert annotations
+in order to make a system more and more robust
+so we run down this part and i have two strings
+of my data path and label path which come
+down to me now here what my objective is i
+model the whole problem as something of this
+sort so as as you had done in one of the lectures
+where i was also mentioning about this problem
+so ah one pixel can be considered as some
+sort of a dependent response based on its
+neighbors over there and for me what i do
+is let me take down say ten cross ten ah sized
+patches over there and whatever is the central
+pixel over there that central pixels label
+is what is associated with these ah patches
+over there so now as in with your classical
+traditional computer vision what you have
+would have done is every patch gets represented
+in terms of a feature which is derived out
+of that patch and based on the features you
+are going to make down a decision over there
+now what i consider is instead of deriving
+out some features from the patch i will take
+the whole patch as my input to the network
+and features ah around a particular pixel
+on that patch is what will be learnt within
+the network ah by the auto encoder itself
+so thats ah typically what we try to solve
+over here so initially for sampling out these
+random locations our idea is just to write
+down a function over there so what it does
+is it defines out a small array over there
+which is of the same size with an height as
+as the normal image over there now you are
+ah this this point over that on the image
+annotation thats what is defined as a bh cross
+wh cross three which means that its ten into
+ten into three given that i have an rgb ah
+image over there and my labels over there
+for this particular patch is what is bh cross
+wh cross one because its its just either zero
+or one its one single plane over there and
+nothing beyond it so this part of my code
+just randomly selects out locations of where
+i can select out these patches coming down
+from ok so lets initialize this part of my
+function for ah copying out patches now here
+what i define is if you clearly see then this
+function does not have ten cross ten explicitly
+mentioned anywhere because i am just using
+some relative numbers being given down over
+here and some ah containers or or some reference
+variable points in order to return down ah
+my ah in in order to get down my actual bigger
+sized image of say five one two cross five
+one two ah pixels over there
+so here i start by defining ah my actual patch
+size in terms of patch height and patch width
+as well as the number of patches per image
+so what i define is i would like to have down
+one thousand random patches selected per image
+great so we just get that one down and then
+ah we need some place to store all of them
+so you remember that we we always typically
+had one tensor being created out so when you
+were having your data loader being used over
+there so the data loader had some parallel
+workers which were pulling out in in each
+batch itself and then that is what was being
+used but then every batchs size was equal
+to the batch length into three if it was a
+color image into one if it was ah grayscale
+image into height into width so for your mnist
+you had twenty eight cross twenty eight so
+it it used to become say if there are ten
+one thousand images taken on the done back
+so it becomes one thousand cross one cross
+twenty eight cross twenty eight
+now here i decided to take one thousand of
+these ones each of size ten cross ten and
+they are ah grayscale so typically then it
+would be basically one thousand into three
+into ten into ten however my training set
+i basically have twenty images available in
+my training so one thousand patches taken
+down from each image and there are twenty
+such images so you would be getting down twenty
+thousand of ah such training ah patches created
+out in one single batch and thats the size
+over here which i do for my training images
+and similarly is a matrix which is defined
+for my training labels as well so now once
+this part comes down to you then what we do
+is ah so let me run that part now here i am
+just going to randomly crop and patch out
+each of these part so its its quite simple
+so what do you need to do is you will have
+to actually open up the image once the image
+has been opened up then ah you need to have
+some sort of randomized selection of locations
+from where you are going to patch it out and
+once that is done you store it in in your
+ah array over there
+so that goes so we need to wait for some time
+for it to actually read and get that one down
+and by now its its ready so here lets look
+into the size of what we wanted to do so we
+to had twenty images and one thousand patches
+selected out from twenty images so you got
+down basically twenty thousand now over here
+you see that there are three hundred such
+neuron locations or or its just twenty thousand
+into three this comes from the fact that i
+had a ten cross ten image and there were three
+color channels so the total number of neurons
+on my input side becomes three hundred so
+its three into ten into ten similarly on my
+output side i just had one channel because
+it was either black or white true or false
+ok and us had a ten cross ten patch so its
+one into ten into ten that makes it hundred
+neurons over there
+so now my neural network will have an input
+over here which goes down as ahthree hundred
+neurons my output over there is one hundred
+neurons and in between it has to train itself
+as an autoencoder so quite unlike where in
+the earlier cases you had where you were associating
+only one label and one output coming down
+to one single patch or or one single image
+over there here we are going to associate
+a label correspond to each single position
+over there now one way you can treat all you
+can always treat this as a regression problem
+you can train this end to end but ah since
+we are doing it with autoencoders or our first
+objective is actually to do an unsupervised
+pre training in order to learn down features
+and then use these features in order to reconstruct
+back my actual space of all the pixel labels
+over there
+now that goes to the next point which is check
+out on my gpu availability and i have my gpu
+created now this is what part i was telling
+you down so what i would like to do within
+this as an autoencoder is that i have three
+hundred neurons which comes down to me so
+thats ah wha[t] what what we do is in a simple
+way since my patch height and patch width
+can change so in fact i can go up over there
+and just change the patch height and patch
+width make it like eleven into into or make
+it thirty one into thirty one what whatever
+you choose to be like so my input is patch
+width into patch height into three thats the
+total number of neurons that i just connected
+down to equal to patch height into patch width
+so it means that three hundred neurons get
+connect it down to one hundred neurons ok
+then i have a tan hyperbolic activation function
+once ah thats done then i connect down these
+one hundred cross one hundred to another one
+hundred cross one hundred
+so its its a very straightforward way of connecting
+it out and then a tan hyperbolic so by now
+i have basically one hidden layer which connects
+on my input to this first one then i have
+another hidden layer which connects down the
+output of the first hidden layer to the second
+hidden layer so this is where my this is where
+typically my output of the second hidden layer
+comes out now that has to go into my decoder
+side over there on my decoder i have that
+one hundred connected down to one hundred
+now those one hundred over here will connect
+down to three hundred because i am i am training
+it just as an autoencoder over there and then
+ah i have my sigmoid activation function on
+the ah last output over there so that i have
+ah ranges which are in zero to one and they
+then not necessarily go down in some negative
+values over there and then i define my forward
+pass over my auto encoder
+so its its quite straight forward that you
+have your encoder module and you have your
+decoder module so you do a input to the encoder
+whatever comes out you save that container
+and ah just do a feed forward through your
+decoder module as well and that would define
+my whole network and then i choose to just
+copy down all my weights and keep it for later
+on visualization purposes so lets run this
+one and then you see this is the network structure
+which is defined over here so and and ah from
+based on whatever we had done in the earlier
+exercises you can just use this part of the
+network which is your auto encoder or the
+encoder part of the network ah as a feature
+extractor and then you can use it for classification
+as well but before that we need to train it
+out so my training as of now since i am using
+an auto encoder over there and its for representation
+learning so i use a mse loss function or l
+two norm and for optimizations so for this
+particular problem ah standard gradient descent
+of the vanilla gradient descent doesnt quite
+work out good and we decided to just go with
+an adam optimizer as we had done in another
+earlier example but just hold on for some
+more time till we actually come down to the
+details of this optimizer
+so here ah it goes down and you have defined
+your criterion function and your optimizer
+and then you can start training your auto
+encoder so i will actually set this one training
+because it it does take a bit of time and
+i am going to train it for five hundred epochs
+so we are we are just setting this to train
+over five hundred epochs and then each batch
+over here whatever you take is one thousand
+so within ah each epoch what you are going
+to do is just check if there is a gpu available
+then convert everything onto a gpu compatible
+cuda format ah then you zero down the gradients
+over there ah so that there are no residual
+gradients from the previous epoch which stay
+while you are updating each of the gradients
+we do a forward pass over the network and
+get down our outputs ok next part is to compute
+the loss using your mse loss so your criterion
+which was defined over here as mse loss function
+is the same thing which i am using over here
+then we do a derivative of the loss or nabla
+of the loss function ah dell dell ah so its
+its partial derivative of j or the loss function
+and thats through this backward step finally
+we ah tune or do the whole back propagation
+using optimizer dot step over there and then
+i am just recording out my total loss at the
+end of every epoch now what i choose to do
+is instead of trying to print down at every
+single epoch as i was doing in earlier cases
+when we were running down with sa say some
+ten epochs twenty epochs fifteen epochs which
+was much lesser but i am [laughter] i am running
+it down with five hundred epochs now if i
+keep on ah really printing it out every single
+epoch it becomes a huge table which would
+be coming out over here ah so what i choose
+to do is ah just see if the epoch is a integral
+multiple of one hundred so like every hundredth
+epochs so hundredth epoch then ah two hundredth
+epoch and and so on and so forth it would
+keep on printing itself over here and finally
+what i choose to do is that you have all of
+your losses which are present in this one
+per epoch loss over all the five hundred epochs
+is what is present within this array called
+as strain loss
+so here i write down a small function in order
+to actually plot this one out and see ah because
+looking at these ah text coming down over
+here its its not so hard to actually understand
+how the loss would be going down so using
+this plot functions over here we are able
+to actually create a visual outlay of how
+the loss was decreasing as it was training
+down an autoencoder for representation learning
+so lets just wait for some more time because
+you can see that there has been a significant
+decrease it starts from somewhere around point
+zero eight and then after one hundred it has
+gone down to one figure ah less and and significantly
+so you can pretty much see that around at
+four hundred epochs its already ah one thousand
+times ah not one thousand say one hundred
+almost one hundred times lesser then ah what
+it was when it had actually started down at
+the first iteration so there has been a significant
+drop as you would see and and that would mean
+that the dynamic range in which the errors
+are visible are also going to change down
+significantly and and thats ah its its much
+dependent on the data and you dont practically
+have much of a say over there
+so now my training is over and then this is
+what the plot looks like so you could see
+that there was a significant drop happening
+from this point to this point within within
+even less than a hundred epochs and thats
+what you see ah starting with the point zero
+eight and coming down at the end of one hundred
+epoch to point double zero one nine five and
+then finally it goes even lower so it it looks
+as if its quite close to zero as in over here
+and and thats a good number i mean for an
+mse loss which is close to ah the point of
+ten power of minus three is a ten power of
+minus four is actually a great number
+so here we decide to actually look into the
+visualization of ah this weight so what i
+have done is i had initially copied all of
+these weights and kept it aside so if you
+look over here so once my network is ah trained
+ah once my network is created and before the
+training starts actually copy down all of
+these random weights which have been ah initialized
+for each of these ah weights over there now
+here is a small function in order to display
+plot out these matrices in terms of an image
+and here i would be ah actually working out
+to display these ones so now this one is basically
+ah matrix of how these weights are associated
+you see a lot of colors over there the reason
+that you see these in color is because your
+inputs there are ah so your input is basically
+three into ten into ten
+so you would be having ah in in some way like
+three channels each of size ten cross ten
+or three planes ah which are matrices each
+of times ten cross ten and you can associate
+that the ah pixels which were connecting down
+the red channel of your image are the ones
+which are visualized on the red channel in
+this visualization the green channel is on
+the green channel over here and the way its
+connected with the blue channel are can present
+with the blue channel over here and thats
+how you get down a colored matrix however
+if you count it down you would get down ten
+pixels over here and ten pixels over here
+so its a ten cross ten matrix into three which
+is for each of the color channels now ah so
+thats thats technically three hundred weights
+which are visualized in this color format
+and if you count down over here you have one
+two three four five six seven eight nine ten
+and and similarly on this side you would be
+having ten and thats because you have three
+hundred neurons which are connected down to
+one hundred neurons and we just choose to
+display it in a ten cross ten matrix
+so this was my random weights which were acquired
+at the start of the program and then after
+the training these are some of the visualizations
+which come down ah for the bits now they dont
+look that great to say honestly ah however
+if you see that that there has been a significant
+change which comes down on each of these weights
+though most of them are still zero and ah
+that brings us to the point that this might
+have learned an over complete representation
+so later on ah in the next week when we start
+doing into stacking of auto encoders and sparcity
+within auto encoders you would be learning
+more about details on ah how this lot of zeros
+and and how similarity in appearance between
+these weights are something exploited even
+further ok so as of now the next part comes
+down that i have trained on my auto encoder
+so my representation learning is done now
+i would need to actually do a classification
+ok so i will have to modify my network i have
+to throw down everything on my decoder and
+replace that with just a sequential connection
+so i have my second hidden layers output which
+is just one hundred neurons those have to
+be connected down to one hundred such features
+because on my output side i have ah ten cross
+ten ah map of all the pixels ok
+now my next point is actually to train it
+out as a classifier so here i had changed
+out my criterion function or loss function
+to a bce loss as as with any kind of a classifier
+and and i still go on to use my adam optimizer
+itself ok now here i start my training for
+the network
+now this would also be taking ah some amount
+of time in order to train down however ah
+this loss is no more than mse loss but this
+becomes a bce loss and its really hard to
+again start directly commenting what you need
+to keep in mind is that while in your earlier
+examples where you had the classification
+with mnist or you had to classify just those
+ah white blood cells into whether they are
+leukemic or non leukemic you were going to
+have one label associated with one single
+patch of an image here its sort of a series
+of labels associated with every single pixel
+within the image and thats whats changing
+over there now you might even come up with
+the question that if we are doing going to
+do it on small patches of ten cross ten then
+why not create the whole image and solve it
+out yes in fact thats possible thats pretty
+much possible you can have all of your five
+hundred and twelve into five hundred and twelve
+into three neurons connected densely through
+some sort of an auto encoder and giving it
+down you need to keep something in [laughter]
+mind that the number of weights which you
+will get down over here will be significantly
+large the compute complexity of that problem
+will also be large and ah where there would
+be another significant problem is that the
+moment you change down the size of the image
+your network is no more of any use over there
+whereas if i am taking down these smaller
+patches of ten cross ten and then i keep on
+doing some sort of a non overlapping window
+and stride it over there for inferencing then
+its its quite easy to actually get down on
+any arbitrary sized image and that would work
+out pretty good so thats one of the reasons
+why we choose to ah go and do it with these
+smaller sized images now if you look into
+ah this part of the training you see that
+there has been a decrease however the rate
+at which the values are decreasing they are
+not so significant and and again saying from
+our earlier experiences ah how the learning
+rate dynamics would behave across epoch is
+not something which you can predispose at
+the start of training over there and and its
+very much depends on the data and the dynamics
+your batch size the kind of optimizers you
+are using as well as the cost function and
+that whats goes down over here so now my training
+is over ah for five hundred epochs and if
+we look into my error plot over there so that
+desktop screen [FL] desktop screen yeah
+so now my training for five hundred epochs
+is over and now if i get back to actually
+looking into how it works out so you would
+see that there has been a significant drop
+and while it started down with a bce loss
+of somewhere around point five it gradually
+keeps on going down and somewhere around one
+hundred epochs you have a significant decrease
+coming down to about close two point and then
+significantly it keeps on doing you see these
+jitters over there and that one of the reasons
+why these small jitters come ah down over
+there is you have your local minima position
+and then you are going to just keep on saddling
+around that local minima for some amount of
+time and thats the reason why this might be
+oscillating over there now one way of ah going
+around ah by getting a much smoother curve
+is to actually by the point you hit this ah
+position on on your error you can actually
+keep on reducing your learning rates and that
+would actually help you come down too much
+further so later on when we do learning rate
+dynamics we will be covering about those in
+more details now thats about training my whole
+network and now i would be interested in order
+to look down ah into how it performs on my
+testing
+so for my testing i have would be taking down
+images from my test data set and ah i just
+take down the ground truth labels ah for its
+evaluation from ah this thing which is called
+as first manual ok now here all of these images
+are loaded and they are converted on to numpy
+array and here its going to break it down
+into those small ten cross ten patches as
+we had done in the earlier case ok now here
+what we are doing is basically one single
+image which is large in size has been broken
+down into multiple number of ah non overlapping
+patches ok such that it covers down everything
+and then for each of the patch its going to
+infer out and then reconstruct that by placing
+each of the patch back onto the matrix so
+this was my input image which i have over
+here and these are these vessels ah which
+you see the dark ones now there are even very
+fine vessels the ones which you see over here
+or the ones which you see over here and and
+they are the ones which is which are really
+hard to ah predict at all
+this is the sort of performance which ah the
+network as of now performs and and given the
+fact that we are just training a very simple
+auto encoder to solve the purpose this is
+not a bad performance at all i mean you you
+get a pretty decent vessel map coming down
+when you know that this is the kind of ground
+truth label so based on our experience of
+training this network at earlier instances
+you can keep on training this for a larger
+number of epochs and keep on gradually reducing
+down the ah learning rates over there so say
+for ah after every ah five hundred epochs
+you make the learning rate half of what it
+was in the previous instance and then you
+would see it gradually saddle down to much
+lower error bounds on the ah binary cross
+entropy you will have to train the auto encoder
+itself for larger epoch say some five thousand
+epochs or ten thousand epochs and the classifier
+on that pre initialized auto encoder for also
+an equal number of epochs and then you can
+see down a pretty ah standard result coming
+down in terms of these results replicating
+what we had over here so i would leave down
+those kinds of exploration on to you ah that
+would be too much time consuming beyond what
+we have in one single lecture so ah have those
+and and really enjoy and play around with
+it and stay tuned for the next weeks where
+we discuss advance topics on autoencoders
+including how to do stacking and denoising
+as well as sparsity criteria till then stay
+tuned and
+thanks

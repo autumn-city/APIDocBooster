@@ -1,0 +1,1183 @@
+if you give me about 45 minutes of your
+time i will show you how to code a fully
+functional
+asynchronous advantage actor critic
+agent in the pytorch framework starting
+from scratch
+we're going to have about 10 to 15
+minutes of lecture followed by and about
+30 min interactive coding tutorial
+let's get started
+really quick if you're the type of
+person that likes to read content
+i have an associated blog post where i'm
+going to go into much more detail
+check the link in the description deep
+reinforcement learning really exploded
+in 2015 with the development of the deep
+q learning algorithm
+one of the main innovations in this
+algorithm that helped it to achieve such
+popularity is the use of a replay buffer
+the replay buffer solves a very
+fundamental problem in deep
+reinforcement learning
+and that problem is that neural networks
+tend to produce garbage output
+when their inputs are correlated what
+could be more correlated than an agent
+playing a game where each time step
+depends on the one
+taken immediately before it these
+correlations cause the agent to exhibit
+very strange behaviors
+where it will know how to play the game
+and suddenly forget when an encounter is
+some new set of states that has never
+seen before
+the neural network really isn't able to
+generalize from previously seen states
+to unseen states
+due to the complexity of the parameter
+space of the underlying problems
+the replay buffer fixes this problem by
+allowing the agent to randomly sample
+agents from many many different episodes
+this guarantees that those time steps
+taken are
+totally uncorrelated and so the agent
+gets a broad sampling of parameter space
+and is therefore
+able to learn a more robust policy with
+respect to new inputs
+as i've shown before on this channel
+problems arise when you attempt to
+simply bolt on a replay buffer onto the
+actor critic algorithm it doesn't really
+seem to work and in fact it's not very
+robust
+after critic methods in particular
+suffer from
+being especially brittle and so adding
+on a replay buffer really doesn't help
+to address that problem
+in 2016 a group of researchers managed
+to solve this problem
+using something called asynchronous deep
+reinforcement learning
+it's a totally different paradigm for
+approaching the deep reinforcement
+learning problem
+and in fact the technology can be
+applied to a wide variety of algorithms
+in the original paper they detail
+solutions for deep q learning
+n-step sarsa excuse me n-step q learning
+as well as sarsa
+and actor critic methods as well so what
+is this big innovation
+well instead of having a replay buffer
+we're going to allow
+a large number of agents to play
+independently on totally separate and
+self-contained environments
+each of these environments will live on
+a cpu thread in contrast to a gpu
+for most deep key learning applications
+this has a
+additional benefit that while if we
+don't use a replay buffer we don't have
+to store a million transitions
+which for trivial environments really
+doesn't matter but if you're dealing
+with something like say
+the atari library a million transitions
+can take up a significant amount of ram
+which can be a limiting factor for
+enthusiasts
+so having the agent play a bunch of
+different games in parallel on separate
+environments only keeping track of a
+small number of transitions
+vastly reduces the memory footprint
+required
+for deep reinforcement learning so in
+what sense exactly is this algorithm
+asynchronous
+what this means exactly in this context
+is that we're going to have a large
+number of
+parallel cpu threads with agents playing
+in their own environments
+they're going to be acting at the same
+time but
+at various times they're going to be
+deciding what to do as well as updating
+their deep neural network parameters
+and so we're not going to have any one
+agent sitting around waiting on another
+agent to finish playing the game to
+update
+its own set of deep neural network
+parameters each one will be totally
+independent
+and learning on its own now we're not
+going to be simply throwing away the
+learning from each agent after it
+finishes
+the episode rather we're going to be
+updating the network parameters of some
+global optimizer as well as some global
+actor critic agent
+so we have one actor critic agent that
+sits atop all the others
+and the local agents that do all the
+learning by interacting with their
+environments
+so what is the advantage part of a3c so
+the advantage
+essentially means what is the relative
+advantage of one state over another
+it stands to reason that an agent can
+maximize his total score over time
+by seeking out those states which are
+most advantageous or have the highest
+expected future return the paper gives a
+relatively straightforward calculation
+for this
+all we have to do is take the discounted
+sum of the rewards received over some
+fixed length trajectory
+and then add on an appropriately
+discounted value estimate for the final
+state the agent saw in that trajectory
+please note that this could be some
+fixed number like say five steps
+or it could be three steps if the agent
+encountered a terminal
+terminal state along the way we're then
+going to go ahead and subtract off the
+agent's estimate of the value of
+whatever current time step it's in the
+trajectory
+so that way we're always taking the
+value of the next state
+minus the current state that's what
+gives us the relative advantage
+so what does the actor critic portion of
+a3c mean
+specifically this refers to a class of
+algorithms that use two separate neural
+networks to do two separate things
+so the actor network is responsible for
+telling the agent how to act kind of a
+clever name right
+it does this by approximating a
+mathematical function known as the
+policy
+the policy is just the probability of
+selecting any of the available actions
+for the agent given it's in some state
+and so for a discrete action space it's
+going to be a relative probability of
+selecting one action over another so in
+our cart pull it's going to be say
+60 move left 40 move right so on and so
+forth
+we're going to facilitate this by having
+two separate networks the actor network
+will take a state or set of states as
+input
+and output a softmax probability
+distribution that we're going to be
+feeding into
+a categorical distribution from the pi
+torch framework we can then sample that
+categorical distribution to get the
+actual action for our agent
+and we can also use that to calculate
+the log of the probability of selecting
+that action according to the
+distribution
+probability distribution and we will use
+that for the update rule for our actor
+now the critic has a little bit of a
+different role the critic
+essentially criticizes what the agent
+the actor did it said
+you know that action you took gave us a
+pretty lousy state that doesn't have a
+very large expected future return and so
+we shouldn't really try to take that
+action given that state
+any other time that we encounter it so
+the critic essentially criticizes what
+the actor does
+and the two kind of play off of each
+other to access more and more
+advantageous states over time before we
+go ahead and talk about the specifics of
+each class let's get some idea of the
+general structure and flow
+of the program the basic idea is that
+we're going to have some
+global optimizer and global actor critic
+agent that sits on top
+that keeps track of everything the the
+local agents learn in their own
+individual threads
+each agent will get its own specific
+thread where it can interact with its
+own totally distinct
+and separate environment the agent will
+play either some fixed number of time
+steps or until it encounters a terminal
+state
+at which point it will perform the loss
+calculation
+to do the gradient descent on the global
+optimizer
+once it calculates those gradients it's
+going to upload it to the global
+optimizer
+and then re-download the parameters from
+that global optimizer
+now keep in mind each agent is going to
+be doing this asynchronously
+so while one agent is performing its
+loss calculations another agent may have
+already finished that loss calculation
+and updated the global optimizer
+that's why right after calculating the
+gradients we want to go ahead and
+download
+the global parameters from the global
+actor critic so that way we make sure we
+are always operating with the most
+up-to-date parameters after each time
+the agent
+performs an update to its deep neural
+network we're going to want to go ahead
+and zero out its memory so that it can
+start fresh for another sequence of five
+or until it encounters a terminal state
+number of steps so now let's talk
+implementation details
+we're going to have a few separate
+distinct classes for this the first of
+which is going to be overriding the atom
+optimizer from the base pi torch package
+so we're going to have a shared atom
+class that derives from the base
+torch optim atom class and this will
+have the simple functionality of telling
+pytorch that we want to share the
+parameters of a global optimizer among a
+pool of threads it's only going to be a
+few lines long and it's much easier than
+it sounds and i'll show you how to do it
+in code
+our next class will be the actor critic
+network now
+typically we would use shared input
+layers between
+an actor and critic where we simply have
+one input layer and two outputs
+corresponding to the
+probability distribution pi and the
+value network v
+but in this case we're going to host two
+totally separate distinct networks
+within one class
+it's a relatively simple problem the
+card poll and so we're going to be able
+to get away with this
+the reason i'm doing it this way is
+because i frankly could not get
+shared input layers to work with the pi
+torch multi-processing
+framework our agent will also have a
+memory which we're just going to use
+simple lists for that
+we're going to append states actions and
+rewards
+to those lists and then go ahead and set
+those lists back to empty lists
+when we need to clear the agent's memory
+we're going to have a function for
+calculating the returns where we're
+going to use the calculation
+according to the algorithm presented
+within the paper
+so the idea is that we're going to start
+at the terminal step or the final step
+in the trajectory
+if that step is terminal the r or the
+return gets set to zero if it's not it
+gets set
+to the current estimate of the value of
+that particular state
+then we're gonna work backward from the
+t minus one time step all the way to the
+beginning
+and we're gonna update r as r sub i plus
+gamma times
+the previous value of r i'm going to do
+a calculation in the video the coding
+portion to show you that these two are
+equivalent meaning
+this calculation as well as the earlier
+advantage description i gave you
+i'm going to make sure that you
+understand that those are actually
+equivalent and it's just a few lines of
+mathematics so it's not really that
+difficult and i've
+taken the liberty of doing it for you
+then we're going to be calculating the
+loss functions
+and these will be done according to the
+loss functions given in the paper
+so for our critic we're going to be
+taking the delta between those returns
+and the values and taking the mean
+squared error
+for our actor we're going to be taking
+the log prob of the policy and
+multiplying it by the advantage
+and with a negative one factor thrown in
+there as well now that's a really cool
+way of calculating the loss for the
+actor because it has a pretty neat
+property
+so when we multiply the advantage by the
+log of the probability what we're
+actually doing is weighting
+at probabilities according to the
+advantage they produce so
+actions that produce a high advantage
+are going to get naturally weighted
+higher and higher over time
+and so we're going to naturally evolve
+our policy towards being better
+over time which is precisely what we
+want right our final class will be the
+agent class and this will derive from
+the multi-processing
+process subclass so here's where all of
+the
+real main type functionality is going to
+happen so
+we're going to be passing in our global
+optimizer as well as our global actor
+critic agent
+instantiating 16 in the case of 16
+threads for a cpu
+local critics with 16 separate
+environments
+and then each one of those is going to
+have you know two separate loops where
+it's going to go
+up until the number of episodes that we
+dictate and it's going to play each
+episode
+as i described earlier within each
+episode it's going to play some fixed
+sequence number of steps
+and then it is going to perform some
+update
+to the global optimizer and then
+download the parameters from the global
+actor critic agent
+our main loop is basically going to set
+everything up we're going to go ahead
+and define all of our parameters create
+our global
+actor critic our global optimizer and
+tell pytorch that we want to share
+the memory for our global enter critic
+agent
+and then we're going to make a list of
+workers or agents
+and then we're going to go ahead and
+send each of those a start command as
+well as a join command so that we can
+get everything rocking and rolling so
+what are some critiques of this
+algorithm overall
+well one is that it is exceptionally
+brittle
+most actor critic methods require a fair
+amount of hyper parameter tuning
+and this one is no exception i tried to
+use the lunar lander environment but
+couldn't really get a good set of
+parameters to make it run
+effectively and get a you know a
+consistent score of 200 or above
+heck even a consistent score of over 100
+i would have called that good enough
+for youtube another one is that there is
+a significant amount of run to run
+variation
+so it's highly sensitive to initial
+parameters you can solve this by uh
+setting global seeds for the random
+number generators so that you're getting
+uh consistent uh random numbers over
+time and so you're going to know exactly
+how you're starting
+but to me it's a little bit kind of like
+cheating so i don't do it in this video
+but it is something to take note of
+and in the original paper i think they
+do something like 50 different runs
+of each evaluation some large number to
+get a pretty tight
+or to get a pretty solid distribution of
+scores and that is i think because
+of the high degree of run to run
+variation
+okay i have lectured at you enough again
+if you like to read
+written content i have a link in the
+description to a blog post
+where i talk about this in a little bit
+more detail but nonetheless let's go
+ahead and
+jump right into the coding tutorial
+let's go ahead and start with our
+imports
+we need gym for our environment
+we'll need our base torch package
+we'll need torch multi-processing to
+handle all the multi-processing type
+stuff
+we will need torch and then to handle
+our layers
+we'll need an n functional to handle our
+activation functions
+and we're going to need our distribution
+as well
+[Music]
+in this case we're going to need a
+categorical distribution
+all this does is takes a probability
+output from a deep neural network maps
+it to a distribution so that you can do
+some actual sampling to get the real
+actions
+for your agent now i want to start with
+the shared atom class this will
+handle the fact that we are going to be
+sharing a single optimizer
+among all of our different agents that
+interact with separate environments
+all we're going to do here is call the
+base atom initializer
+and then iterate over the parameters in
+our parameter groups setting the steps
+exponential average and
+exponential average squared to zeros
+effectively and then telling it to share
+those parameters amongst the different
+pools in our multi-threading pool
+and this will derive from the base atom
+class
+our default values are going to be i
+believe identical
+to the defaults for
+the atom class
+and then we want to call our super
+constructor
+now we're going to handle setting our
+initial values
+and then we're going to tell torch that
+we want to share the memory
+for our parameters or for our
+gradient descent
+and note the presence of the underscore
+at the end of memory there
+okay that is it for the shared atom
+pretty straightforward
+next up we want to handle the
+hydrocritic network which will also
+encapsulate a lot of the functionality i
+would typically put into an agent class
+because
+of my understanding of the design
+principles of object-oriented software
+programming
+uh in this case i have to shimmy a few
+things around because the
+agent class is going to handle the
+multi-processing elements of our problem
+and so it doesn't really make sense to
+stick this like the choose action
+remembering memory functionality in the
+agent class so we're going to stick it
+in the network class
+it's not a huge deal it's just a
+departure from how i normally do things
+and certainly not everybody does things
+the same way i do
+so our initializer takes input dimms
+from our environment
+number of actions from our agent
+and a default value for a gamma of 0.99
+we also have to save our gamma and the
+next thing we want to handle is writing
+our actual deep neural network
+now this is also a little bit different
+than the way i normally do things
+normally i would have a shared input
+layer that branches out into
+a policy and a value network as two
+separate outputs with that shared input
+layer
+when i tried to do that i found that the
+software doesn't actually run
+it doesn't handle the threading aspect
+very well in that case when you have
+shared input layers
+from a deep neural network i don't know
+exactly why that is if you know please
+leave a comment down below because i'd
+be very curious to hear the explanation
+it's simply what i found out through my
+own experimentation so we're going to
+have two separate inputs one for the
+policy and one for
+the value network as well as two
+separate outputs so they're effectively
+two distinct networks within
+one single class
+and we're only going to be using 128
+neurons here not a very large network
+and our output will take
+those 128 hidden neurons and convert it
+into number of actions and our value
+function will take
+likewise 128 hidden layers hidden
+elements and convert it to a single
+value
+or if you pass in a badge of states a
+batch of values
+the agent also excuse me the network
+also has
+uh some basic memory so rewards
+actions and states
+these we will handle just by appending
+stuff to a list and then
+and each time we call the learning
+function we're going to want to reset
+that
+memory so let's go ahead and handle that
+functionality first
+so the remember just appends a state
+action reward to the relevant list
+and the clear memory function just zeros
+out all those lists
+pretty straightforward next we have our
+feedforward function
+that takes a state as input so we're
+going to pass
+that state through our first
+input layer for our policy and perform
+a value activation on that
+and do something similar for the value
+input layer
+and the outputs of those two are going
+to be passed to the rel to the relevant
+policy and value outputs
+and then we just return pi and v pretty
+straightforward yet again
+next we're going to have our function to
+calculate the returns from our sequence
+of steps
+so this will only take a single input
+and that will be the terminal flag
+recall that the
+return for the terminal step is
+identically zero so we need the terminal
+flag or the done flag to accommodate
+that
+so we want to go ahead and
+convert the states from our memory to a
+torch tensor g dot float data type
+because it is a little particular about
+the data type you don't want to pass it
+in double
+it gives you an error so best to take
+care of it now
+we're going to go ahead and pass that
+through our neural network
+and we're not going to be concerned with
+the policy output at this stage we just
+want to know
+what the value evaluations the critic
+has for that set of states
+so our return is going to be is going to
+start out as
+the last element of that list so the
+terminal step
+or the last step in the sequence of
+steps and we're going to multiply that
+by 1 minus and
+done so that if the episode is over 1
+minus done is
+zero so you're multiplying by zero you
+get zero uh
+pretty handy way of handling that then
+we're going to handle the
+calculation of the returns at all the
+other time steps
+so we're going to go ahead and iterate
+over the reversed memory
+and say that our return is the reward at
+that time step plus gamma times
+r and then just return excuse me append
+that
+return to the list of batch returns
+and then finally at the end you want to
+go ahead and
+reverse that list again so that's in the
+same order in which you encounter the
+states
+this calculation reverses it it means
+you're starting at the end when you know
+the value of the final state
+or at least the estimate of the value
+according to the critic
+and then uh reversing it uh to get it
+back in order for
+passing it into our loss calculation
+function
+now this may be a strange form to you
+if you write it out by hand maybe i can
+show you something here where i did it
+for you
+if you write it out by hand this
+particular chunk of code
+you can see that it's identical to what
+they tell you the calculation is in the
+paper
+so yeah you can do that exercise on your
+own to convince yourself or i can just
+show it to you so that
+i can convince you of it but this is
+indeed the return calculation from the
+paper
+everything is as it should be
+and then i want to convert that to a
+tensor
+[Music]
+and return it
+next we have to handle the calculation
+of our loss function
+and this again is
+only a single input the terminal flag
+from the environment
+we're going to go ahead and get the
+value
+excuse me the tensor representations of
+our states and actions
+right at the beginning
+and then we're going to go ahead and
+calculate our returns
+and then we're going to perform the
+update so we're going to be passing
+the states through our actor critic
+network to get the
+new values as well as then a
+distribution according to the current
+values of our deep neural network
+we're going to use that distribution to
+get the log problems of the actions the
+agent actually took
+at the time it took them and then we're
+going to
+use those quantities for our loss
+functions
+values squeeze
+now this squeeze is very important
+if you don't squeeze here it won't
+trigger an error
+but it will give you the wrong answer
+the reason it will do that is because
+the actor loss and
+the critic loss i believe will come out
+as a shape five by five and
+that is not the shape we want we want
+something in the case of uh
+five time steps t max equals five so
+it'll give you a five by five matrix
+instead of a
+five element vector so you have to
+perform the squeeze here to get
+the five by one output of the default
+network into something that is just
+five a list of five elements or a vector
+of five elements instead of five by one
+so definitely need that squeeze if you
+don't believe me by all means erase the
+line
+or comment it out and print out the
+shapes of things to the terminal i
+always recommend doing that
+it's a good way of solidifying your
+understanding of how all this stuff
+works
+so then our critic loss is just the
+returns minus values squared
+pretty straightforward so now let's go
+ahead and say
+that we want the softmax activation
+our output and
+uh that has a property that of course
+the softmax guarantees that
+uh every action has a finite value and
+that
+the value the probabilities add up to
+one as all probability
+distributions distributions should
+so then we use that output to
+create a categorical distribution and
+uh calculate the log probability
+distribution
+of our actions actually taken
+then our actor loss minus log probs
+times uh the quantity
+returns minus values that's from the
+paper and then our total loss
+is just critic loss plus actual loss
+dot mean and we have to sum the two
+together
+because of the way that the back
+propagation is handled by torch
+and of course i did forget the choose
+action function
+but that is not a big deal we'll just go
+ahead and handle
+that now so that will take we're going
+to call it observation
+as input because we're going to be
+passing in the raw observation
+from our environment and so we have to
+convert that to a tensor right off the
+bat
+and we have to add a batch dimension to
+that
+for compatibility with the inputs of our
+deep neural network
+and we're going to call it a d type of
+float
+we pass that through our neural network
+get our policy and value function out
+perform a soft max activation on our
+policy
+along the first dimension then we're
+going to create our distribution
+based on those probabilities and sample
+it
+and convert it to a numpy quantity take
+the 0th element
+and return it so that is it for our
+actor network class it encapsulates most
+of the functionality i would associate
+with the agent
+but it does everything we're going to
+need each of the independent actors
+within their own thread to do
+now we're going to move on to the agent
+class that is going to handle our
+multi-processing functionality
+so i'm going to call this agent
+you will sometimes see it referred to as
+worker and that is a
+fine name that is kind of precisely what
+it is
+i'm just using agent to be consistent
+with my previous nomenclature
+it has to derive from the mp.process
+class
+so we get some access to some goodies
+there so we will need
+our global actor critic that is what is
+going to handle the
+uh functionality of keeping track of all
+the learning from all of our
+environment specific agents the
+optimizer that is going to be the shared
+atom optimizer that we wrote earlier
+input dimms number of actions uh
+gamma in case you want to use something
+other than 0.99
+a learning rate a name to keep track of
+each of the workers
+from our multi-processing
+the global episode index so
+this will keep track of the total number
+of episodes run by
+all of our agents it's not as easy as a
+of a concept as it may seem because
+you're doing asynchronous processing
+as well as an environment id so the
+first thing i'm going to do is call our
+superconstructor
+and go ahead and start saving stuff
+so our local actor critic is just going
+to be
+our new actor critic
+with inputs of input dimms number of
+actions and gamma
+we want to save our global actor critic
+so that we can update its parameters
+we're going to have a name
+for each worker in its own independent
+thread and that's just going to be
+just worker number name and then we'll
+have
+an episode index
+global episode idx our environment
+so environment id is a string here if
+that isn't clear
+um
+and our optimizer did i spell that
+correctly yes i believe i did
+so we have to define a very specific
+function
+so that stuff actually works and that
+function is the run function this gets
+called
+behind the scenes by the worker.start
+function that we're going to handle
+in the main loop but this handles
+effectively uh all the main loop type
+functionality
+of our problems so our global time step
+is going to get set to 1 while our
+episode idx
+dot value so episode idx is
+a global parameter from the
+multi-processing class
+and that we want to get the value by
+using the dot value dereference and
+while that's less the number of games
+some some global variable we're going to
+define
+in other words while we have not
+completed all of our games
+set your terminal flag to false reset
+your environment
+and set the score to zero and go ahead
+and clear the agent's memory at the top
+of every episode
+and then while you're not done so go
+ahead and play your sequence of episodes
+see i'm sorry sequence of steps within
+an episode
+the action is chosen by your local actor
+critic so you're going to pass the
+observation into
+each local actor critic so each
+of these 16 in this case threads will
+get its own
+local electrocritic and that'll
+synchronize to the global
+but you never actually use the global
+network directly to do things like
+choosing actions
+so get the new state reward done
+and debug info back from
+your environment
+keep track other rewards received as
+part of the total score
+remember that observation
+action and reward
+then we have to say if the number of
+steps
+modulus the maximum number of steps is
+zero in other words
+uh if it is every if it is every fifth
+time step
+or we have finished the episode with
+that last time step then we're going to
+go ahead
+and perform our learning step
+modulus t max
+before we're done then we're going to go
+ahead and handle
+the learning functionality so we'll say
+loss
+equals local actor predict dot
+calc loss
+of course we need the most recent
+terminal flag
+as the parameter for that function the
+argument
+go ahead and zero your gradient
+and back propagate your loss
+[Music]
+so we're going to set the parameter for
+the
+global gradient to the local agent's
+gradient
+at this step and then
+after doing that we can tell our
+optimizer
+to step and then we can go ahead and
+synchronize
+our networks
+and we do that by loading the state
+dictionary from our global actor critic
+to our local one and then we want to go
+ahead
+and clear the memory
+after each learning step and then tell
+the
+algorithm to increment t step by one the
+global time step
+and set the current state to the new
+state
+then at the end of every episode we have
+to handle the
+the fact that we may have finished an
+episode
+from another agent while one thread was
+running
+uh because this is running asynchronous
+asynchronously
+so we say with self.global
+uh sorry self.episode idx
+dot get lock so we want to make sure
+that no other thread is trying to access
+that variable
+right now
+and if we can go ahead and increment
+that episode value
+by one then we do the usual print the
+debug stuff to the terminal
+we're going to print out the name of the
+worker the episode
+and that is self episode
+idx value and the reward
+uh the total score from the episode
+and that is it for our agent class so
+this is
+relatively straightforward all we're
+doing is handling the
+fact that we have our local parameter
+our local agent
+that chooses actions we're going to
+perform the gradient descent
+optimizer uh update using the
+gradients calculated by the actions of
+that agent and then
+upload that to our global network so
+that every
+every agent uploads its learnings to the
+global network and then
+we're going to go ahead and download
+that from our global network as well so
+that we
+make each agent in its own thread better
+over time now we have our main loop
+and we're going to do some stuff like
+declaring our learning rate
+our environment id
+cart poll v0 number of actions for that
+environment is just two
+left and right input dimms it's just a
+four vector uh we'll say number of games
+five thousand you know we can actually
+get away with three thousand i believe
+uh t max every five steps that comes
+from the paper
+a global actor critic gets initialized
+here
+and that takes input dims and number of
+actions
+we want to tell that global actor critic
+object that we want to share its memory
+then we have our optimizer
+what are we going to be optimizing and
+sharing the parameters of our global
+actor critic network
+learning rate defined by learning rate
+and betas
+0.92099 i get that from
+morgan joe's stuff i haven't
+experimented with that too much
+a little bit of carbo cargo cult
+programming here i apologize for that
+now we have our global episode and that
+is just going to be
+a value of type i that means unsigned
+integer doesn't mean
+i is an encounter variable you could
+also have uh
+d for a double if you wanted to keep
+track of like a score or something like
+that
+i just means unsigned integer or no it's
+a it's a signed imager
+so it can be negative as well as
+positive
+now we have to create a list of workers
+and that's going to be a list of our
+agents
+and this is what's this is the construct
+that we're going to use to handle the
+starting and running of our specific
+threads
+so that's an agent we have to pass on
+our global actor critic
+our optimizer
+our input dims number of actions
+a gamma a learning rate
+it's helpful to use commas our name is
+just going to be
+the the name is just going to be the
+i in our list comprehension
+our global episode idx
+is going to be that global ep variable
+we just defined
+and we're going to pass in our
+environment id
+or i in range multiprocessing.cpu
+count now i haven't noticed a huge
+difference
+in running this with different numbers
+so
+something other than cpu count in the
+range i have 16 threads if i tell it
+eight
+it still uses all 16 so i'm probably
+missing something here
+i could do a deeper dive into the
+documentation to figure it out
+but for the purposes of the video i'm
+just going to go ahead and roll with it
+so now we want to go ahead and start all
+of our
+workers
+and then go ahead and do our join
+operation
+okay so now moment of truth i want to
+find out how many typos i made
+in the recording of this let's go ahead
+and do a right quit
+i already have an invalid syntax so i
+say
+for reward in
+that's an easy one ah no others
+so let's say a3c dot pi
+okay name env is not defined that's
+because it is self.env
+so that is in line
+114
+cell.env reset
+cannot assign torch float tensor as
+child module pi
+one torch and then module or none
+expected so that is when i handle
+the feed forward in our
+choose action function oh this is an
+interesting one i haven't encountered
+this before let's take a look
+cannot assign as child module pi one
+oh uh that's because
+interesting
+oh of course yeah
+obviously i don't want that self here
+i'll have to annotate that when i
+am editing the video uh that is
+obviously
+going to be problematic so you'll
+probably have seen that already that i
+put in a
+no self dot in there okay
+that's the beauty of doing things for
+oh it's because it's log prob not log
+probs
+that's in
+85.
+i hope i remember all these
+this none type object has no attribute
+backward i probably forgot
+to return my loss yeah that's right
+there we go
+all right now it's running hopefully
+it's still going to record
+even though it is running across all of
+our threads
+looks like we're still good now you see
+that executed really
+really fast it was so fast i didn't even
+have time to get up the
+thread count the resource monitor to
+show you guys
+but you can see here that it
+achieves a non-negligible score so that
+indicates some learning is going on
+now let's go ahead and run it again
+and you can see now this time it's not
+doing any learning at all so there is a
+significant amount of run to run
+variation
+so i'll let it run and finish and we'll
+try one more time
+and maybe we'll get lucky and it will
+actually approach a score of 200.
+nope that's one of my big criticisms of
+this algorithm is that there is a
+significant amount of run to run
+variation and it is
+pretty brittle with respect to some
+other algorithms that came later
+basically the main
+advantage here is that it's asynchronous
+and this
+paradigm can be employed on many
+different types of algorithms as you
+read in the paper you know it can be
+applied to deep key learning
+as well as end step learn
+sarso stuff like that
+okay so it's getting a little closer
+okay so this one took a little bit
+longer because the episodes actually
+achieved scores of 200 which is the max
+not every thread manages to be a winner
+not all of us can be winners in life
+that's a nice little microcosm of the
+universe
+but you can see that for the most part
+uh some of the workers actually i want
+to throw his consistency amongst
+so worker 11 not uh 200
+and if i scan down here another worker
+11 142
+161 interesting
+so you do get actual learning across
+your agents
+it's just not super consistent and that
+is my biggest criticism of this
+algorithm
+is that it has a high degree of run to
+run variation as you can see
+uh but it's still pretty good it's an
+interesting take on deep reinforcement
+learning
+and uh i i do enjoy the algorithm it's
+just not
+what i would categorize as a top two or
+three algorithm in actor critic methods
+i hope this was illustrative for you i
+hope you found it very helpful if you
+have made it this far please consider
+subscribing
+leave a like a comment down below and
+i'll see you
+in the next video

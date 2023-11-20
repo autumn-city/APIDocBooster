@@ -1,0 +1,394 @@
+Hey, everyone.
+My name's Robert, and I
+teach deep learning for SAS.
+Today, we're going to talk about
+how you can incorporate or use
+batch normalization in
+a deep learning model.
+Now, batch normalization
+is typically
+used to solve what's called
+the internal covariate shift
+problem, or at
+least mitigate it.
+Let's talk about the internal
+covariate shift problem.
+When you update
+your neural network,
+you're updating the
+weights iteratively.
+But within each
+iteration, the weights
+are updated simultaneous.
+So when we update a weight,
+we take a partial derivative
+of the error
+function with respect
+to a particular weight
+in the model that
+gives us our gradient.
+We then take that gradient
+and we multiply it
+by our learning rate, which
+controls the step size.
+That gives us our weight update.
+Once every weight in the
+model has an update value,
+we then update our
+neural networks
+and that is an iteration.
+So let's say that I'm
+a weight in the model
+and you're a weight
+in the model.
+I'm going to make
+my move, my update,
+based on you, how
+you appear to me,
+and all the other
+weights in the model.
+So I see you, I update based
+on how you appear to me,
+I update, I look back at
+you, and you've changed.
+Why did you change on me?
+You changed because
+you're updating too,
+and so are all the weights.
+So every weight update is based
+upon second and third order
+effects.
+Other weights in the model.
+It's something of
+a moving target.
+And that's the internal
+covariate shift problem.
+So batch normalization
+normalizes the information
+being passed between
+hidden layers in an attempt
+to mitigate this problem.
+So when information's
+passed from one hidden
+layer to the other,
+for every mini batch,
+and for every
+neuron, we calculate
+a mean and standard deviation.
+So you also have to
+learnable constants, which
+are calculated by the model.
+Let's take a look
+at this in SAS.
+So here I have a
+program where I'm going
+to print out several images.
+It's always a good idea
+to look at your data.
+So we have these images
+here, and I'm going
+to move this over a little bit.
+So we have 10 different
+classes that we're
+going to predict using a
+convolutional neural network.
+We have horses, cats,
+ships, is this a ship?
+Well, maybe our data is a
+little messy, but it'll suffice.
+I navigate back to the code,
+and I'm going to scroll down.
+Here, I'm just going to
+summarize the images.
+And when I summarize
+the images, I'm
+looking for the average
+value per color intensity.
+I'm going to take
+these average values,
+and I'm going to use them as
+offsets in the input layer
+of my deep learning model.
+So we have blue,
+green, and finally red.
+Now, when we build a deep
+learning model in SAS,
+it's actually really easy.
+We start by just
+building a model shell.
+So I called BuildModel action,
+and in the modeltable equals,
+I specify some
+models shell name.
+This is just going to be a
+table that's stored in SAS.
+So I'm going to call this
+model NoBn for no batch
+normalization.
+The type of model that
+we're going to train
+is a convolutional neural
+network, so type equals CNN.
+Next, I add a series of layers.
+And for each layer,
+I'm adding this layer
+to that model shell, NoBN.
+You can call your model
+whatever you would like.
+My model.
+My favorite model.
+Your name.
+Your last name.
+Whatever you would like
+to call your model.
+So you're adding layers
+to your model shell,
+and each layer must
+have its own name.
+So here, I'm calling
+this layer Myinputlayer.
+I can call it
+whatever I would like.
+Layer equals is where you
+specify the layer options.
+So we have type equals,
+this is an input layer,
+so we're saying this is an input
+type, the number of channels.
+These are color images, so we're
+going to have three channels.
+The width and height of
+these images are 32 by 32.
+Now, we're also applying
+some random mutations
+per good practice to help our
+model generalize to new data.
+We're applying a horizontal
+flip transformation as well as
+a random mutation.
+So for each mini
+batch, let's say, we
+pull in 60 or 100 observations.
+For each mini batch, we're
+going to randomly select
+some of those images,
+and we're going
+to horizontally flip them
+or apply a random mutation.
+Last but not least,
+we apply some offsets
+to this input layer.
+And these are the
+offsets that we
+were able to glean from our data
+when we summarized the images.
+After this, I add several
+convolutional layers.
+The first layer is going to
+have convolution filters that
+are 3 by 3 with a
+stride of one, and
+the second
+convolutional layer is
+going to have filters 5
+by 5 with a stride of one.
+Now, these two convolutional
+layers, I actually
+think of these as really
+being on the same layer,
+just having different size
+filters on the same convolution
+layer.
+I then pass this information
+into a concatenation layer
+through the source option here.
+And notice when I
+highlight this ConVLayer1A,
+it also highlights the name
+of that previous layer,
+and this is how we
+create the connections.
+Next, I add a pooling layer.
+Then, I add another
+convolution, and then
+a couple of fully
+connected layers.
+And last but not
+least, an output layer.
+Finally, I train the model using
+what's called dlTrain action.
+And dlTrain is really easy.
+I just specify dlTrain table is
+the name of the training table
+that I'd like to
+train the model on.
+The model equals is where you
+specify the model that you're
+going to apply.
+So we're creating the
+model above dlTrain,
+and then we're going to take
+that model that we create,
+and we're applying
+it to this data here,
+this small image data shuffled.
+We're going to train
+the model for 60 epochs.
+And then, we're going to
+create an iteration plot.
+So I'm going to
+run this program.
+Now, I forgot to highlight
+it, but in the code--
+actually, you can see it
+here in the background.
+We have GPU equals true.
+To build a deep learning
+model with lots of parameters,
+it's probably a good
+idea to use a GPU.
+And SAS makes it really
+easy to use a GPU.
+You just say GPU
+equals true, and SAS
+will go in and find that GPU
+and use it to train your model.
+Our model is now done
+training, so let's take
+a look at the results.
+Oh no, what happened?
+Our model is failing
+to discriminate
+between the different classes or
+predict the different classes.
+Let's try adding
+batch normalization
+to this same model
+structure, and see
+if we maybe get better results.
+So in the second program, I have
+the exact same model structure
+with the exception that I'm
+applying batch normalization.
+So I have my input layer,
+I have my first two
+convolutional layers, my
+concatenation, my pooling.
+And then, my second
+convolutional layer
+is where I apply
+batch normalization.
+To apply batch
+normalization, you
+have to do this in kind
+of a two layer step
+where the first layer is
+basically the combination
+function.
+And the second layer is where
+you apply your activation
+function, but you
+normalize the data first,
+using batch normalization.
+So here, we can see
+that we're adding
+a layer to this--
+this is My_BN_Model
+for batch normalization.
+Here is the name of the
+convolutional layer.
+Type equals CONVO.
+It's going to have 32 filters.
+The width and height
+of these filters
+are going to be a
+5 by 5, and we're
+going to use a stride of two.
+Now, notice that our activation
+function in this layer
+is identity, meaning
+do not transform
+the net of the combination,
+or whatever the combination
+function resolves to.
+We're just going to pass
+that forward untransformed.
+So no transformation
+is being applied.
+We then pass the information
+from this convolutional layer
+here to the next layer.
+And this is where we
+apply batch normalization.
+So we specify type
+equals batch norm.
+In the batch
+normalization layer,
+this is where we apply
+our activation function.
+Here, I'm using the
+exponential linear unit.
+So to implement batch
+normalization in SAS
+it's really easy.
+You just implement
+it as a second layer.
+Now, you may notice that
+earlier in the program,
+I did not apply
+batch normalization
+to my first convolutional
+hidden layer.
+I did not apply batch
+normalization here
+because it has a
+computational cost to it.
+It has learnable parameters.
+So you have to calculate.
+The data is already
+standardized in the input layer,
+so I thought why
+spend the computation.
+So that's why I didn't apply
+it in the first hidden layer.
+Let's run the program and see
+how well the model performs.
+While the model's training,
+I'm going to tell you a joke.
+And this is a joke that I made
+up, so it's nowhere out there,
+maybe we'll see it
+or Reddit after this.
+But the joke is you have a
+statistician and a computer
+scientist, and they're debating
+about the terminology used
+in neural networks.
+The problem with my joke is
+that it can fit any situation.
+Wa, wa, wa.
+I know, it's not a great joke.
+But let's take a
+look at the results.
+I'm going to scroll down
+to my iteration plot.
+Boom.
+Our model is now
+learning the data.
+Batch normalization,
+two thumbs up.
+I hope you now have a better
+understanding of batch
+normalization and how it can
+impact a deep learning model.
+If you like this
+video, definitely
+subscribe and click
+on any of the links
+below for more resources.
+Also, if you have any
+questions or comments,
+please leave those and
+I will get back to you.
+Take care.
+Adios.

@@ -1,0 +1,434 @@
+Hello everyone!
+Today we’re going to be talking about Valorant.
+If you don’t know Valorant, it’s one of
+the most popular Counter-Strike game modes,
+right after, uh, de_dust2.
+I do have friends that play Valorant, but
+I have to admit I’m just not very good at
+it.
+But what if I could teach a computer to play?
+Computers, after all, are great at taking
+tedious work off our shoulders - what if they
+could do for us the tedious work of actually
+playing Valorant?
+I wanted to make this as fair a challenge
+as possible by not giving the computer any
+special knowledge.
+The way bots usually work in Counter-Strike
+and other games is that they’re directly
+hooked into the game and have access to the
+raw data of the game, but they’re dumbed
+down to play at human levels.
+My bot is different because it only has the
+same inputs and outputs that a human would.
+Here, I have two computers: computer #1 has
+Valorant installed on it and nothing else.
+Computer #2 can see what’s on the screen
+of computer #1 using a video capture device,
+and it can send mouse and keyboard commands
+to this Logitech dongle.
+Those are the only two connections between
+these computers.
+No poking memory, no debuggers, no funny business
+with network traffic, or anything like that.
+And because I know someone’s going to ask,
+I have to say that I’m not sharing the code.
+People are going to misunderstand this as
+some kind of exploit, and once you see how
+poorly it plays, you might not want the code
+anyways.
+I do want to make future videos about this,
+so if there’s anything you want to see in
+more detail, just let me know.
+To make all of this work, I needed to teach
+the AI how to recognize enemies, shoot, and
+move around in the game.
+The core to all of this is computer vision.
+I needed a machine learning model to which
+I can feed an image of the game.
+Then, the model needs to be able to detect
+where things are and what type of object it
+is.
+Luckily for me there are many “pre-trained”
+models online so that I didn’t have to start
+from scratch.
+By applying “transfer learning”, an existing
+vision model can learn to recognize different
+objects than the ones it was originally trained
+on.
+I chose one called Faster RCNN, which seemed
+pretty powerful.
+This actually turned out to be a problem later
+on, but it was easy to get started with.
+I should warn you that anytime I say “easy”
+in this video, I actually mean “really frickin’
+frustrating”.
+Part of the reason is that I don’t have
+a Ph.D in machine learning or AI, which is
+a basic requirement for doing machine learning.
+In fact, the PyTorch library that I used doesn’t
+even let you download it unless you have a
+Ph.D.
+Even if you make it past that obstacle, good
+luck getting all the libraries to work.
+But instead of complaining about software,
+let me tell you about training the model.
+The basic technique of teaching computers
+how to recognize things in images is to give
+it a lot of examples with the answer already
+recorded by a human.
+Normally this is done by a grad student or
+other sweatshop labor, but I had to do it
+myself: I found Valorant VODs on Twitch, split
+the video into individual frames, and went
+through them one-by-one, drawing boxes around
+the objects in the image.
+It’s actually surprisingly enjoyable.
+If Valve made this into a mobile game I’d
+probably play it.
+After a few hours of work I had about 1,000
+labeled images.
+I set aside some of them to use as the validation
+data set, while leaving the majority for training.
+The training process involves showing each
+image to the neural network and comparing
+the result against the “ground truth”
+that I labeled.
+Every time it’s wrong, we measure how wrong
+it is and tweak the neurons a little.
+Over time, the neurons change until the right
+answers come out and everyone is happy.
+I trained the model on my GTX 1070 for about
+2 hours and the results were surprisingly
+good.
+Here are some Twitch clips that were labeled
+by the model.
+Pretty good, yeah?
+I slapped this computer vision model onto
+some code that streams from a video capture
+card and voila!
+There was just one problem, the latency was
+terrible.
+I mean, look at that.
+At just 6 frames per second, by the time it
+recognized what was on screen, the actual
+object would have moved somewhere else.
+Just to check, I trained a new model on Kovaak’s
+Aim Trainer and instructed it to instantly
+shoot every target it sees.
+And as you can tell, it’s pretty bad.
+I even tried it out on an RTX 3080, which
+managed to run at about 13 frames per second.
+That’s better, but not quite fast enough.
+So, I decided to give up trying to improve
+the Faster RCNN model and started searching
+online.
+I ended up choosing a model called YOLO version
+5.
+(And for you younger viewers, YOLO was this
+meme from the early 2010s.)
+The good news was that I could convert all
+my existing labels and feed them into the
+YOLO model.
+I tried training with 5 “epochs” and it
+worked!
+Wait, this is the ground truth image.
+Wow, it’s actually really bad.
+I mean, this is just half an hour of training,
+so I can’t really expect too much, but it
+needs to get a lot better.
+And sure enough, after training for 2 hours,
+it could recognize a lot of things.
+And better yet, I was getting 20 frames per
+second even on my obsolete GTX 1070.
+By the way, a lot of the fun in AI is that
+weird border between correct and incorrect.
+Let me show you what I mean:
+OK, so in this image for some reason, it’s
+labeled this Reyna trail as an enemy.
+Kind of a really long stretched enemy, I guess.
+In this one, there is one correct enemy in
+the middle, and to the right of that somehow
+it thinks the sparks from the gun form an
+enemy.
+OK, the far friendly on the left side, that’s
+actually just a mark on the texture.
+Not sure where that came from.
+Here, it thinks that the paint shell is a
+molly.
+The computer vision algorithm has no idea
+if things are moving or not - it just sees
+everything as a still frame.
+It’s clearly learned somehow that these
+weird splatters on the ground are mollies.
+One enemy in the middle, that’s correct.
+But that spike on the right is definitely
+not right.
+The spike label is for planted bombs, and
+that shell that’s being ejected is clearly
+not a bomb.
+OK, molly.
+That’s not a molly, that’s a stim beacon.
+I was feeling pretty confident at this point,
+but there was still a lot of work left to do. 
+The computer vision model is good at recognizing
+objects,
+but not good at knowing where it is in the world. 
+It can’t say which direction it’s pointing
+or even what map it’s on.
+I figured that the best way to make sure the
+AI knows where it is is to use the minimap.
+I can scan the minimap for circles of a particular
+color to know the locations of myself, my
+allies, and any visible enemies.
+I can scan the minimap for circles, filter
+for a specific size, and check the color of
+each circle to know the locations of myself,
+my allies, and any visible enemies.
+This is kind of imprecise, so I use this information
+in conjunction with some basic dead reckoning
+to know where I am.
+If I turn my mouse slightly to the right
+and then push the right arrow key, and then the forward arrow key,  
+I can guess my speed and direction to estimate
+where I am.
+You can see how individually, each technique
+can be pretty bad, but together, the quality
+is usable.
+Similarly, I can scan the top bar to know
+which portrait spaces are empty or not in
+order to count the players.
+And, if the bomb icon is showing, then I know
+the bomb is planted.
+To help with navigation, I made a black and
+white version of the map where the areas that
+can’t be reached are black.
+Using this, I can do basic pathfinding over
+the map.
+At this point, all of it was purely theoretical
+because I hadn’t actually worked on the
+second half of the control loop, which is
+actually controlling the game.
+And I think it’s worth explaining how that
+works here because it’s pretty unusual.
+Normally, bots and other automation tools
+like AutoHotKey use Windows APIs like SendInput
+to send virtual commands to another program.
+But this means you need to have additional
+software on the same computer as the game,
+which I’m not doing.
+Instead, I’m just using a Logitech wireless
+dongle.
+Think about it - your wireless mouse is basically
+a radio that’s shouting its movements over
+the air up to a thousand times a second.
+I have here a radio that can broadcast on
+the same frequency as wireless mice.
+If I tell it to shout the same mouse messages,
+the Logitech dongle doesn’t know or care
+that it didn’t come from an actual mouse.
+And it’s not just Logitech - if you use
+a wireless mouse, there’s a good chance
+that anyone nearby can see and control what
+you’re doing.
+But the good news is that this gave me a way
+to control the player from another computer.
+I wrote some code that used the AI’s internal
+idea of the game state to make some basic
+movements.
+For a couple maps, I marked out the strategic
+points on the map and then made the bot choose
+a location to go to based on the current game
+phase.
+The results were pretty bad.
+There’s a lot of stuff going wrong, like
+mixing up positive and negative directions,
+some kind of desynchronization issue between the
+mouse and the game state,
+and just a lot of Python bugs
+Anyways, many bug fixes later, I had something
+that could kind of go around the map.
+This footage shows the AI picking random points
+on the map to go to.
+Getting stuck on corners was a big problem.
+This is partly because the pathfinding is
+kind of low-res, but also because the precision
+of checking the minimap for its location is
+pretty low.
+For example, if I need to get out of this
+shallow corner, the first couple waypoints
+are very close.
+If the radius of each waypoint is too big,
+the player completes the first two waypoints
+too early, and then tries to go straight for
+the third waypoint.
+If the waypoints are too small, the imprecise
+location causes the player to go back and
+forth because it misses the waypoint.
+Unfortunately, there wasn’t a one size fits
+all solution, so I also added an ugly hack
+to simply choose a new destination after a
+certain amount of time.
+After making these changes, I ran into another
+obstacle.
+Up until now, I had only been able to send
+mouse commands to the Logitech dongle.
+My workaround was to bind extra mouse buttons
+to movement, but the game only supports a
+maximum of 6 buttons so I didn’t have any
+extra buttons for things like switching weapons,
+planting the bomb, etc.
+The root problem is that Logitech patched
+a security hole in Unifying receivers that
+let hackers easily send keystrokes to any
+dongle.
+But we know Unifying receivers have been around
+for a long time, so I went on eBay and just
+purchased a bunch of used receivers.
+Sure enough, the first one that I received
+had the original firmware version on it that
+had this security hole.
+The security hole lets me send keyboard commands
+to the dongle, and with this capability, I
+could work on adding important gameplay capabilities
+like planting the bomb, buying weapons, and
+trash-talking in chat.
+By the way, it was at this point that I decided
+to get the Asus Zephyrus gaming laptop that
+you saw earlier.
+It’s got a mobile RTX 3060 and it only took
+me a whole day to figure out how to install
+the dependencies in Miniconda.
+Now that all the pieces were in place, it
+was time to test it out in a custom match.
+I was trying to knife it... and...
+it didn't go well.
+I got rekt!
+Hmm, it was only shooting body shots
+for some reason.
+Awww-hh-hhh
+Were you using a scout?
+Yeah.
+Why?
+[laughter] well it’s not very good at shooting.
+Oh it’s actually going for B.
+Heh-eh.
+OK, so it doesn’t use audio.
+It doesn’t get audio because… well, the video
+capture card can’t get audio.
+Oh I see I see.
+I forgot to make it buy.
+Also it’s not recognizing you.
+[chuckle]
+You’re too close!
+Quick pause because I thought this was interesting
+-
+the neural network doesn’t recognize enemies when they’re really close, and I *think*
+it’s because in virtually all of the training
+data, the enemy is far away because that’s
+usually what happens in real games.
+Something else that happened here again and
+also happens throughout this video is that
+the AI thought it was looking downwards when
+it wasn’t, which totally throws off the
+aim calculations.
+This kind of desync happens quite a bit, and
+I’m not totally sure where the bug is yet.
+Did it hit you?
+Yeah!
+Yeah, it hit me twice I think.
+2 bullets.
+Pretty solid.
+Where’d it go?
+It’s… it decided to retreat.
+And now it’s coming back I think.
+OK, it’s going A.
+How?
+How did you just walk past it? [laughter]
+There we go, there we go.
+I don’t know how it didn’t notice you.
+OK, now it’s looking at the floor again.
+… and it’s going to die to the molly...
+Hahahaha!
+That was crazy.
+It shot, like, at my feet.
+And then it shot, like, 6 feet to the right.
+Aw, I was switching between my shotgun when
+it shot me.
+Yeah, don't - don’t use your shotgun.
+No worries.
+It’s behind triple looking at…
+A main.
+Oh there it is.
+Oh s*** it killed me!
+And now it’s getting stuck on a corner.
+Just kill it.
+I’m gonna wait for it to come this way.
+[laughter] It tried…
+Is it in A?
+If you’re too close, it somehow doesn’t
+recognize you.
+Oh I see.
+[laughter] The aiming is really buggy right
+now.
+Did I break it?
+Yeah so…
+The angle that it thinks it’s pointing at
+and the angle that it’s actually pointing at
+somehow got desynchronized
+Oh, I see.
+All right, well, this is how we fix things.
+Yeah so if you go from A into CT, you’ll
+see it.
+Aww s***
+- cuz I’m at A site.
+Why don’t you just kill it?
+Aww s*** I was trying to kill it.
+Well it’s just looking at A site right now.
+That was convincing!
+Maybe it does better with shotgun.
+It’s in B site… and it’s just looking…
+looking around.
+Looking at hookah?
+You can go hookah.
+Aw, it’s so stupid.
+I think it also doesn’t have, like, object
+permanence.
+So if it sees you, it just immediately forgets
+about it.
+Where’d it go?
+There it is.
+Attackers win!
+I won!
+I did it.
+It’s really hard to make AI, huh?
+So, as you can see, it’s not very good at
+this game.
+Unfortunately, that’s its current state
+as of today, but there’s a huge list of
+things that could be improved, ranging from
+fixing the view angle calculation, adding
+recoil control, checking corners, lowering
+latency, and maybe even using the audio hints.
+And, it doesn’t have the game
+sense and prediction capabilities that good
+humans players have either.
+We’ve seen computer AIs do very well at
+games like Starcraft, so we know a lot of
+these challenges are solvable.
+The additional complexity of having a real-time
+computer-vision feedback loop is also something
+that the field of robotics has a lot of experience
+with, and in fact this is a very similar problem
+to that of self-driving cars.
+But just like in Valorant, if you’re going
+to turn over control to a computer, you have
+to be OK with dying in situations that a human
+would’ve handled just fine.
+If you're interested in more details about a specific part of this project,
+let me know in the comments.
+I'm planning on making some more in-depth videos about how this works,
+so subscribe if you want to see those.
+Thanks for watching, and check out the linked
+page for any
+corrections and clarifications for this video.

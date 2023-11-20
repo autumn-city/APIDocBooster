@@ -1,0 +1,594 @@
+sorry everyone empty screen right now okay can you 
+see it now at the very top but it's somehow off  
+so let me try that again
+i mean this is visible it's only if you switch 
+to full screen that it can you see a  
+full screen now no i can see your presentation 
+software. I can see the slides you know but not  
+in full screen. I can see your 
+software. Ah, now, perfect
+anyway okay so, well, thanks for 
+the introduction. Sorry for this  
+little technical problem, we are happy 
+to be here today along with Richard,  
+we're going to tell you about how to do deep 
+learning for EEG using Pytorch and MNE-Python.  
+So I wanted to start the tutorial with a little 
+presentation, shouldn't be longer than 15 minutes,  
+just to give you some background on both the 
+sleep staging tasks that we'll be working on today  
+and also give you a brief overview 
+or refresher on deep learning.  
+I'm not sure what kind of background everyone has 
+here today uh so of course i won't be able to go  
+in much depth. But hopefully I'll give you some 
+pointers or you'll be able to connect the dots  
+later on based on that and then finally we'll 
+talk about the notebook that we'll go through.  
+So if you have any of this background this will 
+help you today so any basic knowledge of EEG if  
+you've done scientific programming in python numpy 
+matplotlib, pandas etc and MNE-python of course,  
+and then finally basic concepts of machine 
+learning such as what Alex has just talked about  
+earlier today. So all of the material 
+is already available if you want to  
+take a look but we'll get back to it in a few 
+minutes and we'll post the link in the chat.  
+So first part, introduction to sleep staging. so 
+if any of you are in your science or psychology  
+or related fields you might know that 
+the EEG during sleep is actually pretty wild,  
+there's a lot of stuff that happens while we sleep 
+in the EEG with very distinct patterns very strong  
+transient events that appear during the night. So 
+we typically break down sleep into five sleeping  
+stages. First one being awake although it's not 
+actual sleep. It's part of this categorization,  
+then we have three non-REM sleep stages 
+and one being the lightest sleep stage  
+where it's very easy to be woken up and N3 
+being deep sleep but it's very hard to do  
+and finally REM sleep, which is where most 
+of the dreaming occurs for instance and it's  
+very interesting from an EEG perspective 
+because it's very similar to awake EEG.  
+So now I'm introducing a graph that we call a 
+hypnogram and a hypnogram is essentially just  
+a plot of the sleep stage across a night 
+recording. So here we see that we have  
+about eight hours of sleep time and then we see 
+the sleep stages across that recording and what  
+we see on top of these sleep stages is that there 
+is a sleep cycle structure so we have cycles of  
+about 90 minutes that repeat throughout the night 
+and where we go from awake or light sleep all the  
+way to REM sleep. This is what we call sleep macro 
+structure. There's also sleep micro structure  
+And by that I mean that each stage is 
+characterized by different frequencies  
+and various trends and events so i won't go 
+through the entire table here but for instance  
+in stage N2, we see what we call sleep 
+spindles so these are oscillations at around 11
+12HZ that occur during N2 and they're 
+often followed by k complexes so these sharp  
+sawtooth waves during N3 sleep we 
+have slow waves which are these  
+slower waves with very high amplitude so we 
+have both this stage structure cycle structure  
+and this microstructure with events on the 
+second to second scale this is in a nutshell  
+the EEG during sleep so now how is this data 
+recorded and specifically in the clinical setting  
+so in a clinical setting you would run a test that 
+we called a polysomnogram and it's recorded in a  
+well-controlled environment so for example in 
+a sleep clinic and we'll record many different  
+sensors with many different sensors at once so of 
+course EEG but we also include EOG EMG maybe  
+respiration pulse oximetry and whatever else you 
+want to include there so once we record, for  
+example eight hours long sleep recording we need 
+to ask experts to annotate the data manually  
+and by manually I mean that sleep experts use 
+software that could look like something like this  
+where they see all of the raw signals 
+that we're recording during the night  
+for a 30-second window and so one window 
+by window, they look at the signals 
+and identify patterns to finally give a label 
+to that window so this is a very lengthy time  
+consuming process because you have to do that 
+for very long recordings one window at a time  
+and then finally once you have these annotations 
+you can extract different clinical markers  
+that can help in diagnosing different sleep 
+disorders for example sleep apnea or insomnia
+so given that manual sleep staging is pretty time 
+consuming, is there any way we could automate it  
+with machine learning and of course the answer 
+is yes and that's the topic of today's tutorial  
+In the field of automated sleep staging there's 
+been many different approaches that have been  
+tried over decades now and most of that work was 
+done originally in a traditional feature-based  
+machine learning pipeline or scenario where 
+starting from raw EEG data and based on expert  
+knowledge for example sleep experts or engineers 
+working in this kind of problem you want to  
+extract features or good descriptors of that 
+data such that a classifier would then be able to  
+know which sleep stage this data comes from 
+so we would typically start this pipeline with  
+some pre-processing which you've done earlier 
+today in the MNE tutorial and then follow up  
+with a feature extraction step so in the case of 
+sleep staging we might want to extract a power  
+band or log power in frequency bands knowing that 
+it varies between the different team stages then  
+finally once we have all of the features we care 
+about we can pass them on to classifiers such as  
+logistic regression which then learns the mapping 
+between these features and the sleep stages
+but then what if you're not really willing 
+to spend the time and effort coming up with  
+these features and also knowing that you might not 
+know there might not be a known way of extracting  
+the optimal features for this problem well 
+this is where deep learning approach has become  
+interesting. So in a deep learning approach instead 
+of working on feature extraction you'll work on  
+designing a neural network architecture that will 
+learn both the feature extraction step and the  
+classifier step all at once. So pipeline would 
+typically look like this you start again with  
+pre-processing then you design your neural network 
+architecture we'll talk about that in a minute and  
+finally you can train your neural network so in 
+both cases you end up with a function that maps  
+a raw EEG window to a sleep stage. And if we're 
+thinking in terms of pros and cons well one very  
+obvious one is that a traditional feature based 
+approach is interpretable because you know the  
+features you've defined them so you can try to 
+interpret what the classifier is doing, how  
+this comes at the cost of extensive engineering 
+effort on the other hand in deep learning you  
+might be able to discover optimal features for 
+your problem however this comes at the cost  
+of having many architecture and training hyper 
+parameters to tune and this can take quite a long  
+time so of course today we're focusing on a deep 
+learning approach to this problem of sleep staging  
+ main reason for this is that in the last few 
+years we've seen state-of-the-art approaches being  
+designed with deep learning all right.
+so part two a brief overview of deep learning concepts
+so there's three main components to 
+define when talking about determining  
+and I'll dedicate one slide to each one of these 
+concepts the first one is architecture so the  
+architecture specifies the space of all functions 
+that can be modelled by our network. Examples  
+might be fully connected convolutional that will 
+convolutional layers that we'll talk about in a  
+second component is the loss function so the 
+loss function is a function that measures how well  
+your neural network performs its task and we'll 
+talk about mean squared error in multi-class quest  
+entropy and finally you need the learning rule 
+which glues the the other two components together  
+by telling you how to adapt the weights of your 
+architecture so that you minimize your loss  
+function and in deep learning this is typically 
+done with something called stochastic gradient  
+descent and an algorithm called back replication 
+so now let's go through each one of these  
+components one by one so first for architecture 
+we'll actually cover two types of architecture  
+here so generally speaking in a deep neural 
+network you have this concept of layers so here  
+we have four different layers two hidden layers in 
+the middle and the concept of neurons or units in  
+each layer so each layer has a number of neurons 
+or units which are represented by nodes here  
+and in a fully connected layer 
+sorry fully connected network  
+each neuron is connected to every single value 
+from the previous layer and every single value  
+or node sorry to of the following layer so 
+that's why it's called a fully connected network  
+and so given an input so here our input 
+might be a window of 30 seconds of EEG  
+that we've flattened into a single vector 
+we can pass it on to the input layer and  
+then each node from the first given layer will 
+compute a weighted average of all these values  
+and then apply a nonlinear activation function 
+and pass this output to every neuron  
+in the next layer so we just need to propagate 
+these values to the entire network until we  
+get at the end for example here we have five 
+output values so you could consider that each  
+of these output values respond to the 
+probability of one of the five classes happening
+and so in a way you can think of this 
+as just being stacked logistic regressions
+and the second type of architecture that we'll 
+cover quickly here is a convolutional neural  
+network. So confidence are really the 
+core of a mini determining application nowadays  
+especially in computer vision but also in EEG 
+processing and the main interesting  
+trick behind convolutional neural networks 
+is that they use a convolution operation  
+which dramatically reduces the number of weights 
+that that you need to train and at the same time  
+has this nice translation in variance property 
+where if a pattern occurs somewhere in your input  
+it doesn't matter that happens at the beginning 
+or at the end your network should still be able to detect it 
+for example in a sleep EEG or sleep staging scenario
+if you have a sleep spindle at the beginning of your 30-second 
+window or at the end of your 30-second window
+your network should still be able to say that this is N2 stage
+so in a nutshell ConvNets rely on convolutional 
+variations that allow weight sharing and also  
+translation endurance so there's a bunch of 
+other types of layers or architectures that exist  
+and that we won't have time to cover today. So next component the loss function 
+So the loss function tells us how well the 
+neural network is performing at its task  
+for instance if you're doing a regression 
+task you might want to use something like  
+where you have the prediction of your neural 
+network, true target, and you're just trying to  
+minimize this difference across the m examples of 
+your dataset. for classification task s like what  
+we're going to do today we'll use cross entropy 
+loss so the cross entropy loss is again a value   
+that function that you want to minimize 
+and where you compare the true probability  
+of an example I for class j to the log probability 
+predicted by your network for the same example I
+and class j and then you sum this over all 
+the classes and all the examples in your  
+training there are other sorry for that there are 
+other loss functions that one could use uh but  
+again that we won't have time to cover today and 
+finally the last component is the learning rule  
+so as we just saw we want to minimize the value 
+of our loss function and this is this is what our  
+loss function might look like in 3D so we have 
+this this function that we don't know the the  
+exact shape of but we know that there's a minimum 
+either local or global somewhere in the function  
+and we want to find the right combination of 
+parameters so that we find the the smallest value  
+of this loss function so to do that we need to 
+know whether we need to increase or decrease each  
+value of each parameter of our neural network 
+and how do we do that. T here's an algorithm  
+called back propagation or back  prop for short 
+which is essentially just a simple application  
+of the chain rule to compute the derivative of the 
+loss with respect to each parameter in your entire  
+network and so now that we have we know in what 
+direction to push each weight we can take a step  
+in that direction which is represented by this 
+little arrow here and then measure the loss again  
+ hopefully it will have decreased and then 
+compute the gradient again and then apply  
+a new step and then go over and over and this 
+is what we call gradient descent and nowadays  
+the back propagation algorithm is 
+very conveniently handled by  
+packages such as pytorch and tensorflow so 
+you don't have to think as explicitly anymore  
+about backprop but it's still at the core of 
+deep learning so obviously there's also a lot of  
+concepts that I didn't have time to talk about 
+ if you're interested I really recommend the  
+deep learning book by Ian Goodfellow which is 
+an amazing resource to get started in the field
+so now your mission for today this tutorial as 
+you might have understood from this presentation  
+would be to train the convolutional 
+neural network to perform sleep staging  
+and hopefully try to improve on the 
+performance of the default model
+and so at this point all that I'll let Richard 
+introduce the jupyter notebook and help you set  
+up the tutorial if you have any questions 
+I'm happy maybe to answer them as they come on  
+the Q&A or in the chat but other than 
+that all that picture take a look now
+hey there um my computer just 
+broke and i cannot power it on um  
+so I'm sitting here now with my phone 
+in my hand and an ipad in front of me  
+on which i cannot join zoom but we can try to work through this anyway okay 
+so Hubert has prepared a jupyter notebook which 
+is also shared on colab. I'm not sure if that  
+has been shared in the chat already is it in the chat i have to share it  
+in the chat yes okay so that's a 
+link to a github repository where  
+you can find the tutorial to download or the 
+notebook to download and there is also a link  
+which says open this tutorial in google colab
+this is the convenient way for you to actually
+where's the link? The link 
+is in the chat right here
+or did you send it you better 
+just send it to the chat
+okay okay yeah okay okay so you got it okay 
+everybody got the link if you if you cannot  
+find the link do speak up. okay so if you go to 
+that github site there is there is a link which  
+says open this tutorial in google colab which 
+is convenient to actually run this without any  
+local installation so if you click. I have to tap 
+there you probably click if you click there the  
+remote processing environment called google colab pops up oh yeah right! that's perfect teamwork  
+yes can you follow that link
+let's just wait for Hubert. Okay perfect so this 
+is the notebook that Hubert has prepared for you  
+we're going to work with MNE-python and pytorch 
+and we're going to use a data set which is  
+called physionet or physionet sleep dataset so 
+they recorded I think 70 something participants 
+during sleep they recorded EEG and participants 
+came in for two sessions or two nights essentially  
+now as Hubert so i'm since my computer broke 
+i missed his presentation but i guess he  
+explained briefly which sleep state that there 
+are different sleep stages typically we  
+consider there's five of them one is wakefulness 
+one is REM sleep and then there's three more  
+which are non-REM sleep stages from light sleep 
+to deep sleep and the idea here is to train 
+your network to automatically and hopefully 
+correctly classify sleep stages of EEG data  
+a cool thing about this physionet 
+dataset is that have actually been  
+experts working on it looking at it and 
+they have done the classification for us  
+so this is perfect to feed into their network to 
+train it and later tests how well it performs so  
+we don't need to be sleep experts to get 
+this to work isn't that great. Okay so
+to make good use of that colab notebook you 
+should see you should click on that link at  
+yes exactly where it says copy
+to drive actually copy to drive
+no yes there this will create a copy is it 
+working actually i cannot see what's happening  
+on your screen because my my phone screen is so 
+small this will create a personal copy of that  
+notebook in your google drive and this also 
+means that you can now modify, now modify  
+things and they will get saved so this is great 
+next thing we want to do is we want to ensure  
+that hopefully we have access to a machine in 
+the google data center that is equipped with a  
+GPU, a graphic card essentially and to do 
+that we go to the menu click on run time and  
+change runtime type, and we 
+select GPU, I'm going to try to  
+to follow along on my ipad but it's going 
+to take a little bit longer and then click ok
+now hopefully we ended up on the machine with 
+a usable GPU which will help speed up certain  
+calculations in the process okay so let's maybe 
+briefly look over what we're gonna do here so the  
+first steps are actually not so interesting so 
+we're just gonna install all dependencies  
+meaning pytorch MNE matplotlib for 
+visualization pandas. so easy stuff.  if we scroll  
+through you yes you can i mean you can execute that drive now if you wish to  
+but you can also do that later i just want to 
+give you a brief overview so you don't have to  
+actually actively follow along now just i want to show you what's  
+what's to be discovered here in the 
+notebook so section one loading data  
+we're actually just going to load the first 30 
+subjects and for each subject we're going to  
+record and we're going to load 
+one recording i mentioned earlier there's two  
+recordings per subject and there is more subjects 
+than 30 but we don't have enough  
+time, especially while we're still experimenting 
+with the neural network so we restrict ourselves  
+to just 30 subjects and one recording per subject 
+for the time being so all this code you're seeing  
+here you don't really need to dive into that 
+because it's really just loading that physionnet
+data so it's very specific to that particular data 
+set but in the end if you can scroll a bit down  
+where we see that figure yes in the end 
+you should see a plot which looks like  
+this. this is just a visualization of the 
+raw data of the first data set we loaded  
+unfortunately inside this colab notebook it's 
+not interactive normally you would be able to  
+scroll left and right meaning through time 
+but this doesn't work here however what you   
+can see already is there is this bar at 
+the bottom and it has different colors  
+and these colors they encode for 
+different sleep stages that were actually  
+tagged as such by experts so this is what i 
+mentioned earlier experts have actually tagged  
+this dataset and classified this dataset 
+and just above the figure you can see sleep stage  
+w this means that the color or the current 
+section of data we're currently looking at  
+was classified as w is i 
+think wakefulness, right? being awake  
+okay let's move on to step 2. we need to pre-process the data in some way
+so what we would typically do with EEG data is 
+we would apply some kind of temporal filter  
+here in this example it's going to be a 
+low pass filter with a cut off at 30 HZ
+so this is seems to be good 
+enough for the time being and we plot  
+the spectrogram then to see the effects 
+of the filtering here we can see that  
+the frequency or the power drops as frequency 
+goes above 30 HZ so the filter was successful  
+but this is just to already prime 
+you for that this might be something you  
+could potentially consider to alter a bit to tune 
+a bit to see if and how it impacts performance  
+okay if we scroll further down. this is just 
+codes that essentially extracts so-called epochs  
+that is 30-second segments of the data that belong 
+to specific sleep stages so it would essentially  
+slice the data 30 seconds 30 seconds 30 seconds 
+30 seconds and so on and so forth and would always  
+use the experts tags that are part of the raw 
+data and would attach this tag to each individual  
+slice so this is going to be the data essentially 
+we're going to work with. Isn't that convenient and  
+we're also going to scale the data so it's going 
+to be a standard is it called a standard scalar  
+it's just a very very simple function that 
+ensures eventually we have a mean of zero  
+which helps the algorithms later to 
+work better to perform better yes so this was  
+really just preparations like really just 
+data loading and you know bringing it in
+now section number 3 we're going to divide 
+the data into train, validation and test datasets
+it's in its three and i want to emphasize 
+it's three it's not just training and tests  
+it's training validation and tests so
+here we want to ensure that  
+the data we eventually use as test 
+data to test how well our network  
+actually performs we want to ensure that this test 
+data has never been in touch with our classifier  
+for during training okay that's why we're 
+producing three data sets three splits. okay   
+just trying to just trying to follow 
+along on my ipad sorry that's oh yeah right.
+one thing we want to do is the 
+test dataset.  As test data set we're going to use  
+the first recording as i said there's typically 
+two recordings, we only use one anyway but  
+we're going to use the first recording of the 
+first 10 subjects that's going to be our test  
+dataset we're going to put that aside and we're 
+going to take the rest of the data and we're  
+going to split it into training and validation. I'm 
+going to work with that so after we've done that  
+we can have a look at how many actually 
+samples of the different classes do we  
+have and we can see there is a quite a 
+stark imbalance. So there's lots of samples for
+for N2 data and much fewer samples for 
+N1 labeled data so this could actually  
+this imbalance could pose a problem 
+later on we would like to avoid  
+running into this issue and therefore 
+we need to weight, need to apply some weight  
+to the data and this is what we're going 
+to do in the in the next code block  
+okay, that's tough and now finally finally we 
+can start to actually create a neural network
+so this network is essentially  
+based on what well not just based on i think 
+it's the exact same network as was proposed in  
+or published in this publication by I hope i'm pronouncing the name correctly  
+in 2018 this paper is quite interesting 
+and also helpful while you're doing the task  
+i guess. so i actually wanted to share with you 
+a link to the archive preprint however since  
+my computer crashed i don't have access to that 
+but i will later share it to to the chat  
+ because there they explain how they came up 
+with that specific network and how it performs etc  
+okay so we're trying to recreate 
+this network. I can see  
+the link to the paper has just been shared 
+to the chat so head over to the chats yes so  
+we are going to recreate this network so 
+there's lots of stuff going on there and
+Hubert may disagree but I would just 
+say for now you don't need to understand  
+all of what's going on there just take this for granted for now because  
+this is just a recreation of the network 
+that was proposed in this 2018 paper  
+okay so this is a convolutional network and 
+now we're going to actually in the next
+next step we're going to actually train 
+the network and see how well it performs  
+ i don't think there is so much there's 
+too much to say here because it is essentially  
+a bunch of codes but the interesting stuff actually 
+is then the output so you get a table  
+where you can see different performance 
+measures the loss so remember we're trying to  
+minimize the loss as we go along and 
+the visualization of the learning curves
+and lastly we want to look at yes 
+please unfold and scroll down a little bit  
+yes perfect this is what we were hoping for 
+a confusion matrix that actually tells us  
+in a straightforward fashion how well the the 
+network performs when classifying sleep data  
+and where it makes mistakes and incorrectly 
+labels certain data points or certain  
+certain data certain 
+epochs with the incorrect sleep stage  
+and at the very bottom we have a hypnogram. I 
+learned this term today i didn't know it before  
+but it's quite neat so on the x-axis you have 
+time and on the y-axis you actually have the  
+sleep stage it goes from a wakeful over light 
+sleep, deep sleep, deep sleep up to REM sleep and  
+the blue trace here shows how experts 
+label the data and the yellow trace or  
+is that yellow orange trace it shows how our 
+classifier or network actually classifies things
+yes so up until that point you 
+wouldn't even have to touch  
+much of anything except for the run button
+because all the code you're going to need to 
+generate what you saw here is already there
+however of course it would be of 
+advantage to actually play a bit with that stuff  
+so you may for example be interested 
+in looking into different effects of  
+of pre-processing on the classification 
+performance. so for example here we only applied  
+a 30Hz low pass filter what is 
+going to happen if you apply a let's say  
+10Hz low pass filter or if you apply a band 
+pass filter 5Hz high pass 10Hz low pass  
+who knows actually just as a hint they did 
+something like that in that 2018 paper so you  
+might want to have a look also there 
+is different optimizers you can choose  
+from again i prepared a link for you that 
+points it to the pytorch documentation and  
+since my computer's crashed. I don't 
+have that link anymore but I'm gonna  
+show you i'm gonna share it with 
+you later on so in this example here we  
+are using the and to bear please correct 
+me if i'm if i'm wrong the the Adam optimizer  
+i cannot find it right now here but 
+there is also other ways other optimizers so  
+maybe you can either pick a different optimize or 
+you can change some parameters you pass to Adam  
+and lastly there's different loss functions 
+available again and we share the link with you  
+later. so maybe different loss functions 
+have different outcomes etc so there's lots  
+of things to explore and if you 
+have any questions please do not hesitate to ask  
+i hope you're not totally confused now and i 
+hope the the colab notebook works for everyone
+and i guess that's it. let's get

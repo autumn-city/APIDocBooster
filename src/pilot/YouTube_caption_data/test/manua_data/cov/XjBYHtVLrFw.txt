@@ -1,0 +1,1483 @@
+Great. Thanks. Thanks.
+The floor is yours.
+Thank you for your thanks.
+Everyone can see me and hear me okay? Yes.
+Good.
+So I'm going to be presenting on
+on this manuscript recently published.
+I I'm just really glad Fritz's
+here as well because he
+really did most of the conceptualization,
+essentially all of the programing.
+And I think I'm really excited
+to have worked with him on this project
+and I'll be presenting
+on behalf of our group, which is a large
+collaboration of machine
+learning, scientists
+and geneticists and biologists.
+And I'll tell you a little bit
+about the history in a second,
+but I when this project started,
+I was a postdoc in parts of this lab,
+and it was six months into the COVID
+19 pandemic.
+And we had spent the first six months
+trying to sequence
+as many viral genomes as we could.
+And I have to
+apologize, because I have been infected
+with another Non-Covid virus.
+So I'm actually glad
+that we're not doing this in person.
+But you'll have to forgive me
+if I'm coughing or
+I had a really hoarse voice
+during the talk.
+But in in any event,
+when you sequence as many SARS-CoV-2
+genomes as we could, and I think that the
+you know, the finding from the first six
+months of the pandemic genetic
+analysis was sort of like there wasn't
+a lot of genetic variation, actually.
+And we didn't think that the virus
+was going to mutate
+to the extent that it did.
+And that was probably naive
+in retrospect.
+It was it was clearly wrong.
+In the fall of 2020,
+it sort of became clear how wrong it was.
+And what you're seeing here on the left
+is the relative frequency
+of the genotype of the b117 variants
+or the alpha variant
+that emerged in initially
+in the fall of 2020
+and then seem to have this
+exponential growth in the population
+and then essentially took over.
+And actually, in retrospect,
+this had happened earlier
+with another mutation D614G,
+but it also happened
+it started happening again and again.
+And here at right
+is just a plot of similar in South Africa.
+You can see the little frequency
+or the genotype frequency of B one, three,
+five one or the beta variant
+in South Africa, similar
+kind of thing in the fall of 2020,
+kind of emerged
+and then it increased in frequency
+and seemed to seem to take over.
+The uncertainty is larger on the right
+because we just had less sequencing data
+from South Africa at the time.
+But this story played out again and again
+and in fact kept playing out.
+And I think this is really
+when Fritz and I
+and another people in the team first met
+and started talking about this problem,
+like, how can we forecast
+that these variants are coming?
+How can we identify what's concerning
+and how can we forecast
+the dynamics that that that may play out
+now, it turns out that this
+pattern of rapid
+growth
+to fixation actually wasn't coincidental.
+But there's fundamental biology here,
+and it is a
+I wouldn't say it's a well-known result,
+but it's an established result
+in population genetics
+that when genotypes compete,
+the the relative
+fitness of the fitter
+the fitter genotype will outcompete
+the less fit genotype and the dynamics
+will follow a logistic growth curve
+and cure.
+I think this is I'm
+not sure what the primordial citation is,
+but it was established in Crowe
+in Kimura's book in the seventies.
+Actually this is from from Wikipedia.
+But if you just say, okay,
+there's two levels, there's P and Q,
+and what I want to know is
+what is the change in a meal frequency
+in a single generation
+in this delta p here?
+And I'm going to assume
+that the P genotype has fitness of W
+and that it is fitter than the average
+of the two genotypes in the population.
+We're going to define
+that as the selection coefficient s
+and this is approximately equal
+to the selection coefficient
+times, the frequency of P times
+the frequency of Q, which is just one
+minus P and there isn't anything.
+And, and when you, when
+you pass to the continuum limit here
+and you get a differential equation
+that describes logistic growth,
+there isn't anything
+profound about this, really,
+except to say that
+the genotypes compete with each other.
+There's only so much pie to go around
+and it's a multiplicative
+growth between generations.
+So you've got this logistic curve.
+And in fact,
+this is an empirical observation
+that is consistently observed
+over and over again.
+By the time we had much better sequencing
+data.
+This is the Delta variant passing
+through, taking over in our region
+in the spring of 2021,
+over a year ago. Now
+you can see this
+logistic growth played out across
+six nearby states or five nearby states,
+including Massachusetts.
+Just about everywhere you look,
+you see this logistic growth playing out.
+So this was the initial conversation
+that we started to have.
+I would say Fritz
+and I started to have along
+with other people in the team,
+and it was around this time
+that we were having the conversation
+because the
+the team that had created pyro
+initially developed it over a
+three of them,
+Fritz and Martin Jacobi and Eli Bingham
+had actually come to the Brown Institute
+as Machine Learning Fellows,
+and so we just started to talk with them.
+Are there ways that we could apply
+pyro to viral genetics
+and really kind of focused in
+on this question of,
+you know, what's driving this logistic
+growth?
+Is this something that we can model?
+The other part of this that went into
+the conversation is that when you see
+these variants emerge
+and they've emerged again and again,
+the patterns of mutation
+are actually shared between them.
+So here's a mutation like D614g.
+It's shared by every variant of concern
+that's ever emerged.
+Here's N501y.
+This is shared
+by a lot of variants of concern.
+So there are stereotypical patterns.
+T For 70 k these mutations
+that are recurrent
+and appear to be deriving
+the fitness advantage of strains.
+So we ask the question,
+can we design a model
+where we could actually work out
+which mutations were driving this?
+And the approach, the old approach
+that we had been using in viral genetics
+is basically first,
+build a phylogenetic tree
+of all the sequences and then
+try to use things like the
+the coalescing
+and or other kind of aspects
+of the evolutionary process
+to understand things like the size
+of the population
+or the selection of the population.
+And as the number of viral genomes
+for SARS-CoV-2 was passing the hundreds
+of thousands and then the millions,
+it became clear that this was going
+to be completely a nonstarter.
+So Fritz then came one day and said,
+I have this idea
+of how to overcome this problem,
+and we
+we can take the whole database, cluster
+it into lineages and
+look at the relative
+change in frequency of those lineages
+all across
+space and across time and
+said, okay, you know, that sounds great.
+And can we turn this
+into a regression problem
+where actually
+we're representing each mutation
+or each lineage
+as a combination of the mutations
+that make it up and then
+Fritz kind of formulated this, this model.
+And, and well, to be true, to be fair,
+the regression idea was Jacobs.
+So it was really a synthesis of scientists
+and computer scientists.
+Yeah, it was.
+It was a good
+it was a good conversation. But
+yeah, so
+we came together
+and but the implementation here
+was, was definitely Fritz's
+and the the
+I think the incredible thing is that
+this is exactly the kind of model
+that pyro was was built for.
+And we'll
+talk more about that in a second.
+So here's the model
+and the priors are on the right
+and the guts of the model is on the left.
+But the priors were basically chosen
+to be uninformative,
+except we did a little bit of work
+to define this
+regularization parameter
+for the per mutation
+fitness effects that that was chosen
+through a through a dedicated analysis,
+but that the critical parts of the model
+are here.
+And the basic idea is to build
+this large hierarchical Bayesian
+regression model, where the observed
+values are the absolute case counts
+at a given time in a given place
+for a given cluster.
+And this is a vectored observation
+where there's there's a vector
+in this case, there's 3000 clusters,
+and that is modeled as being
+multi nominal where the probability
+of being of a given
+vector of lineages
+has some initial intercept
+plus a region specific
+and strain specific growth rate
+that dictates
+the probability
+of observing the strain over time.
+The key feature of this model
+is that the strain specific
+growth rate is a linear combination
+of the features or the mutations
+that comprise that lineage, and it's a
+I think there are 3000
+clusters or strains
+and there are roughly
+2000 features.
+So it's a it's a very large, high
+dimensional hierarchical model.
+And this is about.
+It's just a quick question.
+So am I right that that implies
+that the fitness effects of these mutation
+features are independent of each other?
+And is that like
+biologically what happens?
+So exactly that is what it implies.
+I think to a first approximation, it's
+likely very good.
+But we're also seeing that
+in in many places that's
+probably not completely true.
+In other words,
+there are mutations
+that seem to confer a fitness advantage,
+things like the mutation E484K,
+for example,
+that tend not to arise on
+on all backgrounds.
+So there does seem to be some
+basis for interaction
+between the mutations
+and a biological basis for interaction
+if you call epistaxis
+in this language.
+But I think as a first approximation,
+this is a reasonably simple model
+that does seem to capture
+the dynamics of
+of the different strains over time.
+So I think it's a modeling assumption.
+It's,
+it's a reasonable and a starting point.
+But but when you really get down to it's
+probably violated in practice.
+Cool.
+That's totally reasonable. Great. Yeah.
+So feel free as questions come up.
+Feel free to go ahead and shout them out.
+This, it's really great
+to have Fritz here as well
+because this is a really, I would say
+multidisciplinary project and
+and so the questions can come from,
+I say, various
+biological or machine learning directions
+and we can just kind of talk
+about the decisions
+we made and potential next steps.
+But so this is for me where I just was
+completely blown away by bye
+bye pyros ability.
+I mean, we,
+we would you know, try to write these or
+just just try to implement much, much
+smaller, multi nominal logistic regression
+models in, in, say,
+and these things just
+they just wouldn't wouldn't run.
+And France's
+implementation of this model in pyro
+was so efficient and
+it ran in 11 minutes
+and was able to fit this model.
+So I think for for those of you
+who are not familiar with pyro
+and that I guess is my
+I would suspect many of you
+I'm probably not the best person to
+to to explain pyro to you,
+but it's a probabilistic
+programing language that is designed to
+build and implement
+probabilistic models
+like Bayesian regression models.
+And the inference,
+the estimation of the posterior
+can be done by many ways.
+But pyro is particularly good
+at implementing
+variational inference,
+which is a way of a rather
+than sampling
+from the posterior distribution.
+Like most MCM C
+approaches, pyro or variational inference
+actually exactly solves
+for an approximate distribution
+for the posterior
+in in the form of minimizing the distance
+using that call divergence
+between this guide distribution
+and the true posterior
+and pyro is able to do
+this really efficiently
+because it is built on pytorch
+and takes advantage of the
+efficient computational
+abilities of of PyTorch, in particular,
+its automatic differentiation abilities
+and its efficient data structures.
+So I think really
+the one of the key advances
+is just being able to formulate this model
+and perform inference
+on such a large dataset
+with such a large high dimensional model,
+but to yield something that we think
+biologically provides a lot of insight.
+So here are the results of the model.
+What you have here on the x
+axis is the relative fitness.
+And and again,
+this is this these beta sub s
+these are the features, specific fitness
+of the individual amino acid substitutions
+that make up a variant.
+And on the Y axis is some measure
+of statistical significance.
+So this is a volcano plot
+and things that we think are
+highly likely to have a large effect on
+fitness are things that are in the top
+right quadrant.
+And the color of the mutations here
+corresponds to the different genes
+or open reading frames
+that these mutations are found in.
+I think the first thing to note
+is that most of these hits are read
+and read in this case
+corresponds to the spike gene.
+We're going to this
+a little more in a second, but
+the first
+way to kind of aggregate this data
+and understand what it's telling us
+about the dynamics of the pandemic,
+it is is to aggregate the mutations
+into the lineages that we observe
+in the population
+and to assign based on this linear
+combination of mutations,
+specific coefficients
+of fitness for each lineage.
+And this plot is a little complicated,
+so I'm going to walk you through it.
+But on the x axis
+you have the date that the lineage
+first emerged in the population,
+the birthday of lineage, and on the y axis
+you have the relative
+fitness of the lineage.
+Each dot corresponds
+to a particular lineage that was observed
+in the population and the size of the dot
+corresponds to the total number of cases
+that were estimated in the population.
+The color,
+the red are the variants of concern
+and the the green or this former title
+is variant of of interest.
+But almost everything
+now is called the variant of concern.
+But I think several things
+are known about this about this plot.
+First is that it was a relatively sort
+of boring pandemic up
+until the fall of 2020, where
+the relative fitness of lineages was
+pretty consistent.
+And then the pandemic seemed to go through
+this period of relatively rapid
+evolution with the emergence
+of multiple variants of concern,
+the beta and the variant, the alpha
+variant, the delta variant, and then Delta
+fractured into sub lineages
+and the pandemic after the spring of 2021
+went to this relatively quiescent period
+again where where
+most of the descendant lineages were Delta
+and the fitness was relatively consistent.
+And going back to the question
+about whether the mutations are
+are independent, we actually think that
+that this is an example of the of the non
+independence of mutations.
+In other words,
+there's something about the Delta
+background that is just not
+suitable or does not accommodate,
+have a large capacity
+for the addition of fitness
+enhancing mutations.
+Now, that's somewhat speculative,
+but I think there are
+there are multiple examples
+where we're seeing that effect.
+We first actually take a. Guess
+very quickly.
+What is the Y-axis?
+Sorry, I think I didn't get that.
+Our Y-axis is, is the growth rate
+of fitness
+of the variants
+when we first fit.
+The model is actually kind of
+around around here
+was in in the summer of 2021.
+And I thought
+I think many people thought that
+that this was it, that there had been
+this period of rapid evolution.
+And then we had reached this plateau.
+The virus delta was kind
+of the pinnacle of fitness.
+And then, of course,
+Thanksgiving of 2021, everything changed
+and completely out of left field
+was this incredible
+quantum leap in growth rate
+due to the Macron variant.
+And I think, you know,
+one of the things that that this model did
+really, really accurately was forecast
+the future dominance of a two,
+which was at the time
+an obscure sub lineage of being one
+that no one had ever heard of.
+But the models suggested that that view
+was actually quite a bit
+better than the VA one,
+and that that turned out to be accurate
+several months into advance.
+In advance.
+But here is that volcano
+plot laid out across the viral genome.
+And I think this is where
+the biological insights
+of the model really shines through
+across the x axis here.
+This is the genome space of the virus.
+So these are
+the actual genes in the virus.
+And then here is the estimate
+of relative fitness
+for the individual mutational coefficients
+in the model.
+What you can see
+is that there are actually clusters
+or peaks of fitness in the virus
+where mutations
+in these regions seem to have
+an outsized effect on the growth rate.
+And the mutations in these regions
+seem to be the ones at position for a four
+and five or one
+T for seven eight.
+These are the positions that really seem
+to be associated
+with the emergence
+of these variants of concern within spike
+models suggested that there were three
+major places.
+One was this receptor binding domain.
+The interface of spike in Ace2,
+the other was this n-terminal domain.
+And then a third region
+was this fear and cleavage site,
+which is also a hotspot of evolution.
+But the advantage of having a genome wide
+model is that it allowed us
+to ask in an agnostic sense.
+I mean,
+I think the whole world
+was focusing on Spike,
+but it allowed us to ask
+an enigmatic sense
+what outside of Spike
+is also driving fitness.
+And that's where I think
+the results really surprised us.
+In particular, there's this hotspot
+in the nucleocapsid that seemed
+to be a strong peak of fitness,
+and of course he did it.
+Jennifer Doudna's group
+last year had had a paper in Science
+at around the same time that we saw this
+result showing that if you inserted
+these mutational changes into this
+viral particle, you could actually enhance
+the packaging of the virus
+and increase fitness that way.
+So the hits in Spike are relatively
+well characterized,
+the hits in, and I think we have some idea
+what's going on
+there
+seem to be some strong hits in our Korea
+and then there were a series of other hits
+here in this large polypeptide or one A
+that really represent, I would say,
+completely unexplored biology.
+And from the viral genetics perspective,
+I think this is really a goldmine to start
+thinking about what changes
+outside of Spike
+mechanistically drive fitness.
+We then ask the question,
+what is it about these mutations
+that enhance viral infectivity
+or that enhance fitness?
+And in particular,
+are these mutations just making the virus
+more infectious per se,
+which is our is the virus
+just better able to replicate
+and get inside cells?
+Jerry Lewis at this lab did an experiment
+where they inserted some of these changes
+into pseudovirus particles
+and found that some like
+and follow one way
+did in fact enhance infectivity,
+but others like E484k for 70 K,
+these are some of the top hits.
+They actually didn't
+increase infectivity per se.
+We took advantage of
+data from Jessie Blue Lab to Bloom's
+lab that had
+measured the binding
+to a large panel of antibodies
+and aggregated this data into an escape
+calculator to predict the binding
+of mutant virus
+to the receptor binding domain.
+And we asked is predicted
+binding here on the y x axis
+and all associated
+with the apparent fitness
+that's attributed to the receptor
+binding domain portion of the virus
+via the pioneer model
+and we were surprised actually
+to see this strong correlation
+with the Omicron variants
+on the top, right?
+Some of the earlier variants on the bottom
+left suggesting that a lot of this growth
+rate advantage could be attributable
+at least within spike
+to the loss of binding of antibodies
+that would neutralize the virus.
+And we were able to break this out over
+time.
+This is analogous just to that Martin led.
+And I think it really explains
+kind of what's going on in the pandemic.
+We're
+looking at
+a fitness specific effects in SE here.
+Over time.
+You see this initial stability of fitness,
+this rapid increase in fitness,
+this apparent plateau,
+and then this explosion of fitness
+out of left
+field with the Omicron variants.
+And after Thanksgiving of 2021,
+within RBD, we see the same pattern.
+But outside of Spike,
+we really don't see this
+addition of fitness effects
+outside of what it really told us
+is that there was a kind of phase
+transition
+in the pandemic, that there was enough
+immunity in the population,
+that transmission or fitness in the
+population was now dominated by a virus.
+His ability to evade the immune system
+rather than its ability
+to infect cells, infect naive hosts.
+So I think there's a lot of other
+data points
+that kind of support this idea.
+But but but this genome wide, somewhat
+agnostic approach to modeling fitness,
+I think offered a really compelling way,
+way to to see this.
+We asked a related question,
+which is, you know,
+is there heterogeneity
+within a branch of the phylogenetic tree
+that is looking within clusters?
+You know, for example, Delta or b161 7.2
+actually has a collection of some lineages
+associated with it.
+So is there variability
+in the relative fitness of those clusters?
+And what we found was,
+was actually really striking,
+which is that some lineages like Delta
+had a relatively low variability
+set of sudden lineages
+whose relative fitness was all clustered
+around consistent values.
+In contrast, there were some lineages
+like the precursor to two on the crown,
+the speed at 1.1 lineage that seemed
+to have a long tail of fitness,
+high variability in the relative fitness
+of their descended sub lineages.
+It speaks to the fact that
+we think potentially some lineages
+are more likely to permit
+variants of concern
+or highly fit some lineages than others.
+But it also gets back to this question
+of epistemic size or genetic interaction
+between variants that that seems to be
+present in various ways in in the data.
+So we actually continue to run pyro
+or sorry, PI or not,
+I should say we chose
+we weren't sure what to call this
+pyre and all was kind of a joke
+at the time.
+But, but we sort of stuck with it.
+And I think one thing
+I do want to make clear is
+that we're not actually modeling or not.
+We thought maybe that we were
+when we started the project.
+But it's it's actually clear that
+that this is not
+modeling a viruses inherent ability
+to infect
+naive population of hosts
+which is the definition of are not.
+This is really measuring relative fitness
+or another way to say that would be growth
+rate in the population.
+But nonetheless
+we couldn't come up with a better name
+and and so are not stuck
+but we can here to run
+this model
+here is a run from earlier in the week and
+on the
+x axis here is the relative fitness.
+And on the y axis is just the
+the estimated number of cases.
+And you can see this,
+these are the all across lineages, bay one
+bar two is as yet quantum or
+trend fit and then bay one and here is
+is a four or five lineage that's that's
+now causing waves across the world,
+including in the US.
+And then here are the, the mutational
+and the fitness
+of the mutation specific coefficients.
+And it's actually largely consistent
+with now over 10 million genomes.
+It still runs
+relatively quickly and highlights
+the fact that
+that a small number of mutations
+mutational changes within spike continues
+to to drive the pandemic.
+In the last
+I would say I want to make sure
+we have time for questions and discussion
+and just looking at the chart.
+Okay. Nothing and no one likes the pun.
+Okay, great.
+Thank you.
+And so no questions in the chat.
+So in the last 10 minutes,
+I kind of want to talk about
+Martin's model a little bit
+and just kind of tease that and then just
+give a bit of of perspective and context.
+So I think the one
+kind of major limitation of PI
+or not that that
+that I, I think we really came across
+is that the uncertainties
+for the coefficients
+are are probably unrealistically small.
+We think they're useful
+for kind of ranking
+from a from a standpoint
+of experimental characterization,
+which we have stronger confidence then
+in than others.
+But but to actually extract a meaningful,
+credible interval or confidence
+interval
+on these uncertainties that describes
+the real uncertainty around their effect.
+I think the model it doesn't doesn't
+do do that so well
+a related issue is that
+plot is noisy and this is somewhat
+by design in that
+it really is a question of regularization.
+And the more we regularized,
+the cleaner the Manhattan plot gets.
+But we do.
+There's a tradeoff.
+And we do lose
+some of the fitting of the most recent
+and potentially most significant dynamics
+in in the pandemic.
+A related issue, and I'm not sure
+this is a feature, a bug or neutral,
+but some hints we actually just can't
+figure out what they're doing.
+So the the hit that seems to have
+the biggest effect is
+is T for 70 K mutation, which
+doesn't seem to enhance
+escape from antibodies
+and it doesn't seem to
+in fact increase infectivity per say.
+So it may just be kind of along
+for the ride or something that serves
+as a capacitor for other mutations
+and allows them to stabilize.
+Again, getting to this
+this issue of interactions between
+between mutations.
+So around the time
+that we put the first version
+of this manuscript on by archive a little,
+we're after
+it is group led
+from John Barton's
+lab and Brian Lee was the first author
+published a similar analysis or at least
+philosophically similar analysis.
+And what they did,
+and I think it's a really beautiful
+approach, is they applied
+a diffusion approximation
+to this branching process that described
+the relative fitness of genotypes
+in the population.
+And they were able to know this
+kind of this relationship between
+diffusion physical diffusion processes
+and mathematical diffusion processes
+has has actually been in the genetic
+literature for literature for a long time,
+dating back to
+Cosmograph and
+really beginning with Saul Wright,
+who worked on this in the forties,
+the person who's worked
+the most on this is as Jack and he was a
+Japanese scientist, Moto Kimura
+and had had worked out
+that you can actually use diffusion
+processes really effectively
+to model changes in the real frequency
+in the sixties and seventies.
+So what,
+what Lee and a part of their colleagues
+did is they kind of resuscitated
+this old literature and showed
+that you could use this for inference
+because you could
+provide a closed form
+expression for the likelihood of given
+a little frequency changes over time
+and they used this
+to do something quite similar to
+to this hierarchical
+and philosophically similar
+anyway to to the pioneer model.
+So. MARTIN
+And I think this is really cool,
+and I think you might want to
+I would consider inviting Martin
+to talk more about this,
+but I would definitely take a look
+at this paper,
+a preprint from Martin
+that Fritz and I also collaborated on.
+Martin said, Well, that's a really cool
+idea, but actually the inference
+doesn't make a ton of sense.
+And Martin is very interested
+in skilled at applying Bayesian methods
+to these high dimensional regression
+problems,
+and he's developed some tools
+that can apply Bayesian variable selection
+when there's a likelihood that
+can be
+easily manipulated.
+And the
+comparison of different
+essentially
+evidence is under the likelihood
+that you can use that to
+identify
+the variables in the model
+that are the the most predictive, so
+that you can use this
+as a regression subset selection tool
+as well as to model the,
+the relative effect
+of the different wheels.
+So the previous model,
+which is what Martin formulated,
+has this inclusion variable,
+which is the posterior
+inclusion probability,
+and that along with diffusion
+based
+likelihood has been incredibly powerful.
+The result is that when you apply
+the Lee and Barton
+approach, which is performs
+map estimation, there's this tradeoff
+which is a fundamental limitation
+of their approach.
+You can either
+set this regularization parameter Tao
+at a relatively small value
+and in that case you can over here
+you can accurately capture
+the growth rate in the population
+of the different lineages.
+With accuracy,
+however, you get an incredibly noisy
+Manhattan plot or you end up assigning
+the relative fitness to alleles that
+that probably don't have an effect.
+In contrast, using math, you
+can set the regularization parameter
+such that you get a relatively sparse
+Manhattan plot.
+However, when you do this,
+you get growth rates
+at the lineage level
+that don't accurately capture
+and now makes them with different lineages
+in the population.
+And in fact, this is what we desire
+in a biological sense,
+because biologically we think that most
+illegal's are kind of along for the ride.
+There is this idea in biology
+that evolution is neutral
+for most illegals, or nearly neutral.
+And so the ability to apply
+efficient variable subset selection
+brings in
+this important modeling assumption,
+which is that
+most illegals are not contributing
+the fitness of the strain or that the
+that the coefficient of most illegals
+is is zero.
+Now they are not does do this
+to to some extent
+through the regularizing
+and sparsity
+inducing effect of the applause prior.
+But the the ability
+to exploit the Gaussian likelihood and,
+and do this in an efficient
+calculation of a of a principle Bayesian
+model is a really cool
+and unique feature of blacks.
+So I would just highlight that,
+which I think
+was really nicely done by by.
+MARTIN And I think
+just in the last couple of minutes,
+I want to highlight that
+ultimately where we are now is
+both PI or not be vast and map are telling
+the same things about the pandemic.
+They're telling us that mutations
+in spike predominantly
+but also in key regions outside of spike,
+consistently
+unexplored biology
+are driving the fitness of this virus.
+The major effect seems to be
+this phase change in the pandemic,
+where immune escape variants
+that likely reduce or in many cases
+eliminate antibody binding by antibodies
+that have been blocked
+by either vaccination or prior infection.
+Excuse me
+are the major driving effect on fitness
+and some lineages
+have more plasticity than others
+or are better able
+to amid highly transmissible sun lineages.
+And these are places where we should work
+to understand the biology
+of the lineages capacity to omit
+highly fit child lineages.
+And again,
+these effects together
+have created this phase change
+for the pandemic.
+So overall, I think the key biological
+method is that we have
+new and that new tools to understand
+the mutation specific effects on fitness.
+They largely agree
+at least in a qualitative sense,
+of major signals that are relatively
+well characterized and spike,
+but also important signals
+that we need to characterize
+outside of the spike.
+And I am kind of coughing now,
+so I think I'm just going to wrap up.
+But the bigger picture is that in genetics
+we've focused so much on
+genes
+that underlie the basis of phenotypes,
+but in infectious disease,
+there's two genotypes,
+there's the host genotype
+and the microbial genotype.
+But I think with the combination
+of the amount
+of sequencing and viral genetics
+that's just exploded,
+this really offers
+an opportunity to characterize the
+microbial determinants
+of distinct phenotypes
+and Bayesian hierarchical models
+that represent
+strains, specific phenotypes
+or other infectious phenotypes.
+As a collection of the mutations
+that comprise a given strain are,
+I think, a very powerful way
+to dissect some of these effects.
+So with that,
+I apologize for all the coughing.
+I am going to stop there and I will
+leave time for some questions
+and discussions.
+To have questions regarding the time.
+So how far in advance
+can you predict the fitness or how?
+When you talk about prediction,
+what is actually the prediction or
+you know, in terms
+of the regression,
+how far in advance can you tell?
+Right. Yeah.
+I mean, I think that
+depends what you want to know. So
+one limitation of the model is that
+it requires the mutation to be present
+in a region before it's
+included in the forecasting.
+So if a mutation
+has emerged in South Africa,
+the model isn't going to predict,
+even if it knows that
+the fitness of that model or that variant
+or that mutation is higher than other
+circulating variants.
+The model isn't going to predict
+that that variant will dominate
+because it doesn't know that
+that variant will come here.
+The model doesn't have a mutation
+or it doesn't have
+a geographic component
+where there's exchange between places.
+So I think that with that limitation,
+once a variant is present,
+the forecasts tend to be quite good,
+I would say, for a month or two in advance
+or in the future.
+But what the model
+can't do is forecast the
+emergence of a completely new variant
+that is far more transmissible
+than what is currently circulating.
+So, you know, when there was Delta,
+the model couldn't forecast that Omicron
+was going to emerge and and and take over.
+That seems to be happening
+every six months or so,
+at least over the last
+year or two.
+One thing that the model can do
+is it could assign a fitness
+to a hypothetical lineage.
+So we could say that
+it showed a lineage emerged
+that looked like the A5
+but also had mutations
+in, say, r 346 K
+that would have this much fitness
+advantage over the existing one.
+And so we can score lineages
+as they emerge
+and that's useful.
+And then
+the model can also
+track the dynamics of those lineages
+and improve the forecast over time.
+In the in the paper, we,
+we looked to compare the
+the performance of this hierarchical model
+incorporating mutations
+to a non hierarchical model
+that didn't have mutations.
+And we found that
+the mutations added something.
+And I think this is,
+this is one of the coolest things
+in my view about this approach,
+which is that it avoids the complexity
+of full phylogenetic inference,
+but it still captures
+the dependencies between strains,
+and it does it in a way that improves
+modeling accuracy and also forecasting.
+But it does have limitations.
+And I think, you know, it
+definitely doesn't tell us, like you know,
+what's going to be happening
+in six months from now.
+Yeah.
+Have a couple of very naive questions.
+The first one is,
+I think said this way at the beginning,
+but I can't remember the the features
+you're using in the regression.
+Are those single snips or
+are those dimensions result
+of dimensionality reduction kind of thing?
+First.
+That's a great question.
+I don't know if
+I said completely explain. So
+it's there's a a clustering to
+reduce the dimensionality of the dataset
+and then there the feature matrix as
+the proportion of lineages
+that have that amino acid substitution.
+So it's almost binary
+like the mutation
+is either in the lineage or not,
+but it's actually
+you can have between zero and one values.
+I see.
+So it's like is
+it is a single nucleotide kind of thing,
+but it's based
+not on kind of a standard snip variation
+calling, it's based on first
+clustering into lineages
+and then finding a thing
+that's indicative of that lineage.
+That's interesting.
+Yeah. And that one thing to say
+is that we're only modeling
+the amino acid substitutions. So
+the if they're
+synonymous snips
+that wouldn't inducing amino acid change.
+They're not models. Mm hmm. Mm hmm.
+So I guess part of the reason
+I was thinking about that is I'm at first,
+I should say, this is lovely.
+I really I really like this work.
+It's very cool.
+And I'm kind of thinking like,
+can you do something like what you did
+with, you know, if you're in a situation
+where you have a lot less data.
+So I have some collaborators at Stanford
+who are genetic ecologists.
+They do these experiments where they like,
+you know, they'll sequence Arabidopsis
+around the world and, you know, they build
+a big data set of genomes for them.
+But it's much smaller than what you have
+and it feels like,
+you know, you're working at the like,
+how do we deal with this massive data?
+And but the Bayesian stuff should also
+help with kind of relatively smaller data.
+And and so I guess, okay, one
+question is just like, you know, will that
+is that true? Will it work?
+Another question is sort of like,
+is it possible in that very first phase
+to use
+maybe genomes from wider kind of,
+you know, less related
+species that aren't in lineages
+to just do some unsupervised
+representation,
+learning to pull out some features
+that'll be useful
+to reduce the dimensionality.
+Yeah.
+So I mean I think all great questions and
+I would say like for both of them I,
+I don't know
+and I'm very curious to hear Francis.
+That's, but, but I mean, I think that
+we do wonder.
+But so, I mean, I think this is such
+a high dimensional problem
+that that it
+you know, it probably does require
+an extraordinary amount of data.
+And I think, you know, we're in a unique
+situation with SARS-CoV-2 where we have
+you know, we had millions of genomes
+and now we have over 10 million genomes.
+But there are hundreds of thousands
+of influenza genomes, for example.
+And you know,
+could this be applied to influenza?
+Could you?
+Course, if I the features
+if you needed to, I think yes.
+I mean, I think that this is what to me
+was so exciting about about all of this,
+which is that
+I think the idea of hierarchical models
+for genetics
+is so useful because it it really speaks
+to the biology of of genomes.
+There are
+there is a hierarchical structure to it.
+There's the genome,
+but there are also the chromosomes
+and the genes and the mutations.
+And so and, you know, for flu,
+there's like the segments.
+So maybe you can't get down
+to the amino acid level
+like you can four stars, but probably
+you could identify a segment of influenza
+that is associated with enhanced fitness.
+And it's not just fitness.
+I mean, it could be other properties like,
+you know, virulence.
+So I think the innovation here is
+kind of like the hierarchical nature
+of the modeling
+and the ability to actually formulate
+these models in a programing language.
+Now, I, I think that, you know, pyro
+is not easy to use for a novice.
+I certainly couldn't have done what
+Fritz did, but I think it's learnable.
+Like, I learned
+a fair
+amount about how to use pyro
+during this project,
+and I definitely would use it
+and will use it in the future
+because although the learning curve
+is steep, it's incredibly powerful.
+And I think this kind of modeling approach
+has many applications
+that we haven't scratched the surface
+of because it's been difficult
+to implement them,
+you know, to to implement these models.
+And so I think the idea of probabilistic
+programing
+languages
+for this purpose has incredible legs.
+And then if,
+you know, I think that the way that pyro
+was built, the ability to scale to these
+really datasets and to use variational
+inference can be really, really viable.
+So I thought that that for me
+was the best part of this project
+was just working with friends,
+kind of learning about some of the stuff.
+And then it really was a
+multidisciplinary collaboration and so on.
+Learning Experience.
+The second question
+that you asked
+was about
+taking kind of a step back,
+I think, in the phylogenetic tree
+and saying, can we can
+we look at different species or different
+different types of not within SARS-CoV-2
+but across different viruses
+and pull out features?
+Yeah, I think that that that also
+has incredible potential.
+It probably involves different
+kind of modeling approaches and different.
+But I think that yeah, that's it's.
+Really, it's really a question
+kind of about
+generalization,
+you know,
+not knowing much about the biology,
+my mental model is that like,
+you know, even in
+say very different viruses, there are some
+conserved parts
+that will have similar effects and so,
+you know,
+if you could do some unsupervised
+pre-training kind of thing to just,
+you know,
+look at all of the genomes that you've got
+that have variation
+and compress them down to features
+that are likely to be features,
+you know, of of interest, basically,
+because there's so much does it does
+equal a bit disequilibrium, linkage.
+There's a lot of compression
+that you should be able to get rid of
+by looking at, you know, stuff.
+And that might
+kind of help reduce
+the data needs because,
+you know, once you've done that,
+you might need less data to rule out,
+you know, some things or,
+you know, some things that are correlated.
+I have no idea.
+But it's just something I've been kind of
+pondering separately is like,
+how can we help the ecologists
+by doing something
+with like a lot of unrelated genome data?
+Yeah, I think that's a great point.
+I don't know.
+We started talking with Debris
+Marks's group a bit.
+They kind of do something similar
+where they
+they build these probabilistic
+generative models that take advantage of
+high dimensional correlations
+between amino acid substitutions.
+And they use that to learn
+kind of basic
+principles of protein design and
+there are
+some incredible stuff
+that comes out of that.
+And these correlations also have,
+you know,
+largely structural implications because
+when mutations are correlated,
+it's often
+because a mutation in one position
+makes it hard to maintain
+the original amino
+acid at the other position
+because they're there in physical contact.
+And so in that kind of
+spatial structure is incredibly useful,
+but it's, I think, unexplored
+and really exciting territory,
+certainly kind of out of my area of,
+of, of knowledge.
+But I think you're
+you're really onto something.
+Yeah.
+One of the difficulties
+in modeling of this thesis
+in this project was that
+we had, you know, kind of a lot of data,
+but it was very
+it was like side data.
+It was like we were we were
+trying to do a
+G was on the meta data,
+like the time fields
+of the genomes that were sampled.
+And it was then we had to first fit
+a logistic growth model and then we could
+infer the growth coefficients
+and then we could do
+make a manhattan plot on top of that.
+So it was like this stack.
+And so it ended up that
+we were pulling out a lot of information
+from kind of very low quality,
+large volume data.
+And so I think like
+we just have barely enough information
+to fit a linear additive model.
+And I think these these kind
+of like style models that could surpass
+if I give as fast prior on which pairwise
+coefficients were important,
+I think that might have helped us out
+like there was a level of complexity
+we really couldn't afford
+in terms of like labor costs.
+You know.
+That's also really interesting
+because it suggests that
+having,
+you know, more kinds of observations,
+giving you more predictors
+like you basically only had
+how much was there in the population.
+And I guess like if you also had like
+how much did this cause sneezing verses,
+you know, loss of taste
+and just all of these things
+that would give you a lot more signal
+to write, right?
+We had basically like this
+virtual phenotype.
+Our phenotype was the timestamp
+from which we inserted the growth rate.
+Right.
+And so it was really I think
+it was really unusual, but to try to
+to even have the audacity to say like, oh,
+we can pull some signal out of there
+right? I think a lot of people would have
+if given up on the data.
+If you had access
+to full like full
+medical records,
+I guess you could in principle
+like add a bunch more features
+to each of these observations.
+But I guess in practice
+that's one of these like, you know,
+terrible things that happens
+with medical data as it all gets
+separated
+and is impossible to piece back together.
+Yeah, you'd need orders of magnitude
+less data.
+We had real phenotypes here.
+We had
+ten to the six genomes
+or ten to the ten to seventh genomes.
+And I think we needed so many
+because it's so little
+like with, you know,
+three orders of magnitude less data.
+If we had phenotype tags, we could
+we could do the same regression.
+Mm hmm.
+Yeah, that's really interesting.
+And and I mean, it's cool for the virus
+case, but also for the ecologists.
+That's what they tend to have
+is more like phenotype information.
+So that's really relevant.
+Cool.
+I should run, but this was great. And,
+you know.
+Good to meet you, Jacob. Awesome to see.
+Nicole. Nice to meet you guys.
+Thanks so much.
+All right.
+Thank you. Bye bye.

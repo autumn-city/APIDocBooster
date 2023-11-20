@@ -1,0 +1,288 @@
+>> So now we want to go ahead
+and change the output text.
+And I mentioned that there
+were some complications here.
+Let me show you.
+So I've gone
+to spot.pcc.edu/~mgoodman/
+developer.android.com.
+And I'm going to
+search for fragment.
+And then under guides
+you'll see fragments.
+So I'm going to click on that.
+And then if you scroll down
+to here you'll see a fragment
+life cycle.
+So last week we talked about
+the activity life cycle
+and everything from when
+the activity is created,
+when it get started, when
+it gets zoomed, the cost
+and destroyed and
+all that other stuff.
+And fragments have
+a life cycle too.
+And the bottom line here is that
+just creating a new instance
+of the fragment object
+just puts it
+at the very beginning
+of this life cycle.
+And the view that's part
+of the fragment isn't
+actually available
+until you get all the way
+down here, onCreateView.
+And so if I create a new
+instance on the output fragment
+and then try to access
+the TextViews for the amps
+and watts, they don't
+actually exist yet.
+So let's go ahead and
+take a look at our code.
+So here is where I create
+the new output fragment.
+The view doesn't exist yet so I
+can't actually get the amp text
+and the ohm text.
+What I need to do somehow is
+I need to wait until somewhere
+in here, some point here
+in the activity life cycle.
+And then those views will
+exist and I can set the text.
+So here's what I'm going to do.
+At this point I know volts and
+ohms, I'm going to tell volts
+and ohms to the output fragment.
+And then when the output
+fragment it's the right point
+in the life cycle, then the
+output fragment is going
+to go ahead and change
+those texts.
+So the first thing I want
+to do is add a method
+to output fragment so that I
+can tell it volts and ohms.
+So let's go ahead and create a
+public method void setValues.
+And it's going to take
+float volts and float ohms.
+And this is public because
+I'm going to be calling it
+from my main activity.
+And then what this is going to
+do is just save these values
+so that I can use them later.
+So I'm going to create
+private member variables
+so that I can save these
+values, private float nVolts
+and private float nOhms.
+And then in this method I'm
+going to set nVolts equal
+to volts and nOhms
+equal to ohms.
+So set values is just
+telling the fragment
+to remember the values.
+And then I'm going to call that
+in my main activity right here.
+So after I've created the output
+active-- output fragments,
+I'm going to call this
+setValues on it and I'm going
+to pass in volts and ohms.
+So now my main activity is
+telling my output fragment what
+values to use in
+the calculation.
+Then in the output fragment I'm
+going to wait until somewhere
+in the activity life cycle
+after onCreateView has been run.
+So what I'm going to do, I'm
+going to put this in onStart
+which is after onCreateView.
+So anywhere after here
+the TextViews exist.
+I'm going to put it
+right here onStart.
+And let's go ahead and
+get our previous code
+from output activity.
+And this is on the
+OnCreate method.
+So I'm just going to copy
+all these to start with.
+And then I'm going to put
+that in an onStart method.
+So @Override, public void
+onStart and then I'm going
+to paste in that code.
+Then I'll take the imports.
+OK. So, I don't have
+an intent anymore
+because I'm just
+launching this thing.
+Volts and ohms I now have
+set an nVolts and nOhms.
+And then this calculation of
+amps and watts is the same.
+They should work now except
+that findViewById is a
+method on activities.
+And I'm not in an
+activity class anymore,
+I'm in a fragment class now.
+So somehow I need
+to get the root view
+for the currently
+running activity.
+And there is a method
+for doing that.
+So I'm going to call View
+view is equal to getView.
+And then this view has a
+method, view.findViewById.
+OK. So this gets the current
+view from the activity.
+This [inaudible] in that view
+to find output amps
+and output watts.
+Then this formatting is the same
+and setting the text
+is the same.
+And that should be it for this.
+Let's go ahead and
+see if it works.
+I'm going to go ahead
+and run the app.
+So I'll type 120 volts
+and 10 ohms and calculate.
+Oop, and I have an error.
+So let's go ahead
+and see what I got.
+So I'm going to--
+-- make this a little
+bigger here.
+Oh, I didn't call the
+super method in my onStart.
+That's a mistake that
+I always seem to make.
+So let's call that,
+super.onStart.
+Let's try it again.
+OK. So, 120 volts and 10
+ohms, 12 amps, 1440 watts.
+Now in the previous version
+of the app I had a
+back button here and--
+or I could use this back button.
+But now I want to hit the back
+button, it doesn't take me
+to the input form, it
+just exits the app.
+And the reason is because there
+is only one activity here.
+And when I return from that
+activity, that exits the app.
+So with-- but I-- what I really
+want to do is I want to be able
+to hit that back button and
+go back to my input form.
+So I want to be able to type
+120 and 10 and calculate.
+And if I hit this back
+button, I want to return
+to the input form even though
+it's the same activity.
+And the fragment
+manager lets you do
+that by setting something
+called the back stack.
+So the back stack is a list of
+prior points in your activities
+that may can return to
+by hitting back button.
+And all you have to do
+to make this work is
+in your main activity before
+you make a change that you want
+to return to-- so here's where
+I will place the input activity
+with the output activity.
+At this point in my activity,
+I'm currently displaying
+the input fragment.
+And that's the point
+that I want to return to.
+So I'm going to add in my
+transaction addToBackStack.
+And then optionally you
+can give this a name.
+So I'll just go ahead
+and give it Input Form.
+You can even leave this
+as null if you want.
+So what this is doing is
+it's basically building
+into the fragment
+manager the state
+of the current activity
+before it gets committed
+so that I can return to that
+by hitting the back key.
+So let's go ahead and run that.
+So I'll type a 120 volts
+and 10 ohms calculate.
+Now, when I hit the back button
+it returns me to the input form.
+And let's go ahead and do
+220 calculate, 22 amps,
+back button and so on.
+So now the back button
+is working the same.
+And I just want to point out
+one more thing about this.
+So you'll notice that I have
+this addToBackStack before I
+replace the content with
+the output fragments.
+And you might think that
+if I move this here,
+now when I hit the
+return it would return
+to the output fragment.
+But that's not actually
+what happens.
+And the reason is because this
+is not actually committed yet.
+When I set the content frame
+to hold the output fragment,
+that doesn't actually happen.
+That change isn't actually made
+until here when I do the commit.
+So addToBackStack Input Form
+should do the same exact thing
+whether I have it before
+or after this replace.
+So let's go ahead
+and run it again.
+It should do the
+same thing as before.
+So 110, 10, 11 amps, back, I
+return to the same point, 220,
+back, return to the same point.
+So bottom line is if this can be
+confusing when you're starting
+out because you think you're
+returning to the activity
+with the output form but
+you're actually returning
+to the activity before
+this commit happens.

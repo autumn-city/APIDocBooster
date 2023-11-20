@@ -1,0 +1,241 @@
+ All right, let's now take a look at a code example of VGG 16 that
+ are implemented here. I should mention that I don't want to
+ rerun this here from scratch during this video because it
+ took one and a half hours to train it's a large network. So
+ in that way, we will just take a look at the results. So I will
+ of course, share this with you should find the link under the
+ video. Yeah, so what we have here is all the usual imports
+ watermark, torch, torch vision, and so forth. Then my helper
+ files as usual, they are I think identical to what I used to last
+ week, I can't remember making a modification to them. So exactly
+ the same like that we used for Alex net, the only difference
+ here is really that I have a different architecture. So
+ defining our hyper parameter settings on the random seed
+ shouldn't be a hyper parameter, but you have to set it to
+ something. So I'm setting it to 123 batch size to 256. And we're
+ training for 50 epochs. And I was using a GPU for that because
+ otherwise, it took too long. So you could, for instance, run
+ this on Google Collab on the GPU. If you run things on the
+ GPU, this function doesn't really work that well anymore,
+ because I actually cut this from the videos because it was too
+ long. But just to briefly mention why. So when you train
+ things on the GPU, there are different types of algorithms
+ used for convolutions. So there's, of course, the
+ convolution that we talked about in the lecture, but in code,
+ people don't implement it this way, they are usually more
+ efficient approximations of that, like a fast Fourier
+ transform based ones. And depending on what computer you
+ use, and what graphics card you use, different approximation
+ algorithms are used. Although these approximations are pretty
+ good, they are approximating the convolution very, very well.
+ There are tiny differences after the decimal point. And if you
+ have a lot of tiny differences, they can add up and then
+ sometimes you will find that results are different when you
+ run them again, because not only are different algorithms
+ automatically chosen based on the computer, but also when you
+ run it multiple times. So Nvidia is actually running some
+ automatic way to guess which algorithm might be a good choice
+ at a given time. So that is why there are sometimes slight
+ slight differences. It used to that you could set this to a
+ deterministic setting. But for some reason, it complains now
+ that this deterministic setting doesn't really work anymore. But
+ any case, you don't have to worry about that. It's very
+ normal in deep learning that you get different results if you run
+ things again. I mean, they will be slightly different, they will
+ not be very different. It's just like very, very small
+ differences.
+ Any case, let's not worry about this. Okay, so talking about the
+ data set now. So here, we're working with a cipher 10 data
+ set, which is 32 by 32. But yeah, I
+ resize this because VG, if you
+ look at this figure, again, it was originally developed for 224
+ times 234 inputs. And there are just too many layers for small
+ inputs, because you have the size of the layers. And it's at
+ that point, if you have half the input size, you will already
+ have only three by three or four by four layers here. And if you
+ make it even smaller, it would be one by one, or even smaller,
+ if you have here already one by one, and then try to half it. So
+ that way, we can't have inputs that are too small, it actually
+ works with 32 by 32. But the results were not as good. So it
+ was faster, of course. But with this version, where I slightly
+ upscale, I get actually 85% accuracy. So what I'm doing
+ here is I'm upscaling these images from 3232 to 7070. Then I
+ do a slight random crop here. So the random crop is to avoid
+ overfitting and avoid overfitting, but to reduce the
+ overfitting to make it a little bit less sensible or sensitive
+ to exact pixel locations. And then I'm converting it to a
+ tensor, and then normalizing it so that they will the pixels
+ will be centered at zero across the channels, and have a
+ standard deviation of one. So it's the usual procedure. Again,
+ for testing, I don't do any random crop, I'm center cropping.
+ Then the rest is exactly the same that we talked about for
+ Alex net last week. So here's the interesting part. That's
+ the VGG 16 architecture. Yeah, I just had some notes for myself
+ for calculating the padding, but we probably don't need that
+ here. So how I implemented it is in different blocks. So I have
+ one block that is usually the convolutions and then stopped or
+ the final layer in that block is the max pooling layer that
+ reduces the size by half. So these preserve the size, it's
+ the same convolution with the padding such that the input
+ equals the output size, and max pooling reduces the size. And
+ then again, here, this conserves the size, this reduces the size
+ by half because of the stride. Then here, again, we have another
+ block with max pooling, another block, and max pooling, and
+ another block, and max pooling. And then these are what I call
+ my feature extractor layers. And then we have a classifier layer.
+ This is really if I go back to the figure, this is really this
+ last part here in light blue, this is the fully connected
+ part. So here, linear layer, fully connected layer,
+ essentially, another one, and another one. So you have drop
+ out, I should probably get this is one deep dropout version. So
+ if you want to add dropout for other layers, you have to, I
+ would recommend using drop out 2d. Actually, I recall I forgot
+ about that recently. And I used a regular dropout somewhere
+ because I, for some reason, forgot to type 2d. And I was
+ wondering why, why I couldn't notice any difference. All
+ right. Yeah, here, I'm using the caming uniform weights as given
+ here, because that's what was used in the original paper, then
+ I have an adaptive average pooling, which will, in this
+ case, make things equal to the height and width here, so that I
+ chose to be three by three. So because for the linear layer,
+ you have to know the input height and width, because you
+ need to know the number of features, we know always know
+ the number of channels, right, because it's coming from here.
+ But sometimes it's hard to know what's the width and height to
+ compute the number of features. So usually, what we do is we
+ have here the feature map, and then average pooling. And then
+ what we do is we flatten this is essentially a flattening
+ operation. This is essentially the same that you do when you
+ work with multilayer perceptrons and MNIST. So you basically
+ flatten the input, which is a image, you flatten this to be a
+ long vector, that's the same operation here. And for that,
+ you have to know the number of parameters, because you need to
+ know the number of weights right for the multilayer perceptron
+ layer, the linear layer. So how would you get this information
+ here, I'm using adaptive average pooling. So adaptive average
+ pooling is an operation where you can determine the input and
+ output size, and it will either add the strides or the padding
+ such that this dimension will be met. So if the input is so where
+ am I here, if the input to this one is smaller than three by
+ three, it will add padding, if it's larger than three by three,
+ it will not add padding and do some strides to reach that size
+ that we desire. Yeah, and if you don't want to do adaptive edge,
+ average pooling, and you want to know the number of sizes that
+ come out of the last block, for example, one way would of course
+ to be to use the equation that I showed you and just calculated
+ by hand. That is a valid approach that could be a
+ potential exam question. But we don't have an exam anymore. So
+ don't worry about it may be something for the quiz. But in
+ practice, yeah, people would write forward or backward hooks,
+ I think I explained it. So you would use a forward hook here,
+ explain it to you when we talked about the pytorch API. But to be
+ honest, even that is something most people won't do, because
+ it's just too much work to write a hook function. I mean, I
+ wouldn't do it. Simple brute force way would be to just
+ implement print statement temporarily. So what you would
+ do is you would just have something that's lazy way, the
+ lazy but efficient way, something like x dot size,
+ prints the size here of x, then you would run this here, when
+ you do the training, it will output the size, it will
+ probably crash if you don't have the right dimensions. But then
+ you know the size, right, you know the height and width, then
+ and then you can remove it at the desired height and width
+ here. And you're good to go. So in practice, most people, to be
+ honest, are just inserting if you want to know the size, you
+ just import a print statement. And that's how you find out the
+ brute force way. Okay, so this is essentially the VGG
+ architecture. So you can see they are essentially a
+ conversion layers, followed always by max pooling that has
+ the input size, we have many of those, then these classification
+ layers here. Um, yeah. And then we have here the training. So
+ I'm initializing it for 10 classes. If we look back to the
+ slides, it's 1000 because image net, the data set that they
+ used here had 1000 classes, we have cipher 10 with 10 classes
+ only. I use SGD with momentum. And this our learning rate
+ scheduler that reduces the learning hell rate by a factor
+ of 10. So dividing it by 10, if the validation accuracy doesn't
+ improve. So this is just my training script that I used for
+ Alex net two. Alright, so here's then the training the same as
+ with Alex net can say, see, it trains pretty quickly, 35%, 50%,
+ 53% accuracy. So it's slowly climbing up. At some point, it
+ stops around here, it's improving a little bit, but it
+ takes longer, more epochs. So I do that. So it's sometimes, you
+ know, it's very useful to look at this. If you run an expensive
+ network like VGG, it might be taking a few hours, and you
+ probably want to take a look at the beginning, whether it's
+ even worthwhile training at 450 epochs, right. So if you notice
+ that the loss doesn't go down, maybe in the first four epochs
+ or something like that, or you notice the accuracy doesn't
+ improve, then I would just stop the training and maybe change
+ some parameters before you just waste one and a half hours
+ waiting until it finishes. So this is why I'm printing this
+ during the training. There's a tool called tensor board that
+ can create visualizations during training. We are not talking
+ about this in this class, because I think we already have
+ enough tools for you to learn about. So there's already enough
+ code going on. But you're very welcome to check this out. At
+ some point, it's also nice for visualizing things. But yeah,
+ here, I'm trying to keep things simple. So not too many tools at
+ once. Sorry, enough, you have to learn in a way. But at the end,
+ I always find it still helpful to take a look at visualizations
+ here, I have make them of course, with matplotlib, so that
+ you can't see them during training only after training.
+ But yeah, what you can see is the loss goes down pretty
+ nicely. So it kind of converges here after 50 epochs, maybe it
+ would still approve a little bit. But looking at the
+ validation performance here, so in orange, you can see maybe
+ maybe it would go up slightly more, but you can already see
+ after epoch 10, there's a huge amount of overfitting. So to
+ reduce that overfitting, maybe adding some dropout to D might
+ help. You can actually it's maybe a good exercise, you can
+ actually insert a regular dropout. And you will see with
+ the regular dropout that you won't reduce overfitting too
+ much. But if you use dropout to D, that helps actually more
+ with convolution networks. Okay, so this is that. And then here,
+ just the visualization, looking at some examples, you can see
+ most of that looks correct. So P is predicted T is the true
+ label. You can see this one is wrong deer and frog. It's hard
+ to tell. I mean, if you look at this cipher 10 has such a low
+ resolution that even we have difficulties telling what's in
+ these images, I think. Alright, so here's a confusion matrix. So
+ that looks actually interesting, you can see, dog and cat are
+ often misclassified here. And that is kind of reasonable
+ because cats and dogs are both animals. So a cat and a dog are,
+ for example, very different from an airplane. So dog and airplane
+ is rarely confused, whereas dog and cat is more often confused.
+ In the grand scheme of things, that's kind of reasonable, I
+ would say. So you can actually see all the animals. That's very
+ interesting. So you can see all the animals here in this square
+ often. Yeah, misclassified compared to ships and trucks,
+ and like automobiles. So yeah, you have things and then you
+ have the animals animals among each other harder to classify
+ compared to other objects like airplanes and automobiles. All
+ right, so this is VGG 16. Maybe one more thing I have VGG 16
+ standardized, I was just toying around with it to see if proper
+ standardization can improve things, but it didn't turn out
+ to be true. So just to show you the I would say proper way. So
+ scrolling up again, here, I'm just using point 5.5.5.5, which
+ will scale the pixels such that they are between minus one and
+ one, centered at zero. So using point five, but we can actually
+ use the proper standard deviation, we can feature pixel
+ mean by computing them. So here, I just have a function added to
+ it that computes or approximates actually, because it's faster,
+ it approximates the mean and standard deviation for each
+ channel for each color channels, it's the red, green and blue
+ one. So they are around point five. And then here, the standard
+ deviations are point to five, instead of point five, and what
+ I assumed in the previous code. But if I use these proper ones,
+ instead of just using point five, I find that it doesn't
+ really make any difference at all. So performance, I think,
+ was pretty much the same, actually worse 82. Actually,
+ it's an interesting drop here. It's very due to overfitting,
+ more overfitting. Yeah, so but you can see in this case, I
+ didn't gain anything from doing this other standardization.
+ Maybe it's actually training better, though you can see it's
+ dropping more here could be because the schedulers triggered
+ at that point. It doesn't have to be because of choosing the
+ mean and standard deviation could be just coincidence.
+ Alright, so that was a long video, probably. So let me wrap
+ this up. In the next video, we will talk about residual
+ networks, which are a little bit more interesting than just
+ adding more layers to it.

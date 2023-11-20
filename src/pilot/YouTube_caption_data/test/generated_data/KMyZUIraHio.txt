@@ -1,0 +1,822 @@
+hey guys in this video we are going to
+have a look at how
+you can use t5 for text summarization
+and i'm going to show you how you can
+set up the unnecessary libraries
+i'm going to show you how you can use
+the t5 tokenizer
+and then we're going to use the hanging
+face library transformers
+to actually fine tune the t5 model
+for text summarization let's get started
+so here i have a brand new notebook in
+which
+i'm going to change the runtime and make
+sure that it's a gpu
+and then i'm going to connect to the
+instance
+after this is complete i'm going to just
+check what type of gpu did i get
+and we have car 80 i'm going
+to reset the machine
+and check if this is going to be a bit
+better
+otherwise yeah it's a d4 now
+so this is uh great and
+yeah i'm going to start by installing
+some requirements
+we are going to need transformers
+library from the honey face and by torch
+lightning
+these are the latest version at the time
+at which i am recording this video so
+this should be good enough
+and i'm going to basically
+paste a lot of imports uh
+here i'm importing some python whitening
+stuff
+and yeah pretty much the transfer from
+the transformers library we're going to
+use t5 for conditional generation
+if if you haven't seen the d5 in action
+i did um a videos or two videos
+on question answering with t5 you can
+have a look at those
+and those will probably give you a good
+intuition of what is happening
+here so in this video i'm not going to
+take the time to explain what t5 really
+is
+and how it works under the hood
+next we are going to import uh the
+watching boiler plate that we are going
+to use
+pretty much again standard stuff i'm
+going to define the figure size
+and seaborn i'm going to use seabourn to
+set the style of the plots that we are
+going to get
+and finally i'm going to use seed
+everything
+to make sure that pretty much everything
+is reproducible
+all right so now we are ready to take
+some data
+and the data today comes from kego
+it's this news summary data set
+which says that it's about generating
+short-lived descriptions of news
+articles
+and in this case we have
+these many examples and they contain
+the author name the headlines short text
+and complete article
+so these are news from
+in shorts and there are
+scripts from hindu indian times and the
+guardian
+so it's from 2017
+and it looks like the date set is uh
+quite good at least uh at
+first glance and you can see a tiny
+preview
+of what do we have we have the date
+which we are currently not interested in
+and we have the read more link
+the headlines and this is the actually
+this is the short text
+or the compressed text and this is the
+full text of the article
+so we are going to basically take this
+train um t5 on it
+and try to generate something that is
+similar to what we have
+right here so this will pretty much be
+the task
+and i'm going to basically download
+this same this same data set
+from my google drive and i'm going to
+release it a run so
+this will give you a csv
+zip file i'm going to unzip it
+and i'm going to put it into a data
+folder
+so if we open up
+the data folder here here we have the
+csv file it's 11 megabytes
+and the next thing that we are going to
+do is to load it
+using bundles of course from data
+news summary csv
+and we will have to specify encoding
+in order to read the data
+i'm going to use what in one which seems
+to be working all right
+then if we look through some of the
+examples
+we have exactly the same structure that
+we had
+in kego again this is the compressed
+uh sorry this is the complete text and
+then this is
+the summary of the article
+and yeah i'm going to just take those
+two
+columns the text and the c text
+and yeah if we
+do this
+next yeah i'm going to replace the
+column names
+the first one will be summary and then
+will be the text
+then i'm going to drop all the examples
+that
+don't have a summary or text
+and have a look at it
+okay so here we have the summary and
+then the text so this is
+just the data frame that we are going to
+work with let's check
+the number of examples that we have so
+it's a little bit lower than
+what we hit into the date set
+but this is mostly due to the dropping
+of the
+non-existent uh either summaries or
+texts
+then i'm going to split the data
+into a train and test data frame
+i am going to reserve about 10 percent
+for
+test size
+let's check the resulting shapes
+yeah we have only 440
+examples for testing and the rest of it
+is
+just for training okay so
+next we are going to basically create a
+data set
+uh in the form of
+date set that that extends from pytorch
+dataset
+and i'm going to emit it or create a
+constructor for it
+it's going to take the self of course
+then
+uh data in the form of a data frame
+then a tokenizer d5 tokenizer
+and yeah i'm using the post
+tokenizer and importing it as t5
+tokenizer
+in the hope that this will speed up the
+preprocess
+because it takes a lot of time to
+pre-process some of the data
+then i'm going to say that we want the
+maximum token length
+of the text itself is going to be
+512 characters or tokens
+and for the summary
+we want this to be 128
+okay so i'm going to
+take the tokenizer here
+save the data and pretty much
+the all the stuff that are passed to the
+constructor i'm going to create a
+property of it
+all right next we need to do the
+two methods len
+and the get item method
+i'm going to take the data row from the
+data
+and the current index and i'm going to
+extract the text
+which is again the full text and
+i'm going to encode it
+i'm going to specify a maximum length of
+the encoding
+to be the max the text max
+token length i want a padding
+to the max length i want truncation
+i want the attention mask
+and those are all properties from the t5
+tokenizer
+as again we've used those into the
+previous videos
+i want this to add the special tokens
+and
+return tensors in the form of python
+tensors i'm going to pretty much do the
+same thing
+for the summary
+and i'm going to use the summary
+max tokenland here
+and this will be the summary encoding
+okay uh and after
+this i'm going to create the actual
+labels
+which we are going to take from the
+summary encoding
+the input ids from the tokenizer and i'm
+going to replace
+the padding tokens which has an idf 0
+with -100 and this will
+basically make sure that we have
+the correct labels that are required for
+t5 text generation
+i guess i have a better explanation of
+this
+in the previous videos and finally the
+result of this
+is going to be a dictionary which
+contains
+text in the summary
+the text input ids
+and this will be from the text encoding
+input ladies
+and i'm going to flatten those so those
+can be
+easily batched by the data waller
+i want also the text attention mask
+i want the labels and everything is
+photons so it's one-dimensional
+at least on the first one and i want the
+attention mask from the summary encoding
+all right so i believe that this
+should do the trick uh and let's
+run through it it seems to be working
+all right
+uh next we are going to create a data
+module for
+pytorch whitening
+i want to emit this
+passing the training and test data
+i'm going to specify that those are
+on this data frame again
+here up a bit with the typing uh
+i am going to take the tokenizer which
+is going to be
+e5 tokenizer then the batch size
+which is going to take default value of
+8
+and this will be of course dependent on
+the gpu that you have
+and the max token length for the text is
+going to be
+512 and for the summary
+max tokenland
+128 so this is the constructor
+and i'm going to call the super
+constructor on this one
+and i'm going to basically take all the
+parameters
+and save them as a property
+all right so we need a setup method
+which is called automatically by
+the trainer if we pass in stage
+and we are not going to be interested in
+that stage
+but here i'm going to create a training
+date set
+which is going to be news summary date
+set
+i'm going to pass in the training date
+frame the tokenizer
+the text max tokenland and the
+summary max token
+so this will be the train date set and
+for the test data set
+yeah this should do the trick again
+so we have both of those data sets
+and i'm going to build a train data
+water
+and this will basically return a data
+water
+from pytorch with the training data set
+a batch size set to the number
+of the batch size from the property that
+we have
+i want this to be shuffled because it's
+for use for training and the number of
+workers
+is going to be set to 2 at least that's
+all right value for google cloud
+next i'm going to do pretty much the
+same thing for the validation data
+loader
+except that i'm going to pass in the
+base date set
+and i don't want this to be shuffled
+and pretty much the same thing for the
+test date water
+all right if we're in this it should
+work all right next i am going
+to specify the model name that we are
+going to use
+and we are going to use the t5 base
+which is
+the smallest d5 model
+and i'm going to initialize the
+tokenizer
+and i want to use the d5
+base model
+and what this all right so we have the
+the tokenizer
+so one thing that you might want to have
+a look at
+is how many tokens do would you need
+to train those models and to do that i
+do
+some basic plotting
+i'm going to specify the number of text
+tokens and
+the summary token counts
+and i'm going to basically iterate over
+the training date frame
+i'm going to calculate the text colcon
+count
+by actually calling the tokenizer
+and calling the row text from here
+token text
+token counts and on the next row i'm
+going to
+add this
+to the list and then i'm going to pretty
+much do the same thing
+for the summary
+all right and if we run this it should
+say that
+yeah the the number of uh the sequence
+length is larger
+than the sequence that the model is
+going to take which is uh 512 i believe
+but that's all right because we just
+want to have a look at
+the token length or the distribution of
+it
+then i'm going to plot
+the token counts and i'm going to create
+a support for that
+i want to do a histogram or his port
+of the text token counts
+over the first axis and i'm going to
+label it
+with the title full
+text token counts and i'm going to
+pretty much do the same thing
+for the summary token counts
+over the second taxes
+and this should give us the
+distributions of both
+and as you can see for the
+text token counts pretty much the
+the largest part are around
+1 500 or something like this
+so the distribution is heavily skilled
+here and we have
+some example or examples which contain
+a lot more of the data but that's all
+right
+and for the summaries you can see that
+we can fit
+in about one for we can probably fit
+100 percent of the examples into the 140
+uh tokens which is uh kind of great
+because
+uh the tokenizer is not going to be
+expanded
+or have to be to work harder to
+encode more tokens from the summary
+so the summaries are really quite
+small which is good again all right
+so given this i'm going to prepare
+the number of epochs and the bar size
+and i'm going to basically
+create the data module
+using the default parameters
+which i've conveniently chosen before
+doing the video
+of course so and finally the much size
+so this will give us the data module
+and then we are going to create
+a whitening module that is going to be
+the model
+for the summarization
+so here in the constructor
+i'm going to again emit this
+and for the model i'm going to create an
+instance
+of it from retrain again
+i want to enter the model name which is
+t5 base
+and i want the outputs to be returned as
+a dictionary
+all right so this will actually not
+return a dictionary but rather
+data class which is even better
+and i'm going to overwrite the forward
+method here
+it will take the input ladies and
+attention mask
+and if we have labels we are going to
+pass the decoder attention mask
+which is calculated from the summary
+encoding
+and the labels which we also calculated
+and the output of the model is going to
+be a result of applying the model
+to the input ladies
+for the rotation mask we are going to
+apply the attention mask for the labels
+we are going to pass in the labels
+and the decoder attention mask
+is going to be the decoder attention
+mask
+arguments and we are going to return the
+wash
+of the model which is calculated
+automatically by the huge face library
+model
+and the widgets on the predictions of
+the model
+all right everything seems great and i'm
+going
+to continue with writing the training
+step method that is required by python
+lightning
+and from the batch i'm going to
+basically take the input ladies
+from the text
+the attention mask again from the text
+the labels
+and the labels are tension mask
+which we're going to pass to the decoder
+i'm going to basically apply the forward
+method
+the attention mask
+the decoder attention mask
+which are going to be the labels
+let me just reform on this to be
+a bit more readable the labels
+attention mask and the labels themselves
+all right and this will return the walls
+and the outputs
+okay uh next i'm going to
+walk the validation was the train was
+sorry
+and return the loss itself
+all right so this is the training step
+we basically take
+the data from the batch and pass it to
+the forward method so
+the forward method can get the data
+and apply through the model and we
+are going to just return the was and the
+predictions of the model
+based on what the hanging face library
+transformers
+is giving us so next i am going to
+pretty much copy and paste this
+so we can use it for the
+validation step
+and i'm going to just change this
+and then the test step of course you can
+be
+a bit smarter than me or a lot smarter
+than me
+and just extract all this into
+uh a couple of methods
+which is going to make your code
+much more readable
+but copy and paste works here
+as well so i'm going to write out
+the final method which is going to be
+configure optimizers
+and here i'm going to use adam with
+weight decay fix i'm going to pass in
+the parameters and the warning rate
+which is going to be
+this small number i guess
+yeah all right so now that we have
+all this we have a syntax error
+which is right here here
+we have dev here all right this should
+work
+and i'm going to create an instance of
+the model
+this will and it's download
+900 megabytes so this is quite all right
+and it's a worst model even the base
+version of it i'm going to load
+tensorboard
+and i'm going to
+load the magic pencil board
+and i'm going to
+observe the winding a whitening works
+folder
+so this should load it and after that
+i'm going to create
+a callback
+for the checkpoints
+i'm going to save into checkpoints
+and i want only the best
+checkpoints
+and i want to do that according to
+validation loss
+and i want the best model to have the
+minimum
+validation was yeah this here says
+that it's not active because we haven't
+started training yet
+and then i'm going to create a logger
+into the lightning clocks folder and i'm
+going to
+name the experiment news summary
+i'm going to create a trainer i'm going
+to pass in
+the logger the checkpoints
+callback is going to be the checkpoint
+callback
+the max epochs are going to be number
+of epochs gpus
+are going to be equal to one progress
+bar refresh rate is going to be 30
+because we're using google cloud here
+and this should probably run
+fine yeah we're using the gpu and then
+on the trainer
+we are going to train the model using
+the data module
+and this should start the process
+hopefully if we
+got everything correct this should start
+training
+and pretty much the expectation here is
+that
+the model shouldn't give you
+a very large decrease into the wash
+because this model was pre-trained on
+summarization
+and it might very well be possible that
+it was
+pre-trained on pretty much the same data
+set
+so so now the training is complete
+we're going to basically have a look at
+what we did so far and how well the
+model is going to
+create summaries for our news articles
+and as you can see quickly from the
+training works the validation was
+has been decreasing for the three epochs
+that we've trended
+but it looks like that it is decreasing
+by small margins
+and here is the tensorboard works for it
+as you can see the training was is
+rather let's smooth it out
+it's kind of decreasing but yeah it's
+all around the place and the validation
+was
+is decreasing as well but but
+only slightly so the training took about
+23 or 24 minutes
+and yeah you're free to try out other
+warning rates or other parameters for
+the training
+but i'm going to continue with loading
+the best model
+so far which is the one that is
+from the last training epoch
+and i'm going to what from the
+checkpoint
+which we are given by the checkpoints
+callback from the trainer
+and then best model path
+so this will toward the model
+and then i want to freeze it so we will
+be able to
+speed up the inference
+and this will just go ahead and load the
+model
+then i want to have a look at what
+can we do to do the summarization
+so to do that i'm going to write a
+simple function called
+summarize and
+in it we want to pass in
+some text
+then the first thing that we are going
+to do is to call the tokenizer
+that we have
+i'm going to pass in the text
+then i'm going to pass in the max length
+which is
+500
+the padding so this is pretty much the
+same thing that we had
+in the date set creation
+i want this to be truncated return the
+attention mask
+add the special tokens
+and return the result as tensors
+for pytorch
+and the result is going to be the text
+encoding
+after this is complete uh we want
+to ask our model to generate
+the summary for this tokenized text or
+tokenization
+so that i'm going to call the
+trained model dot model which is
+actually the
+instance of the d5 for generation model
+and then i'm going to call generate
+so here this method takes a lot of
+parameters but we're going to pass in
+the input ids
+from the text encoding
+and then uh and again if you're not
+familiar with what
+those parameters do please check the
+previous videos
+on which i went a bit deeper into
+all the different parameters and
+a tutorial that includes
+what is happening here when calling
+those parameters
+so then i'm going to pass in the
+attention mask from the encoding
+and then i want to specify the maximum
+length
+150 for example
+uh then since we are doing
+beam search i want to specify some
+parameters that i found that are
+kind of all right again you might want
+to do
+some hyper parameter optimization here
+this will minimize the model when
+we have some repetitions i guess and
+again just hyper parameters here
+and want to do some early stopping
+to speed up the process so
+this will generate some ids
+which corresponds to ids
+for from for the tokenizer
+and i'm going to just decode this
+so the tokenizer decode i'm going to
+call this method
+for generated id in generated
+ids and i'm going to decode the
+genera uh generated id i want
+this to skip the special tokens
+and i want to clean up the tokenization
+spaces
+as well so this will be the predictions
+but this will return basically some
+words so
+the array of words i'm going to just
+join
+by an empty space and return the result
+of that
+so this hopefully will summarize some
+text given from here and i want to
+basically have a look at what type of
+summarizations our model is going to do
+so i'm going to take the first row from
+the test
+set
+i'm going to take the text from it
+and model summary
+and we're going to take this using the
+summarize
+that we've function that we just created
+then i want to preview the text here
+i want to get
+the summary that is
+created by the humans
+so we have quite a long text
+so we have a woman that is trying to
+jump over the fans
+in the white house and we have pretty
+much this summary of a woman who is
+arrested twice for trying to jump the
+white house fence etc and let's
+look at the model summary does it even
+make any sense
+and is it uh somewhat as good as this
+one
+so this is a summary a 38 years old
+year old woman in the u.s who was
+apprehended twice for allegedly trying
+to jump the white house
+fence last week has been arrested for
+scaling offense at the treasury building
+next to the white house
+uh yeah for scaring offense at the
+treasury building
+next to the alright well
+there was to speak to the president
+donald trump
+at the time she was charged with
+unwarfall
+entry and contempt of court
+so it looks like it's been
+it's done actually very well compared to
+the
+to the rear summary well it might be
+just
+a fluke so i'm going to do the same
+thing
+for the next example and have a look at
+it again
+i'm going to look at text
+then and summary
+and finally at the model summary as you
+can see
+it takes some time to generate
+the summary so if you want
+to do some fast inference
+you might be out of luck because this
+model is rather small
+rather slow so just
+take that into account so here
+at this toe in some railway station
+used to sell tea during his childhood he
+said to become a tourist spot
+and culture minister visited the place
+on sunday
+so the tea style uh the summary has the
+t still
+in the same place where prime minister
+once
+salty during his childhood is set to
+become a tourist spot
+so pretty much the same thing converting
+the style into a tourist
+spot is part of the larger project for
+putting
+modi's birthplace etc
+in place and set the t still with the
+vote of
+all right so it seems sensible
+again so this is good and i'm going to
+just
+have a look at one final example
+just to make sure that this is
+all right so pretty much the same thing
+but so far those summaries look like
+they're making sense and
+uh they're actually quite good
+so we have u.s president barack obama
+has declared
+declared january 16 as a religious
+freedom day
+with accordance with yearly tradition
+continuing an
+yearly tradition ongoing u.s president
+center proclamation to declare
+religious free freedom day in the us so
+this looks
+again very very sensible um
+and sent a proclamation to declare
+religious freedom day in the u.s so it's
+it's actually not the same sentence
+it's like adding at least in this case
+this one
+so religious freedom is a principle
+based on
+shared ancestry culture etc
+rich freedom is principle based not on
+shared ancestry
+so it yeah it's principle based not on
+shirt and
+so it's basically taking just this
+one sentence as you might have guessed
+obama said let's check the previous
+examples
+yeah so here uh you can see that
+uh the the first sentence was actually
+kind of changed
+but yeah it's basically deciding
+which sentences are
+let's say important and based on that
+it's
+creating something that is very sensible
+in my opinion
+so it looks like it is doing some job
+and it works at least
+quite well on those examples
+all right guys so uh thanks for watching
+i'm going to create another text
+tutorial
+in which uh i'm going to explain all the
+steps that we've
+looked into the this one and of course
+i'm going to include
+a jupiter wap notebook if you like this
+video please
+like share and subscribe and i'll see
+you in the next one
+bye bye

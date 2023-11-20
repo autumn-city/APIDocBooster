@@ -1,0 +1,1378 @@
+hello this is rohan paul very welcome to
+my machine learning and deep learning
+youtube channel let's get started
+today's video is about custom layer
+intensive locators and also building a
+simple model after creating a custom
+layer
+now a layer is a data processing module
+that takes as input one or more tensors
+and that outputs one or more tensors the
+fundamental data structure in a neural
+network is this layer and so also one of
+the central abstraction in keras is a
+layer class a layer is a class in keras
+that receives some parameters passes
+them through states and computation and
+at the end gives you an output as
+required by the neural network
+every model architecture contains
+multiple layers be it a sequential or a
+functional api
+now the most important thing to remember
+is a layer has two elements in it
+number one is state which are the
+weights which can be trainable or non
+trainable and layer also has some
+computation which is the forward pass
+calculation
+now some layers are stateless but more
+frequently layers have a state now in
+this slide let's quickly take a slightly
+more detailed look at the state and
+computation definition
+so states are mostly trainable features
+which are trained during a model that
+fit in a dense layer the states
+constitute the weights and the bias
+these values are updated to give better
+results as the model trains in some
+layers a state can also contain
+non-trainable features or non trainable
+waves
+and these weights or tensors actually
+are learned or trained with stochastic
+gradient descent which together contain
+the network's knowledge and these
+stochastic gradient descent happens
+during the
+execution of the model.fit function
+and now the computation computation
+helps in transforming a batch of input
+data into a batch of output data in this
+part of the layer the calculation takes
+place in a dense layer the computation
+does the following calculation y equal
+to weights multiplied by the x vector
+which is input vector plus b
+and this whole expression on the right
+side returns me the y
+so y is output x is the input and w are
+the weights and b is the bias term here
+now given uh
+weights in a layer are all about tensors
+so let's quickly understand the shape
+and the rank of a tensor so mostly we
+will be dealing with rank 0 rank 1 rank
+2 and rank 3 tensors and this is a this
+is a representation of those ranks so
+let's uh
+check that rank 0 which is this is a
+tensor is a scalar value that's a single
+number that has magnitude but no
+direction
+rank 1 tensor is a vector it has
+magnitude and the direction rank 2
+tensor is a matrix it is a table of
+numbers so these on the left each row
+you can
+think about
+each sample each row is representing
+each sample and then each column is
+representing each feature so this is a
+rank two tensor and rank three tensor is
+a cube of numbers uh represented by this
+last image so basically
+um there's no shape for rank zero tensor
+because it has no dimension the shape
+would hence be empty array or a single
+empty array and rank one tensor has a
+shape here in this case it's a shape of
+this which is a single array with the
+number being three inside and rank two
+tensor this one will be represented by
+three by six matrix that is three rows
+and six columns and uh this one that is
+rank three tensor has a shape of two by
+2 by 2 that is each axis has 2 elements
+in it
+now for practical example rank 2 tensors
+that is this one which is a matrix of so
+many rows and so many features is mostly
+processed in dense fully connected layer
+or dense layer as it is called in keras
+and then rank 3 tensor this is mostly
+seen in sequence data which are stored
+in rank 3 tensors of shape samples by
+time steps by features and is typically
+processed by recurrent neural networks
+such as lstm or one dimensional
+convolution layer that is conf1d
+and rank four tensor so we don't see
+that in this particular slide rank four
+tensors are mostly about image data and
+that that is usually processed by two
+dimensional convolutional layer
+and now uh about the topic of uh today's
+video which is about creating custom
+layer uh in keras now since keras
+utilizes object oriented programming we
+can actually sub cluster layer class and
+then insert our architecture definition
+inside that
+child layer class so basically first
+take a quick look at how
+a parent layer and child layer
+overall created in keras and this is a
+structure
+so basically i have a parents layer and
+then a child layer which is inherited
+from the parent layer and the way i call
+the child layer so the child layer is
+basically a custom implementation of the
+parent layer
+and
+the way that i call is
+for example if i have x input then the
+child layer is executed by passing some
+the arguments to child layer and also
+passing the x input and then i get x
+output
+so in this example the child layer class
+instance is called directly with the
+input x input
+like in this uh this line and this
+action calls the underscore underscore
+called
+this function found in the parent layer
+of the child layer
+and this underscore underscore call
+function in the parent class in turn
+calls the diff call function in the
+child layer class which defines the
+logic of the child layer
+and now i'm going to actually create a
+custom layer in keras and if you look at
+the documentation of keras you will find
+this statement that i have written here
+very clearly written in the official
+recommendation official documentation
+page of them that each custom layer
+class must define uh three method init
+call
+and also usually the build method the
+build method is not compulsory but
+mostly uh most often it is indeed
+written so the init assigns layer wide
+attributes that is a number of output
+units if you know the input shape
+you can also initialize the weights in
+the constructor as well the build is not
+strictly required but implementing it is
+a best practice defining this method
+allows you to instantiate weights lazily
+which is important if you don't know the
+size of the input when you initialize a
+custom layer and finally the call method
+uh call method defines a forward pass
+that is call method handles a
+calculation of the forward pass in a
+neural network as long as these
+operations are differentiable within the
+call method and the weights are set to
+be trainable tensorflow will handle bad
+propagation for you
+and so this is the main three points
+that keras official documentation
+actually recommends and following this i
+have already
+now i'm going to define the actual uh
+custom layer in keras and this will be
+my code
+okay this is my code
+for building the custom layer so this so
+you can see this is a this class this
+child dense class this is what ah
+represent my custom layer and this is
+inheriting
+from the main layer class of keras that
+is dot layers dot layer i've already
+imported um the keras library with this
+um with this line here and now i have
+also imported the tensorflow stf and
+then um in the first argument i am doing
+keras dot layers clear it will make my
+child layer class in being inherited
+from the parent layer that is from the
+main layer class of keras
+and now for the next four or five
+minutes i'm going to go through each
+part of this code that is what is this
+init method is doing here in the child
+class then uh how exactly the build
+method is forming the uh the weights
+with the adwords function and what this
+android function indeed is doing how to
+uh assign the input input dimension that
+is an input input shape in in a child uh
+layer class in keras and also uh how
+exactly the call function is doing the
+calculation so uh let's do that
+so the first point is understanding
+about why we are doing this init method
+is part of the class constructor and to
+understand it first take a quick look at
+how method resolution order works in
+python so method resolution order is
+also called mro
+and
+one second
+okay so this is a quick slide on mro in
+python the method resolution order is
+from bottom to top and left to right
+this means that first the method is
+searched in the class of the object if
+it is not found it is searched in the
+immediate superclass
+in the case of multiple superclasses it
+is searched left to right in the order
+by which it was declared by the
+developer now let's take a look at this
+example that i have a simple definition
+of a class d class c
+and that takes two argument b and a and
+under these uh some code comes so in
+this case m r o would be c to b to a
+because a b was mentioned first
+in the class declaration
+so method resolution order defines the
+order in which the base classes are
+searched when executing a method first
+the method or attribute is searched
+within a class and then it follows the
+order we specified while inheriting
+now
+this is
+this whole theory about mro is very
+important for understanding this line
+super dot init so uh let's understand
+this line uh for a general python class
+definition that what exactly this init
+method club dwight super is doing and
+how it works so uh
+when i call an init method in the class
+definition like this that super dot init
+it means that calling the init method of
+the super class as if
+it were a method of the current class
+since the current class is derived from
+the super class in other words it means
+to call a bound init method from the
+parent clause that follows a supers
+child class the one that defines this
+method in the instances method
+resolution order
+so super lets you avoid referring to the
+base class explicitly and
+when you write a class you want other
+classes to be able to use it super makes
+it possible by making it easier for
+other classes to use the class you are
+writing
+now when another class subclasses the
+class you wrote
+it could also be inheriting from other
+classes and those classes could have an
+in it of their own that comes after this
+in it based on the ordering in the mro
+method resolution order
+without super you would likely hard code
+the parent of the class you are writing
+this would mean that you would not call
+the next init in the mro and you would
+thus not get to re use the code in it so
+if you are writing your own code for
+personal use you may not care about
+these distinction this kind of
+architecture but if you want others to
+use your code using super is one thing
+that allows greater flexibility for
+users of the code and for sharing the
+code
+now coming back to the init method
+defined in our child tense layer which
+is which is inheriting from the
+keras.layers.layer which is a main keras
+layer so init is a first method in this
+subclass that will help to initialize a
+class and it accepts parameters and
+converts them to variables that can be
+used within the class this is inheriting
+from the main layer class of keras and
+hence requires some initialization this
+initialization is done using the super
+keyword here and units or activation of
+the arguments that any text ah units is
+just a local class variable this is
+analogous to the number of units in the
+dense layer and activation
+here represent for the activation
+function so uh to add an activation to
+my whole network
+of this layer we need to specify
+this in the init method itself uh either
+a string or an instance of an activation
+object can be passed into this
+activation it is set to default as none
+so if no activation function is
+mentioned it would not throw an error
+now the build method build is a next
+method in the class this is used to
+specify the states
+in the dense layer the two states
+required are w that is weights and b
+that is bias when the dense layer is
+being created we are not just creating
+one neuron of the network's hidden layer
+but multiple neurons at one go
+very important uh to remember this so if
+i pass 32 as a value for this unit
+argument which is um which is an
+argument under the init method then 32
+neurons would be created
+and then each of these 32 neurons in the
+layer needs to be initialized and given
+some random weight and bias values
+tensorflow contains many built-in
+functions to initialize these values
+here for initializing the weights i am
+using
+random normal initializer function here
+with this with these parameter
+initializer equal to random normal
+uh so with this
+tensorflow will initialize the weights
+normally
+from randomly using a normal
+distribution of values and self.w
+contains the states of the weights in
+the form of a tensor variable
+and the shape of these
+tensor variable that is the shape of
+my weights is defined by this parameter
+that is shape equal to input dim and
+self.units i will explain these two
+things in a in a second
+before that uh just move on to the
+creation of the bias variable as well
+and then i will come to a separate um
+explanation of these input shape
+and how it is implemented uh after this
+so uh
+initially i'm initializing the weights
+here and in the next line i'm also
+initializing the bias and for
+initializing the biases tensorflow's
+zero initializer function is used that
+is initializer equal to zeros now this
+sets all initial bias values to zeros
+that is
+self.b is a tensor with the size same as
+the size of the units uh
+by default normally it's um 32 and each
+of these 32 bias terms are set to zero
+initially
+now another thing i should do here uh
+that is i'm adding another parameter
+called trainable equal to true to both
+of them that is to both weights and
+biases uh this also sets uh these
+weights and bias term to be trainable
+that means these terms will be updated
+as a training moves forward
+and now about these input shaped
+parameter that i pause while creating
+the webs and that is initializing the
+weights to my adword function and that
+will define the shape of the weights and
+is extremely important because
+while doing your uh real-life project in
+deep learning using keras tensorflow or
+pytorch whatever framework you use
+matching and working with the shape
+variable that is the shape of the tensor
+you pass to your network
+is an extremely important point and many
+times this will be one crucial factor
+that will make or break your model
+because making these shapes parameter
+compatible and deciding on the shape
+parameter perfectly is
+really really really important in any
+deep learning project so quickly uh
+let's take a look at a slide that i made
+for understanding these
+input shape parameter in the in my
+custom layer function
+so the input layer is just a tensor that
+is input shape is just a tensor
+having the same shape as your training
+data it's a starting tensor you send to
+the first hidden layer example if you
+have 30 images of 50 by 50 pixels in rgb
+that is three channels rgb channels the
+shape of your input data is 30 by 50 by
+50 by 3
+then
+and how these numbers is coming 30
+images 15 to 50 each
+that is 50 by 50 pixels and then i have
+three channels for three rgb color
+channels and then your input layer
+tensor must have this shape now the
+input shape is the only one you must
+define because your model cannot know it
+only you know that as a data scientist
+and based on your training data and
+that's why you have to input that at the
+first stage of your model all other
+shapes are calculated automatically
+based on the in based on the units and
+particularities of each layer meaning
+given the input shape all other shapes
+are results of layer calculation
+now take another example input shape uh
+as given as 728 and then just a comma
+that is it's a single single scalar
+value
+given as an input shape so this means
+that each sample has 728 values the
+comma does not create a second dimension
+it's just python notation for creating a
+tuple that contains only one element
+input 728
+with a comma is the same as batch input
+equal to batch size comma 728
+so in a single sentence the input shape
+parameters can be defined as that input
+shape parameter simply tells the input
+layer
+what the shape of one sample of your
+training data looks like adding it to
+your input layer will ensure that a
+match is made
+and now also quick word on this adword
+function
+this adds a new variable to the layer it
+is a method for layers and it creates a
+tensorflow variable representing some
+mutable values in the layer uh if you
+look at the documentation for how to add
+custom layers they definitely recommend
+using adword function for this purpose
+so to and uh in the documentation you
+can actually see that
+many more parameters that this adword
+function actually text has been
+mentioned very well so uh in my next
+cell actually uh an example of uh using
+the build method and using uh
+and using adword function to create the
+create the weights and here i'm just for
+example just for showing as an example i
+am using some more parameters that add
+word function text
+so the first one it takes a string as
+its name and then shape of course we
+have used in the above as well that it
+takes a shape parameter which defines
+the shape of the tensor that it will
+output
+and initializer very important this
+actually uh initializer initializer
+actually defines a way to set the
+initial random weights
+of eras layers here first i have used in
+this case that is in my custom layer
+function
+i have first used the initializer to be
+random normal
+that means that initializer generates
+tensors with a normal distribution and
+then in the next one i have created i
+have given the initializer to be zeros
+uh that means initializer that generates
+tensor initialized to zero
+so overall the android method gives you
+a shortcut for creating weights it's a
+good practice to create weights in a
+separate build method called lazily with
+the shape of the first inputs seen by
+your layer
+and now finally the third and the last
+method in our custom layer which is this
+method call
+now call is a last method that performs
+a computation in this case as it is a
+dense layer it multiplies the inputs
+with the weights adds a bias and finally
+returns output the math move function
+here which does a
+matrix multiplication is used as self.w
+and self.b are not single scalar values
+they are actually tensors and that's why
+i'm using tf.matmul
+and now natural question that may come
+to your mind is what is the difference
+between these underscore underscore init
+method defined in this subclass
+and the underscore underscore call
+method that has been defined in the
+original base class of keras that is
+original layer class remember our child
+dense class is defining this in it but
+the child names class is actually
+inheriting from the original layer class
+this is the base class from which this
+child dense is being inherited so this
+original base class layer has a method
+called underscore underscore call and
+what is the difference between that call
+and these init method so let's quickly
+look at that and this is that difference
+that is
+the
+underscore underscore init defined in
+this subclass method
+is used when the class is called to
+initialize the instance that is when the
+instantiating the class while the
+underscore underscore call method that
+has been defined in the parent
+parent base class is called when the
+instance is called so this underscore
+underscore call is a template to call
+the already instantiated class to do
+something
+and now the next natural question that
+will come to your mind that why does
+keras use two different type of call
+method that is one is these underscore
+underscore call method that is defined
+in the original base class of
+layer in keras and
+the call method that i defined here in
+the subclass in the child dense layer
+glass
+so let's quickly look at a very
+beautiful
+stack overflow in a question that has
+answered this question very beautifully
+that
+here the original question was exactly
+these why keras use call instead of call
+and uh this is that answer uh
+but definitely go through the entire
+okay this is the only answer that it has
+been given and yeah so i found this
+answer pretty beautiful that basically
+in python when you call an instance from
+class a using class a and then uh invoke
+it or execute it it is equivalent to
+class a dot underscore underscore call
+so it seems reasonable to use underscore
+underscore call instead of call in the
+case right however the reason we use
+call
+in our sub class that is in our child
+layer class is that when tf.keras calls
+a model or a layer it has its own inner
+operations which are essential to keep
+its inner structure as a result it
+exposes a method
+call
+in the subclass for customer overloading
+that is the original underscore
+underscore call calls these
+this call
+which has been defined in the sub class
+as well as some inner operations so when
+we reload the
+call inheriting from
+tf.keras.model or tf.keras.layer
+we can call our custom code while
+keeping the original
+tf.kerases inner structure for example
+uh if your input is a numpy array
+instead of a tensor you don't need to
+transform it manually if you write
+customer code
+in call function but if you overwrite
+the original underscore underscore call
+function that has been defined in the
+base pattern class in layer or model
+it would be a problem since some inner
+operations of
+tensorflow will not be called in that
+case and that's why a numpy array may
+not be acceptable uh to whatever you are
+trying to do in your network
+now my custom layer is completely
+written so i am ready to implement my
+custom layer to see that
+it takes some input and gives me some
+output and remember both my input and
+output will be some tensor so let's
+write the code
+um i'm going to implement my
+child dense class that i just wrote and
+the first one it takes is units
+units equal to
+32 i'm giving the pretty much the
+default value of 32 and the next one is
+activation function activation equal to
+df dot
+uh neural network dot value
+i'm giving it a review activation
+function and then input input tensor
+input tensor will
+be uh
+f dot
+uh i'm going to give it uh uh well i'm
+going to give it a shape of
+shape of 2 and 784 so df dot
+once
+and shape equal to it will be a tuple of
+two
+and seven eight four
+and the output shape will be calculated
+by
+my
+uh child dense functions so let's um
+implement my
+dense and give it my input tensor
+and that should be my output tensor
+let's see if i run this code
+awesome so i got uh output tensor
+uh this is the output tensor let's
+quickly check their shape output tensor
+dot s hp
+and i got a 2 by 32 matrix or 2 by 32 um
+two-dimensional two-dimensional tensor
+uh as my output
+so now that my uh simple custom layer is
+looking to be working perfectly and the
+code just worked so now i am going to do
+a full model using that same custom
+layer that i just built previously that
+is a child dense
+and
+before building the model i have to
+create some dummy data
+and i am going to create a two
+dimensional data that is the data will
+have x and y-axis uh and so let's do
+that first and this remember the keras
+layer class has the same basic api as a
+model class model has more methods
+exposed of course like a fit evaluate
+safe but in the same way that a layer
+can be composed of other other layers a
+model can be composed of other models
+and layers this is useful when you
+borrow functionality from a pre-trained
+model
+now my two-dimensional data set that i'm
+going to create now it will have few
+negative samples and few positive
+samples that is i'm going to create i'm
+going to create two sets of data set and
+these two data set will be very nicely
+linearly separable so that i can clearly
+see the positive samples being separated
+from the negative samples and
+also i'm going to generate each classes
+of points by drawing their coordinates
+from a random distribution with a
+specific covariance matrix and a
+specific mean
+now intuitively the covariance matrix
+describes the shape of the point cloud
+that is shape of the
+data set that i'm going to generate
+here the point cloud means uh in the
+cloud each data point is a point
+and
+the mean describes the mean of this
+point cloud describes its position in
+the plane i will reuse the same
+covariance matrix for both the point
+clouds but i'm going to use different
+mean for these two data sets
+so it will mean that my point clouds
+will have the same shape but different
+positions
+and here is a code
+uh so first i'm just defining the number
+of samples in each class that
+i am defining it between 2000 and then
+my this is the first line is for
+creating my samples negative these will
+hold these first
+set will hold all the data samples with
+the
+for negative samples that is and i'm
+using multivariate normal so i'm drawing
+the entire sample from
+numpy's multivariate normal distribution
+and assigning the mean to be 0 and 3 and
+covariance for the covariance matrix i'm
+assigning this matrix 1 and 0 5 and 0.5
+and 1 and size of course will be the
+total number of samples in each class
+and exactly the same kind of code for
+generating the positive samples as well
+in only difference is here the mean is
+different uh in the first set i had mean
+of 0 and 3 and the same second one mean
+of
+3 and 0. now let's quickly run the cell
+to check the shape
+yep so i have their shape as expected 2
+000 samples 2 000 rows and it has
+two
+two columns or two features
+and now let's uh stack these samples
+positive and samples negative in uh
+vertically so i get a single uh data
+matrix uh with the shape of four
+thousand by two because i have two
+thousand data into uh two thousand
+samples in negative and two 2000 samples
+in positive
+and this is a code
+so i'm creating a new variable x inputs
+this will hold my entire input data and
+then i'm vertically stacking the samples
+negative samples and positive samples
+with np.vstack
+and i am
+stating the type as type to be numpy
+float32
+let's run this code
+uh perfect so i got a data matrix
+with 4000 rows and two columns and now
+i'm going to also generate i have to
+generate the target values
+my target variable or vector will be an
+array of ones and zeros and
+of the shape four thousand by one
+because i have two thousand
+positive samples and two thousand
+negative samples and also another point
+that uh the target
+i zero is zero if input i belongs to
+class zero and target i zero is one if
+input i belongs to class 1
+uh yeah and now this is a code for
+creating the target variable and of
+course i have to vertically stab stack
+the negative samples and the positive
+samples using np dot vs stack
+and here is that line uh so y target is
+a variable holding on the target vector
+and all i'm doing i'm creating np 0s and
+np dot once and in each case
+i am creating that many samples of zeros
+and that many samples of ones and my
+sample number remains 2000 and d type is
+again float32
+just run it
+and
+okay uh let's print this y
+target
+awesome it has it is a vector of zero
+and ones and uh yeah that's what i want
+and before proceeding further i want to
+do a quick scatter plot of my uh input
+data that is x input
+um
+but before that uh let's uh check the
+what kind of
+data it holds x input remember x input
+we created by vertically stacking my uh
+samples negative and samples positive uh
+with np.vstack and it has a shape of
+4000 by 2. now let's just print my input
+variable
+that's not x input what was the name x
+inputs okay there's an a is there
+yeah uh all right so this is the array
+of my x input so it has uh two columns
+and it's a two dimensional data
+okay fantastic now i am ready to do the
+scatter plot let's do my scatter plot
+and this is the code for my scatter plot
+all i'm doing uh to plt dot scatter i'm
+passing uh first axis value that is all
+these values and then the next value
+with the comma i am passing the second
+axis value and that's why after the
+comma i'm using one
+uh to actually check understand this
+concept if you just print
+x
+inputs
+colon and then 0 that means it will
+print the entire
+entire first column
+uh yes
+so see 0 dot
+zero dot three three four four is my
+first value then the next value would be
+minus two four five minus two four five
+etcetera and if i do the same with one
+it will print a second column two dot
+two dot nine three three yes and one dot
+1.871.87 perfect okay
+all right i can delete this cell
+all right so uh in my scatter plot i'm
+just passing these two axis of data uh
+the first x is in the second axis
+and then plt dot show
+let's run it
+awesome i got a very beautifully
+linearly separable scatter plot
+so
+all the negatives and positive samples
+are very
+very well separated and okay
+that's beautiful and now let's move on
+to
+do my next
+chunk of code
+now let's start combining our model
+because the data is completely ready and
+let's compile a sequential uh keras
+model
+so
+eras dot sequential
+and to it i'll be passing a layer and
+i'll be passing a dense layer so
+eras dot
+layers dot
+dense
+i'm passing it input of one and uh
+with that
+i'm ready to compile and the compilation
+code would be this
+let's understand
+this piece of code one by one
+the compilation step is about
+configuring the whole learning process
+of the model because once the model
+architecture is defined you still have
+to choose three more things which is
+loss function optimizer and matrix and
+my whole model architecture here was
+defined in this line remember here i'm
+not using anything complex i'm just
+using a single a dense layer and
+this is a line where my model was
+architected and now in the compiled
+phase i am taking care of the three
+other things that is loss function
+optimizer and metrics so the first is
+optimizer uh what the optimizer does is
+it determines how the network will be
+updated based on the loss function it
+implements a specific variant of
+stochastic gradient descent
+and then the loss function or the
+objective function uh here i'm
+mentioning the loss function to be a
+mean squared error so this is a quantity
+that will be minimized during the
+training it represents a measure of
+success for the task at hand and the
+last one is matrix and the this matrix
+actually it's just a measures of success
+you want to monitor during the training
+and validation such as classification
+accuracy unlike the loss training will
+not optimize directly for this matrixes
+as such matrix don't need to be
+differentiable
+and again if you are wondering about
+what is the difference between loss
+function and metric in this uh keras
+model that we just built i refer you
+again to this beautiful stack overflow
+question here that was asked exactly uh
+the same question and this answer very
+clearly tells the loss function is used
+to optimize your model this is the
+function that will get minimized by the
+optimizer
+a metric on the other hand is used to
+judge the performance of your model this
+is only for you to look at and has
+nothing to do with the optimization
+process
+now that my model is compiled i'm ready
+to train the model by using dot feed
+function of keras but before uh training
+the model i have to do the most
+important part of any training which is
+splitting the data set into trend data
+set and validation data set because
+otherwise if i train the entire data set
+my model can just remember the mapping
+between the input and the outputs and
+there is no point in
+point in calculating the loss or the
+evaluation matrix on the same data set
+so during the training i have to keep a
+particular part of the data set which is
+completely unseen by during the training
+training portion of the model so let's
+pick the data set and this is my code
+yeah and i'll go to the go through each
+part of this code line by line so first
+what i'm doing is i'm
+shuffling the entire data set indices
+using the uh numpy random and dot
+permutation function uh so i have an
+indices a list of indices which is
+entirely shuffled and then i am with
+this shuffled indices i am creating two
+new variables for my inputs and for my
+targets and
+passing uh to the original data well
+these shuffle indices so that i now get
+a data set of arrays which are
+completely shuffled and then first i'm
+creating and this is this is now the
+important part which is about the actual
+splitting
+and
+so my target is to split uh to keep 30
+of the data set as a validation set and
+the rest 70 percent as training set
+so number of validation samples is just
+multiplying the entire length of x
+inputs with 0.3 and then taking the
+integer
+form of that and then with the number of
+validation samples which is 30 percent
+ready at my hand
+then that i am
+with that i'm using the slice notation
+of python to split the data set that is
+first i am keeping the first 30 percent
+for validation that is i have to extract
+or slice the data set by at that uh
+dividing point that is i have to take
+the first 30 percent of the data set for
+my validation set validation input and
+also for my validation target
+and this line is doing just that um
+actually i put the comment in the
+comment you can see what this is actual
+signature of the slice notation that uh
+i have a list and if i pass
+and then five then items from the
+beginning through five minus one will be
+extracted that is
+this expression will return me the first
+full item that is zeroth item up to five
+minus one and so this
+line will give me all the
+inputs values all the input array values
+starting from the beginning of the array
+up to the number before these number
+validation samples
+and i'm doing the exactly same for
+validation targets so this will be my
+validation set that is validation input
+and validation target and i also have to
+do the training inputs and training uh
+training targets
+and exact same code only difference is
+now the colon is at the end that is i am
+starting from this value and going up to
+the end of the array
+uh that would be my in training inputs
+and similarly for the uh target training
+targets i am starting from this index
+and going up to the end of the array
+that is i am taking all the rest of the
+the values after my validation set let's
+actually print
+the shape of them so
+let's actually run this code this cell
+and now i'm going to print
+these
+new
+split
+uh splitted area that i just created
+shape
+okay the so the validation inputs uh
+1200 by 2 makes sense and validation
+target also should be
+oh sorry
+let's uh
+this hpe
+yeah validation target is also 1200
+number of samples and of course the
+number of columns is one because it's
+just a single value of target and
+similarly i will have
+happy
+and then also
+training
+training targets dot essentially
+run this code
+and okay uh okay print
+ring statement
+without print it will uh only print the
+last uh expression so now it will print
+the both of them run this code and i'm
+getting 2 800 in my training inputs
+and number of columns is two because i
+have two features and for the targets is
+again 2 800 and of course the column
+will be one awesome that makes uh
+good sense i'm actually i can actually
+delete this cell now
+uh or maybe not
+just keep it
+so after splitting these training inputs
+and training targets these will be the
+two uh data or two
+numpy array or tensorflow object that
+will be passed to my training model that
+is that is to my feed function so let's
+understand the fit function because now
+uh the data is completely
+completely ready to be fed into the
+model for training so
+uh after compile remember we have
+already compiled the model in previous
+step here of that is first we
+defined the architecture of the model
+here in this line it's a super simple
+architecture there is no uh hidden layer
+and no stacking of layers it's just a
+single dense layer of keras and then i
+ran this compiled function so my model
+and data is completely ready to be
+compiled now uh that is um to be to be
+trained to be trained now with the feed
+function
+so let's understand the fit method after
+compiled comes a fit the fit method
+implements
+the training loop itself these are its
+key arguments uh the first one is data
+inputs and targets to train on it will
+typically be passed either in the form
+of a numpy array or a tensorflow dataset
+object
+the number of epochs that's another
+parameter to the fit function
+that is
+how many times the training loop should
+iterate over the data past
+and another important item important
+parameter to fit function is batch size
+that is the size to use within each
+epoch of mini batch gradient descent the
+number of training examples considered
+to compute the gradients for one weight
+update step
+all right now i have made a quick slide
+let's look at them so this is uh the
+overall representation of model.fit um
+and it takes
+i have passed a full arguments here
+inputs targets a box batch size so the
+input example can be either numpy array
+or tensorflow objects
+corresponding training targets uh also
+will need to be passed uh which again
+can be numpy array or tensorflow objects
+a box is just a number of epochs i have
+put here five it can be anywhere 10 50
+etc depending on the power of your
+machine that you are running on
+and so that means epochs means a
+training loop will iterate over the data
+five times here
+and with each epoch uh your accuracy of
+the model is supposed to be enhanced up
+to a certain point and lastly the patch
+size which i have
+given 128 that means a training loop
+will iterate over the data in batches of
+128 so your training may have millions
+of samples but
+for each training loop 120 will be
+considered and that's the way your
+machine can accommodate the huge number
+of batches huge number of samples uh for
+large scale data set
+so now let's run the fit function before
+that quickly check the shape that is the
+number of samples of our training sample
+so we have uh 2800 samples in our
+training data set and the code for
+my actual training will be just this
+that is um
+i am the model is already compiled and
+on top of that i am passing a dot fit
+function to that i am passing training
+inputs
+and training targets so this is my x
+data and this is my white data and
+epochs i am passing 10 that is i'll be
+running for 10 epochs batch size i'm
+giving a very small number here 16
+because my whole data set itself is 2
+800. in in training
+and validation data this is another
+important parameter in the feed function
+because evaluation of the model that is
+keras will run internally and evaluation
+of your training and that will be done
+not on your training set but on your
+validation set that we
+that we did previously so validation
+data will be by validation inputs and
+the validation target that is just the
+corresponding to these training inputs
+and training targets we already split
+the data set uh kept 30 percent of the
+data set to be my validation set and
+this is that
+being used here that validation data i
+am passing as a tuple for my inputs and
+for my validation targets and just
+quickly check again so that we don't
+forget what they are
+uh
+remember in this cell we created this uh
+validation inputs and validation targets
+and also we checked their shapes here
+let's check the shapes another time
+range
+run the cell yes so i have 1200
+number of validation samples
+okay now let's run the fit
+yep
+okay it ran very very quickly because
+it's a very small data set uh
+indeed uh 2800 number of training
+samples is actually nothing uh
+and for the real world in the real world
+it probably will be dealing with
+millions of samples so anyway it ran the
+training pretty fast and
+i have held the entire training output
+in a variable called history because now
+this history variable will have some
+pretty important uh information uh after
+the training is done so this history now
+has all the important act all the
+important parameters it has got within
+itself and i'm going to extract it but
+before that let's print the history
+variable to check
+uh
+what this is all about
+okay so it says callbacks history at uh
+okay it did not give me anything let's
+print in another form
+actually history did not give me
+anything because
+uh it has a
+object called history within itself and
+that object has all the important
+information so i actually have to print
+it like this history dot history
+and
+this actually has
+all the all the model training parameter
+after the training uh
+in a dictionary format that is in key
+value format so let's print it
+awesome this is exactly what i needed
+and that is i have the loss i have the
+binary accuracy i have the validation
+loss validation loss is called val loss
+here in keras
+and you are seeing so many values
+because of these
+these important values like loss binary
+accuracy they are all held for each
+epoch because during the model keras do
+so many things and one of the important
+thing is that they uh keep a track of of
+the result of the training after each
+epoch so all these results are for each
+epoch so this is a loss after the first
+epoch this is the loss after the second
+second epoch and so on similarly uh this
+is a validation loss after the first
+epoch this is a validation loss after
+the second epoch and so on
+and if you are interested in knowing
+what is the difference between the loss
+and validation loss remember in our
+um uh
+uh in our history.history object it
+printed one loss
+this is a list of laws for each epoch
+and then it also printed the validation
+laws
+uh here so uh
+i will refer you to these um
+beautiful stack data science stack
+exchange question that was asked
+uh exactly the same question curious
+difference between val loss and loss
+during training
+and the answer is pretty much that
+validation loss is a value of cost
+function for your cross validation data
+and loss is the value of cost function
+for your training data
+and uh this is the main difference but
+further if you
+go into the detail uh of course i have
+not discussed about um
+applying uh dropout etc in this video
+but uh dropout is of course a very
+important part of any deep learning
+training so uh this is another point of
+difference between well loss and loss uh
+the reason is that during training we
+use drop out in order to add some noise
+for avoiding overfitting during
+calculation of cross validation we are
+in the recall phase and not in the
+training phase
+so we will use all the capabilities of
+the network so actually what they are
+pretty much saying is that
+during the calculation of loss
+the dropout is included but during the
+calculation of validation loss the
+dropout is not included but uh the
+concept of dropout is a separate concept
+altogether i will discuss it in a
+separate video uh but here i just
+mentioned just to uh make sure the
+differences between validation loss and
+loss in general
+so let's go back to our code
+yeah now the next important point to
+understand here is evaluation
+oh but before that uh quick point on
+this well loss again that keras could um
+after the training it could calculate
+this valid validation loss separately is
+because during the training we passed it
+a validation data set let's look at this
+uh during the training one of the
+parameter was validation data and that
+included my validation inputs and
+validation targets so
+these validation loss the val loss value
+this one
+this loss value was calculated on that
+validation data set that we passed
+during the training
+okay now the evaluation
+so evaluation is a process during
+development of the model to check
+whether the model is best fit for the
+given problem and corresponding data
+kira's model provides a function called
+evaluate which evaluates a model during
+the training and it takes three
+arguments test data that is test input
+data test target data and batch size and
+all evaluate function will do is to
+iterate in batches
+over the data passed and return a list
+of scalars where the first entry is a
+validation loss
+and the following entries are validation
+matrix let's quickly check it actually
+otherwise it will not be clear so here
+is my code to calculate the validation
+first
+uh
+comment out this
+so all i'm doing is um i'm using
+model.evaluate and then passing my
+validation input that is test inputs
+validation targets and batch size of 128
+and printing these variable that
+whatever the evaluate gave me
+all right and it gave me
+the loss and matrix array is
+it just have two two numbers and these
+two numbers the first one is actually
+the validation loss and the second one
+is accuracy
+uh so this is an absolute number
+uh and this is the actual accuracy so
+let's now uncomment this and print this
+yeah that's pretty much it so the first
+element of the array from this evaluate
+model is a loss and the second element
+of the array is accuracy
+and now finally i come to the final step
+of any model training which is to get my
+predictions from my trend model and for
+applying this prediction i'll be using a
+predict function of keras and to this
+function i will pass the validation data
+set because the validation data set is
+the one on which i want to apply uh the
+trend model to get the validation
+prediction that is
+the predicted value from the input
+validation data set and this is my
+simple code prediction model.predict so
+this is the most important part i'm just
+using this model is already trained and
+i'm just applying the dot predict
+function on it and to this i am
+passing the validation inputs and let's
+print my
+prediction it should be a numpy array
+pre predictions
+and let's run this cell
+yeah
+yes so it gave me a numpy array this is
+all the prediction that is i have a
+validation input which was a two
+dimensional matrix and from it
+this is the prediction i got and if i
+quickly print their shape
+yeah 1200 is a number of samples because
+that many were my uh or what the sample
+number of samples from my validation set
+all right so that uh pretty much wraps
+up this video and
+before closing a quick word on my
+channel that i will be uploading videos
+pretty frequently on deep learning
+involving uh pi torch and tensorflow so
+if you have not subscribed yet do
+subscribe and if you like this video
+smash the like button alright see you in
+the next video

@@ -1,0 +1,315 @@
+friends welcome to my channel. Dhanesh here.  
+in this video i am going to discuss time series 
+forecasting using pytorch. time series data  
+as the name suggests is a type of data 
+that changes with time. for instance the  
+temperature in a 24 hour time period . the 
+price of various products in a month . the  
+stock prices of a particular company in a year. 
+these are all examples for time series data.  
+time series forecasting is an important area in 
+machine learning .it is important because there  
+are so many prediction problems that involve a 
+time component . these problems are neglected  
+because it is this time component that makes 
+time series problem more difficult to handle.  
+what are all the characteristics 
+of time series prediction?  
+what makes a time series different from say 
+a regular regression problem ?there are two  
+things. the first one is it is time dependent . so 
+the basic assumption of a linear regression model  
+that the observations are independent doesn't 
+hold in this case. the second point along  
+with an increasing or decreasing trends most time 
+series have some form of seasonality trends . that  
+is variation specific to a particular time 
+frame . for example if you see the sales of a  
+woolen jacket over time you will invariably 
+find higher sale in winter seasons.  
+rnn and sequential data . see recurrent neural 
+network is a solution for handling sequential  
+data . see rnn process historic data. but there 
+are two drawbacks with rnn. one is the vanishing  
+gradient and the second one is the exploding 
+gradient. the solutions for the drawback of  
+rnn are lstm (long shorter memory) gru (gated 
+recurrent unit) and the latest one the BIRT.
+now the implementation. see i am implementing 
+the time series forecasting by using lstm and  
+pytorch . let's get into the implementation part 
+. i am using anaconda on top of that i have you  
+know all software's like python everything is 
+installed. and i'm i can launch the Jupiter  
+notebook from here. you get here i am importing 
+the necessary libraries. i have imported the  
+you know uh python i have import torch and seaborn 
+numpy pandas all the libraries i have imported let  
+me run this program you can give a pip installed 
+pytorch to install pytorch you can give do this  
+uh people install python i have run it from the uh 
+you know anaconda terminal i have done it you know  
+contact installed i touch and i have installed you 
+know uh python in this system even uh printing it
+yeah you can see it here this is the data set  
+the data set that will be using the 
+flights data set let's load the data set  
+into our application and see how it looks  
+so this is the output you can see it 
+here the data set has three columns year  
+month and passengers the passengers column 
+contains the total number of traveling passengers  
+in the specified month let us 
+plot the shape of our data sets  
+yeah it's 144 comma 3. you can see there 
+are 144 rows and 3 columns in the data set  
+which means that the data set contains 
+12-year traveling record of passengers  
+the task is to predict the number of 
+passengers who travel in the last 12  
+months based on the first 132 months remember 
+that we have a record of 144 months which means  
+that the data from the first 132 months will be 
+used to train our lstm model whereas the model  
+performance will be evaluated using the values 
+from the last 12 months let's plot the frequency  
+of the passengers traveling per month the 
+following see let's write the script for them
+and the next script plots the monthly 
+frequency of the number of passengers one  
+yeah this is some showing the you know monthly 
+frequency of the number of passengers fine
+this output shows that over the years the average 
+number of passengers traveling by air increased  
+the number of passengers traveling within a 
+year fluctuates which make makes sense because  
+during summer or winter vacations the number 
+of traveling passengers increases compared to  
+the other parts of the year next we will get 
+into the data pre-processing the types of the  
+columns in our data set is object as shown by the 
+you know following code i will write that script
+yeah you can see it here  
+the first pre-processing step is to change 
+the type of the passenger's column to float
+it's done now if you print the  
+all underscore data number a you should see the 
+following floating type values let's print it
+next we will divide our data set into training 
+and test sets the lstm algorithms will be trained  
+on the training set the model will then be 
+used to map mac predictions on the test set  
+the predictions will be compared with the actual 
+values in the test set to evaluate the performance  
+of the trained model the first 132 records will 
+be used to train the model and the last 12 records  
+will be used as a test set the following 
+script divides the data set into training  
+and test sets let's write that script now let's 
+um now print the length of the test and train  
+sets 12. if you know um no print the test data you 
+will see it contains last 12 records from the all  
+underscore data number array now let's print test 
+and our data set is not normalized at the moment  
+the total number of passengers in the initial 
+year is far less compared to the total number of  
+passengers in the last years it's very important 
+to normalize the data for time series predictions  
+we will perform min max scaling on the data 
+set which normalizes the data within a certain  
+range of minimum and maximum values we will 
+be using the min max scalar class from the  
+sk-learn pre-processing module to scale our data 
+for you know uh you even when you you know learn  
+convolutional neural networks you do this min 
+max scaling so let's do the script for that  
+it's fine now let's print the first five 
+and last five records of our normalized  
+training data you could see here see you can 
+see that the dataset values are now between  
+-1 and 1. it's important to mention here that data 
+normalization is only applied on the training data  
+and not on the test data if normalization is 
+applied on the test data there is a chance that  
+some information will be leaked from the training 
+set into the test set the next step is to convert  
+our data set into tensors since pYTORCH models are 
+trained using tensors you you are aware of that  
+pytorch no models are trained using tensors 
+tensors means they are containers for data  
+there are you know one-dimensional tensors 
+two-dimensional tensors three-dimensional  
+tensors three-dimensional tensors we call it as 
+matrix and you know two dimensional it is you know  
+we call it as vectors you are familiar with 
+that to convert data set into tensors we can  
+simply pass our data set to the constructor of 
+the float tensor object let me write that you know  
+piece of code processing it's working fine now 
+the final pre-processing step is to convert our  
+training data into sequences and corresponding 
+labels you can use any sequence length and it  
+depends upon the domain knowledge however in 
+our data set it is convenient to use a sequence  
+length of 12 since we have monthly data 
+and there are 12 months in a year if we had  
+daily date ids a better sequence length would 
+have been 365 that's the number of days in a year  
+therefore we will set the input sequence length 
+for training to 12. next we will define a function  
+named create underscore in out underscore 
+sequences this function will accept the row  
+input data and will return the list of tuples 
+in each tuple the first element will contain a  
+list of 12 items corresponding to the number 
+of passengers traveling in 12 months the second  
+tuple element will contain one item that is the 
+number of passengers in the 12 plus first month  
+let me write that function now next script is 
+to you know i'm executing the following script  
+to create sequences and corresponding labels for 
+training yeah it's working fine see if your print  
+length of the train underscore in out underscore 
+sequence list you will see it contains 120 items  
+this is because though the training set 
+contains 132 elements the sequence length is 12  
+which means that the first sequence consists 
+of the first 12 items and the 13th item is  
+the label for the first sequence in the same way 
+the second sequence starts from the second item  
+and ends at the 13th item whereas the 14th item 
+is the label for the second sequence and so on  
+let's now print the first five items of the train 
+underscore in out underscore sequence list and  
+see the output you can see that each item is a 
+tuple where the first element consists of the 12  
+items of a sequence and the second tuple element 
+contains the corresponding label next what i am  
+going to do is the creating the lstm model long 
+short term memory we have processed the data now  
+is the time to train our model we will define a 
+class lstm which inherits from nn.module class of  
+the pytorch library and this i know this code 
+i will you know i will write the code for the  
+lstm model the constructor of the lstm class 
+access three parameters input and score size  
+that corresponds to the number of features in the 
+input uh though our sequence length is 12 for each  
+month we have only one value that is total number 
+of passengers therefore the input size will be one  
+uh the second parameter it is hidden underscore 
+layer underscore size that specifies the number  
+of hidden layer along with the number of neurons 
+in each layer we will have one layer of 100  
+neurons the third parameter is output underscore 
+size the number of items in the output since we  
+want to predict the number of passengers for one 
+month in the future the output size will be one  
+next in the constructor we create variables 
+hidden underscore layer under source  
+size lstm linear and hidden underscore scale cell 
+lstm algorithms accepts three inputs previous  
+hidden state previous cell state and current input 
+the hidden underscore cell variable contains the  
+previous hidden and cell state the lstm and linear 
+layer variables are used to create the lstm and  
+linear layers inside the forward method the input 
+underscore sequence is passed as a parameter  
+which is first pass through the lstm layer the 
+output of the lstm layer is the hidden and cell  
+states at current time step along with the output 
+the output from the lstm layer is passed to the  
+linear layer the predicted number of passengers 
+is stored in the last item of the predictions  
+list which is returned to the calling function the 
+next step is to create an object of the lstm class  
+define a loss function and the optimizer since we 
+are solving a classification problem we will use  
+the cross entropy laws for the optimizer function 
+we will use the adam optimizer let me do that part  
+and i have given the learning rate as 0.001 and 
+now let's print our mod yeah you can see it the  
+output you can see it here now we will train 
+the model we will train our model for 150  
+epochs you can try with more epochs if you want 
+the lows will be printed after every 25 epochs  
+let me do that piece of code run 
+this and i will show you the output  
+yeah it's uh uh since our test set contains 
+the passenger data for the last 12 months  
+and our model is trained to make predictions using 
+a sequence of sequence length of 12 we will first  
+filter the last 12 values from the training 
+set we need to write the code for that i will  
+do the script for that let me run this see you 
+can see the output here uh you can compare the  
+above values with the last 12 values of the train 
+underscore data underscore normalized data list  
+initially the test underscore inputs item will 
+contain 12 items inside a for loop these 12 items  
+will be used to make predictions about the first 
+item for the test set that is the item number  
+133 the predict value will then be appended to 
+the test underscore inputs list during the second  
+iteration again the last 12 items will be used 
+as input and a new prediction will be made which  
+will then be appended to the test underscore 
+inputs list again the for loop will execute  
+for 12 times since there are you know 
+since there are 12 elements in the test set  
+you know at the end of the loop the test 
+underscore inputs list will contain 24 items  
+the last 12 items will be predicted value for the 
+test set i will write the script for that for loop  
+you can you know print the length of the test 
+and score inputs list you will see it contains 24  
+items the last 12 predicted items can be printed 
+i will write the script for that i will read here  
+see the output you can see it here it's uh you 
+know it's important to mention again that you may  
+get different values depending upon the 
+weights used for training the lstm since the  
+normalized the since we normalize the data set for 
+training the predicted values are also normalized  
+we need to convert the normalized predicted 
+values into actual predicted values we can do so  
+by passing the normalized values to the inverse 
+underscore transform method of the min max scalar  
+object that we need to normalize our data set 
+let me do that you can see the output here  
+it's here let's now predict the values against 
+the actual variable we create a list that contains  
+numeric values for the last 12 months the first 
+month has an index value of 0 therefore the last  
+month will be at index 143 the next script 
+i will upload the total number of passengers  
+for 144 months along with the predicted 
+number of passengers for the last 12 months  
+yeah you can see it here see this is the output 
+month versus passenger and the predictions  
+uh the predictions made by our you know long 
+shorter memory lstm are predicted by the orange  
+line you can see the orange line you can see that 
+our algorithm is not too accurate but still it has  
+been able to capture upward for total number 
+of passengers traveling in the last 12 months  
+along with occasional fluctuations you can 
+try with a greater number of epochs with a  
+higher number of neurons in the lstm layer to 
+see if you can get better performance to have  
+a better view of the output yeah we can plot the 
+actual and predicted number of passengers for the  
+last 12 months i will show you uh let 
+me run this uh script and see the output  
+yeah it's it's it's coming here 
+you can see the output here  
+yeah this is the output month versus passenger 
+here we have plotted against total passengers  
+uh the predictions are not very accurate 
+here as well but the algorithm was able  
+to capture the trend that number of passengers 
+in the future months should be higher than the  
+previous months with the occasional fluctuations 
+so that's all uh here you know about you know  
+time series forecasting thanks for watching 
+please like share and subscribe thanks a lot

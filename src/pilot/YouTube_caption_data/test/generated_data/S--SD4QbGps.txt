@@ -1,0 +1,567 @@
+hi everyone in this video you will learn
+how to dockerize a machine learning
+application and this tutorial consists
+of two parts in the first part we build
+our flask app and apply the machine
+learning model and in the second part we
+dockerize everything and for this i
+actually got help from francesco who is
+a docker captain and a real expert in
+this field hello everyone and thanks for
+the introduction i'm francesco docker
+captain and i like to help developers
+understand continuation concepts you can
+find me on twitter and youtube in the
+links below in the second part we will
+take care to containerize the
+application that patrick is about to
+create
+let's start
+so the second part is available on his
+channel and i will put the link in the
+description below and now let's get
+started alright so let's start from
+stretch by developing our machine
+learning model and our
+web app and for this i have one empty
+directory that i called app and then i
+have another one where that i called
+mldf so this is where we do our machine
+learning development and yeah here we
+don't start completely from scratch so i
+already have the data here and a
+notebook where we train and come up with
+our model so this is not the focus of
+this video but you will learn how we
+transfer our notebook to a production
+ready web app so
+let's do this and yeah let's go into the
+ml
+def folder
+and if you are
+working with machine learning stuff then
+the chances are pretty high that you use
+a
+conda environment
+so i want to use the same in here so we
+start from scratch by setting up a conda
+environment so i say connor create minus
+n and then i give it a name and i also
+like to specify the python version i won
+so here i want python 3.9 so hit enter
+and you don't need to use a conda
+environment but i recommend that you use
+at least one kind of virtual and
+management so you could also just use
+the build in virtual and this works just
+fine but in this case i want to
+demonstrate how to do this with a conda
+environment so now we activate it and
+the great thing later will be that when
+we have our docker container then we no
+longer have to worry about this local
+setup here so then everything should
+work in our docker container but for now
+we have to set up this locally so yeah
+now we have this activated and now we
+can install all the packages we want so
+the first thing i install is
+two pointer and ipi kernel for the two
+fighter notebook support then i also
+want to install the a kernel for this
+environment so i say ipython kernel
+install minus minus user minus minus
+name and for the kernel name i give it
+the name as the environment so also nlp
+and now i need to install all the
+packages i need to develop the model so
+in this case i'm going to use
+scikit-learn
+but the same approach works also with
+tensorflow models or pytorch models so
+in this example i want to keep it simple
+but again the approach is the very same
+for any kind of machine learning or deep
+learning app so now we have this and in
+this example i need one more package and
+this is the nltk package to work with
+text and now we should have everything
+we need so now we can start our notebook
+by saying two fighter notebook
+and this fires up the server and here we
+see the data and this is the notebook i
+prepared so this is the notebook and i
+will upload this to github and put the
+link in the description and now we go
+over this only very briefly so what
+we're doing here is we work on a project
+to classify twitter tweets and say if
+they are positive or negative
+so
+the first thing i want to do is change
+the kernel and make sure that we use the
+kernel from the environment that we just
+created so we select this nlp
+and then let's run the first cell and
+see if all the imports work
+and here we get a error module not found
+so i forgot to install this in the
+environment so let's go back to a kernel
+to the terminal
+and then
+activate this in a new window conda
+activate nlp and then we say conda
+install pandas and hit enter alright so
+now we have panda so now let's go back
+and run this again and now the imports
+work so yeah and then now let's go over
+this briefly so here we load the data
+and again i will put the link for the
+data set in the description below so you
+can download this as well
+and then we do some text pre-processing
+so we here we define emojis and stop
+words
+and then i created one function
+pre-processed that gets the raw text
+data and then here for example i remove
+your l patterns the user patterns and
+then i remove stop words
+and i apply the slammatizer
+and the lemmatizer is a popular
+technique in nlp that groups together
+inflected forms for example better and
+good so we instantiate this here and
+this is available in the nltk package
+and when you run this the first time you
+might get a error and a note that you
+need to execute this command so we have
+to say import nltk
+and then download this package and this
+package so this is important because we
+have to remember this for later because
+we have to do the same commands in our
+docker container but yeah this is the
+pre-processing so we define this
+function then we call this with the pr
+and get the pre-processed text and here
+i do a train test splits and then i set
+up all the different models or pipeline
+steps i need so the first thing here is
+to use a vectorizer and so i set this up
+and call vectorizer fit and then
+vectorize a transform and then i try out
+different classification models as last
+step so here i have this helper function
+to evaluate the model
+and yeah here i create different models
+for example this bernoulli naive bayes
+and then call model fit and model
+evaluate and yeah once we've done this
+and decided for the final best model
+now the next thing to do is to save all
+the different steps and all the train
+models and then load this in our
+application but in this case i want to
+show you one best practice that you can
+use with the sk learn package and for
+this we use the sklearn pipeline and the
+way it works is that we define a
+pipeline object where we put in all the
+different steps so the first step is the
+vectorizer and the second step is the
+final classification model and then we
+have everything together so now i have
+to only call one fit command and then
+one predict command and don't have to
+call the vectorizer and the bernoulli
+model separately
+so yeah i recommend that you set up a
+pipeline like this and then here i
+evaluate it again to see if this still
+gets the same results and now we have to
+only save one trained pipeline so after
+having set pipeline dot fit we now save
+this pipeline and for this we use the
+pickle module and then we load this
+again and here i call model evaluate to
+check if this is still the same and yeah
+this approach is the same for every
+machine learning pipeline so if you use
+tensorflow or pytorch then also at some
+point you want to save either all the
+steps separately or maybe you could save
+the whole pipeline in one step and then
+later in your application we call a
+model load again
+so yeah this is how we save and load the
+model and then here at the very end i
+have one function to predict the text so
+here we call this pre-process function
+so this step is still separately because
+this is not a model that we can put in
+our pipeline but then here we only call
+model predict so this will apply the
+vectorizer and the final classification
+model and then it returns the label
+so here i test this with some example
+tweets so
+now let's run all the cells and hope
+that this works all right so the code
+run through and now we see the final
+output so here we have the
+classification i hit twitter this is
+class zero which means negative may the
+force be with you this is one which
+means positive
+and then here again we have one negative
+tweet so yeah our classification works
+and now we have all the code we need in
+the notebook and now the next step is to
+transfer the code that we need from here
+to our application so let's go back to
+our folder and if we go to the ml dev
+folder then here we should see our
+pickled file so this is the pipeline
+so the first thing i want to do is i
+want to copy this over to the app and
+now let's go back to the
+terminal and here we can
+quit the server
+so we no longer need our notebook and
+now let's go back and into the app
+folder and here i fire up my code editor
+so in here the first thing i want to do
+is i create another folder and i call
+this api and then in here again a new
+folder and i want to call this models
+and then i move the saved model into
+this folder
+so now we have this and then in the api
+folder i want to create two files so i
+want to have one app dot pi
+and and
+another one and we call this utilities
+dot pi
+so yeah so now we have the after pi the
+utility stop pi and the
+models with the saved model and now the
+first thing to do is to bring over the
+code from the notebook to the utilities
+file so let's put this next to each
+other and now let's bring over all the
+code that we need so we need a few
+imports so we need import ray and pickle
+then we need this lemmatizer so let's
+copy and paste this
+and then if we go down so we don't need
+this data set but we need the emojis and
+the stop words for the preprocessing so
+again let's copy this and i will make
+this smaller for now
+so yeah here we copied this
+then we need this pre-processing and the
+lemmatizer so let's copy and paste this
+whole function
+and then again here we don't need this
+um
+train test split stuff and we also don't
+need the stuff where we set up the
+different models and fit them and
+evaluate them
+so the only thing we need at the end we
+also don't need this pipeline stuff we
+only need this where we load the pickled
+file again so let's copy and paste this
+as well and here we have to be careful
+so this is now in the
+models folder so we say models slash
+pipeline dot pickle file and then let's
+go down further so yeah we could also
+use this predict function and maybe this
+with if name equals equals main to test
+the code
+so
+now we should have all the codes that we
+need
+and now let me reformat this a little
+bit so i want to put the lemmatizer up
+here so that we see it right away
+then i also want to have this where i
+load the model at the top so that i see
+this right away as well
+and
+then let's create one
+final function
+and i will call this define predict
+pipe line and this only gets the final
+text and then here we can say return
+predict because this function still gets
+the
+model so down here it gets the model and
+the text
+so here we say predict and then we put
+in the load at pi
+and the text
+and then
+this is basically the only function we
+have to call
+and then down here here let's say
+predict
+pipe line and then it only gets the text
+and then i want to i can close the
+notebook and make this larger again
+and now let's open the terminal in here
+so in here i want to run this and make
+sure that this works so now let's make
+this larger again
+and the first thing in the terminal i
+want to do is make sure that i'm in the
+correct environment so like you can see
+here this is a different one that was
+activated by default so i deactivate
+this and say conda activate nlp
+and now we first let's go into the api
+folder and then we can run python
+utilities dot pi and yeah this works so
+here we should now see the same output
+that we've seen in our notebook so this
+works as well now we have all the code
+for our model classification that we
+need here
+and the last thing to do is now to
+implement the flask app so for this we
+use flask and of course we have to
+install this
+and here i'm simply going to install
+this in our
+conda environment but i install it with
+pips so i can say pip
+install flask and this works just fine
+all right so now we have flask so now
+let's import the stuff we need so we say
+from flask we import
+flask then i also want to sonify and i
+also want request and then we say from
+[Music]
+utilities
+utilities we want to import the predict
+pipeline function this is all we need
+from there then we set up our app so we
+say app is our flask app with the
+underscore name convention and then we
+need to create one function and we call
+this let's call this predict function
+and for now we say pass and we have to
+decorate this of course so here we say
+at and then app dots and now this is new
+since since flask 2.0 we can say
+app.post so for a post request
+and then we define the url endpoint so
+we say this should be at slash predict
+and here what we want to do is we want
+to basically send a text to this
+endpoint as json data and here we get
+the text and then call the predict
+pipeline
+so the first thing we do is we say data
+equals request dot json
+and then since we want to deploy this to
+production i also want to do a couple of
+error checking here
+so i wrap this in a try except block and
+then say the sample equals the data with
+the key
+let's call this text
+so now the user should put in a json
+file with the key text and otherwise we
+get a key error so we say accept and
+then we
+catch a key error
+and here we can say we want to return
+jsonify and then this should be a
+dictionary where we put in the
+key
+error and then as a message we could
+maybe say no
+text was sent
+so yeah otherwise it works and then we
+have the
+sample
+and this is
+a raw string right now so we want to put
+this in a list so we need a list with at
+least one element so we say sample
+equals a list with this item and then we
+call the predictions pipeline so we say
+predictions equals predict
+pipeline and this only gets the one
+sample now
+and then again we could and do some more
+error checking with this
+but yeah i leave this up to you but now
+for the very end i want to do one more
+error checking so here i want to say
+result equals and then again i want to
+chase sonify this
+and then i put in the first predictions
+so this should again have only one
+element so i can say
+predictions and then zero
+and if this does not work then this will
+or this could maybe throw a type error
+and i show you why in a second
+so we catch a type error as e
+and then here again we can return a
+error as json object and here i want to
+make the exception message as a string
+and otherwise always say this is also
+the result and then at the very end we
+return the
+result so yeah this is basically all we
+need for our predict endpoint and now
+again i want to say if underscore name
+equals equals underscore
+main then i want to test my flask app
+and i want to say app dot run and here i
+give it um
+host the host object equals as a string
+0.0
+and while i'm debugging this and trying
+this i can simply still say debug equals
+true this uses the
+internal flask development
+server so this is fine because later we
+use a production ready server and not
+this one so now let's test this again by
+going to our terminal and then this case
+we run python app.pi and this should
+start the flask server so yeah this is
+up and running and now we can go to a
+separate terminal and then use a curl
+command to send a post request to this
+endpoint so let me copy and paste this
+in here
+so we say curl and then a post request
+and we need to send this json data with
+it so here we have the key text and then
+we use this
+tweet
+and then here we have this endpoint at
+part 5000 and then slash predict so
+let's run this and see what happens
+and we get a response back so the
+endpoint work but we get an error object
+of type in 64 is not chase and
+serializable
+and so what happened here is that in our
+application if we go back and have a
+look at here so here we catch this type
+error and this is exactly what happened
+because now if we go back to the predict
+pipeline
+and in the predict function so here
+this prediction is a numpy data type and
+not a python
+int so we have to convert this to a
+integer
+and in fact i want to
+do this a little bit different so
+instead of putting a
+tuple in here i want to create a
+dictionary so this will look nice in
+json format so let's create a dictionary
+from this so this needs a key so here we
+put in the key text and then the text
+then we put in the key let's call this
+spread for prediction
+and then here we want to put in the
+label and yeah this is the label to
+prediction or other way right the other
+way around prediction to label
+so yeah so now we have this so let's
+save this and run this and this is still
+in debug mode so if we go back then this
+should be reloaded so now let's
+do the curl command again and now it
+says connection reviews so i think i
+accidentally
+quit it this because here i have a
+syntax error so if we go back then of
+course here this should be before the
+colon so now it should work so now let's
+run our app again and see if this is up
+and running so yeah now our app is
+running again so now let's send a call
+command again and yeah now it works so
+now we get the correct prediction back
+where we see the label the prediction
+and the original text so now let's also
+test this with the
+negative one so here we send the text i
+hate twitter
+and then we get the negative labels so
+yeah this worked
+so now our app is running and now we
+want to
+dockerize this so before we do this i
+want to do one more thing so in our api
+folder i create one file
+requirements dot txt
+and this is where i put in all the
+packages that i need
+so
+um what we can do here is if we go back
+to the terminal
+and quit our application
+so since we used a
+conda environment we can say conda list
+and this will list all the packages that
+we have here but here we basically only
+need to grab the ones that i installed
+in the beginning so conda installs a
+bunch more
+so we need scikit-learn and
+we also see the version here and i
+highly recommend that you put in the
+version in the requirements txt file as
+well and pin this
+because if we have a difference between
+the versions where we trained our model
+and then later when we load this and do
+it in our app if there is a difference
+then our app or our model could break or
+produce different results so we want to
+have the same version for scikit-learn
+and i recommend the same if you use
+tensorflow or pytorch so we pin the
+version here and then we also need the
+nltk so let's search for this so here we
+have nltk and then let's also copy and
+paste this and pin the version to
+3.6.6
+and then we also need flask so let's
+search for flask and copy and paste this
+and yeah for flask it doesn't really
+matter but i recommend that this should
+be at least 2.0 because then we can use
+this app.post command
+so let's pin this to at least 2.0 so we
+can say greater equals 2.0.0
+and then this is all that we need and i
+also want to write a comment here so i
+copy and paste this so this is a command
+that we need to import nltk and download
+the packages for nltk so i put this here
+as a comment as well
+and then yeah francesco can see this
+and now we have everything we need for
+our web app so we have this one
+directory with the api
+and here we have our flask
+up and running and yeah as a next step
+we want to dockerize this and as i said
+in the beginning you can find this on
+francesco's channel so i hope you
+enjoyed this tutorial and then i hope to
+see you next time bye

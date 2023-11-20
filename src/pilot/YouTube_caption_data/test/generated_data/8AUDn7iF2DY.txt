@@ -1,0 +1,250 @@
+all right let's now talk about
+how we can use batch norm in practice
+and also we will talk briefly about how
+batch norm
+behaves during inference because yeah
+you know that
+during training we have mini batches but
+that's not necessarily the case if we
+want to use our network for prediction
+sometimes we only have a single data
+point so how would that work
+so but yeah first let me show you how
+batch norm works
+when we use pytorch i've actually
+just used the code from last week where
+i implemented
+dropout and just made a slight
+modification where i
+removed dropout and added a batch norm
+layer so
+i was just accept that reusing the same
+code so i don't want to walk through
+this
+in detail but you can find the code here
+on github
+and yeah here i'm showing you the main
+code the multi-layer perceptron that we
+have to modify
+and um yeah so what we have here is the
+one two hidden layers and the output
+layer at the bottom
+and first notice that i'm using again
+flatten that's because i was working
+with mnist and mnist is um
+n times one times twenty 28 times 28
+dimensional and flattened will
+essentially flatten this to a vector to
+a n
+times 784 dimensional vector where n is
+the
+batch size and then it will work with
+the fully connected
+linear layer here so yeah i
+here insert batch norm after the linear
+layer notice that there is a
+1d it may be confusing why is there a 1d
+that's because there is a slightly
+different version of batch norm for
+convolutional networks
+we will discuss this in the
+convolutional network lecture where
+this would be called batch nom 2d for
+the convolutional network so
+to keep them apart this is called batch
+nom 1d
+this is essentially just the bathroom
+that we discussed here in the previous
+videos so
+the 1d is just there to keep them apart
+um yeah and here i'm doing the same
+thing in the second hidden layer
+also yeah notice that i set the bias to
+false because that would be redundant
+right because if we
+compute the net input as let's say the
+weight times
+the feature plus b and then
+in batch norm we had this plus beta
+values and that way the bias becomes
+kind of redundant
+so it's not necessary but you can have
+it there it doesn't really matter
+i ran it with and without it i didn't
+notice any difference in this case
+okay so this is how yeah batch norm
+looks like a full code example
+can be found here but there's really
+nothing
+nothing really to talk about because
+it's just
+two lines of code here
+yeah so i was also just for fun or
+running some experiments
+without the bias that i just showed you
+and having
+batched on before the activation that's
+usually how
+yeah that was originally how it was
+proposed in the paper
+but sometimes people also nowadays it's
+even more common to have it after the
+activation
+i will talk more about that in the next
+video um i found some
+benchmarks some more sophisticated
+benchmarks i wanted to show you
+so but here in this case when i ran the
+code of the multi-layer perceptron that
+i just showed you
+i enabled the bias so i'm actually not
+showing it here
+i don't know why i deleted it but um by
+default
+bias is true if you don't set anything
+and
+i found it was the same performance i
+then also inserted
+batch norm after the activation instead
+of before the activation like here or
+here so i now instead of
+here having it before activation i now
+have it
+after the activation in both cases and i
+also didn't notice any
+yeah any difference really here um
+yeah and then i also run experiments
+with dropout
+in this case also i didn't notice much
+of a difference except now the network
+was not overfitting anymore
+the test accuracy for both dropboard
+cases was slightly lower compared to
+no dropout i think i used just too much
+out but i could at least see there was
+no overfitting anymore
+but yeah the comparison here is um
+inserting batch norm before the
+activation
+and then drop out and then
+after the activation and then drop out
+and i also did not notice any difference
+here
+in practice um people nowadays it's more
+common to actually recommend if you use
+dropout
+to recommend having batch norm after the
+activation and yeah one little
+fun memory aid to remember that is if
+you
+consider this case so you have batch
+norm
+then you have the activation and then
+you have dropout
+you may call it bad it might be better
+to have
+batch norm after the activation that's
+typically a little bit more common
+in this case i didn't notice any
+difference it may make a small
+difference in
+other types of networks like
+convolutional networks so i would if you
+use dropboard in a bathroom i would
+probably go with this variant but yeah
+of course it's something
+it's a hyper parameter essentially to
+experiment with
+all right so um i have one more thing
+about dropboard in pi torch
+so when we look again at our training
+function here this is exactly the same
+training function that i used last week
+in dropout
+but again this is again highlighting
+train and evil are important here that
+we
+during training set our model into
+training mode
+because that's where batch norm will
+compute
+the running mean and the running
+variance i will talk about this in the
+next slide
+so here batch norm will actually
+compute some running statistics during
+training
+and these running statistics are then
+used in the evaluation mode when we
+evaluate our model on
+new data so during an evaluation you
+have to imagine
+um that you are mimicking the inference
+scenario and an inference you may only
+have a single data point
+right so let's say you have a google
+search engine and there's just one user
+running a query and you have a network
+that has
+batch norm so you have to normalize
+but you don't have a batch of users so
+only if one user
+so how do we deal with that scenario so
+there are two ways to deal with that
+scenario the easy one would be to use
+a global training set mean and variance
+so you would compute these means
+for the features and the variances for
+the features for the whole training set
+that's something you would also usually
+do or could do when you compute
+the input standardization but um
+this is actually not very common in
+practice for some reason so
+what's more common is to use an
+exponentially weighted average
+or a moving average is just a different
+name for that so usually
+practice people keep a moving average of
+both the mean and the variance during
+training
+so you can think of it as also as the
+running mean how it's computed is by
+having a momentum term
+it's usually a small value like point
+one and this is multiplied by the
+running mean from the previous um
+epoch or sorry previous mini batch
+and then what you so you have this um
+this term this is like
+the running mean times the momentum term
+this is a point
+one value and then you have one minus
+the momentum this is like a
+0.9 value then
+plus yeah plus 0.9 times the current
+sample mean so that's the mini
+batch mean and you just do the same
+thing also for the running variants
+so here essentially this is just like a
+moving average or running mean
+and you do the same thing for the
+variance that's what you keep and then
+during inference
+you use that one to scale the data point
+that you do a prediction on
+you yourself don't have to do that yeah
+yourself by the way by
+using model evil it will actually happen
+automatically
+but yeah here's just like the
+explanation what's gonna
+happen under the hood okay so yeah that
+is how
+batch norm works in pytorch and in the
+next
+video i want to briefly go over yeah
+some
+very yeah brief a brief rundown of
+all the types of literature that try to
+explain how batch gnome works

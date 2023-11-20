@@ -1,0 +1,1813 @@
+PETAR VELICKOVIC: Hi, everyone.
+My name is Petar Velickovic,
+and I'm a research scientist
+at Deep Mind.
+And I will be giving you an
+introductory presentation
+and Colab exercise to the
+vibrant and exciting field
+of graph neural networks.
+As we go along, I will
+also be telling you a lot
+about fantastic graph
+neural networks, and where
+you might be able to find some
+of them in the real world.
+So in this talk, we will be
+going through neural networks
+that operate over
+graph structured
+data, which are commonly denoted
+as graph neural networks,
+or GNNs for short.
+I will start by giving you a
+bit of a motivation for why
+you might want to work with
+data that lives on a graph,
+and also overview some of
+the standard techniques that
+have actually already made
+us go a really long way.
+So the motivation for why you
+might want to study graphs
+is that graphs are actually
+everywhere around us.
+You can see them in lots of
+data that just comes around
+naturally.
+All chemicals can be
+represented as molecular graphs.
+Transportation networks can
+naturally lend themselves
+to a graph representation.
+Social networks such as this
+Facebook Friendship graph
+can be represented
+as a graph structure.
+And even places such
+as brain connectomes,
+where you might not immediately
+expect a graph to appear,
+can be meaningfully represented
+as a graph structure
+in one way or another.
+In a way you can say that--
+especially because graphs
+naturally generalize objects
+such as grids or sequences,
+where machine
+learning has already
+made very significant
+strides, you
+can say that the data
+that comes from nature
+is really nicely
+captured using a graph.
+Therefore, if we want to advance
+scientific discovery using
+neural networks, it
+makes sense to study data
+that lives on a graph.
+And to kick off this discussion,
+I would like to just dive
+into the molecular example.
+And as mentioned, molecules
+are very naturally represented
+as graphs.
+You can divide them into atoms
+that are connected by bonds,
+and those easily correspond
+to nodes and edges in a graph.
+You can attach
+features to every node,
+such as atom type, charge or
+bond type to edges, and so on.
+Once you have a molecule
+represented in this form,
+you can ask yourself some
+interesting questions
+about the molecule.
+And something that might
+be very interesting
+is whether this molecule
+represents a potent drug.
+So one thing you can do is
+once you have your molecule,
+you can train a
+graph neural network
+to predict a binary task.
+Will this drug inhibit a certain
+bacterium, such as Escherichia
+coli, for example.
+You can train this
+on a curated data set
+where you have a bunch
+of molecular compounds,
+and you know how strong
+this bacterium will respond
+to the presence of the drug.
+But once you've trained
+this graph neural network
+to give you an answer
+you could, in principle,
+apply this model to any
+molecule, not just the ones
+that you've curated
+in your data set.
+So if I have a large data set of
+known candidate molecules, that
+are known to exhibit some
+drug-like properties,
+you can feed them
+through your model
+and look at the predictions,
+like how likely it
+is to inhibit the bacterium.
+And you can take the top 100
+candidates from the model,
+and send them to chemists for
+more thorough investigation,
+maybe with some
+additional filtering.
+And what you might
+end up realizing
+is that the chemists
+have discovered
+here a previously overlooked
+compound, halicin,
+that ended up behaving like
+a highly potent antibiotic.
+So this sounds like a very
+interesting discovery,
+so you end up getting it
+published in a journal,
+like "Cell."
+But then because you've used
+this fairly straightforward
+machine learning
+pipeline to come up
+with completely
+new therapeutics,
+these kinds of
+discoveries quickly
+get picked up by
+outlets such as Nature,
+and then outlets such as
+The Financial Times BBC,
+and so on and so forth.
+In a way, this is one
+of the most popular
+successful applications of
+graph neural networks to date.
+If you've read any articles
+about scientists discovering
+powerful antibiotics
+using AI, you
+can know that there is a graph
+neural network hidden in there
+that operated over the molecule.
+Similarly, you can look
+at transportation maps,
+such as the ones you might
+find within Google Maps,
+and those can also be
+naturally modeled as graphs.
+For example, you could put
+nodes in the intersections
+of the traffic
+network, and put edges
+as the roads connecting them.
+And you can put
+some node features
+in there such as the length of
+the roads, the current speeds
+that vehicles are having,
+or maybe some historical
+speeds that they had
+at this point in time.
+One other way in
+which you can do this
+is partition the route
+into these super segments
+which model a part of the road.
+And this now gives you a
+natural graph structure
+that you can operate over.
+So if I then run a graph neural
+network over this super segment
+graph I can predict interesting
+things about the travel route.
+And one very interesting
+thing you can predict there
+is the estimated
+time of arrival.
+So in a way, it corresponds
+to graph regression.
+Given the graph structure
+that corresponds to the road,
+I want to predict what's
+the expected travel
+time over this particular path.
+And we ended up developing
+a system at DeepMind,
+and along with our
+partners at Google Maps,
+have successfully scaled it up
+to a model that is now actively
+deployed within Google Maps.
+And in several
+major cities, it's
+drastically reduced the
+proportion of negative user
+outcomes when
+querying for what's
+the expected travel time.
+In some cities, such
+as Sydney or Taichung,
+the improvement is over 40%.
+Therefore it's another
+very impactful application
+of graph neural
+networks that's already
+impacting many users worldwide.
+Another aspect that you
+might want to focus on
+are social networks, and
+recommendation systems
+more specifically.
+So the basic task
+of recommendation
+is based on a preferences
+that a particular user might
+have, reliably recommend
+new content for the user
+to explore.
+You can use existing
+links, like what
+are the things that some
+users find interesting,
+how do different concepts
+relate to each other,
+as some adjacency input to
+a graph neural network that
+can then predict new links.
+One issue is that most
+of the standard methods,
+at least up to a
+given point, have
+assumed that you process and
+feed the graph end all at once.
+And there's been
+quite some research
+on how you might be able to
+run these graph neural networks
+on very large graphs.
+And one of the first
+approaches, GraphSAGE,
+showed that you can basically
+subsample some neighbors,
+and subsample some
+neighbors neighbors.
+And only run your
+graph neural network
+over this reduced graph
+of subsampled neighbors.
+And if you let this model
+train for long enough,
+you will end up with
+performance that
+is quite competitive to having
+the whole graph in there
+in the first place.
+And when this gets scaled up
+to the billion node level,
+this has been applied in the
+PinSAGE model, which directly
+tries to model the
+Pinterest graph
+and predict new ways in which
+visual concepts that the users
+have found interesting
+can map to new things
+that we might want
+to recommend to them.
+And this graph has 3 billion
+nodes and 18 billion edges,
+and therefore corresponds to
+the first web-scale popularized
+application of graph neural
+networks, which is currently
+deployed actively
+within Pinterest.
+So hopefully these
+techniques motivate
+you to explore a
+graph representation
+learning, and graph neural
+networks, as a great approach
+for dealing with
+the kinds of data
+that nature usually
+throws at you.
+Assuming we have
+that motivation,
+let's think about how we might
+go on and develop our own graph
+neural network model.
+So what we actually
+want is something
+that sort of generalizes
+a convolutional layer.
+Because we can
+think about graphs
+as a strict
+generalization of images.
+If you have any
+image data set you
+can treat the image
+as a grid graph,
+where every node
+corresponds to a pixel,
+and it's four or eight
+immediate neighbors
+specify the adjacency matrix.
+Convolutional neural networks
+leverage the convolution
+operator to exploit this strong
+spatial regularity and images,
+and it would be
+highly appropriate
+if we could somehow generalize
+this to operate over
+arbitrary graphs.
+So just as a quick reminder,
+how convolutions work on images
+is we're able to exploit
+the spatial regularity
+to define comparably very
+small matrix of parameters
+k, which is then slid across
+the different positions
+in the image.
+And at each step we just take
+local pairwise position product
+sums, which allows us to specify
+an output image that detects
+patterns in the original image.
+And because this is
+just one operator that's
+applied everywhere
+in the same way,
+it's going to capture a
+very important invariances,
+such as translation invariance.
+So an object of interest
+is interesting no matter
+where it appears in the image.
+And also it exploits locality.
+So a pixel is far more
+likely to be related
+to the pixels right near
+it, rather than pixels
+in opposite corners.
+So what we really
+want when we try
+to define a graph convolution is
+something that's quite similar.
+Something that considers the
+immediate local neighborhood
+of a particular node,
+and uses that information
+to further update
+the node's features.
+So if I have features in a
+central vertex b in this case,
+and I have features of
+its immediate neighbors,
+my graph convolution layer
+needs to predict the next step
+features of this
+node, hb prime, which
+is some function of the entire
+set of neighbors of node b.
+So we basically need
+an operator that
+looks at over sets of neighbors
+to drive next step features.
+And there's quite
+some challenges
+with deploying a graph
+convolution in this way
+because there's a lot
+of desirable properties
+that a convolution
+layer needs to satisfy.
+It should ideally require no
+more computation and storage
+complexity than it takes
+to store the graph itself,
+which is number of nodes
+plus number of edges.
+It should have a fixed
+number of parameters
+regardless of input size.
+So if I give you a graph that
+is twice as big or equivalently
+in convolution
+neural network land,
+if I give you an image
+that's twice as big,
+you should ideally not have
+to increase parameter counts,
+so I can apply the same
+graph convolutional layer
+on graphs of arbitrary sizes.
+It's very nice to have
+the localization property,
+so to be able to act on a local
+neighborhood of a node only.
+And it's nice to be able to
+specify different importances
+to different neighbors, simply
+because they might not all
+be equally relevant.
+And ideally, we
+might want the layer
+to be applicable to
+inductive problems.
+So if I apply my trained
+graph convolution layer
+to a graph it has never seen
+during training, a completely
+new structure, it
+should still nicely
+generalize to that structure,
+assuming they both came
+from a similar distribution.
+And fortunately, for images,
+this highly rigid and regular
+connectivity structure of each
+pixel connected to its four
+or eight neighbors makes
+such an operator very easy
+to devise as this
+small matrix that you
+slide across the image.
+Arbitrary graphs pose a
+much harder challenge.
+And one thing that is also
+quite important to keep in mind,
+before we dive into how you
+might design layers like this,
+is once I have a layer like
+this, what can I do with it?
+So imagine that you have an
+input graph which features xi
+in each of the nodes and
+some adjacency information,
+usually specified as
+an adjacency matrix
+A. Once you apply your
+graph neural network layer,
+it will exploit these local
+interactions to update
+the features of each node
+to this latent space h.
+So each node will
+have features hi,
+representing the latent features
+of that node that are somehow
+mindful to that node's direct
+neighborhood in the graph.
+And once you have
+these vectors, you
+can do lots of interesting
+tasks on a graph.
+You can do node classification,
+so classify each node
+independently by just
+applying a shared layer
+f to each one of these h
+vectors to get predictions
+in each of the nodes.
+You can do whole
+graph classification
+if you aggregate
+all of the h vectors
+for all the nodes using
+some permutation and variant
+function, such as summing.
+So you can take a sum of
+all of your h's and then
+apply a sum module
+to predict and answer
+on the whole graph level.
+And finally, you can do
+predictions over edges,
+or in some cases,
+even prediction over
+whether links exist or not, by
+taking the features of the two
+vertices that you want to
+investigate the edge over.
+You might also have some
+edge features attached to it,
+which is this eij vector.
+And once again, you can
+learn a shared function
+that, applied to every edge or
+potential edge in your graph,
+performs the
+required prediction.
+So there's a wide
+variety of standard tasks
+that you can specify
+on a graph, and it's
+important to keep those in
+mind when applying graph neural
+networks.
+We will primarily focus
+on node classification,
+but it's useful to note
+that these are also
+a potential choice
+to investigate.
+With that being said, let's
+dive straight into ways
+in which we can define
+these different graph
+convolutional layers.
+We will work our way slowly
+towards a very simple way
+in which we can update
+node features to be
+mindful of the entire graph.
+We will assume for
+simplicity, for now,
+that we have an unweighted
+and undirected graph,
+and this means that
+our adjacency matrix
+will be binary and symmetric.
+So you either have
+a 0 or 1, depending
+on whether there exists an
+edge with a particular pair
+of elements, and if
+i is connected to j,
+j must be connected
+to i as well.
+Once we have a
+matrix like this, you
+can look at the effects of
+multiplying your node feature
+matrix h by the
+adjacency matrix.
+This effectively recombines the
+information in the neighborhood
+into just one vector through
+the virtue of this matrix
+multiplication operator.
+And usually, it's
+useful to also leverage
+the power of deep
+learning, so actually
+giving some layered
+processing of the features.
+So besides multiplying
+by the adjacency matrix,
+we will also multiply by some
+learnable linear transformation
+W, which corresponds to just the
+linear layer in a deep learning
+framework, and we
+might want to apply
+some non-linear
+functions, such as relu,
+to further make our
+feature representation more
+complex as we go along
+in stacking these layers.
+Before we can call this a
+complete graph convolutional
+layer, we need to
+fix a few issues.
+First of all, if it's
+not explicitly enforced,
+this update rule may
+discard the central node,
+and therefore your predictions
+for a particular vertex
+would drop the context
+about that vertex itself.
+So you can make a
+very simple correction
+here by adding the
+identity matrix
+to your adjacency
+matrix, and this
+enforces that node I is
+always connected to itself.
+And this allows you
+to rewrite this rule
+as basically sampling.
+So you get the next
+step features of node I
+as first taking the sum over all
+the neighbors of the features
+of that neighbor, multiplied
+by the linear transformation W.
+And finally, you can
+apply a non-linearity
+such as relu on the
+result. This is called
+sampling because you're
+pooling all of your neighbors
+with the summation
+aggregation function.
+This might come
+with a few problems
+because multiplying by
+the adjacency matrix
+may increase the scale
+of the output features.
+Basically, if you sum
+six different things that
+have roughly the same
+distribution as you do,
+the features in the next
+layer are going to potentially
+be very scaled up.
+So as a result, it's
+often useful to normalize
+the adjacency matrix and force
+the features not to explode.
+And one very common
+way to do this
+is to also multiply by
+the inverse of the degree
+matrix, where the
+degree matrix tells you
+the overall degree of each
+vertex along the main diagonal,
+and it's 0 otherwise.
+So multiplying by
+the inverse degree
+basically amounts to taking
+our original sampling rule
+and further dividing by the
+degree of the receiver node.
+So we have this division by
+the neighborhood size of I
+plugged into the formula.
+And this is now
+called mean-pooling,
+because we're effectively
+taking the average of all
+of our neighbor features.
+This is quite simple but
+quite versatile, and usually
+a very strong choice
+for inductive problems.
+Instead, we can try to
+normalize the adjacency matrix
+in more interesting ways.
+And one very popular
+approach performs this idea
+of symmetric normalization,
+where instead, you
+multiply by the inverse square
+root of the degree matrix
+from both sides.
+And as a result,
+what you're actually
+doing is you're dividing
+by the square root
+of the product of
+neighborhood sizes of i and j.
+This update rule is often called
+by just graph convolutional
+network, or GCN, popularized
+by Thomas Kipf and Max Welling
+at ICLR 2017, and it's
+currently the most popular graph
+convolutional layer.
+It's quite simple to implement,
+quite scalable and powerful,
+and as a result, most commonly
+cited paper in the literature.
+But there are still
+some limitations
+of this model that might
+be interesting to address
+moving forward, especially
+as the graphs get
+a little bit more complex.
+So first of all, we assume
+this adjacency matrix
+that's binary, symmetric, we
+had no way of easily attaching
+complex features
+to the edges, which
+for example, for
+computational chemistry,
+might be problematic, as edges
+can have multiple bond types.
+And one way in which we
+can correct this issue
+is by instead focusing
+on edge-wise mechanisms.
+And in the most generic form,
+what this means is that we can
+compute messages-- that
+is, arbitrary vectors--
+that get sent across
+edges of the graph.
+And you can condition these
+messages by any edge features
+that you might have.
+And then we can think of
+the aggregation function
+as just aggregating all
+the messages sent to it,
+as mentioned, using something
+that is permutation-invariant.
+So this is embodied in the
+message-passing neural network
+model from Justin
+Gilmer and others,
+where you compute a message
+function from node i
+to node j which takes
+into account the features
+of the sender vertex i, the
+features of the receiver vertex
+j, and any edge features you
+might have along that path,
+and computing basically a
+vector of message that's
+being sent along this link.
+Now, a vertex, what
+it has to do is
+it needs to collect all
+the messages sent to it
+and aggregate them using
+some permutation variant
+function, which can,
+for example, be summing,
+as we discussed before.
+And then that is recombined with
+the information already present
+in that vertex.
+So that's why there's
+the hi vector in there.
+And that goes through
+some readout function
+to get the next step features
+for that particular node.
+Altogether, this gives the
+message-passing neural network
+framework, which is a very
+powerful and generic framework
+for dealing with
+graph-structured data.
+And the message function
+and the readout function,
+these fe and fv elements,
+are usually themselves
+smallish multilayer perceptrons.
+So they're fairly simple
+computational modules.
+In order to visualize what
+message-passing neural networks
+are doing, let's consider
+this example of a graph
+with six nodes,
+where on each node,
+you have attached a
+certain feature vector.
+And let's say I want to
+send a message from 3 to 4.
+I will take the
+features of 3 and I
+will take the features of 4.
+I've deliberately omitted
+the edge features here
+to make the illustration
+more simple.
+And I will compute the
+message from 3 to 4
+as a result of applying
+the message function
+fe on these two.
+In a simple and similar way,
+I can also compute messages
+from all other nodes
+that get sent to 4,
+and I aggregate them
+together, for example,
+by summing them up,
+as is displayed here.
+And then combined with the inner
+features that were previously
+in node 4, I can take
+the summed message,
+pass it through the
+readout function fv,
+and this gives me the features
+for that node in the next step
+of processing, which I
+feed back into the node
+for the next step.
+And this process is
+carried out in parallel
+over all the vertices here.
+We visualized it
+just for node 4.
+So the message-passing
+network that I just presented
+is the most potent graph
+neural network layer, at least
+in terms of layers that look
+at only first-order neighbors.
+However, it requires us
+to store and manipulate
+these edge messages,
+which can get costly,
+both from memory and
+representation point of view.
+Like, it could overfit
+if the data is sparse,
+and it could end up
+using a lot of memory
+if the graphs are big.
+So in practice,
+these MPNN models
+are often only applied to
+small graphs or graph data sets
+where it is assumed
+that there's some pretty
+complex manipulation
+going on over the edges.
+You can think of them almost
+as MLPs of the graph domain.
+As some intermediate
+approach, let's go
+back to what we did in graph
+convolutional networks,
+where we aggregated
+just the sender notes
+features hj potentially
+after being transformed
+by some weight vector.
+And then there was this
+coefficient, alpha ij,
+which said, how much
+are node j's features
+important for node i?
+What the GCN did
+when they defined
+the 1 over square root of
+neighborhood i neighborhood j
+was they defined this
+coefficient explicitly.
+So they explicitly said,
+based on the graph structure,
+this is exactly how much node
+j is important to node i.
+But there are many
+possible factors
+other than graph
+structure that influence
+the importance of a
+neighbor to another vertex.
+So it might be
+quite useful if we
+can compute the coefficient
+in a slightly different way.
+And in the graph
+attention network model
+which I have proposed with
+a few others at ICLR 2018,
+we instead compute this
+coefficient alpha ij
+implicitly.
+So for a particular edge,
+we take the features
+of the sender, the receiver,
+and the edge features,
+and we pipe them through
+this attention function a
+which gives us coefficients
+along pairs of nodes ij, which
+we can then normalize
+using a softmax function
+across the neighborhood.
+And this a can be any
+learnable shared neural
+network, which is often called
+the self-attention mechanism.
+So, for example, transformers
+fit within this paradigm.
+And as a result, we arrive at
+this graph attention network
+update rule, which
+using some tricks
+such as multi-head attention,
+we can usually significantly
+stabilize in practice.
+They're probably not
+as general as MPNNs.
+The theory is still
+under development.
+But they can be more
+trivially scaled up
+compared to MPNNs because
+this attention function only
+computes one scalar, the
+influence of node i to node j.
+And in contrast,
+the message function
+had to compute a vector
+message along each edge, which
+drastically increased
+the potential memory
+requirements of the model.
+So here is a way to
+visualize what's going on
+in a graph attention network.
+On the left-hand side, you
+have the attention mechanism,
+which looks at features of
+a node i and its neighbor j,
+and some attention
+function, which
+then computes the
+coefficient alpha ij, which
+signifies the influence
+of node i to node j.
+And then on the
+right-hand side, you
+can see the multi-head attention
+mechanism, where each colored
+line indicates a different
+way in which a node, node
+1 in this case,
+receives information
+from its immediate neighbors.
+And then that information
+is directly aggregated
+and across different
+heads, either
+concatenated or averaged
+to produce an updated
+representation.
+One more note I would like
+to make on transformers,
+which are a very popular
+model for dealing
+with sequential data, is
+that very often, there
+is a bit of a debate as
+to whether transformers
+should be used instead or
+together with graph neural
+networks.
+Depending on the
+perspective you're
+are looking at the
+problem, you can actually
+make the claim that transformers
+are graph neural networks.
+If you imagine them as operating
+over a fully connected graph
+of all pairs of input
+tokens, your message
+function being just the
+sender node features
+and the aggregation
+function being attention,
+you can express transformers
+as a special case
+of message-passing
+neural networks.
+And because they operate
+over a fully connected graph,
+they actually don't exploit
+any structural information
+in the model itself.
+You have to externally
+inject it into the model,
+and this is what transformers
+do through the use
+of positional embeddings.
+If you were to drop the
+positional embeddings,
+you would end up
+with something that's
+basically equivalent to a
+fully connected graph attention
+network model, and you can think
+of the attention coefficients
+as sort of inferring
+a soft adjacency
+matrix for some graph
+that nicely describes
+how your data is operated.
+If you want to see more
+detailed exposition of how this
+is derived, I would
+invite you to take
+a look at Chaitanya Joshi's
+publication in "The Gradient."
+So now I would like to walk
+you through a Colab exercise
+where we are going to go through
+the elements of implementing
+some standard graph neural
+networks over one of the most
+standard benchmark
+data sets in a way
+that anyone can
+easily work through,
+using just a simple Colab
+and not even requiring
+any special GPU resources.
+What we will do is perform
+node classification
+on the standard Cora benchmark.
+Cora is a citation network
+that classifies nodes which are
+papers into different topics.
+There are seven different
+topics and there's
+2,708 different papers
+connected by about 5,500 edges.
+Features corresponds to bags of
+words that represent the paper,
+and we're given only 140
+training papers and access
+to 500 validation
+papers, which then
+will make us have to
+generalize to about 1,000 test
+nodes in the graph.
+And what we will do
+in the Colab exercise
+is implement the
+sum-pooling, average-pooling,
+and the graph convolutional
+network update rule.
+And if you're interested
+in improving further,
+you can try to explore
+any of the other ideas
+that we have covered
+in this presentation.
+So I'm going to now
+bring up my Colab screen,
+where we're going to build
+several standard graph neural
+network layers on top of the
+Cora citation network data set.
+Cora is a standard benchmark for
+graph representation learning,
+and due to its very
+small scale, it's
+easy to quickly train on
+it, even when you only
+have a CPU at your disposal.
+This is what made it propel many
+of the early papers on graph
+representation
+learning while today,
+it is known to be oversaturated.
+So if you actually want to
+perform academic research
+in graph representation
+learning,
+some other data sets
+like the Open Graph
+Benchmark would be recommended.
+This is still an
+excellent playground
+for coming to grips with some
+of the standard techniques
+in the area.
+So what we're going
+to do is we're
+going to start off by loading
+all of the necessary packages.
+I'm just going to
+pip install them just
+in case they aren't available.
+So we're going to need numpy,
+we're going to need TensorFlow,
+and we're going to be using
+the Spektral library for graph
+representation learning
+that we will only
+use for loading
+and preprocessing
+the data set in a nice form.
+So there's nothing
+Spektral specific
+that we will be covering in
+this particular tutorial.
+So we're going to import numpy,
+import TensorFlow, and import
+Spektral to begin with.
+And we will just wait a
+little bit for all of these
+to get set up.
+I'll make a new code cell
+as we're going along.
+Perfect.
+Spektral has these
+convenience functions that
+will allow us to quickly
+load and preprocess
+many standard graph
+representation learning
+data sets, such
+as Cora, and they
+come with these useful
+loader functions that
+will allow us direct
+access to items
+such as the adjacency
+matrix of the graph,
+the feature matrix, which
+gives us the feature in each
+of the nodes, and also
+the labels that tells us
+the topic of each paper.
+And then we also have access to
+these useful mask arrays, which
+tell us which nodes belong to
+the training set, which nodes
+belong to the validation
+set, and which
+nodes belong to the test set.
+And the particular function
+that we will call here
+is spektral.datasets.citation.
+And finally, we call
+load_data with the data set
+name set to cora.
+So this will load
+the Cora data set,
+preprocess it in a
+nice way, and give us
+access to all of these
+pieces of information in what
+is basically a one-liner.
+We will get these features
+and adjacency information
+in a sparse format
+in order to be
+able to deal with
+potentially large graphs.
+But for our purposes, we won't
+need the sparse representation.
+So we're going to
+immediately just
+convert both the features
+and the adjacency matrix
+to a dense representation.
+And also, the adjacency
+matrix doesn't
+come with self edges,
+so as mentioned before,
+that's a common
+thing that we need
+to do at the very beginning.
+We add the identity matrix
+to the adjacency matrix
+just to make sure
+that this is OK.
+And in order to make sure
+that everything plays nicely
+with TensorFlow, we will convert
+the type of both the features
+and adjacency matrix to 32-bit
+floating point numbers, which
+are the standard
+representation and use
+for deep learning pipelines.
+Just to verify the
+size of the Cora graph,
+we will print out the
+shape of the features
+and we will also print out the
+shape of the adjacency matrix
+and also the shape
+of the labels.
+So this will give us
+interesting information
+about the sizes of different
+concepts in our graph.
+And we might also be
+interested in how many training
+nodes we have, how many
+validation nodes we have.
+So-- because these
+masks are just
+given as a 0, 1 array
+telling you whether or not
+each node belongs in the
+training set and the validation
+set or the test set,
+I can just print
+the sum of all of
+those masks, and that
+will tell me how
+many nodes I have
+in each three of
+these data sets.
+So if I were to
+execute the cell,
+it downloads the Cora data
+set, preprocesses it, and now
+we have the Cora data
+set fully loaded.
+And we can see
+that the Cora data
+set has 2,708 nodes, 1,433
+features in every node,
+and seven labels, seven
+possible paper topics.
+We have only 140
+training nodes, which
+is a very low data training
+problem, 500 validation
+nodes, and 1,000 test nodes.
+So now that we have the data set
+loaded in, we can keep going.
+And we will need to define
+two special functions that
+will allow us to do some of
+the standard deep learning
+loss and evaluation metrics,
+just in a way that is masked
+across this mask information.
+So cross-entropy loss
+is a standard loss
+that you might apply when
+dealing with classification
+problems from some predicted
+logits from your network
+against some ground
+truth labels.
+But in this case, we also have
+a mask that we must apply.
+So what we will do
+is we will first
+compute the loss in
+every node, applying
+the usual cross_entropy
+with logits function
+and calling the
+appropriate inputs.
+Now we need to use
+the mask to only use
+the parts of this loss
+function for the nodes
+that belong in that
+particular set.
+So we first cast the mask
+into a float 32 type.
+And we additionally
+divide the mask
+by its average value, which
+will allow us basically
+to take a product of
+this mask with the loss
+and then take the mean of this
+product as the overall loss.
+And this now returns to
+us the cross-entropy loss
+over the nodes of
+the graph, but only
+taking nodes that are
+masked by the mask array.
+And in a similar
+vein, we might be
+interested in computing
+some accuracy metric.
+And once again, we
+don't want the accuracy
+over all the nodes in the graph.
+We only want the accuracy
+over, say, the test
+nodes or the validation
+nodes, so we need to mask
+appropriately.
+We first compute the
+correct prediction,
+which compares the
+argmax of the logits
+with the argmax of the labels
+across the feature axis.
+So this will tell
+us, for each node,
+whether or not it is correctly
+predicted by our model.
+And we can compute the
+full accuracy as just--
+sorry.
+tf.cast of this correct
+prediction as a float 32,
+just to convert it back
+from a Boolean format
+into a floating point format.
+And once again, we need to
+cast the mask appropriately
+and divide it by the
+mean, and now this
+allows me to take the
+individual accuracy elements
+and only multiply them by the
+positions that I care about.
+And now I can return the
+average across all positions
+to give me the accuracy
+only over the nodes
+that I care about.
+So there won't be any output
+for this particular cell,
+but it is important
+to specify it
+because we will need to compute
+losses and accuracies only
+over the nodes in
+a particular set,
+for example the training set.
+Once we have this, it's time
+to define a very simple graph
+neural network layer.
+So a graph neural network layer
+looks at a node feature matrix,
+an adjacency matrix,
+some transformation
+that we wish to apply to
+every nodes, and an activation
+function.
+So what we do first is we
+transform each of our nodes
+using this point-wise
+transformation.
+This is the equivalent of
+the matrix W in the slides
+that I presented previously.
+And once we have these features
+that we want to aggregate,
+we will just perform a
+matrix multiplication
+with the adjacency matrix
+and these features.
+So keep in mind that this is
+going to be powerful enough
+to implement frameworks such
+as the graph convolution
+network, the sum-pooling, the
+mean-pooling, and the graph
+attention network, where you
+can basically express the graph
+layer as just neighborhood-based
+recombinations
+of node features.
+If you need to compute more
+complex edge functions,
+like in the case of
+message-passing neural
+networks, this framework will
+not quite be expressive enough,
+and some minor modifications
+will be necessary.
+But for now, we will be using
+this particular GNN framework
+because it is already
+going to encompass
+a lot of the interesting
+models that we care about,
+and it's very simple to write.
+As you can see, it's
+only three lines of code.
+So we transform each of
+the nodes individually,
+we matrix multiply with some
+appropriate adjacency matrix
+to recombine it
+across neighborhoods,
+and finally, we apply
+an activation function.
+So this is a general recipe for
+a large class of graph neural
+network models.
+Now, using this, we can
+define a simple two-layer GNN
+to classify the Cora data set.
+So we have some features,
+adjacency matrix, some GNN
+model function.
+We can specify how many units
+do we want our neural network
+to compute in each node, so how
+many dimensions in our latent
+features, for how many
+epochs we want to train,
+and maybe the learning
+rate that we want to use.
+So we will define two graph
+neural network layers,
+and each one will have its
+own transform, for which we
+will use the weight matrix
+W, which in TensorFlow terms
+is just a dense layer.
+The first one computes
+the hidden layer,
+which has a certain
+number of units,
+and the second one computes the
+classification of each node.
+So we need seven outputs
+for seven classes.
+Now we can define
+the GNN that's used
+to solve this problem on a
+particular set of features
+and adjacencies that first
+computes the hidden features
+in every node.
+So it applies our GNN
+function to the features,
+to the adjacency,
+using the transform
+that we first defined, and
+the activation function,
+we can use any non-linearity,
+for example, relu.
+Then we can go on
+and define our logits
+by applying the second graph
+neural network layer, which
+starts from the hidden features,
+and then the adjacency matrix,
+now applying the second
+transformation which
+projects each nodes
+to only seven outputs.
+And we treat these as
+logits, so there is no need
+to further transform them.
+We will use the
+identity function
+to just not transform anything.
+And the logits is what we
+return as our neural network's
+predictions.
+We are going to use a
+standard optimization pipeline
+using the Adam Optimizer.
+So here, we can load up some
+standard item optimizer,
+which has a learning rate
+equal to the learning
+rate we provided.
+And now we're going to do
+just the standard training
+pipeline with early stopping.
+So we're going to keep track
+of the best accuracy we've
+had on the validation
+data so far,
+and we're going to
+iterate over the graph
+data set for the specified
+number of epochs.
+We'll use a TensorFlow
+GradientTape
+to record all of the
+gradients as we go along.
+So we apply our Cora
+GNN on the features
+and adjacency to compute the
+predictions at this step,
+and we can compute
+the loss using
+the masked_softmax_cross_entropy
+on the predicted logits
+and the ground truth labels.
+And in particular, we
+want to compute the loss
+on the training set, so we
+pass on the training mask.
+Once we compute the
+loss, we can specify
+gradients to update the
+variables based on this loss.
+So we first look
+at the variables
+that the gradient
+tape is watching.
+We define the gradients
+just by invoking
+the t.gradient
+function on this loss
+function using these variables.
+And finally, we can
+apply the optimizer
+to apply these gradients.
+So we call the
+apply_gradients function
+on the zipped combination
+of gradients and variables.
+Finally, once we have
+updated parameters,
+it's useful to track
+validation and test accuracy.
+So we can take the logits
+as a product of our GNN
+using the features and adjacency
+after the gradients have been
+updated, and we can compute
+the validation accuracy
+as the masked accuracy on the
+logits against the labels,
+but using the
+validation set mask.
+And we can compute the
+test accuracy as well as
+the masked accuracy
+of the logits
+against the labels
+on the test set.
+Now, we should not be
+looking at the test set
+until we've firmly committed
+ourselves to the weights.
+So for now, we can only
+use the validation accuracy
+and compare it against
+the best validation
+accuracy we have received,
+which will update the best
+accuracy if we've exceeded it.
+And this should, in principle,
+save the current model
+so that it can be evaluated
+on the test set later.
+But to kind of skip the model
+saving stage in this Colab,
+I will just print
+out the statistics
+on this particular go.
+I'll just copy that
+line over here.
+So this will print the
+epoch, the training
+loss, the validation
+accuracy, and I'll just
+report the test accuracy
+here so that the last test
+accuracy that gets printed is
+the one that we're going for.
+So executing this entire cell
+specifies all the routines
+that we need to train
+on the Cora data set.
+And now finally, we can
+just call one line of code
+to try to train on
+the Cora data set
+for some particular
+given adjacency matrix.
+And we will compute 32
+features, over 200 epochs,
+and use a learning
+rate of 0.01, which
+are some of the standard
+parameters you can use.
+Initially, I will pass
+the raw adjacency matrix
+to this function,
+which means I'm
+going to be multiplying my
+features with just the 0, 1
+matrix.
+Therefore, we're
+implementing sum-pooling.
+And we're expecting this
+to have some problems
+with the scale of the
+features, and as a result,
+it might not give us the
+best results possible.
+Let's see what happens
+when we run it.
+So our model improves a little
+bit over the first 11 epochs,
+reaching an accuracy
+that is about 77.6%.
+And very quickly, it converges
+to a good set of weights,
+so all the subsequent
+epochs don't
+update the validation accuracy.
+We're left with this
+77.5% performing model.
+One thing that is very
+useful to verify here
+is that it's useful to
+use the graph at all.
+So what I'm going
+to do is test this
+by replacing the adjacency
+matrix with just the identity
+matrix.
+What this will do
+is it will basically
+render the operation
+of multiplying
+with the adjacency matrix as
+not really changing anything.
+So we just have basically
+a point-wise classifier
+in each of our nodes,
+so a standard MLP model
+that's shared
+across the vertices.
+And let's see if changing
+our adjacency matrix to this
+will affect the
+results in any way.
+So now you can see the progress
+is generally far more steady,
+but it doesn't actually end up
+surpassing around 50% or so.
+We will just let it
+finish to the end.
+But here, you can see that
+if you're not effectively
+exploiting the graph
+structure, you're
+going to end up not
+completely capturing
+the interesting
+structure in your data.
+And this point-wise MLP will be
+unable to go beyond 50% testing
+accuracy or so.
+Now, for-- once we've shown
+that the graph is actually
+useful by comparing these
+two kinds of models,
+we can try to explore more
+interesting kinds of graph
+convolutional layers.
+The first one we can
+explore is mean-pooling.
+So we can first compute
+the degree matrix
+as the degree of
+each node, and then
+spread across the diagonal.
+And we can now rerun our train
+Cora setup using the features.
+But now we will divide
+the adjacency matrix
+by the degree matrix, which is
+equivalent to multiplying it
+with the inverse of
+the degree matrix.
+And this will now give us a
+normalized propagation rule,
+which should hopefully deal
+with any exploding signal
+that we might have.
+And this should hopefully be
+more stable than the update
+we had before.
+And as you can see,
+already after 30 epochs
+or so, it is behaving better
+than the sum-pooling model.
+In fact, it has even exceeded
+80 percentage points of accuracy
+on one of those runs.
+But the overall performance,
+which is around 78.7,
+is a more stable and
+strong improvement
+over the sum-pooling
+model, which
+indicates that it is a
+good idea to normalize
+our adjacency
+matrix in this way.
+And finally, we were
+going to try out
+the specific version
+of the normalization
+that Thomas Kipf has proposed
+in the graph convolution network
+model.
+If you remember,
+this requires us
+to compute 1 over the
+square root of the degree,
+and then multiply
+that on both sides
+with the adjacency matrix.
+So we can get the
+normalized adjacency matrix
+by first having this half
+normalized degree matrix,
+and then multiplying
+that with the product
+of the adjacency and the
+normalized degree matrix.
+So this is the equivalent
+of taking d to the minus 1/2
+and then multiplying it with the
+adjacency matrix on both sides.
+Once we have this
+normalized adjacency,
+we can once again try to
+train on the Cora data set
+using the features, using this
+normalized adjacency, and then
+same hyperparameters as before.
+Let's see how stable that is.
+So in the absence of the
+sum-pooling aggregation,
+this model actually ends
+up usefully training
+for far longer.
+And it reaches, say, 50
+epochs and there's still
+some improvements.
+And you can see while on
+average, you should not
+expect to see a very significant
+difference between this one
+and the division by degree,
+at least not on this data set,
+on this particular run, the
+test accuracy has exceeded
+81%, which shows, at least
+empirically, the single run
+improvement on the degree
+normalized version.
+But both of them in principle
+improve on the sum-pooling
+and are expected to
+perform roughly comparably
+in this particular setting.
+So this wraps up
+the Colab exercise
+that I wanted to
+guide you through,
+and we're going to quickly
+go back in the presentation
+to conclude this session.
+Thank you for following through
+with this Colab exercise.
+And in case you found any
+of the above interesting,
+I would like to point you
+to some potentially useful
+resources if you'd like to
+study these concepts further.
+All of these resources,
+which are in my opinion
+quite useful, I have
+recently summarized
+in a thread on Twitter,
+which you can directly find
+linked in the video
+description below.
+So I invite you
+to check that out
+if you're interested in
+more resources for learning
+about the area of graph
+representation learning.
+On that note, I would
+like to thank you
+for following my presentation
+and Colab exercise.
+I hope you have got
+some inspiration
+to tackle this exciting and
+rapidly emerging field of graph
+representation learning.
+And if you have any
+questions, please
+feel free to reach out to me
+either via email or via one
+of my other accounts online.
+Thank you so much.
+[MUSIC PLAYING]

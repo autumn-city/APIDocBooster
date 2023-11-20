@@ -1,0 +1,956 @@
+[Music]
+hey there today we will implement a
+paper called pondernet learning to
+ponder first of all all credits go to
+the authors for writing this paper and i
+hope i will be able to convey at least
+some of its ideas in this video anyway
+as far as i know there is no official
+implementation around and therefore i
+decided to look for unofficial ones what
+you see on the screen is an
+implementation created by the labml
+people if you are not familiar with this
+site you should definitely check it out
+since it has really brilliant
+implementations of relevant deep
+learning papers together with
+annotations the implementation in this
+video is very much based on their code
+plus some minor modifications anyway i
+will try to give you a quick conceptual
+summary of the paper in a couple of
+seconds however i would more than
+encourage you to check out this amazing
+website you can find all the relevant
+links in the description okay now i will
+try to explain very briefly what
+pondernet is about by going through
+different sections of the paper
+pondernet in the most general sense is a
+novel architecture for neural networks
+that can be used on any supervised
+learning problem the most important
+feature of the pondernet is that it can
+dynamically modify its forward pass
+specifically if it thinks that a given
+sample is simple it is going to make the
+forward pass shorter
+however if it comes across a harder
+sample it can decide to make the forward
+pass longer so that it has enough
+resources to make the right prediction
+this is very different from standard
+neural networks that have exactly the
+same forward pass no matter the input
+difficulty
+so now the big question is how exactly
+does this ponder net decide on the size
+of its forward pass the essential
+ingredient here is a so-called step
+function this step function inputs two
+objects the feature vector and a hidden
+state and then it outputs three objects
+the first one is the prediction y hat
+the second thing it outputs is a new
+hidden state and finally it also outputs
+a whole thing probability lambda which
+is a number between 0 and 1 and after
+each step we use this lambda to
+determine whether we want to halt or
+whether we want to continue the forward
+pass so to explain it in plain words
+this step function outputs a prediction
+y-hat and to this end it is equivalent
+to standard neural networks however
+additionally it also outputs a lambda
+which enables the network to encode
+whether it is happy about its current
+prediction when the lambda is high we
+think that the current prediction is
+really good and there is no reason to
+continue if on the other hand the lambda
+is low we are not happy about the
+prediction and we want to continue
+which means to rerun the step function
+and this is where the hidden state comes
+in because it holds all the knowledge we
+learned in the previous steps
+okay now that we understand the forward
+pass that can be dynamically stopped
+after any step how do we actually train
+a network like this well at the training
+time no halting takes place and we
+always run the step function for a fixed
+number of steps as we run the forward
+pass we just collect the predictions and
+the halting probabilities after each
+step and once we are done with the
+forward pass we take all the first step
+halting probabilities we collected and
+we put them together in a way that they
+define a probability distribution called
+p and that has the following form
+this probability distribution encodes
+the probability that our forward pass
+holds after a specific number of steps
+and if you're wondering why we should
+care about this distribution well it is
+used inside of the loss function
+so the loss function is composed of two
+components the first component is the
+reconstruction loss this reconstruction
+loss is very similar to standard
+supervised learning losses like the mean
+squared error for regression or
+cross-entropy for classification however
+there is a twist we don't just take the
+prediction of the last step and instead
+we take all the predictions after all
+the steps and then we compare it with
+the ground truth using let's say mean
+squared error and finally we compute a
+weighted average over all steps and not
+surprisingly the weights are nothing
+else than the probability distribution p
+in simple terms you want to give more
+weights to steps where the whole thing
+is very likely and low weight to steps
+where it is unlikely for the network to
+hold the second component of the overall
+loss is a so-called regularization loss
+and again it has to do with our
+predicted probability distribution
+the goal of this component is to force
+our network to hold after the fewest
+steps possible the way it is done is we
+are forcing our predicted distribution
+to be similar to another fixed
+distribution namely we want our p to be
+as similar to the geometric distribution
+as possible if you're wondering why
+geometric distribution well it is
+because the probability mass function of
+the geometric distribution is decreasing
+that means that the most likely halting
+step is actually the first one and each
+consecutive step is less and less likely
+standard way of enforcing two
+probability distributions to be similar
+is to use the kl divergence anyway to
+summarize the reconstruction laws make
+sure that the predictions are close to
+the ground truth after each step and the
+regularization loss makes sure that for
+most samples the network does not take
+too many steps however it also
+encourages the network to take more
+steps when really necessary
+finally at inference time we don't need
+this probability distribution p anymore
+and if the network thinks that it has a
+good enough prediction we let it hold
+before reaching the maximum number of
+steps and this of course makes the
+computation way more efficient right so
+let us start with the implementation
+first of all we will create a util
+script
+okay let's start with the data set in
+the paper one of the data sets the
+authors test the ponder net on is called
+the parity data set and it is a binary
+classification data set where the
+features are vectors with three possible
+entries zero minus one and one and the
+target is nothing else than the parity
+of this vector
+so first of all we can specify the
+number of samples we want to have and
+know that we will actually generate this
+data set on the fly for each sample so
+number of samples can be more or less
+anything number of elements is a very
+important parameter because it
+represents the number of elements in the
+input feature vector and finally we can
+specify the minimum and the maximum
+number of non-zero elements and the
+reason why we want to do this is to
+control the difficulty of the problem
+here we just handle the case where the
+user did not specify a custom range
+and here we just run a sanity check on
+the specified range
+the length of the data set is nothing
+else than the number of samples that we
+chose
+okay and now we want to generate a
+vector of zeros minus ones and ones and
+then we want to compute its parity
+because disparity will serve as the
+target and just for the record we are
+not going to guarantee reproducibility
+that means that if we access the same
+index of the data set twice very likely
+we will get a different feature vector
+and a different parity target
+we start by pre-populating an empty
+vector of zeros that has the size of
+number of elements
+and here we randomly sample an integer
+which will represent the number of
+non-zero elements that are going to be
+inside of our feature vector and for
+this we are using the range that we
+defined in the constructor
+and then we populate the first n
+non-zero elements of the vector with
+minus ones and ones
+and here we just randomly shuffled the
+elements of our feature vector because
+we don't want all the minus ones and
+ones to lie at the beginning but we want
+them to be randomly spread out across
+the entire vector and that's it for our
+feature vector and now we just need to
+compute the parity of this vector
+we count up the number of ones inside of
+our feature vector and if the number is
+divisible by two then the parity is zero
+otherwise it is one and finally we
+return our feature vector and our target
+let us test out what we just implemented
+first of all let's not restrict the
+number of non-zero elements in any way
+and the values of these elements are
+zeros ones and minus ones and if you
+just count up the number of wands you
+should get two which is divisible by two
+or in other words there is uh an even
+number of ones and therefore the parity
+is zero
+as mentioned before the fact that we're
+accessing a zero or first sample doesn't
+really mean anything there is randomness
+and we don't get the same result anyway
+here there is zero ones which means that
+the parity is again zero
+here interestingly all of the elements
+are either minus one or one it seems
+like there are five ones which means
+that the parity is one and yeah here we
+have three ones again parity is one if
+we just focus on the number of non-zero
+elements which means either ones or
+minus ones we can see that the first
+query had four of them the second one
+had three of them the third one
+interestingly had all elements non-zero
+and the most recent query had five
+elements that were non-zero and now we
+can instantiate another data set where
+we actually specify the range
+and now we've implemented everything
+correctly the number of non-zero
+elements should be between one and three
+inclusive
+here we have two nonzero elements
+here we have one non-zero element here
+we have three non-zero elements
+one
+minus one
+ah sorry one
+anyway it seems to work and again the
+way i think about this is that the more
+non-zero elements you have the harder
+the problem is right intuitively if we
+take the extreme case when all the
+elements are zero then clearly the
+parity is zero the other extreme is that
+there are no non-zero elements which
+means everything is either minus one and
+one and this would take some effort to
+actually go through and determine the
+parity of however you can argue that
+irrespective of the elements one has to
+scan through the entire vector anyway
+honestly i don't really know how exactly
+they did it in the paper maybe they had
+a setup where their model was able to
+work with variable sized feature vectors
+and then the difficulty would simply be
+the length of this vector
+yeah i don't know
+since in our setup we assume that the
+length of the feature vector is constant
+this was the only idea i could think of
+when it comes to introducing the concept
+of difficulty however maybe the number
+of non-zero elements is irrelevant and
+all of these vectors are equally as
+difficult
+all right and now we want to implement
+the pondernet
+first of all we tell the network how
+many elements there are in the feature
+vector our simple step function will
+contain a recurrent cell this cell takes
+the input features and the previous
+ending state and it outputs a new hidden
+state and this parameter number of
+hidden just determines the hidden layer
+size this parameter determines the
+maximum number of steps the network can
+ponder for and as explained at training
+time we will actually always reach this
+number of steps and we will never halt
+before and related to it we have this
+flag allow halting by default we will
+set it to false however if we activate
+it then if all samples in the batch
+finished or halt it we don't even
+continue until the maximum number of
+steps okay so what do we have inside
+first of all we have this recurrent cell
+that i just explained we will use the
+gru cell however you can use any
+recurrent cell you want and yeah as i
+said this cell is responsible for coming
+up with new hidden states and then we
+take this hidden state and we run it
+through a linear layer in this case it's
+the output layer that will turn the
+hidden state into a prediction similarly
+we have another linear module the lambda
+layer which will again take the hidden
+state however it will output the whole
+thing probability
+you restore the parameters as attributes
+we instantiate our gru cell
+and as discussed we also instantiate two
+linear layers one that is going to take
+the hidden state and output the y hat
+the prediction and the other one is
+going to take the hidden state and
+output the lambda the halting
+probability and of course we will need
+to apply the sigmoid activation in order
+for the values to be in the range 0 and
+1.
+so how does the forward pass look like
+it inputs the batch of features pretty
+standard and then it returns three
+different tensors the white answer is a
+collection of all predictions after each
+step note that the first axis of this
+tensor is the steps and the second one
+is the samples and this feels unusual
+because most of the time the batch
+dimension is the first one but whatever
+and of course the training time the
+first dimension will always be fixed to
+the maximum number of steps however if
+we allow for halting the first dimension
+can end up being shorter the second
+tensor that we output represents the
+probabilities p it has the same shape as
+the y and if we fix a sample and then
+sum up across all the steps we should
+get a one because it represents the
+probability distribution over different
+steps and finally we return a tensor
+called holding step and this sensor
+stores the step for each sample where it
+was halted
+so first of all we extract useful
+attributes from the input tensor x
+and here we initialize our initial
+hidden state to zeros here we
+initialized the tensor called unholded
+probabilities it is a helper tensor that
+we will update dynamically and it stores
+the probability that we haven't halted
+yet
+we initialize the list of p's and y's
+where we will dynamically add the
+results after each step and we also
+initialize the whole thing step to zeros
+the minimum number of steps that a given
+sample can take is one so in a way if a
+holding step is zero is just a temporary
+marker saying that a given sample hasn't
+halted yet
+not surprisingly everything will happen
+in a for loop representing the different
+steps first of all we want to generate
+the whole thing probability lambda if we
+are at the final step it will be just
+once in other words it is certain that
+we will stop the forward pass and if
+it's not the final step we take our
+hidden state run it through the lambda
+layer and through the sigmoid activation
+and that will represent the probability
+of halting note that the output of
+sigmoid has a range of 0 1 1 so it is
+going to be valid
+here we took the hidden state then ran
+it through the output layer and we got a
+prediction y-hat here we don't apply the
+sigmoid activation because we will apply
+it inside of the loss function and if
+the number is positive that means that
+the network is predicting the parity to
+be one and if the number is negative the
+network is predicting it to be zero and
+we just append it to our list and here
+we're just going to use the lambda that
+we calculated above and turn it into the
+probability that we hold at that given
+step the difference between p and lambda
+is that p stands for the unconditional
+probability that we hold at step n
+whereas the lambda stores the
+conditional probability assuming that we
+haven't halted yet what is the
+probability that we hold now and we can
+actually compute the p from the lambda
+by just multiplying the lambda by the
+probability that we haven't halted yet
+and here we're basically trying to
+determine what samples in the batch
+halted at this step the formula is a
+little bit long but using the computed
+lambda we sample from the bernoulli
+distribution and if the lambda is high
+it is way more likely that we will
+actually hold the process however this
+is the random part of the forward pass
+the rest of the formula just make sure
+we only update those samples that
+haven't halted yet in other words those
+are the samples that have holding step
+equal to zero
+we already have all the outputs
+necessary however we need to prepare for
+the next step
+specifically we update the unholded
+probabilities which is nothing else than
+taking the previous unholded
+probabilities and multiplying them by
+one minus lambda and also we generate a
+new hidden state using the old one and
+the input features one important thing
+to note here is that we are always
+feeding the entire original feature
+vector into the cell and that is why we
+require fixed sized input in theory this
+mapping that takes the input features
+and the previous hidden state and
+outputs a new hidden state can be as
+complicated as you want for example it
+could consist of another human network
+that processes the feature vector
+element by element allowing for variable
+sized feature vectors
+and if we allowed for whole thing and
+all samples in our batch have already
+halted then we just break out of this
+for loop and again primarily this is for
+the inference time
+once we are done with all the steps we
+just stack up all the per step
+predictions and probabilities into two
+big tensors and finally we return all
+the useful tensors all right now let us
+check whether everything works as
+expected
+so we define some parameters and now let
+us instantiate the
+pondernet let us run a forward pass on
+some dummy input
+as expected the shape of the predictions
+is 2016 20 stands for 20 steps and 16
+stands for 16 samples
+p has exactly the same shape
+as you can see all entries of p are
+non-negative
+also they are all smaller or equal to
+one
+for each sample in the batch if we sum
+up the first step probabilities we get
+one for each sample we have a valid
+probability distribution
+if we look at the halting step tensor we
+see that there are 16 elements and this
+sensor contains the information at what
+step a given sample was halted finally
+let us change the allow halting flag
+inside of the pondernet network
+let's rerun the forward pass
+let's look at the halting step again we
+can clearly see that the maximum of all
+elements is three and since we allowed
+halting we would hope that both y and p
+do not contain all the remaining steps
+but only the first three steps
+and as you can see it is the case
+anyway now the only thing left to do is
+to implement our loss function and as
+you probably remember it is composed of
+two different parts the first one is the
+reconstruction loss
+so this loss module has a single
+parameter which is the actual loss
+function that takes the predictions and
+the ground truth and it spits out a
+number for each sample in the patch
+so we give it the probability tensor
+that is one of the outputs of the
+pondernet as we have just seen we also
+give it the predictions of the pondernet
+and finally we also provide the ground
+roof labels so that the shape here is
+different than for the previous two
+tensors and that is because we will
+apply this loss per each step we return
+the actual lost scaler and it is nothing
+else than the weighted sum of per step
+losses
+extract the maximum number of steps from
+the b tensor and then we initialize the
+total loss
+and here we run the for loop over steps
+and for each step we compare the ground
+truth with the prediction and we weigh
+it based on the probability distribution
+and then we just simply compute the mean
+over the entire patch and add it to the
+total loss
+and yeah that is the reconstruction loss
+okay and now let's implement the
+regularization loss
+all right so as discussed before the
+goal of the regularization loss is to
+make sure that for every sample the
+predicted halting probability
+distribution is as similar to the
+geometric distribution as possible
+however the geometric distribution has
+one parameter that one needs to fix and
+here we call the parameter lambda p and
+i guess it has a nice interpretation
+because if you do one over lambda p you
+get the expected value of this
+distribution and we also provide the
+maximum number of steps the reason why
+we need this is to decide on a cut-off
+value because in theory the geometric
+distribution has an infinite support
+which means that taking for example 1
+million steps is possible but extremely
+unlikely however we want to have a
+cut-off value so that we can just turn
+the probability mass function into a
+list of floats
+so here we initialize a tensor of zeros
+and we want to iteratively populate it
+we will also have this helper flow that
+we will continuously update and it
+represents the probability that we
+haven't halted yet
+so the probability of holding after k
+steps is nothing else than the
+probability that we haven't halted yet
+in any of the previous steps and that on
+the cave step we will halt
+and we will save this tensor as a buffer
+if you're not familiar with buffers it
+is nothing else than a tensor that we
+would like to store or the computation
+in the forward pass however this tensor
+is not trainable
+here we also instantiate the kl
+divergence loss
+so to compute the loss we input the p
+which is one of the outputs of the
+ponder net the return value is nothing
+else than a scalar representing the
+regularization loss we unpack the shape
+of our p-tensor
+and then we transpose it and this way
+the samples are the first dimension
+here we just take the pre-computed
+geometric distribution tensor and we
+expand it across all samples or in other
+words we just repeat the same tensor
+across all the samples
+finally we compute the kl divergence and
+yeah that's the regularization loss
+let's play around with this
+regularization loss a little bit
+so we set the lambda parameter equal to
+0.5 as you probably remember we have
+this buffer p underscore g that holds
+the probability mass function
+the way you should interpret this is
+that the probability of halting after
+the first step is equal to 50
+after the second step is 25 and so on
+and so on
+and even though we
+made a cutoff after 20 steps the weights
+numerically still sum up to one
+however now let us create a new instance
+where the lambda is 0.2
+and as you can see here
+it's more probable to make more steps
+the sum is smaller than one so you know
+you can say that it's not a probability
+distribution but again this is just an
+approximation and the kl divergence
+computation is going to work out anyway
+all right let's write the training
+script
+[Music]
+first of all let us write an evaluation
+function the goal is to run it every now
+and then during training to get a good
+idea of what is going on
+all right so we provide a data loader
+that is going to stream batches of our
+validation set and we also provide an
+instance of our pondernet we will return
+two types of metrics the first type are
+just scalars for example the average
+halting step however we will also return
+tensors of metrics where we want to
+monitor what happens in each step
+here we prepare a couple of lists and we
+will be appending per batch metrics
+here we run our pondernet
+and then we use the gather operation to
+only extract those predictions that
+correspond to the whole thing steps
+all right so here we compute the
+accuracies if we were to take the
+predictions when the process was halted
+and we also compute the average halting
+step
+here we disregard the whole thing step
+and we literally just compute accuracy
+for each step separately
+and we also compute the mean probability
+of halting for each step
+and here we just average over the
+batches in our validation set and we
+should more or less get the metrics over
+the entire validation set
+and i will write two functions that take
+these metrics and just plot them nicely
+all right and that's it for the
+evaluation and plotting logic and now
+let us set up a cli
+so the only positional argument is the
+folder where we're going to put the
+tensorboard stuff this beta float will
+determine how much importance we are
+giving to the regularization loss the
+lambda p will determine uniquely the
+geometric distribution we are dealing
+with number of elements will determine
+the size of our feature vector
+and as we saw we can put a lower bound
+and an upper bound on the number of
+non-zero elements and of course we can
+also choose the maximum number of
+pondering steps
+so here we hardcode that the number of
+evaluation samples is going to be 1000
+and we're going to iterate through this
+validation set in batches of size 50.
+all right so the idea here is that we
+are going to have multiple validation
+sets one is going to be let's say the
+easy one and the other one is going to
+be the hard one and this is going to be
+determined by the number of non-zero
+elements
+here we create a tensorboard writer and
+we dump all the cli parameters as text
+so here we created our training data
+loader it's worth mentioning that the
+number of samples is the batch size
+times the number of iterations and again
+we are generating the samples on the fly
+so this is just like a convenient setup
+so that we have number of iterations
+gradient steps uh during the training
+also if the user selected a custom range
+for the number of non-zero elements we
+pass this information into the
+constructor and now the idea is to
+create a bunch of evaluation data
+loaders so that we can understand how
+our model performs
+so the first evaluation data loader is
+going to be called test and it has
+exactly the same range of number of
+non-zero elements as the training data
+loader
+so the second evaluation data loader is
+actually going to hold the easy samples
+and the third evaluation data loader is
+going to be streaming samples that are
+hard
+we make sure all the parameters are on
+the right device and have the right d
+type
+here we instantiate our reconstruction
+laws and the actual criterion is going
+to be the binary cross entropy
+and here we also instantiate the
+regularization loss
+and finally we instantiate an optimizer
+and the learning rate value is actually
+taken from the paper i believe and now
+we are ready to write the training loop
+so we iterate through our batches in the
+training set and we cast both the
+features and the targets to the right
+device and their id type
+we run the forward pass of our pondernet
+and just a reminder since we did not
+allow for halting we will always run it
+for maximum number of steps
+here we compute the reconstruction loss
+and also the regularization loss
+the overall loss is equal to the
+reconstruction loss plus the
+regularization loss times beta
+we set all the gradients to zero then we
+compute the gradients and then we take
+the gradient descent step
+here we track the losses however
+occasionally we also want to run
+evaluation using our evaluation data
+loaders
+for each of the data loaders we run the
+evaluate function that we prepared at
+the beginning of the script
+[Music]
+and here we created the two plots and we
+tracked them with tensorboard
+and since we also have a bunch of single
+scalar metrics we just track them with
+tensorboard
+and when the evaluation is done we also
+store the model overwriting any previous
+checkpoints
+and that is it for the training script
+okay so we are going to run two
+different experiments
+first of all the paper discusses how
+sensitive the results are on the
+hyperparameter lambda b that uniquely
+identifies the target geometric
+distribution here we just create a grid
+of five different lambdas and run the
+training for each of them and also know
+that we are setting number of elements
+equal to 15 which is very small compared
+to the paper however this will enable us
+to get some results relatively quickly
+here you can see the second experiment
+and the goal here is to assess the
+model's ability to extrapolate the input
+feature vectors will have 30 elements
+however at training time the maximum
+number of non-zero elements will be 25
+our goal is to investigate how the model
+performs when we give it vectors that
+have 26 27 28 29 and 30 non-zero
+elements let's look at the results of
+the first experiment
+here we see the overall loss and as you
+can see something went wrong for lambda
+0.5 0.7 and 0.9 because the training was
+interrupted i didn't really check the
+root cause of the problem but i believe
+it has something to do with nouns or
+infinities even in the paper authors
+show that for lambdas higher than 0.5
+the results are let's say unstable i
+guess the main reason here is that we
+are forcing the pondernet to take two
+steps or even fewer steps on average and
+just doesn't like it anyway for rounds
+where the lambda was smaller than 0.5
+the loss was going down let me deselect
+the failed runs
+so the overall loss as you have seen is
+composed of two components the
+reconstruction loss and the
+regularization loss and here you can see
+the reconstruction loss evolution over
+the training and we see that at the
+beginning it's constant and then it
+starts to decrease drastically
+if you look at the regularization loss
+we see that it starts to decrease
+immediately and the loss is very low
+however then it radically increases and
+finally it slowly decreases for the rest
+of the training this behavior of the
+reconstruction loss is something i
+observed in all experiments and it shows
+that the network tries to match the
+target geometric distribution perfectly
+at the very beginning and only then it
+starts to pay more attention to the
+reconstruction loss and is less strict
+about the predicted distribution p
+looking at the accuracy of the halted
+predictions we see that we are able to
+reach almost 100 accuracy
+here we see the average halting step the
+expected value of halting steps should
+be
+1 over lambda if we match the target
+distribution perfectly
+we can also look at the halting step in
+cases when we only evaluate on simple
+samples and in this case those are the
+samples that have between one and four
+non-zero elements so as you can see
+let's say we have 10 steps for lambda
+0.1 and 6 steps for lambda 0.3
+and if you look at the average halting
+step for heart samples or in other words
+samples that had between 11
+and 15 non-zero elements and we see that
+on average the network takes more than
+one step more on the harder samples than
+on the simple ones this is consistent
+with our mission let's say of making the
+pondernet spend more time on the harder
+samples
+let us now look at some plots here you
+can see the target geometric
+distribution in red color and the
+predicted distribution at the end of the
+training in green color they are very
+similar however for the predicted
+distribution it is close to impossible
+to hold before the step number five by
+the way let me show you how this bloat
+evolved over the training
+alright so right after initialization we
+see that the predicted distribution is
+behaving more or less like a geometric
+distribution with lambda equal to 0.5
+that is because a randomly initialized
+linear model will predict zeros on
+average
+however after a few steps you can see
+that we are pretty much able to match
+target geometric distribution
+however as we saw in the regularization
+loss evolution the network then starts
+focusing more on the reconstruction loss
+and mostly defaults to taking the
+maximum number of steps
+and it is only from now onwards that we
+are starting to approach the target
+geometric distribution
+for lambda 0.3 the evolution is similar
+and this is the final predicted
+distribution
+finally if you look at the average
+prediction let's say for a lambda equal
+to 0.3 when we give the network easy
+samples we see that the most likely
+holding step is around four
+however if you look at the harder
+samples we see that the most likely
+number of steps is five and the
+distribution is definitely shifted
+towards more steps and again we can make
+the same conclusion and that is that the
+pondernet takes more steps when the
+input sample is more difficult
+here we see the accuracy of the
+predictions if we disregarded the whole
+thing and always evaluated just one
+specific step and we see that around the
+step 6 we hit the 100 accuracy and it is
+consistent with the average holding step
+the network holds when it knows that the
+maximum accuracy has been reached what's
+also cool is that the accuracy does not
+degrade if we take further steps all
+right now we will check out the results
+of the second experiment
+in terms of the loss you can see that it
+is very close to zero also it is worth
+noting that in this experiment the input
+features have 30 elements which made the
+training way longer
+here is the accuracy evolution on
+samples from 1 to 25 non-zero elements
+exactly the same setup we had in
+training and not surprisingly we are
+able to get almost 100 accuracy
+here we see the accuracy for samples
+with 26 to 30 non-zero elements quite
+amazingly the network is able to get
+around 95 of them right this shows that
+the pondernet is able to generalize
+for the easy samples that we have seen
+during the training the average holding
+step is around eight
+when it comes to the heart samples that
+were not seen during the training the
+network takes around nine steps on
+average which is at least one step more
+than on the easy samples and again this
+supports our hypothesis that the
+pondernet is able to adjust to the input
+difficulty and think longer when it's
+really necessary if you look at the plot
+it tells us the same story so for the
+easy samples we see that the stem number
+4 has the highest probability
+and if you look at the heart samples we
+see that the step 6 is the one with the
+highest probability and what is also
+interesting is that sometimes the
+pondernet gives itself the luxury to
+think for maximum number of steps
+however maybe this behavior would
+disappear if we train the network for
+more iterations anyway that is it for
+the video i have to admit that i really
+enjoyed this paper and preparing all the
+code and experiments i find the idea
+pretty original and especially the fact
+that the network can dynamically modify
+its forward pass i hope there will be
+more research and future work on this
+topic and that we will have some drop-in
+implementations that just take a
+standard supervised neural network and
+then wrap it in this pondering logic
+anyway all credits go to the authors of
+the paper and the people at lab mlai
+also know that the experiments that i
+ran in this video were not supposed to
+reproduce what was done in the paper and
+it was mostly just me playing around and
+coming up with different ideas
+thank you for making it to the very end
+you are awesome and as always i will be
+happy to get any feedback here on
+youtube or other platforms have a nice
+rest of the day and see you next time

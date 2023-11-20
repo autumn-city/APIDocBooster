@@ -1,0 +1,1339 @@
+WOLFF DOBSON: Hi, everyone.
+My name is Wolff and I'm going
+to tell you about TensorFlow
+from the ground up.
+This talk is designed for those
+who know the basics of ML,
+but need an overview on
+the basics of TensorFlow.
+We're not going to do
+a lot of math here,
+but we will do a bunch of code.
+All right, you ready?
+Why do you need TensorFlow?
+What are we even doing here?
+Well, we're probably
+doing machine learning.
+There are other things you
+can do with TensorFlow,
+but we'll be sticking to ML.
+And we're going to
+be using Python.
+You'll see later
+that you don't always
+need Python to do TensorFlow,
+but you almost always
+write models and do
+training in Python.
+And when we talk
+about TensorFlow,
+we want to think about the
+arc of machine learning.
+So you're going to
+collect some data.
+You're going to represent
+some weights or parameters.
+You're going to
+build a model out
+of groups of weights
+and parameters.
+You're going to train
+those weights with math,
+and then you're
+going to accelerate
+that training so it finishes in
+some reasonable amount of time.
+And if this isn't
+very familiar, you
+should check out one of
+our Coursera courses.
+But otherwise, we're assuming
+that you kind of know
+this stuff.
+TensorFlow has a lot going on.
+We have a lot of methods
+and classes and functions.
+We have thousands of methods
+and classes and functions.
+And we have Keras and Sonnet
+if you need high level APIs.
+We have a lot of
+add-on packages,
+like Probability, TFX, Lite,
+JavaScript, Agents, Privacy.
+We even have to have
+tf.numpy coming up
+so you can use your NumPy
+code inside TensorFlow.
+But how do you get your
+head around the design
+of the entire system?
+Fundamentally, what
+do you need to know?
+TensorFlow has a lot
+of different layers.
+Even though this talk
+is from the ground up,
+the part that we're
+talking about today
+is the Python part that
+fits above the runtime
+but below the high level
+APIs, like Keras and Sonnet.
+If you're doing implied
+machine learning,
+you might want a higher
+level API than this,
+but those higher
+level APIs are built
+using these fundamental parts.
+So what are these parts?
+Well, there's five easy pieces--
+tensors, variables, modules,
+gradients, and tf.function.
+And we're going to teach
+them to you right now.
+Use tensors to
+represent some data.
+Use variables to represent
+weights or parameters.
+Use gradient tapes to
+train those weights
+with fancy math; modules for
+collecting all those weights
+together to be a
+model; and finally,
+tf.function to
+accelerate that training,
+or inference if that's
+what you're doing.
+So let's talk about tensors.
+Tensors are multidimensional
+arrays that are strongly typed.
+We call these types D types.
+If you're familiar
+with NumPy, tensors
+are kind of like ndarrays.
+Everything you see
+here is a tensor,
+like scalars, and vectors, and
+matrices, and even strings.
+Tensors are strongly typed with
+ints and complex and strings.
+And we have exotic
+types of tensors,
+like Sparse and Ragged.
+Tensors are all immutable, like
+Python numbers and strings.
+You can never update the
+contents of a tensor.
+You can only create a new one.
+So why do we need
+tensors at all?
+Here we have an image that's
+converted into a float tensor.
+Each pixel value turns
+into a floating point
+number in a big matrix.
+We use tensors to represent
+whatever it is that we're
+trying to operate on.
+Images turn to tensors,
+sound turns to tensors,
+text turns to tensors.
+Tensors are also fast, so
+they can be vectorized,
+and then they can be
+used on accelerators.
+Let's see what that
+looks like in code.
+Here we're defining
+three tensors,
+each of different
+ranks, which is to say
+how many dimensions they have.
+So a rank 0 tensor
+here is a scalar.
+A rank 1 tensors
+looks like an array.
+We can put two rank
+1 tensors together
+to form a rank 1 tensors
+with complex values.
+And here we have
+a rank 2 tensors
+that describes word pairs.
+We can keep going to arbitrarily
+large sizes and dimensions.
+You may have noticed
+that I'm using
+rank and dimension to describe
+the bounds of a tensor.
+This is kind of like a
+three-dimensional tensors.
+Python array printouts get
+kind of hard to visualize.
+I mean, I hope you
+like square brackets,
+but we can do a little better.
+We can visualize this a
+couple of different ways.
+As you can see,
+this rank 3 tensors
+doesn't necessarily describe
+what you classically
+think of as a 3D space.
+Instead, it might be a batch of
+2 by 5 examples of your data,
+or something entirely different.
+Tensors are all
+inspectable and have
+a lot of different features.
+The biggest one here
+you'll see a lot
+is shape, which describes
+the number of elements
+along each of the axes.
+Fundamentally, though, you're
+allocating a block of memory
+and some metadata around this
+brick of numbers that you have.
+So in code, we make
+a rank 4 tensors,
+and then we can interrogate
+it about all its features.
+Here we see dtype, and shape,
+and number of dimensions,
+and each dimension, which
+we're going to call an axis.
+Axes are often referred
+to by their indices,
+but you should always keep track
+of the meaning of each one,
+like batch, width, height,
+the feature itself,
+like color or something.
+Often, axes are ordered
+from global local.
+The batch axis is first,
+followed by spatial dimensions,
+and then features for
+each location last.
+This way the feature vectors are
+contiguous regions of memory.
+You can then do math on them, as
+you'd expect, using overrides.
+And the results
+execute immediately.
+So we have matmul
+and min, argmax.
+We have various overridden
+operators, like at and
+plus and minus.
+And we have slicing
+operators that you
+might find in something
+like numpy or concat
+to squish two tensors together.
+We can look at how
+that looks in code.
+Element-wise multiply,
+matrix multiplication,
+element-wise addition without
+the operator overload, and even
+some slicing.
+Normally, when you
+call these, they just
+return the results right away.
+So it should feel very Pythonic.
+And there are a whole
+bunch of other useful ops
+that you can use, a lot of
+specialized operators that
+do ML things, like ReLU which
+you use for activations,
+2D convolutions, Softmax,
+compute the Cholesky
+decomposition of
+square matrices,
+or look up something
+in an embedding.
+A lot of these ops like ReLU
+can be easily implemented
+in low level fragments
+of TensorFlow,
+but we like to have
+bigger scale ops here,
+both for convenience,
+because how often will you
+write a Cholesky decomposition
+correctly in the first try?
+And when we implement these
+common operators internally,
+they get fused together
+for efficiency.
+Checkpoints are popular in
+machine learning, so let's
+checkpoint what
+we've learned so far.
+Number one, we have
+tensors, but what
+if we need to describe
+something that can change,
+like the parameter of a
+machine learning model?
+Well, as we noted before,
+sensors are immutable,
+which makes optimization
+refactoring possible
+and it lets the graph optimizer
+unfold constants and so forth.
+However, every
+machine learning model
+is made out of
+changeable parameters.
+You can't just store
+these in Python variables,
+because that will
+be really slow.
+So TensorFlow has a
+special data type for this.
+A variable looks and
+acts like a tensors.
+And in fact, it's
+a data structure
+backed by a tf.tensor.
+Like tensors, they have
+a dtype and a shape,
+and they can be
+exported to NumPy.
+So in this code here,
+we're going to make a few.
+We have a regular 2D
+tensors, and we use
+it to initialize a variable.
+We can also have Boolean
+and complex variables.
+Variables can be any
+supported dtype that you want.
+Most of the time,
+variables act like tensors.
+However, you can
+reassign the variable
+using tf.Variable assign.
+Calling assign does not
+usually allocate a new tensor.
+Instead, the existing
+tensor's memory is reused.
+Because this is a data structure
+wrapped around a tensor,
+for ops, it's about as
+fast as using a tensor.
+However, because
+it allows updating,
+you can't reshape them.
+For better
+performance, TensorFlow
+will attempt to place
+variables, and tensors as well,
+on the fastest device
+compatible with its dtype.
+This means most floating point
+variables are placed on the GPU
+if one is available.
+However, you can override this.
+In this snippet, we place a
+float variable on the CPU,
+and the computation with
+it on the first GPU.
+In most cases, you
+wouldn't want to do this,
+because GPUs are good at doing
+floating point variable math.
+But maybe you know
+something special
+about how the variable is used.
+Getting great performance
+out of TensorFlow
+does mean you need to
+think about which devices
+are doing which work,
+and the pipelines that
+connect them all.
+However, even though
+manual placement works,
+you probably won't
+do it manually
+like we're doing
+here very often.
+It's a field of active
+research to decide
+how to place tensors
+and move data around.
+The good news is
+that TensorFlow comes
+with built-in distribution
+strategies that
+lets you write your code
+once and then use it
+on a lot of different
+kinds of training setups,
+whether you have one machine
+with multiple GPUs like this,
+or lots of CPUs, each
+with their own GPUs,
+or even TPUs and TPU pods.
+All of that is a talk
+for another time.
+So let's get back to variables.
+Just like tensors, you
+can do math with variables
+and you can mix and match
+tensors and variables.
+The output of this combination
+of variables and tensors
+is a tensor.
+So x is the input data
+to y equals wx plus b.
+In Python-based TensorFlow,
+tf.Variable and tensor
+instances have
+the same lifecycle
+as other Python objects.
+When there are no
+more references
+to a variable or tensor,
+it gets garbage collected.
+And that includes ones that
+are placed on accelerators.
+A passing note about
+deallocating memory.
+You might notice that when you
+explicitly deallocate a tensor
+or variable on a GPU, you
+won't see the GPU memory
+allocation go down.
+That's because the
+runtime is reserving
+that memory for later use.
+So checkpoint-- we have tensors.
+We have variables.
+You can imagine
+a world where you
+can do the forward pass of a
+network, because we have data
+and we have variables.
+And you can do ops in
+the data and variables.
+But what about training?
+Beyond vectorization,
+TensorFlow exists
+to do automatic differentiation.
+To do machine learning, you've
+got to take a lot of gradients.
+Why do we need so
+many gradients?
+There's way more than
+we can cover here.
+But we need gradients
+to do things
+like gradient descent, which
+lets us optimize a function.
+You need to know which direction
+to change your variables that
+reduces the loss between
+what your model predicted
+and what the truth is.
+I mean, there are other
+optimization schemes
+besides gradient descent, but
+let's stick with that for now.
+To show some gradients, let's
+do some really basic calculus.
+Let's make a variable
+that's some vector.
+And then we square it.
+We'd like to calculate
+the gradient, which
+is to say, what is
+dy with respect to x?
+If you remember your
+high school calculus,
+you take the exponent down.
+You put in front of
+the variable, so 2x.
+Since x is a pair of 3's, we
+see that this should be 6.
+Remember, we're using
+override operators here,
+so that math op, that's
+part of TensorFlow.
+That's cool, but
+we want TensorFlow
+to calculate dy for us.
+How do we do this magic?
+Variables, and
+sometimes tensors,
+are marked as important,
+which means they're watched.
+Each operation knows how to
+compute its own gradient.
+And with the chain rule, you
+can determine the gradient
+across multiple operations,
+all with the goal
+of doing something
+like gradient descent.
+So how does TensorFlow
+keep track of the gradient
+across multiple operations?
+As we do math along
+our network, a tape
+records per-op
+gradient functions,
+and any needed intermediate
+values, on the forward pass.
+Each operation keeps recording
+these intermediate values.
+And as we go along
+calculating, we
+build up this whole tape
+of intermediate values.
+Then, going backwards,
+we can calculate
+the complete gradients while
+playing the tape backwards.
+So do-do-do.
+For the next step, we
+throw away the old tape
+and start a new one.
+This means we can do different
+operations on the next step.
+So your neural networks
+can be dynamic.
+So let's go back to our
+tiny calculus problem.
+Again, we make a variable that's
+some vector and we square it.
+This time we're going to
+create a gradient tape
+to do the math in the
+context of the gradient tape.
+We could then ask the gradient
+tape what the derivative of y
+is with respect to x.
+And when we print that
+out, we get a pair of 6's.
+So let's do another example.
+This example is
+a little bit more
+complicated, because we're going
+to take the derivative using
+a little, tiny ML model.
+So we make a dense Keras layer,
+which contains just wx plus b.
+It contains a kernel and
+bias module variables.
+Then we call the layer,
+calculate the loss,
+which is the difference between
+what the model predicted
+and what we wanted.
+And then finally,
+we can calculate
+the gradient of the
+loss with respect
+to all the trainable variables.
+We're being a little
+tricky here at the end,
+as we're using an
+accessor on the layer two
+get all of its
+trainable variables.
+We'll get to that
+accessor in a moment.
+And if we print out the
+shapes of these gradients,
+we can see that the
+gradients have the same shape
+as the variables.
+So if we can apply
+those gradients somehow
+to the variables easily,
+we could actually
+do some machine learning.
+OK, that was a lie.
+We can even be more
+clever with TensorFlow.
+The gradients can be gradients
+with respect to anything.
+Here we're going to take
+the gradient with respect
+to r, which is an
+intermediate calculation,
+instead of with respect
+to the input, x.
+That's no problem.
+Since it's 2x times
+x squared, that's 18.
+Stop the video there if
+you want to check my math.
+Control flow is
+no problem either.
+The gradient tape only records
+what computations actually
+took place.
+So the flow control
+is invisible to it.
+In this case, we
+have a simple branch,
+which uses either v0 or v1.
+In this case, since x is
+1, it's greater than 0,
+so we go down the first branch.
+Then the derivative with
+respect to v0 is just 1.
+And the derivative
+with respect to v1
+is none, which is to say
+there's no gradient at all.
+What if we went down
+the other branch?
+Since you make a new
+gradient tape on each pass,
+if you go down
+either branch, you'll
+get a gradient based on that
+branch's calculations only.
+OK, there's a lot of
+technicalities here,
+and bonus features which
+we don't have time for.
+You can watch or not watch
+whatever variables you want.
+You can stop and start
+the gradient calculations
+within the gradient
+tape context.
+If you want to take the
+gradient of non-scalar targets,
+we provide a shortcut
+for batch Jacobians.
+You can also override gradients
+with nearly anything, including
+calculating second
+order gradients easily.
+This is all in our
+guides, which will
+be linked to in the comments.
+Back to our checkpoints.
+We have tensors.
+We have variables.
+We can do the forward
+pass of a network.
+We can do the backwards
+pass to calculate gradients.
+So what about building
+the whole model?
+This brings us to modules.
+In the last example, I
+snuck in a little piece
+of functionality.
+We looked up all the variables
+associated with a dense layer.
+It's very helpful to have
+a place that automatically
+collects all your variables.
+You also want to
+create classes that
+can contain all the math
+that you want to do,
+as many neural networks have
+a lot of repeating structures
+in them.
+Since TensorFlow lets you
+define your models in Python,
+modules are a Pythonic
+way of gathering all
+of this functionality together.
+You might recognize this.
+For future reference,
+we're going
+to be referring to
+linear regression a lot.
+In linear regression, we
+have y equals wx plus b.
+x is the input.
+w and b are parameters
+that you are
+tuning to try to
+predict the output
+y from x, so you get that nice
+little line through your data.
+And what we're
+trying to do there
+is guess the relationship
+between x and y.
+In machine learning,
+this kind of operation
+can be called a dense layer,
+or sometimes a linear layer.
+We're going to use it a lot.
+So let's make a layer like that.
+In Python, it's easy enough to
+make a linear regression layer.
+You extend tf.Module,
+and then define
+an init function that
+allocates your variables,
+and a call override
+that does the math.
+Here we're going to do the
+ReLU activation as well.
+By defining underscore
+underscore call,
+we're making this into
+a Python callable,
+which means we can treat
+it like a function.
+A multilayer model is
+pretty much the same thing.
+It's more than one layer.
+Since we've already
+defined dense,
+we just use it here in
+our sequential module
+that calls two dense layers.
+So if you look closely at
+call, we first call dense_1
+and then we call dense_2.
+You could actually just write
+that as dense_2 calling dense_1
+directly, but this
+way you can debug it
+as you're writing your model.
+And you use print to check
+on your shapes and whatnot.
+You can also see
+in this call, we're
+just calling the layers on
+whatever is being passed in--
+usually tensors, although
+tensor ops will actually
+convert NumPy
+ndarrays and Python
+lists to tensors automatically.
+In this case, the results
+will always be tensors.
+And r there, the intermediate
+result, is also a tensor.
+tf.Modules are
+built specifically
+to collect variables and
+collect them recursively.
+In this example,
+we're going to ask
+our sequential model, hey,
+tell us all your variables,
+and it tells us.
+It's got two sets
+of b and two sets
+of w, each attached
+to a different layer.
+They're slightly different
+shapes because the last layer
+only has two outputs.
+You can see
+immediately how useful
+this is in the context
+of our last example
+when we were
+calculating gradients
+that were the same
+shape as the variables.
+We want to be able to apply
+the gradients directly
+to the variables.
+So briefly, let's
+talk about saving.
+There's two ways to save.
+One is a checkpoint.
+Checkpoints are
+where you write out
+the values of all your weights
+and a little bit of metadata.
+That's built into TensorFlow
+and it's pretty easy to use.
+There's another way to save
+that we'll get to in a minute.
+Last thing I'll
+say about modules
+is if you know what Keras
+is, Keras layers are actually
+modules.
+They inherit from tf.Module.
+That means you can
+interrogate Keras layers
+for their variables
+in submodules
+with the same methods.
+Keras layers come with a bunch
+of other handy convenience
+features, and they work really
+well within the entire Keras
+framework.
+But ultimately,
+they are tf.Modules.
+For historical
+reasons, you should
+choose either pure
+tf.Module or tf.keras.layer
+as your base classes.
+They don't intermix perfectly,
+so just be aware of that.
+So we're back to our checkpoint.
+We have tensors.
+We have variables.
+You can do the forward
+pass of a network.
+You can do the backwards
+pass to calculate gradients.
+And finally, we can make
+a model and save it.
+So all we have to
+do now is train.
+So let's talk about
+training loops.
+If you think back
+to my first slide
+about the arc of
+machine learning,
+for supervised
+learning in particular,
+you're going to do these
+three tasks in order.
+You're going to send
+a batch of inputs
+through the model
+to generate outputs.
+You're going to calculate
+the loss by comparing
+the outputs to real life.
+We sometimes call
+real life a label.
+We use the gradient tape
+to find the gradients.
+And then we optimize the
+variables with those gradients.
+And you'll have to do that a
+whole bunch of times in a row.
+So let's take a look.
+First, we allocate a model.
+In this case, we're going to
+allocate Sequential.Module.
+Then we're going
+to create x, which
+is some kind of input data.
+Then we have y, which
+is some kind of label.
+And then we allocate
+an optimizer.
+We can use a Keras optimizer
+with or without Keras.
+In this case, we're going to use
+SGD, which is gradient descent.
+Then we're going to
+create a gradient tape.
+And inside the content
+of that gradient tape,
+we're going to call model on
+our input x to generate y prime.
+Then we're going to grab
+a loss off the shelf,
+in this case, MSE, which
+is Mean Squared Error.
+We're going to use that to
+calculate the loss between y
+prime and y, which is reality.
+And then we're going
+to calculate gradients.
+In this case, we're going to
+calculate the gradient of loss
+with respect to the
+trainable variables.
+And then we're going
+to call that optimizer
+to apply the gradients
+to those variables.
+Now, you're going to want to
+do that a lot of times in a row
+in most cases.
+So it helps to isolate
+your train step out
+from just calling it directly.
+So we're going to define a train
+step here, pass in a model, x
+and y.
+We're going to create
+that gradient tape.
+We're going to
+calculate the loss.
+And then we're going to
+ask the gradient tape
+for the gradients.
+And then we're
+going to pass that
+straight into the optimizer,
+which is defined globally.
+And remember, optimizers
+are just math,
+so if you don't want to
+use a built-in optimizer,
+you can just write your own.
+This one here is just
+a linear application
+of the gradients based on
+some arbitrary learning rate.
+So then your basic loop
+then is create a model,
+create an optimizer, and
+then call that train step
+over and over again with
+different batches of data.
+Here we're going to iterate
+through the dataset with x
+and y.
+And we're going to pass
+that directly into train.
+We're going to set some learning
+rate we think is a good idea.
+In more advanced uses, we
+might want to tune the learning
+rate as we go along.
+But basically, you can
+do whatever you want.
+If you want to train on
+more than one target,
+like a whole lot of
+GPUs, you actually
+don't need to change
+your model and do
+all the tensor and
+variable placing
+by hand, like we
+showed a long time ago.
+You want to pick a strategy,
+like MirroredStrategy,
+which replicates the model
+on more than one device.
+And then you create all
+your training objects
+inside the context
+of that strategy.
+This lets the
+strategy figure out
+how to distribute all
+the variables and tensors
+and ops across all the devices.
+MirroredStrategy, like
+I said, will actually
+just create whole copies
+of the model on each GPU.
+The cool thing is if I decided
+to use a different strategy
+with a different hardware setup,
+the only change to the code
+is to swap out the
+strategy that we've chosen
+and probably mess with the
+configuration a little bit.
+It does get complicated
+here, though.
+With custom training loops,
+you have to be careful.
+Anything that has
+a variable in it
+needs to be created
+inside the strategy scope,
+because it might need
+to get distributed.
+And if you have multiple
+replicas that are all
+working on some
+subset of a batch,
+then when you try to
+sum all of that loss
+together, or average it, or
+whatever that you're doing,
+you have to remember how
+many replicas you have
+and how to average it together
+and get the scaling right.
+If you use Keras in distribution
+strategies, a lot of this
+is taken care of for you.
+So you might want
+to look into that.
+So checkpoint.
+We have tensors.
+We have variables.
+We can do the forward
+pass of the network.
+We can do the backwards pass
+to calculate all the gradients.
+We can train a model.
+But what if I want to
+optimize my calculation?
+What if Python isn't enough?
+Well, that's where
+tf.function comes in.
+In the previous sections, we've
+always been running TensorFlow
+eagerly.
+This means TensorFlow
+operations are
+executed by Python op
+by op and return results
+directly back to Python.
+Eager TensorFlow takes
+advantage of GPUs,
+because it allows you to place
+variables and tensors and even
+operations on GPUs and TPUs.
+It's also very easy to debug.
+For some users, you may never
+need or want to leave Python.
+However, running TensorFlow
+op by op in Python
+prevents a host of accelerations
+otherwise available.
+If you can extract tensor
+computations from Python,
+you can make them into
+a graph like this one.
+This is a graph of
+that sequential model
+that we've been working on.
+See, we've got mx plus b.
+We've got mx plus b.
+We have a little
+ReLU ops in between.
+It's pretty cool.
+Graphs are data structures that
+contain a set of tf.Operation
+objects, which represent
+units of computation,
+and tf.Tensor objects
+which represents
+the units of data that flow
+between the operations.
+They're defined inside
+a tf.Graph context.
+Since these graphs
+are data structures,
+they can be saved,
+run, and restored, all
+without the original
+Python code.
+With a graph, you have a
+great deal of flexibility.
+You can use your
+TensorFlow graph
+in environments that don't
+have a Python interpreter,
+like mobile applications,
+embedded devices,
+and backend servers.
+TensorFlow uses graphs as
+the format for saved models
+when you export
+them from Python.
+Graphs are also
+easily optimized,
+allowing the compiler
+to do transformations
+like statically infer
+values of tensors
+and then fold the constant
+nodes in your computation.
+If you have two parts
+of a computation that
+are independent
+of each other, we
+can split them out and run
+them on different devices
+or threads.
+You can simplify
+arithmetic operations
+if you notice lots of
+common sub-expressions.
+We have in TensorFlow an
+entire optimization system
+called Grappler
+that performs these
+and many other optimizations.
+So graphs are cool, but they
+are harder to program with
+and debug.
+So between TensorFlow
+v1 and v2, we're
+able to make using
+graphs optional.
+The goal we have then is
+to write your code in eager
+and then construct
+graphs when we need them.
+And like
+differentiation, we want
+that to be automatic for you.
+The truth is, when
+you're writing your code,
+even if you have an intent
+to run this without Python,
+you should be planning
+in your head a little bit
+of what kind of graph
+you're going to make.
+So let's make a graph.
+We make a little function
+you might recognize,
+y equals mx plus b.
+[LAUGHS] We're going to do that.
+Then if we want to turn it into
+a graph, we wrap it in a call
+to tf.function.
+The thing that's returned is
+called a polymorphic function.
+The polymorphic
+function can then
+be used like a regular
+TensorFlow or Python function.
+So let's use this.
+We're going to make
+x1, y1, and b1.
+Then we're just going
+to pass that in,
+because it's a Python
+callable, and we can print out
+the results using NumPy.
+tf.function recursively
+traces any Python
+function that it calls.
+So if you have
+some outer function
+that calls some
+inner function, when
+you wrap the outer
+function in tf.function--
+and here we're actually
+using the decorator
+instead of calling it directly.
+You can see the
+little @tf.function--
+that means the
+inner function just
+gets pulled in with
+the outer function
+and turned into a complete
+graph all by itself.
+You might ask yourself,
+what about flow control?
+With flow control, you won't be
+able to use these dynamic ifs
+and whiles inside Python.
+The good news is TensorFlow
+comes with Autograph.
+So when you wrap a
+function in tf.function
+that contains flow control,
+we reparse the Python
+and we're able to generate
+TensorFlow ops, like tf.cond
+and tf.while, that allow you to
+do branching inside your graph.
+So if you want to take
+a look at this function,
+and we want to convert it into
+a graph using tf.function,
+we can actually ask
+it just to show us
+what code it turned it into.
+And it looks
+something like this.
+The code is really
+complicated and it
+uses a specific
+TensorFlow sort of format.
+But you don't need to know
+or care about this at all.
+You can always switch
+back to eager execution
+if you're debugging.
+Let's talk about saving.
+We've already talked
+about checkpoints, which
+just write out the weights.
+We have this other way
+of saving, which is
+where we write out the graph.
+Any function can be saved
+this way as a saved model.
+This saves two pieces--
+the graph trace and the weights
+at the time it was being saved.
+So here we have a module.
+Note that at least one
+function in the module
+has to have a method
+decorated with tf.function.
+And the eagle-eyed among you
+might notice that in my example
+so far I haven't.
+But let's pretend I did.
+You might ask, what if there
+are two tf.function methods?
+And the answer is,
+well, it's complicated,
+but you're allowed to
+save multiple signatures
+in the same file.
+A saved model is
+really a directory.
+So let's take a
+look inside this.
+We see three parts.
+Graph is at the top level.
+If you look inside the
+variables directory,
+you see shards of variables.
+They're shards.
+That's why they're numbered.
+And then we have an extra
+directory called assets
+for any other files you want
+to include with your model,
+like a vocabulary for
+lookup or something.
+So just wrapping a tensor
+using function in tf.function
+does not automatically
+speed up your code.
+For small functions
+that are only
+called a few times
+on a single machine,
+the overhead of tracing
+and then calling
+a graph or a graph fragment may
+end up dominating your runtime.
+Also, if most of the
+computation was already
+happening on an
+accelerator, such as stacks
+of GPU heavy convolutions,
+the graph speed-up
+is not going to be very big.
+But for complicated
+computations,
+graphs can provide a
+significant speed-up.
+This is because graphs
+reduce the Python to device
+communication, and perform
+some optimizations,
+and basically take all of the
+execution away from Python.
+It can get a little tricky to
+debug if you have this graph
+that you've passed
+off the executor
+and the graph's just being
+chewed on by the executor
+and something goes wrong.
+To make debugging easier,
+the very first thing
+I almost always recommend
+is to switch back to eager
+and pass the same data in.
+To keep hold of
+eager mode, you want
+to use a tf.function
+decorator only after you've
+gotten things working.
+In Keras, you can also just
+tell it at the compile step
+to run eagerly, and then it'll
+run eagerly automatically.
+And if you really want
+to turn off eager,
+you can actually turn
+it off at a global level
+and say, run all
+functions eagerly.
+So basically, debug your model
+in Python and then wrap--
+as you finish debugging a
+part, wrap each part of it
+in tf.function, and it'll
+get faster and faster.
+Or ultimately, just
+set a flag to turn it
+on and off in your entire file.
+So checkpoint.
+We have tensors.
+We have variables.
+We have the forward
+pass of a network.
+We have the backwards
+pass that allow
+us to calculate gradients.
+We can train a model.
+We can make graphs.
+And we can save.
+So we're all done.
+I mean, we're not.
+There's a lot more.
+For example, we haven't talked
+about any of the high level
+APIs, like Keras and Sonnet.
+They have idiomatic
+coding that you're
+going to want to learn about.
+There's some low level
+stuff that you might get
+into if you want to use NumPy.
+We have distribution
+strategies and TPU pods
+and all that, all of which
+have their own things
+that you want to learn about.
+Big thing is once your data
+no longer fits in memory,
+you need to use things
+like tf.data datasets
+to be able to process
+that data efficiently.
+And of course, putting
+models in production
+is a whole field of
+study unto itself.
+But remember this-- define
+data in terms of tensors.
+Define your parameters in your
+model in terms of variables.
+Track gradients
+with gradient tapes.
+Define models in
+terms of tf.Module.
+And make your model run
+fast with tf.function.
+All right, thanks so
+much for your time.
+Everything we
+talked about here is
+on tensorflow.org in
+guides and tutorials.
+Keep watching
+TensorFlow YouTube.
+Thanks so much.
+[MUSIC PLAYING]

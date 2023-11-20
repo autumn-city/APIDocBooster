@@ -1,0 +1,901 @@
+[Music]
+hey guys and welcome to this video so
+today we will play around with pruning
+and by torch and we will also try to
+implement the paper called the lottery
+ticket hypothesis finding sparse
+trainable neural networks as always i'm
+not affiliated with the authors and i
+apologize in advance for any potential
+misinterpretations of the paper and bugs
+in my code anyway here you can see a
+github repo which was created by one of
+the authors and i would definitely
+encourage you to check it out personally
+i did not really inspect it in detail
+and instead i just decided to prepare a
+minimal implementation myself uh which
+should illustrate the main ideas but by
+no means it is an attempt to reproduce
+the paper's results anyway i hope you
+enjoy the video
+let me explain in my own words and
+rather informally what the lottery
+ticket hypothesis is about it states
+that if we take any feed-forward neural
+network with randomly initialized weight
+we can find a sub-network inside of it
+with very nice properties
+this sub-network is called a winning
+ticket and what are the properties first
+of all after training the winning ticket
+will generalize better or in other words
+it is going to have a higher test
+accuracy second of all training of the
+winning ticket requires fewer steps than
+training of the original network and
+lastly the winning ticket has way fewer
+parameters than the original network the
+authors mentioned that it is often less
+than 10 to 20 of the original number of
+parameters here you can see the actual
+wording of the lottery ticket hypothesis
+that was taken from the paper feel free
+to stop the video and read it anyway i
+would definitely like to point out a
+couple of things you can see that the
+authors define a mask vector called m
+that has the same size as the number of
+parameters of the network one can
+actually obtain any sub network by
+element wise multiplication of an
+appropriate mask m and the parameter
+vector theta another important point is
+that to compute the test accuracy one
+also needs to have a validation set the
+idea is to find the iteration with the
+lowest validation loss and then to
+compute the test accuracy using the
+parameter vector corresponding to that
+given iteration the hypothesis states
+that there exists a winning ticket
+however it does not necessarily give us
+a recipe how to find it luckily the
+authors actually do propose a procedure
+that will help us find it quite
+surprisingly it is based on vanilla
+pruning anyway let's focus on the first
+row of this diagram we start with the
+original randomly initialized network
+and we train it for a fixed number of
+iterations once trained it is very
+likely that all parameters of the
+network will have different values than
+before training anyway we then take the
+train network and prune it layer by
+layer in our context pruning will simply
+mean that we removed a fixed percentage
+of weights with the lowest absolute
+value or in other words the lowest l1
+norm in this diagram we remove a single
+weight per layer which would correspond
+to approximately 16 now comes the
+important part we only keep track of the
+pruning mask and completely throw away
+the actual weight of the pruned network
+and the reason is that we will actually
+go back to the weights of the original
+network and just copy them however we
+will keep the result of the pruning by
+applying the pruning mask and yeah that
+was one iteration of our algorithm if we
+stopped here it would be called one shot
+pruning however we can actually repeat
+the same procedure as many iterations as
+we want and that would be called the
+iterative pruning anyway eventually we
+end up with a network that has a lot of
+prone weights however the ways that we
+did not prune will be equal to their
+counterparts from the original network
+here you can see the exact description
+of the algorithm that i just took from
+the paper
+lastly i want to talk about our setup
+and simplifications that we will make in
+this video so first of all we will be
+only using the multi-layer perceptron
+the paper also investigates
+convolutional neural networks however we
+are not going to do that our data set is
+going to be the notorious mnist aka the
+hello world of computer vision and the
+authors also run some experiments on the
+c410 data set however we are not going
+to do that in this video anyway we will
+actually have 60 000 training samples
+and 10 000 validation samples and note
+that we are not going to work with any
+test set and related to this instead of
+using an early stopping criterion on the
+validation set and then computing test
+accuracy as was done in the paper i
+believe our ultimate metric is going to
+be the maximum validation accuracy over
+all training iterations i'm not sure how
+good or bad of an idea it is however i
+decided to go for this setup to make the
+code simpler another important point is
+that we are going to make our lives
+easier by using a pruning module that is
+already included in pytorch i believe
+this module did not exist at the time
+when the authors published this paper
+and if i'm not mistaken their code
+implements all the pruning logic from
+scratch lastly a small disclaimer a lot
+of the code in this video was just a
+result of me improvising guessing since
+i did not really have the time and
+energy to go look for the official logic
+so please keep that in mind and feel
+free to let me know if you find any
+blatant mistakes first of all let me
+give you a very quick tutorial on how to
+do pruning in pytorch and i will only
+focus on the features that we will need
+for the lottery ticket
+all right so we instantiated a simple
+linear layer and we would like to see
+what parameters it has
+and as you probably know it has this
+weight parameter and this bias parameter
+and both of them are let's say dense
+sensors now let us see whether it has
+any buffers buffers are nothing else
+than tensors that are not supposed to be
+trained
+so nothing was printed out which means
+that there are no buffers and lastly let
+us also look at the forward pre-hooks
+forward pre-hooks are let's say
+callables that are going to be called
+just before you run forward pass on a
+given module
+it's an empty dictionary all right so
+this is the status before pruning and
+now let us actually try to do some
+pruning
+so as you can see torch has an entire
+module with multiple different pruning
+methods however what we are going to use
+is the l1 unstructured pruning approach
+l1 stands for the l1 norm and it means
+nothing else that we will prune out
+those elements that have low absolute
+value and the fact that it's
+unstructured just means that we are
+treating all the weights independently
+uh here you can see the dock string
+however most importantly you can see
+that we need to provide the module we
+want to prune and the name of the
+parameter and also the amount which in
+our case will be the percentage so let
+us try to apply the pruning on the
+weight parameter
+so we wanted to pronounce 50
+of the elements however what's important
+is that it modified our linear model in
+place and then it also returned it and
+the question is what exactly was this
+modification in place and to answer it
+we basically rerun some of the commands
+we ran before
+right away you can see that the weight
+parameter disappeared and instead there
+is this new parameter called weight
+original let us check the buffers now
+so it's not empty anymore and you can
+see that there is this weight mass
+tensor and as you would guess it
+represents what elements were pruned
+corresponding to the zeros and what
+elements were left intact corresponding
+to ones
+and if we print them side by side we can
+see that it's the elements with low
+absolute values that were kicked out
+for example this one
+however elements with large absolute
+value were kept
+all right and now the question is did
+the original attribute weight disappear
+no it's actually there but it's not a
+part of buffers or of parameters and
+let's say it's just a plain python
+attribute and as you can see it actually
+represents the element-wise
+multiplication of the mask and the
+original tensor
+this is another way how to view it the
+weight original and the weight mask are
+just the leave notes whereas the weight
+is not a leaf node anymore because it's
+a result of some operation of two leave
+notes
+here i just computed the element-wise
+multiplication manually and you can see
+that it's exactly equal to the weight
+and let me also highlight one
+interesting property and that is that
+the gradient of the pruned out elements
+it's always going to be zero no matter
+what loss function we use
+so here i just created some like random
+loss function
+we compute the gradients
+and as you can see the gradients are
+zero for the pruned out elements another
+interesting thing worth mentioning is
+where exactly um the update process
+takes place
+as you can see the forward pre-hooked
+dictionary is not empty anymore and
+there seems to be a hook and without
+going into detail this is exactly where
+the element-wise multiplication of the
+mask and the original weight is taking
+place and this forward pre-hook is
+always going to be called just before
+our forward pass and that way we
+guarantee that the linear weight tensor
+is always up to date lastly we also want
+to investigate what happens if we prune
+the same module multiple times
+and as you can see there's only three
+elements left which actually suggests
+that we apply the second pruning only to
+those elements that survive the first
+pruning so this weight tensor has 12
+elements three times four after the
+first pruning of fifty percent we were
+left with six elements and now after the
+second round of pruning we end up with
+three elements which is fifty percent of
+the six survivors from the first pruning
+and what's interesting
+is that after the second pruning we have
+a hook which is of type pruning
+container and it basically handles all
+this logic of uh running pruning
+multiple times
+and yeah this is just a summary of
+what's inside of the model after two
+rounds of pruning and in the code that
+we're going to write we will actually
+also apply the pruning to the bias and
+uh yeah i believe that's all we need to
+know all right so first of all let us
+just prepare our data which is nothing
+else than the notorious eminence data
+set
+and our idea is to just take
+contortivision mnist dataset and make
+sure we flatten the images into 1d
+arrays and the reason why we do this is
+to simplify things since we are only
+going to be using the multi-layer
+perceptron as our neural network
+all right so we provide the folder where
+the dataset is lying or where we want to
+download it to and then we just specify
+whether we want to get the training set
+or the validation set just when it comes
+to the terminologies i guess you could
+also call it the test set but throughout
+this video i'll call it the validation
+set and that's basically the set where
+we're going to compute the accuracy and
+internally we will have the storage
+vision data set
+first of all we prepare this custom
+transform that is going to take a pillow
+image and cast it to a tensor and then
+we will just flatten this image that is
+just a grayscale 2d image into a 1d
+array throwing away all the structural
+information
+and here we instantiate the torch vision
+data set providing all the necessary
+parameters
+here we define the size of our data set
+all right and if we query a specific
+sample in our data set we then get the
+feature vector which is just the
+flattened 1d array with 784 elements
+because the original image has a
+resolution of 28 times 28 and we also
+get the ground truth label a number
+between 0 and 9.
+and yeah this is all we need now the
+goal is to write a couple of utility
+functions related to pruning and as you
+saw in the small tutorial actually torch
+does a lot of heavy lifting for us but
+still we'll try to write a couple of
+helper functions to make it even easier
+for our use case
+first and foremost we want to write a
+multi-layer perceptron module because
+that's going to be the only neural
+network that we're going to be
+experimenting with in this video
+so we let the user choose the number of
+features which for mns is going to be
+784 then one can also choose the hidden
+layer sizes and finally also the number
+of targets and again for eminence this
+is going to be 10. internally we will
+have this module list instance and it
+will hold all the linear layers and this
+attribute is kind of important because
+we will use it throughout the codes to
+easily iterate through all the linear
+layers in the multi-layer perceptron
+so here we prepare sizes of all layers
+including the feature vector and also
+the target vector
+and we iteratively define all the linear
+layers and then we create this modulus
+instance
+so the input to the forward pass is
+nothing else than a batch of input
+features and what we return is a batch
+of predictions or logits
+all right so here we just iterate layer
+by layer and we always send the tensor
+through that given layer and we also
+apply the value activation
+with an exception of the last layer cool
+that's done and now we would like to
+write a couple of pruning helper
+functions and note that all of them will
+be modifying torch modules in place and
+also there will be this pattern where we
+implement something for a linear layer
+and then we just generalize it to the
+multi-layer perceptron by iterating
+through all the linear layers and
+applying the same procedure to each of
+the linear layers first of all let us
+define a pruning of a linear layer
+we provide a linear layer to be pruned
+and we also provide the percentage of
+elements to be pruned both in the bias
+parameter and the weight parameter
+finally we can choose a method of our
+pruning we saw the l1 pruning already
+however we will also support random
+pruning which we will use as a benchmark
+in the experiment
+so based on the method string we define
+the prune function that we want to use
+and these functions are just outsourced
+from by torch
+and exactly as we saw in the small
+tutorial we actually apply this pruning
+to both the weight and the bias and now
+we will just define what it means to
+prune an mlp
+not surprisingly we provide an mlb
+instance we also provide a prune ratio
+however we have two options either we
+provide the same prune ratio for all the
+linear layers inside of our mlp or we
+can actually have a different prune
+ratio for each of them which can be
+achieved by providing a list here and
+the reason why we want to have different
+prune ratios for different layers is
+because in the paper the authors
+mentioned that the pruning they applied
+to the last layer was smaller and
+finally we choose what pruning method to
+use and this one is going to be the same
+for all layers
+here we do input validation
+and we simply iterate through each
+linear layer and we use the prune linear
+function that we defined above okay now
+the goal is to write a function that
+will quickly check whether a linear
+module was pruned or not
+for this check to evaluate to true we
+want both the bias and the weight to be
+pruned
+and the way we do this is that we look
+at all the parameters of the linear
+module and we make sure that it's
+exactly the weight original and the bias
+original and because that's basically a
+way how we can detect that a linear
+module was pruned or not all right the
+next function is going to re-initialize
+a linear module with random weights and
+again it is going to happen in place
+the goal of this function is to work
+both on linear modules that were pruned
+but also on linear modules that were not
+pruned and we want to make sure that the
+pruning or let's say the mask is not
+going to be modified by this function
+and by the way the reason why we want to
+have this function is because we will
+investigate whether the winning tickets
+are only good because of the mask that
+was generated by pruning or whether it's
+also because of the initialization of
+the original parameters all right so
+first of all we established whether the
+linear module was pruned or not
+and then we just extract the actual
+learnable parameters weight and bias
+here we re-initialize randomly both the
+weight parameter and the bias parameter
+by the way this logic is just coming
+from the constructor of the linear layer
+taken from the torch source code and now
+we will actually use this method to
+define what it means to re-initialize
+the entire multi-layer perceptron
+and yeah the same logic here again we
+just iterate through all the linear
+layers and apply the reinitialization
+linear to each of them and now we want
+to define a function that is going to
+copy the weights of one linear module to
+another linear module
+also we make an additional assumption
+that the first linear layer is unpruned
+whereas the second one is pruned and the
+reason why we need this function is
+because we will use it to create the
+winning tickets because as discussed
+it's not enough to just have the pruning
+mask we also need to reset the
+parameters to the original parameters
+here we run some sanity checks
+and we copy both the weight tensor and
+the bias tensor from the unpruned linear
+to the pruned linear and now again we
+will just iteratively reapply this
+function to copy an entire multi-layer
+perceptron
+so the first parameter is an unproved
+multi-layer perceptron
+whereas the second parameter is a pruned
+multi-layer perceptron
+and here we basically go layer by layer
+of both of the mlps assuming that they
+are identical when it comes to the
+architecture and we copy the linear
+modules one by one finally we just want
+to write an evaluation function that is
+going to compute how many prune
+parameters there are in each of the
+layers of our multi-layer perceptron and
+this way we can track it and have a nice
+overview
+once we run the experiments
+so the way we count up the number of
+parameters per layer is just we count
+the number of elements in the weight
+tensor and to actually get the number of
+prune parameters we just count up how
+many times there is a zero in the mask
+tensors
+and we are done with all the utility
+functions and now we can write a
+training script where we put everything
+together
+what's going to be different this time
+compared to let's say my previous videos
+is that we're going to be using weights
+and biases to actually track our
+experiments and the main reason for it
+is that uh we will have hundreds of
+different runs and in my opinion
+tensorboard is not necessarily well
+suited for this given setup alright
+first of all let us write the utility
+function that is going to loop through a
+data loader forever
+it's actually a generator function and
+the idea is that we will take an
+existing data loader and we will always
+let's say restart it whenever it stops
+its iteration and we will just yield the
+same thing it is yielding and actually
+in our specific case it's going to be a
+tuple of battery features and the batch
+of
+targets okay now we would like to write
+a utility train function and the reason
+why we want to put it in a utility
+function is because we will do training
+at two different places first of all we
+do the pruning and the second use case
+is when we already have a prune network
+and we just want to train it from
+scratch and evaluate how good it is
+so first of all we will provide our
+neural network and in our case it's
+going to be the multi-layer perceptron
+then we provide our training data loader
+we also provide the loss instance that
+is a callable and it computes the actual
+loss scalar we also provide the
+optimizer here we provide the maximum
+iteration this will control the exact
+number of steps we train the model for
+that is why we actually implemented this
+infinite looping of the data loader we
+don't want to stop when we do let's say
+exactly two or three epochs we actually
+want to choose the number of iterations
+optionally we can provide a validation
+data order and this will actually signal
+to us that we are not in this pruning
+phase where we try to determine the best
+uh weights to prune and instead we are
+in this final training phase where we
+already have a prune model and we just
+want to train it from scratch and
+finally we can control how often we are
+going to evaluate and compute the
+validation accuracy
+so we take our training data loader we
+make sure it loops infinitely and we
+also add
+progress bars
+and here we iterate through our training
+data and if the number of iteration is
+equal to the max iteration we just stop
+the training
+anyway we take the batch of features and
+we run the forward pass and we get the
+logits
+we then compute the low scaler comparing
+the predictions with the ground truths
+if we are in the evaluation mode we will
+also track the actual loss with weights
+and biases
+and this is the standard torch
+boilerplate we zero any previous
+gradients we compute new gradients and
+finally we take a step with our
+optimizer
+and this branch handles the evaluation
+logic so we basically iterate through
+all the samples in our validation set we
+run the predictions and we compute the
+accuracy and know that this validation
+accuracy is going to be the metric that
+we will use for evaluation of our
+experiments and making conclusions
+and we just increment the iteration
+counter all right and that's it for the
+train helper function now i will just
+quickly implement a command line
+interface parsing logic
+we've seen a lot of the parameters
+before but i will just comment on those
+um that are new so the batch size is
+going to be 60 i think i saw this
+somewhere in the paper this prune
+iteration will determine how many times
+we run the pruning and if we set it to
+one it's going to be one shot pruning
+however if it's going to be larger than
+one it's going to be iterative pruning
+we initialize the weights and biases
+and here we define a metric that is
+going to be the maximum of our
+validation accuracy and i know that in
+the paper the authors discuss early
+stopping and probably similar things but
+here we make an assumption that this
+number is going to be the ultimate
+indicator whether our model is good or
+bad
+here we set the manual seat and this
+will hopefully allow us to compare
+networks that were not pruned at all
+with let's say the winning tickets
+assuming that all the parameters are
+identical
+we instantiate the train and the
+validation data loaders
+and here we define the hyper parameters
+of our multi-layer perceptron the number
+of features is 28 times 28 because we
+are dealing with flattened eminence
+images then the hidden layer sizes if
+i'm not mistaken this is what they did
+in the paper and finally the number of
+targets is 10 because we have 10 digits
+we instantiate two multi-layer
+perceptrons and the reason why is that
+the second one is actually going to be a
+copy of the first one and what we're
+going to do next is that we are going to
+apply pruning to the mlp
+multi-layer perceptron and after the
+pruning we always make sure we copy the
+weights from the original multi-layer
+perceptron
+here we instantiate the cross entropy
+loss and also the atom optimizer this
+learning rate was proposed in the paper
+i believe all right and now we're ready
+to implement the first stage of what
+we're trying to achieve and that is the
+train and prune lube that should result
+in a nicely pruned network
+first of all we take our overall pruning
+ratio that we want to achieve and we
+kind of distribute it to per round prune
+ratios because there might be multiple
+iterations of this pruning and training
+loop
+and here we implement the logic of
+applying the same per round ratio to all
+linear layers inside of our mlp except
+for the last one uh for the last one we
+only apply half of that pruning ratio i
+saw this in the paper
+this variable defines how many
+iterations we're going to train our
+model for before we prune i'm not sure
+if it makes sense it's basically
+something i came up with maybe this
+first stage should
+be done in fewer steps i don't know
+all right and here is our pruning loop
+first of all we train our network
+and then we prune each layer inside of
+our multi-layer perceptron
+however after the pruning we make sure
+that we reset all the parameters to the
+original values and now you can see why
+it was useful to create a copy of our
+original network
+finally we also track some useful
+statistics
+all right so now we are done with the
+pruning phase and we have two options we
+can either randomly re-initialize the
+parameters of our network and thus
+completely throw away the original
+weights or we don't do any
+re-initialization and thus our network
+will have the original weights
+and note that in both cases the pruning
+mass is going to stay untouched the main
+reason why we want to have this option
+in our code is to be able to run
+experiments that investigate how
+important the original weights are in
+finding winning tickets
+the second stage is nothing else than to
+train our network one more time however
+now we want to monitor the training and
+the validation performance of this
+network very closely
+all right and we are done i wrote a
+script that creates let's say a grid
+search over multiple different hyper
+parameters
+and this is the place where the grid is
+defined all of our experiments will run
+for 15 000 iterations then we want to
+compare the one shot pruning versus
+iterative pruning where the number of
+iterations is 5. we also want to compare
+l1 pruning versus random pruning here we
+have a bunch of different pruning ratios
+zero represents no pruning whatsoever on
+the other side of the spectrum we have
+97 pruning which is very radical and
+here we want to investigate whether
+randomly initializing the weights after
+pruning has an effect and finally we
+have five different states and the
+actual grid search looks like this i'm
+using this tool parallel is able to
+launch multiple parallel processes i
+believe that this grid generates more
+than 300 different experiments and yeah
+i already ran it on my computer for
+multiple hours and now i'm going to show
+you the results
+so i prepared a small report with the
+most interesting results let's start by
+double checking that the actual pruning
+was consistent with the desired pruning
+levels
+first of all let us look at those
+experiments where we only pruned in one
+shot in other words it is exactly those
+runs where the number of pruning
+iterations was one which is shown in the
+first column the second column
+represents the actual pruning ratio that
+we computed after doing the pruning and
+finally the rightmost column is the
+desired prune ratio as we see there is
+basically a perfect correspondence
+between the actual and the desired prune
+ratio which would suggest we did things
+correctly by the way it seems like there
+are only seven lines however in reality
+there are way more of them but they are
+overlapping
+let me just point out that the two
+columns are not perfectly equal and that
+is because of the last layer of our mlb
+since we apply half of the desired
+pruning to it and that is why the actual
+pruning is always a little bit lower
+than the desired one
+now let us look at the runs where the
+number of pruning iterations was five
+each of these columns represent the
+actual pruning ratio after a specific
+iteration and the rightmost column again
+represents the desired pruning ratio and
+things look correct in this case too
+since the actual pruning ratio keeps on
+increasing after each iteration
+so specifically if you let's say focus
+on one experiment where the desired
+pruning ratio was 80 we can see that
+after the zeroth iteration 27 of the
+weights were pruned after the first
+iteration 47 and so on and so on all the
+way up to 80 percent
+now let us move on to the main part of
+our results as discussed before the
+paper claims that to find the winning
+tickets one is to first of all prune
+based on the absolute values of the
+weights which in this table would
+correspond to the l1 pruning method and
+the second key to success is to make
+sure that after pruning we copy the
+original weights rather than just
+re-initializing them and the idea now is
+to actually look at our experiments and
+filter them based on these two criteria
+and see how they performed
+and first of all let us look at the case
+where we do random pruning and we don't
+reinitialize the weights
+so what you see here is a parallel
+coordinate plot and the first two
+columns show our filtering criterion the
+third column is the prune ratio and
+finally the last column is the maximum
+validation accuracy reached during the
+training and as mentioned before this
+metric is the way how we are going to
+measure the success of a given run right
+away we can see that there is a clear
+negative relationship between the amount
+of pruning and the accuracy
+and i guess the takeaway here is that if
+we care about accuracy then we should
+not apply any pruning whatsoever because
+it degrades the performance
+this negative correlation still holds
+even if we only focus on those runs
+where the pruning was not extreme anyway
+this is definitely not the right recipe
+to find the winning tickets
+now what if we apply the l1 pruning
+however once the pruning is done we
+randomly re-initialize all the
+parameters of the network
+here the results are very similar to the
+previous setup because it seems like the
+pruning ratio is negatively correlated
+to the validation accuracy
+and unfortunately it is always the case
+even if we only focus on the runs where
+the pruning was between zero and eighty
+percent
+all right and let us finally look at
+what happens if we apply the l1 pruning
+and at the same time we don't randomly
+re-initialize the weight of our network
+and we just work with the same
+parameters that the original network had
+here the story is very much different
+first of all let me point out that
+i also show the prune iterations column
+to understand what effect it has on the
+final accuracy
+and as you can see it seems like the
+iterative pruning scheme leads to better
+results since there is a positive
+correlation anyway what about the
+pruning ratio we can see that if we
+include all the rounds the correlation
+is still negative
+however it is caused by the extreme
+pruning ratios above 90
+let me discard them
+suddenly we see that there is a positive
+correlation which is very impressive
+since it means that the more we prune
+the better the accuracy is going to be
+which is in line with what the lottery
+ticket hypothesis would suggest
+also if you only consider those runs
+with iterative pruning we can basically
+go all the way up to 93 pruning and
+still get basically the same accuracy as
+with the unpruned network which is
+absolutely impressive
+and finally let's focus on the winning
+tickets a little bit more and let us fix
+a random state and inspect how the
+validation accuracy evolves over the
+training
+just for the record i applied a little
+bit of smoothing to make the plot easier
+to interpret so if you focus on the red
+line it represents an experiment where
+no pruning was applied at all and as you
+can see it is consistently below the
+other lines with an exception of the
+black one which represents an extreme
+pruning of 97 percent uh when it comes
+to the best performers they lie in the
+range of 50 to 90
+pruning and also let me point out that
+the prune network seem to hit the top
+accuracy way faster than the unpruned
+ones which is again in line with the
+hypothesis
+okay let us look at another random state
+and the story is basically the same as
+with the previous one the 97 pruning is
+a little bit too extreme however
+anything from 50 to 90 seems to
+outperform the unpruned network anyway
+that's it for the video i actually have
+to admit that i really enjoyed working
+on this one because i was able to get
+good results in the very first iteration
+of my experiment
+which is not always the case when it
+comes to making these videos also if i
+assume that there were no bugs in my
+code and that the experimental setup had
+no major flaws i have to admit that i
+find the results to be very impressive
+and they definitely give an interesting
+perspective on what is happening
+when we train neural networks anyway if
+you enjoy content like this feel free to
+like the video leave a comment and
+subscribe and i actually want to give a
+shout out to some of my viewers who
+suggested the topic of this video
+and if you have any ideas for future
+topics feel free to join our discord
+server and i would be more than happy to
+work on them
+anyway have a nice rest of the day

@@ -1,0 +1,402 @@
+ Yeah, so in this video, I'm going to show you how we can
+ implement a perceptron in Python using NumPy and pytorch. So I
+ will be using Jupyter notebooks, because I think for simpler
+ code examples, it's actually quite nice to use Jupyter
+ notebooks, because I can execute one thing at a time, and it will
+ make things easier to explain. However, later on in this
+ course, we have to I think move to Python script files, because
+ when the deep learning models become larger and larger, managing
+ them and Jupyter notebooks can be a little bit, I would say
+ tedious and also dangerous. Because it's easy to lose the
+ overview and debugging is a little harder if you have the
+ separate cells and stuff like that. And then the danger is
+ that you might execute things out of order. And yeah, also, you
+ want to import certain aspects from different files, you don't
+ want to have everything in one notebook, because then it
+ becomes really confusing and manageable. But we will get to
+ these parts later in this course. So yeah, so back to
+ this topic of the perceptron implementation in NumPy and pytorch
+ on all the code files are actually on GitHub. So if you go
+ here to this link, or I will also link them on canvas so that
+ you can just click on them if you are interested to play around
+ with them. The homework will be based actually on the NumPy one
+ where I will ask you to implement this in plain Python,
+ just to make sure you understand what's going on. And by
+ converting NumPy code to Python, I think you will work with the
+ code step by step and get a better understanding of these
+ individual things. And I think also you're going from NumPy to
+ Python is easier than from Python to NumPy if you are
+ relatively new to NumPy. So in that way, let me now walk
+ through the NumPy notebook. The pytorch notebook is actually
+ very, very similar, which is one of the cool things about
+ pytorch, because it is very similar to NumPy. Except there
+ are some extra features that we will be using later on. And I
+ will have a lecture on pytorch where I will explain you these
+ differences. So for right now, it doesn't make such a big
+ difference whether we use the NumPy or pytorch notebook. I
+ will also show you a step by step comparison after I
+ explained the NumPy notebook. So you will see what's actually
+ different between the two. Alright, but let's do one thing
+ at a time. So here, I will make this a little bigger. I hope
+ it's easier to see them. It's almost too big. Alright, so yeah,
+ so I'm starting here, let me clear, maybe the outputs, and
+ then I will execute them one at a time. So I'm importing some
+ libraries for those who have not used notebooks, this one here,
+ this command is for showing plots in the notebook. It's
+ technically not necessary anymore. Always sometimes, on
+ some computers, plots will not be shown in a notebook, if you
+ don't include that line, and it doesn't hurt to include that
+ line. So I always do this. Here, I'm just loading the data set.
+ So there's nothing really interesting happening here. But
+ I will step through this step by step. So the data set is like
+ some toy data that I generated, I will show you how that looks
+ like shortly. So here, I have two feature columns, I didn't
+ include any column header. But this is the first feature. This
+ is the second feature value. And this is the class table here. So
+ there are zeros and ones. And you can see the data set is not
+ shuffled. And actually, it's helpful for learning if the
+ data set is shuffled, it will make the learning a little bit
+ faster in the perceptron. Yeah, alright. So here, I'm loading
+ the data set into NumPy can also use pandas. But I thought it
+ might be overkill, because it's a relatively simple data set.
+ And then I'm assigning the features to x, which is a
+ matrix, then, and y, which is the class table. I can maybe
+ show you just how they look like. So this is x, it's a matrix.
+ And y is class level array. So here, it's shuffled because I
+ actually executed this whole bunch of code. So you then can
+ already guess what's going on here. So here, I'm loading the
+ data, and then just printing some summary information, it's
+ always, I think a good idea to do that to get an idea. So we
+ have 50 labels from class zero and 50 labels from class one, we
+ have thus 100 data points in total, and two feature columns,
+ and also 100 labels. So, for example, here, we can see, okay,
+ these and these match numbers match. So and that's what we
+ expect. It's just some sanity checks here and some making sure
+ that everything looks okay. Then here, I'm shuffling the data set
+ so that they are not all in order, they are shuffled. And
+ how I'm doing that is I have to shuffle x and y together, right?
+ So otherwise, on everything will be mixed up, then the features
+ won't correspond to the class labels anymore. So how am I
+ doing that is I'm creating a shuffle index. So I can just
+ show you creating this shuffle index here. And how it looks
+ like this is just the numbers from zero to 99. So the 100
+ indices, and then I'm actually shuffling these indices. So here,
+ I'm generating random number generator, and then I am
+ shuffling these indices here. So you can look at these after
+ shuffling. So after I execute that, you will see that oops,
+ that's too much. But you will see they are no random order.
+ And then I'm using that to select the data points from x
+ and y. So then x and y will be shuffled based on the shuffle
+ index here. So that's how we shuffle. And then I will use the
+ first 70 data points for training. And the last 30. So
+ we have 100 data points to 70 to 100. The last 30 data points
+ will be for our test set. Later on, we will be seeing or using
+ more convenient ways to load data in pytorch. So there are
+ some loading utilities here, I'm just doing it step by step. So
+ you get a feeling of what's basically going on. And then I'm
+ normalizing the data. So this is sometimes also called
+ standardization. So here, I'm standardizing the data such that
+ after standardization, it will have mean zero and unit
+ variance. So I'm subtracting the mean and divide by the standard
+ deviation. So here, I'm computing the mean and
+ standard deviation of my sample. And then I'm subtracting the
+ mean and divide by the standard deviation. And then both will be
+ having mean zero and subdivision one, so unit variance, so you
+ can actually check that.
+ Oops. It's not quite true, because we have to look at the
+ training. Okay, very close to zero. So this is 70 digits after
+ zero. So 0.000 or something up to two. So very, very small.
+ It's almost identical to zero, essentially. And then for the
+ standard deviation, it should be around one. Yep. So the data is
+ standardized. Well, why am I doing that? It kind of speeds
+ up training a little bit. It's like stabilizing the training
+ for the perceptron. It's not that necessarily necessary. But
+ it is a good practice to do that for other types of optimization
+ algorithms later on when we talk about stochastic gradient
+ descent. So this is something standardization that is usually
+ recommended. The only types of machine learning models where
+ this is really not that necessary is like for tree
+ based models. That is something we covered in or that was the
+ end discussed in statistics 451. When we talked about decision
+ tree algorithms, these don't require standardization. But all
+ other machine learning deep learning models, I know, they
+ can usually benefit from that, like, especially stochastic
+ gradient descent will just learn faster, which is something we
+ will be doing later. So it's just a good practice. Alright,
+ let's take a look at the data. So here, this is our training
+ set, how it looks like. So you can see it's around centered at
+ zero. We have two classes, class zero, these circle here, and
+ then the square for class one. So feature one and feature two,
+ that's our training set. And so there should be 70 examples, and
+ then the remaining 30 examples in our test set. So what we
+ want to do is we want to train our model on the training set
+ and then evaluate it on the test set. So let's implement our
+ perceptron model then. So yes, the perceptron code, you can see
+ it's relatively short, I'm implementing it using a
+ forward and backward method. Why I'm doing that is because that
+ is also how things are done in pytorch. And it will make things
+ more familiar later on if I start using this habit. Alright,
+ but let's start at the top. So I'm implementing it as a
+ class here. And yeah, you should be I think familiar with Python
+ classes. So here, what I'm doing is I'm running the constructor.
+ So this is a special class method, a constructor, I'm
+ giving it the number of features, because that's what I
+ need to know the number of weights. And I'm using here, the
+ implementation where the weights and the bias are separate,
+ because that is more convenient. So I don't have to modify the
+ feature vector. So what I'm doing here, if I go back to my
+ lecture slides, I'm using this, this notation here where we have
+ the bias separately. So I'm initializing the weight vector,
+ and the bias units, the bias unit is just a single value,
+ that's just one number. And the weights, the weight vector, it
+ depends on the number of features, right? So I make this
+ a column vector, sorry, a row vector. So this is then this
+ equal to m, the number of features. All right. So here,
+ I'm just setting up my weights and bias and setting them to
+ zero. Later on, for certain algorithms for stochastic
+ rendition, it's better to initialize them to small random
+ numbers here for the perceptron, it's not necessary. But for
+ neural networks, it will be necessary later on, we will see
+ that in the forward method, I'm computing the net inputs,
+ actually here in linear. And then I'm predicting the
+ prediction, computing the predictions, that's my
+ threshold. So this is the net input. I'm calling it linear,
+ because later on, we will also see linear layers in pytorch,
+ they are called linear, and they are basically computing net
+ input. So this is you can see the dot product between the
+ input vector and the weights. So that is computing this part
+ here. And then I'm adding the bias here. I can actually make
+ this bigger. Alright, um, then here we have our threshold
+ function, this threshold function is just using NumPy
+ where so how this works is it's saying if linear, so if the net
+ input is greater than zero, then output one, otherwise output
+ zero. So it's our forward method. And here is our
+ backward method. So the backward method, why am I calling it
+ like that? It is for computing the arrows. So usually, yeah,
+ when we have deeper neural networks, we will use something
+ called back propagation, where we look at the outputs. And then
+ based on the outputs, we adjust the inputs. So in that way, we
+ run the forward method to produce the predictions. And
+ then we compute the arrows and then update. So it will become
+ more clear when we have a deeper network where there's really
+ like a back propagation going on. So these are our two
+ methods. So backward is computing the arrows, which is
+ the difference between the true class labels and the predictions.
+ And forward is used to get the predictions in the first place.
+ Let me see here. So this is
+ what we just implemented. So we implemented here the prediction
+ that's going on here, prediction is equal to step A. And then
+ step B is the backward pass with which gives us the arrows. And
+ now we have to put everything together. So I implemented train
+ method here. So for so this train method is basically the
+ whole, the whole thing here. So for epoch in the number of
+ epochs, so this is for every training epoch. And then for
+ every training example, this is here, this part, we perform the
+ four paths path, backward path, and update. Alright, so since
+ backward is already doing all forward, we just call backward
+ here. There's some ugly reshape here going on. And that is
+ because we are making the vector dimensions match. Otherwise, you
+ will get some arrows. So here, I'm just making the dimensions
+ met, you can maybe let's take a look. So here, this will be one
+ row and m columns. So it will be I think this is called a row
+ vector I said earlier, the other one was a row vector. But yeah,
+ I'm always confusing the words, row vector and column vector.
+ Because here, this is just one, one row and multiple columns.
+ But this is because there are multiple columns, but still
+ called row vector, because it looks like a row. Anyway, so
+ here, we have this row vector here. And this has to have the
+ same dimension as why it's in this way. I'm just making this
+ the same dimension. So you can compute everything nicely.
+ Otherwise, you will find there will be a dimension mismatch. So
+ there's just a reshaping going on here. And then here, we
+ perform the update. So again, I'm doing the reshape
+ afterwards, so that we get the original dimensions back,
+ because because the weights here, they also have the same.
+ So see, we are matching the original dimension. So we're
+ just reshaping so we can add to it. Otherwise, there will also
+ be a dimension mismatch if this is just a single number, or if
+ it's a one times m vector instead of m times one vector.
+ So yeah, this is annoying to do this reshaping, technically would
+ also I think not be necessary if I remove the dimension from
+ everywhere. But here, that's more explicit actually doesn't
+ hurt. Just like you have to be aware of that. And then also we
+ update the bias. So the bias, it's just updating it by the
+ arrows. The reason is, think about it, if we would have one
+ here, if I have a one here, so this would be one times the bias
+ unit instead of so the input would be the one, right. So
+ instead of saying errors times the feature, we would have be we
+ would have error times one, right. So error times one. And
+ we can cancel the ones instead of writing it like this. Since
+ we have the bias separate, I can just cancel this, we don't have
+ to include that. Yeah, the next evaluating it. So evaluating
+ the performance here, I'm just doing the forward pass. And then
+ compute the accuracy. The accuracy is computed by checking
+ how many of the predictions match the true label, and then divide
+ by the data set size. So it will be giving me a number between
+ zero and one. Alright, so this is my perceptron. And then here,
+ I'm training it. So yeah, initializing it, and then
+ training it for five epochs. And then I will print the model
+ parameters afterwards. It's pretty fast. So we get the
+ weights, the weight vector 1.27 1.346. And then the bias is
+ minus one in this case. And now we can evaluate it, compute the
+ accuracy. So the test set accuracy is 93%. It's not quite
+ 100%. On the training set, it should actually have 100%,
+ right? Because it's linearly separable, this data set, and
+ it should converge if it's linearly separable. Let's do
+ that. Yeah, that's 100%. Everything is classified
+ correctly tested is not as good because we may overfit. So let's
+ take a look at the decision boundaries. So here is some
+ complicated code to compute the decision boundaries. It's
+ actually not complicated is what I did is I rearrange things
+ here, right? So what we have is if you think about it, the
+ decision boundary is greater or equal to zero. So everything
+ hinges upon zero. So if we have our computation, it's x zero
+ times w zero, right? Plus this on it and put x one times your
+ one with me. Yeah, that's correct. Let me just wanted to
+ bring that a little bit more closer together. It's easier to
+ see and then plus the bias, right? So this hinges upon zero.
+ And now let's see on nets. So what we're interested in is what
+ we're doing here is we are taking one fixed number. So
+ let's say we're taking for feature zero, the minimum value
+ of minus two. So we are going to the left hand side here. And
+ then we want to find so this is
+ for x zero x. So x zero is the x axis and x one is the y axis.
+ So we take minus two this data point here. Or actually here, we
+ only know minus two, and we want to find the corresponding x one
+ value. So this is this is x zero. So it's at minus two. So
+ what is the corresponding x one value? So we have to rearrange
+ this solving for x one, right? So what we do is we move this
+ stuff, and this to the left hand to the right hand side. So we
+ have x one times w one equals two minus x zero times zero
+ minus b, right? So I'm just subtracting this and this. So
+ it's now on the right hand side. And then I want to know x one,
+ right? So I divide by w one. So when I divide this,
+ and so this is basically essentially what I've written
+ here. So I get the x one value, I'm calling it min. The reason
+ is because it's the left hand side, then I'm doing the same
+ thing for the right hand side. So I'm doing it for the right
+ hand side. I'm again setting x zero to some value, I'm setting
+ it to two here. And then I'm finding the corresponding y axis
+ value, which is this x one max here. So I'm doing the same
+ thing, just rearranging. Now I'm using a max value. And then I'm
+ connecting these lines. And that's how I get this. I've done
+ this here for the left hand side for the training set and right
+ hand side for the test set. So yeah, one is the training set,
+ and one is the test set.
+ So this should be the maybe easier to write like this. The
+ decision boundary doesn't change actually, because it's the same
+ for the training and test set. Just the data set is different
+ because the decision boundary only depends on w, right? So we
+ are providing these are fixed values, we are providing them.
+ And the decision boundary only depends on these parameters on
+ the model parameters. So the decision boundary does not
+ change here. So this is for the training set. And this is for
+ the test set here on the right hand side. And you can see in
+ the training set case, it perfectly classifies these
+ examples. And on the right hand side, this is the test that you
+ can see, it's maybe fitting some of the data too closely. I mean,
+ there's no other way, actually. But it happens that here in this
+ case, it doesn't perform well. Actually, yeah, there's a
+ different way. If you would fit the boundary like this, oops,
+ like this, more, more straight, then you may get these right,
+ but it just happens so that these data points are not in the
+ training set. So the model doesn't know that it should
+ shift the boundary more to the right here. So in this way, the
+ model does actually a good job and on the training set, but on
+ the test set, it's it's not so good. So in that way, it's
+ actually this term is called overfitting because it fits the
+ training data a little bit too closely, and doesn't generalize
+ so well to the test set. Okay, so this is how the NumPy code
+ works. In the homework, you will be playing around with this a
+ little bit more and then re implemented in just regular
+ Python, just removing some of the dot products, replacing
+ them by for loops and so forth. Um, yeah, the pytorch code, I
+ don't need to talk about this, I think, because it's the same
+ same. So this is exactly the same. This is exactly the same.
+ This is exactly the same. There are some differences here. But
+ yeah, this is exactly the same this this except that I'm now
+ using torch tensor instead of NumPy arrays. But yeah, I
+ prepared an overview here to show you the main differences.
+ So in class, we will be talking about this in more detail when I
+ talk about pytorch thing next week or in two weeks, depending
+ on how far we get next week. So here I highlighted the
+ differences, though it's also in the slides from the slides. So
+ on the left hand side, this is the pytorch implementation. On
+ the right hand side is the pytorch. So NumPy and pytorch.
+ And you can see there are not that many differences. So the
+ way the weights and biases are implemented here, we are using
+ NumPy zeros here, we are using torch zeros, we had a bit more
+ specific here, instead of saying NumPy float, we say torch float
+ 32, it's a 32 bit, I have this device here, cause on the way I
+ implemented things that would also run on the GPU, if there's
+ a GPU available, if no GPU is available, it will use the CPU.
+ So there's this device here, which is provided here,
+ optionally. It's not necessary, though. And what's a little bit
+ more, it's a little bit different. So here, I mean,
+ there are multiple ways you can write that you can also use a
+ plus function, to be honest, I just happened to use torch dot
+ add, but I could have also used a plus. So what I mean is I
+ could have, I don't know why I actually did it so complicated.
+ I could have just had a plus here and remove this torch at
+ should still work.
+ Um, yeah, and then the mm is matrix multiplication. And so
+ in NumPy, we usually write dot in torch, we write a pytorch,
+ we write mm for matrix multiplication. But in pytorch,
+ the dot function can also do matrix multiplication. So in
+ the way, it is kind of like the same thing, it's just looks a
+ little bit different. The where function and pytorch is a bit
+ more, I would say involved, not that much more involved, but it
+ has to have placeholders, such having a one and zero, it needs
+ to have a tensor here. So I'm creating this as placeholder
+ here and providing them. But it's the same concept. And then
+ what's a little bit different here is the last part. So instead
+ of numpy dot sum, it's torture sum. Here, I'm converting it to
+ a float. Because otherwise, it will be an integer. And then
+ an integer divided by some value will give an integer, what we
+ want to have a float, because it's a fraction between zero and
+ one. So if you don't do that, you will get back an integer.
+ And that's not correct, because the value of accuracy is very
+ between zero and one, which is why I'm casting this to float.
+ But again, the pytorch code will be covered in class in more
+ detail later. So um, yeah, that is what I wanted to say about
+ the code, you get to play around with that a little more in the
+ homework. Then here, for the optional convergence theorem, I
+ wanted to make a video about that. But I realize I talked a
+ lot about the code right now. So I honestly want to wrap up this
+ lecture, the next day will be probably short, so that in the
+ next week, we can start a fresh topic. So then we can talk a
+ little bit about the linear algebra background for deep
+ learning, some notation, a little bit about calculus, and
+ then get started with pytorch next week. So in that way, I
+ think this is not really necessary. So this is some
+ optional mathematical proof, I will leave it in the slides,
+ because I spent a lot of time making this. But yeah, you can
+ read through that, but it won't. So if you don't know about that,
+ you won't miss anything, because it's not relevant for deep
+ learning. It's just showing that the perceptron will not converge
+ if the data is not linearly separable. And you can try that
+ out in practice. So you can, for example, if you go to the
+ animation here, this is the animation that I showed you in
+ class, it's just as a Jupyter Notebook. And you can change
+ the data such that one of the blue points is here. So you can
+ change the class table of one of these points, or you can change
+ the class of one of these points. And then you can run
+ this, and you will see it will never converge. So here, this
+ one will converge eventually at iteration 49. But if you change
+ one data point, such that it cannot separate the data
+ correctly, it will go on forever, essentially. And this
+ is what the proof is about. So you can mathematically show
+ that there's a lower bound and upper bound for the size of the
+ weights. And based on that, you can basically conclude that it
+ will converge on if the classes are linearly separable. So I
+ won't go into too much detail about that, when it will
+ converge. So this is showing that it is, it will converge if
+ it's linearly separable. But only if it's a linear
+ separable. And yeah, in the last video, let me talk about the
+ geometric intuition about the decision boundary. So again,
+ don't worry about the convergence theorem, all you
+ have to know is that the code will run forever if the data is
+ not linear, simple, and otherwise, it's guaranteed to
+ find the solution. So it's guaranteed to find this boundary
+ if it exists. That's what the proof is about. Alright, so next
+ video, the geometric intuition.

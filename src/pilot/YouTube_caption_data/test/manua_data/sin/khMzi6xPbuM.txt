@@ -1,0 +1,200 @@
+PyTorch plus Lightning is the coolest thing around. StatQuest! Hello! I'm Josh Starmer
+and welcome to StatQuest. Today we're going to talk about an introduction to coding
+neural networks with PyTorch and Lightning. Lightning lets you do awesome stuff with
+neural networks. Yeah! This StatQuest is also brought to you by the letters 'A',
+'B' and 'C'. 'A' always, 'B' be, 'C' curious. Always be curious. Also, I want to
+give a special bam to one of my co-workers at Lightning, Adrian and Wälchli, who
+helped me create this tutorial. Note this StatQuest assumes that you have already
+seen the StatQuest Introduction to PyTorch. If not, check out the 'Quest. Lastly,
+you can download all of the code in this StatQuest for free. The details are in the pinned comment below.
+In the StatQuest Introduction to PyTorch, we started with this super simple dataset
+and then we coded this super simple neural network to fit a pointy thing to the data.
+To do this, we created a class that contained code for the weights and biases, and
+for running data through the neural network. And then, completely separate from that
+class, we wrote code to optimize the neural network with backpropagation. Bam? Well,
+even though the code worked like we expected, we had to come up with our own learning
+rate for gradient descent and, generally speaking, figuring out a good learning rate
+isn't always easy. So it would be nice if there was a tool that could find a good learning rate for us.
+Also, it would be nice if the code for training the neural network were easier to
+read and write. Lastly, we would have to make significant changes to this code if
+we had GPUs or TPUs to accelerate learning. For example, this code runs fine on my
+laptop, but if we wanted to accelerate it with one or more GPUs, we'd have to make
+a lot of changes. The good news is that we can do all of these things and more when
+we combine PyTorch with Lightning. So let's go back through the code and show how
+we can do things easier and improve it with Lightning.
+Bam!
+First, just like, before we import torch to create tensors to store all of the numerical
+values, including the raw data and the values for each weight and bias. Then we import
+torch dot nn to make the weight and bias tensors, part of the neural network. And
+torch dot nn dot functional for the activation functions.
+Then we import SGD so we can use Stochastic Gradient Descent to fit the neural network to
+the data. So far, everything is the same as when we used PyTorch without Lightning,
+but now we import Lightning as L to make training easier to code. And now we need
+TensorDataset and DataLoader from torch dot utils dot data, which will ultimately
+make our lives easier when we start working with larger data sets. And just like
+before, we'll graph our output with matplotlib and Seaborn. Now let's build this
+neural network. Note: If all we want to do is create a pre-trained neural network
+and run data through it, then everything is the exact same as before, except now
+when we create the class we will name it BasicLightning and we will inherit from
+LightningModule instead of nn dot module, which is what we did when we used PyTorch
+without Lightning. Other than that creating this pre-trained neural network and running
+data through it is just like before. In other words, just like before we create an
+initialization method for the new class and the first thing we do is call the initialization
+method for the parent class LightningModule. And just like before we create the weights
+and biases for the network by creating a new parameter initialized with a tensor
+set to the value for the weight or bias. And we do that for each weight and bias in the  network. Bam.
+Now, just like before, we need a way to make a forward pass through the neural network
+that uses the weights and biases that we just  initialized.
+So, we create a second method inside the class called forward, so we can see what's
+going on. Let's move the code for forward to the top of the screen.
+Again, just like we did when we used PyTorch without Lightning, we create a new variable, Input
+to Top ReLU, that is equal to the input times the weight w sub 0 0, plus the bias
+b sub 0 0. Then we pass Input to Top ReLU to the ReLU activation function with f
+dot ReLU and scale the ReLU output by the weight w sub 0 1. Likewise, we connect
+the input to the bottom ReLU and scale the activation function's output. Then we
+add the top and bottom scale values to the final bias and use the sum as the input
+to the final ReLU to get the output value. Lastly, the forward function. Returns the output.
+So just like before we have created a new class that initialized the weights and biases
+and does a forward pass through the neural network.
+Now, I don't know about you, but every time I write a block of code, even when it's
+mostly the same as something I wrote before, I like to test it to make sure it works
+as expected. So let's test the code by plugging in a bunch of values between 0 and
+1 that represent different doses and see if the output from forward results in this bent shape
+that fits the training data. Again, just like before, we can create a sequence of
+numbers between 0 and 1 using the linspace function from PyTorch. We store the tensor
+in a variable called Input Doses and we can print out and admire the input doses
+by just typing the variable name Input Doses. Now, in order to run these input values
+through our neural network, we make a neural network that we'll call model from the
+class we just created, BasicLightning. Then we pass the input doses to the model,
+which, by default, calls the forward method that we wrote earlier and we save the
+output from the neural network in a variable that we cleverly named Output Values.
+And now that we have both the input values to the neural network and the output values we can use them to draw this graph.
+So we set the Seabourn style to whitegrid so the graph looks cool. And then we use
+lineplot to draw a graph of the data. Lastly, we set the y and x axis labels. And that
+code gives us this graph. The graph tells us that the neural network we created earlier, BasicLightning, does exactly what we expected.
+Hey so far, pretty much everything has been a review of basic PyTorch. When will we start doing cool stuff with Lightning?
+Right now Squatch. So we can demonstrate how Lightning makes it easier to train a
+model we'll set  bsub final to 0 and make a copy of the original class we created,
+BasicLightning, and change the name of the copy to BasicLightningTrain, because we
+want to train this neural network. Then we change the initial value for final bias
+to 0.0, and we set requires grad, which remember is short for requires gradient,
+to True. And, because we will use a Lightning function to improve the learning rate
+for us, we add a new variable learning rate to store the value. Note: For now, we
+set learning rate equal to 0.01, but this is just a placeholder value and the actual
+value does not matter right now. Now, just like we did before, we can verify that
+this neural network no longer fits the training data by drawing a graph of the neural
+network's output. Only this time, we are using BasicLightningTrain instead of BasicLightning.
+And, because final bias now has a gradient, we called detach on the output values
+to create a new tensor that only has the values. The graph shows Effectiveness equals
+17 when Dose equals 0.5, which is way too high and that means we need to optimize b sub
+final. So we create the training data by creating a tensor called inputs with three
+input doses, 0, 0.5 and 1, and another tensor called labels that has the known values
+0, 1 and 0. However, now that we are using Lightning, we need to wrap the training
+data in a DataLoader. So we  combine the inputs and the labels into a TensorDataset
+called dataset, and then we use the TensorDataset to create a DataLoader called DataLoader.
+DataLoaders are super useful when we have a lot of data because:  1. They make it
+easy to access the data in batches. This is super useful when we have more data than
+memory to store it. 2. They make it easy to shuffle the data each epoch and 3. They
+make it easy to use a relatively small fraction of the data if we want to do a quick
+and dirty training for debugging. Okay, now that we have our training data wrapped
+up in a DataLoader, we are ready to optimize b sub final. Now, if you remember last
+time, when we use PyTorch without Lightning, we optimized b sub final with a whole
+lot of code. The first thing we did was create an optimizer object that used Stochastic Gradient
+Descent, SGD, to optimize b sub final. Then we coded for loops to calculate the derivatives
+needed for stochastic gradient descent. Specifically, we coded a loop that went through
+the full training dataset 100 times, or epochs, then for each element in the training
+data we calculated the value predicted by the neural network, then we calculated
+the loss, which in this case was the square difference between the predicted value
+and the known value. Then we called loss dot backward to calculate the derivative
+of the loss function with respect to the parameter we wanted to optimize. Lastly,
+after we calculated the derivatives for all three points in the training data, we
+took a small step towards an optimal value for  bsub final with optimizer dot step
+and zeroed out the gradients with optimizer dot zero grad, so that we could start
+another epoch. All in all, we had to write quite a bit of code to train the neural
+network. Now let's combine PyTorch with Lightning to simplify this code a whole bunch.
+Well, wait, hold on a second. There's one more thing I need to review about the PyTorch
+code. When we only use PyTorch, before we wrote this code to optimize b sub final, we
+created a class to keep track of the weights and biases and a forward function to
+run data through the neural network. And then, separately, we wrote the code to optimize
+b sub final. In contrast when we add Lightning, we put all of the code relating to the neural network in the same place.
+So, when we create the class BasicLightningTrain from LightningModule, we create the
+init method that contains the weights and biases for the neural network and the learning
+rate, the forward method to run data through the neural network, and a new method
+called configure optimizers that sets up the method we want to use to optimize the
+neural network. And just like before we'll use stochastic gradient descent. However,
+this time we're setting the learning rate to a variable that we will improve in just
+a bit. Then we create another new method called training step, which takes a batch
+of training data from the DataLoader that we created and the index for that batch.
+The training step function calculates the loss, which, just like before, is the sum
+of the squared residuals. Now that we've added configure optimizers and training
+step to our class, we're ready to optimize the neural network. So, since we just
+modified the class by adding two new methods, the first thing we do is make a new model.
+Then we create a Lightning Trainer, which we will first use to find a good value for
+the learning rate and then we will use it to optimize, or train the model. Here we
+are setting the maximum number of epochs to 34 because we know from before that 34
+epochs is enough to fit the model to the data, but if it were not, the good news
+is that we don't have to start from zero and try again. Because Lightning lets us
+add additional epochs right where we left off. Now that we have the trainer, we will
+use it to find an improved learning rate by calling tuner dot lr find. In this case,
+we're passing lr find the model, the training data, dataloader, the minimum learning
+rate, 0.001, the maximum learning rate, 1, and we're telling it to not stop early.
+In other words, by default lr find will create 100 candidate learning rates between
+the minimum and maximum values, and, by setting early stop threshold to "None", we will test all of them.
+Anyway, we store the output from lr find in lr find results.
+And we can access an improved learning rate by calling suggestion on the results.
+Now, just for fun, we can print out the new learning rate that we stored in new lr to see what it is,
+and we see that the new learning rate is 0.00214, and, lastly, we can set the learning
+rate variable in our model to the new learning rate. Now that we have found an improved
+learning rate for stochastic gradient descent, let's train the model.
+To train the model and optimize b sub final, we simply use the trainer to call the
+fit function. Fit requires the model and the training data, which we named dataloader.
+When we call the fit function with our model and training data, the trainer will
+then call our model's configure optimizers function, and in this case, that means
+configuring a stochastic gradient descent optimizer using the new learning rate that we just set.
+Then the trainer calls our models training step function to calculate the loss. Then,
+without us having to do anything, the trainer will call optimizer dot zero grad, so
+that each epoch starts with a fresh gradient; loss dot backward, to calculate the
+new gradient; and optimizer dot step, to take a step towards the optimal values for the  parameters.
+And then it calls training step again and repeats for each epoch that we requested.
+In other words, the big training loop that we had to code when we used PyTorch without
+Lightning is reduced to just coding the loss in the training step function when we use PyTorch with Lightning. Bam!
+Now, to verify that we correctly optimized b sub final, we can print out its new value, and we get -16.0098.
+Hey, can we draw one last graph to verify that the optimized model fits the training data?
+Yes.
+We can verify that the optimized model fits the training data by graphing it with
+this code, which is the same as what we use before, except now we don't create a
+new model, and instead just use the one we optimized. And this is what we get, which
+shows that the neural network does exactly what we expect. Double Bam!
+What if we want to train our neural network on GPUs or use some other fancy accelerator?
+On a very basic computer like a laptop, you might only have a single processor that
+does all of the work called a central processing unit, or CPU. In this case, our
+neural network and, specifically, the tensors that represent the weights and biases,
+would be on the CPU, as well as the tensors that represent the training data. And
+when all of the tensors, the ones for the weights and biases and the ones for the
+data, are in the same place on the CPU, then we just do the math for backpropagation to train the neural  network. However,
+training a neural network on a single CPU, which might only have a few computing cores,
+is usually relatively slow. With this simple neural network and this simple dataset, the
+speed really doesn't matter, but if we had a fancier neural network with tons of
+weights and biases and a ton of data, then running everything on a single CPU might
+be too slow to train in a reasonable amount of time.
+So when we need speed, we often train neural networks on one or more Graphics Processing
+Units, or GPUs, which can have 10 times or even 100 times more Computing  cores.
+And when we use PyTorch without Lightning, then we have to manually move the tensors
+to the GPUs, and keeping track of what tensors are where can get pretty complicated.
+And that means we can't easily test our code on our laptop with a single CPU and then
+ported to a system with a lot of GPUs without having to change the code a bunch.
+In contrast, when we use PyTorch with Lightning, we can let Lightning automatically
+detect if GPUs are available by setting accelerator to "auto", when we create the
+trainer object. And we can let Lightning determine how many GPUs are available by
+setting devices to "auto". Now, with Lightning, we can test our code on our laptop
+with a single CPU and then move it to a fancy computing environment with a bunch
+of GPUs without having to change the code. Triple Bam! And don't forget, you can
+download all of the code in this StatQuest for free! The details are in the pinned,
+comment below. Now it's time for some shameless self-promotion. If you want to review
+statistics and machine learning offline, check out the StatQuest PDF study guides
+and my book The StatQuest Illustrated guide to Machine Learning at StatQuest dot org.
+There's something for everyone! Hooray! We've made it to the end of another exciting
+StatQuest. If you liked this StatQuest and want to see more, please subscribe. And
+if you want to support StatQuest, consider contributing to my patreon campaign, becoming
+a channel member buying one or two of my original songs or a t-shirt or a hoodie,
+or just donate. The links are in the description below. All right, until next time quest on!

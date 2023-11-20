@@ -1,0 +1,564 @@
+Welcome, today ah we are going to look into
+one of these lab exercises, ah associated
+with ah activation pooling. And while in the
+last two lectures, you have studied about
+ah global activation pooling as one of them,
+and the other one for finding out regions
+was using the region proposal network, so
+that was an rCNN .
+And, ah we had compared out ah the pros and
+cons of each of them; while in global activation
+pooling ah the advantage is quite distinct,
+as it comes out that, ah you do not need to
+train a network explicitly just for ah finding
+out where the object is located. So, that
+means that even if you do not have object
+localization data present with you, you can
+still train a network. And then using the
+activation maps coming out of this network,
+you can of this classification network, you
+can actually find out and localize by expressing
+. And that gives you more of a hotspot, kind
+of a behavior and where this ah object is
+present in the image.
+Now, on the other side of it, you also had
+ah region proposal networks in which ah you
+needed to have some sort of region proposals
+given to you while training. And based on
+these region proposals, you will be able to
+predict out where exactly the object is located.
+And now the advantage with the ah region proposal
+network was that, you can have ah partially
+occluded objects over there and still it can
+find out what is the total exhaustive span
+over there. So, if there is one person behind
+the other person, then the person who is in
+behind the bounding box, which comes up is
+pretty much ah distinct and confirm, met to
+the total ah physical appearance of the person
+over there.
+Now, we will be taking up ah one of these
+examples in our lab session and that is ah
+just with activation pooling, now that is
+that is easier to implement and has a significant
+ah amount of ah use cases in lot of practical
+problems. And for this purpose, what we are
+doing is, we are revising one of these ah
+data sets, which we had earlier used in our
+auto encoder exercises and that was about
+this, microscopy image classification of white
+blood cells ok.
+So, we are going to make use of that ALL-IDB
+data set once again, so ah refreshing back
+from your auto encoder days. And, ah what
+we are going to do is, if you remember then
+ah when we have downloaded the dataset, there
+were two distinct folders over there in the
+data set. One was ah just for your ah classification,
+and it was given in terms of smaller patches;
+and the other one which you had was the whole
+image over there on which you could find out
+WBCS and RBCS scattered down together, and
+and the whole idea was like where is the WBC
+located.
+Now, we are going to take this first one,
+which is ah trying to ah create a network
+which is just going to classify WBC is in
+two benign or malignant kind of a behavior
+over there. And then use this network and
+its activations ah subsequently, in order
+to find out where is that WBC exactly located
+on the image . So, this is overall what we
+are going to do .
+Now, let us ah get into what we are trying
+to do over here, now the first part of ah
+the network is still quite common and ah conformal
+to what we have done. So, these are your standard
+header files, which we would just be needing
+. Now, ah once you have all of that done,
+and ah once you have this data downloaded
+from this location, so you get done basically
+two folders.
+One of them is ALL IDB2, the other one is
+ALL IDB2 . Now, IDB2 folder is the one where
+you have this smaller patches of images stored
+over there. And IDB1 is the one where you
+have the whole image, and there are WBCS present
+at a certain location . So, since ah the whole
+concept of training these kind of activation
+maps was to train a classification network,
+and then use this classification network subsequently
+to do a localization problem . So, we are
+going to use the data from ALL IDB2 ok . Now,
+ah the first point which we try to do over
+here is, ah create down ah just just a basic
+scratch tensor over there.
+And now once that tensor is created out. Next
+is ah you read down one image at a time. And
+now once this image is read down, now since
+ah the images over there are not of a fixed
+size, so they keep on varying and typically
+they are about 256 cross 256 pixels in size
+or sometimes, 257 cross 257 sometimes 240
+cross 240 pixels . So, they were varying out
+, but are the networks which we typically
+tend to ah use are the ones which would be
+taking down only a fixed size of image . Now,
+we are going to use ah one of the networks
+from our ah image net challenge over there,
+and for that reason we need to resize, all
+of these images on to 224 cross 224 pixels,
+so that is the purpose of ah doing a resize
+over here .
+And then what we do is , we try to ah just
+change the dimensions of the data set, so
+which meant that ah the color channel which
+otherwise is supposed to be on the third axis,
+should be coming down on the first axis, so
+that was our convention for using in (Refer
+Time: 04:48). So, that is the whole purpose
+of transposing 0 and 2, these two axis over
+there. And ah then you just need to convert
+it onto a torch array from ah numpy format.
+And this gives you, basically a 3 comma 224
+comma 224 sized tensor, which can be fed down
+into one of these ah tensor locations.
+Now, what we have for our case is we are going
+to take down, 200 images for training and
+60 images for our testing and validation . So,
+the input tensor over there has a number of
+images, cross number of channels, cross x
+cross y dimension, so that is what you see
+200 comma 3 comma 224 comma 224 . Now, here
+we take one image at a time, resize it to
+224 do the transformation get down this in
+3 comma 224 comma 224 format. And then ah
+rewrite that into one of these tensile locations
+over there. And and as you keep on changing
+this tensile location, you have everything
+filled up on the all the images over there.
+So, you do the same thing for your ah labels
+as well, so this is just for your training
+data set.
+Now, ah once it is done, so let us let us
+ah try looking into ah you can print out the
+complete thing. And then you can see, what
+is the size of your training and testing data
+sets over here ok .
+Now, ah that your data set is created over
+there. So, you can ah actually transfer all
+of this onto ah pi torch equivalent data set,
+and what that helps you is that ah now you
+can use your data loader functions in order
+to load it down in terms of your batches.
+And we define our batch size as just 32 images
+on our batch. So, just just to stay conformal
+to what we had done in the earlier cases . And
+then you have your data set given down, whether
+you are going to shuffle it across over there,
+so whether your stochastic nature for gradient
+descent to come into play the number of parallel
+workers over there , and these are the stuff
+which you keep on set .
+Now, ah next what we do is we look into whether
+a cuda ah base GPU is available over there.
+So, since your GPU is there, so you just ah
+tag off that flag.
+And then ah you start with your network. Now,
+we start with ah resnet18 and we are ah choosing
+a pre-trained model. So, the model which is
+already pre-trained on ah image net . Now,
+where we need to make a change is that ah
+ah image net classifying model is something
+which has to classify 10,000 object categories.
+So, you will have 10,000 neurons over there
+or 1,000 object categories 1,000 neurons.
+So, it is it is more over there .
+Now, what we need to effectively changes we
+just have two classes of classification benign
+versus malignant and nothing else over there
+. So, we change that and make it down just
+as 2 neurons . So, this is the first part
+of the architectural adaptation, which we
+need to do; then ah get it converted onto
+your cuda . So, this is the only part with
+changes within a pre trained network and and
+the last classification part over there .
+Now, till now we have not yet come down into
+any aspect of activation pooling. And this
+was just to print the network, and ah you
+can pretty much see what is present over there
+. So, this is your resnet 18 the standard
+resnet 18 network without any ah kind of a
+difference coming down . Next is ah since
+ah this network is first trained for a classification
+problem. So, we need to take a cost function,
+which is conformal to classification problem
+solving; and for that purpose we choose a
+negative log likelihood cost function over
+there. And the optimizer which we choose is
+stochastic gradient descent ok .
+Now, once everything is set over there, we
+decide to run this one for 15 iterations or
+epochs over that, now within each epoch it
+is it looks the same.
+So, there is not much of a difference which
+we are doing over here in terms of code. So,
+first is you need to convert your inputs to
+variables the variable container for use within
+auto grad features. And then ah once you have
+that one converted, ah next this is a normalization,
+because your inputs were basically in unsigned
+8 bit integer. So, the dynamic range over
+there was 0 to 255 whereas, ah whatever inputs
+we are supposed to get down to this network
+is supposed to be in the range of 0 to 1.
+So, this normalization comes off a huge help
+over there.
+Next ah you ah So, so next what you are going
+to do is basically you do a feed forward over
+the network . Then find out ah your loss and
+that would basically be via ah forward propagation
+over the criterion. And now since you are
+going to use a negative log likelihood as
+a cost function. So, you need to have a log
+softmax on your output side as well. So, that
+is this ah extra transformation which comes
+down, ah for matching down the for matching
+down the ah input parameter space, conformal
+to your ah criterion function .
+Now, that you get your ah loss coming out
+over there. So, you can find out which is
+your maximum, ah which is your predicted class
+coming out over there . And based on that,
+you have your ah optimizer set down ok.
+Now, once your optimizer ah is starting down
+with the zeroing down on gradient. So, the
+first part is you need to find out your nabla
+of loss or the derivative of loss that solved
+out . Then, you update your parameters over
+there ok .
+Now, once that is done ah you keep on accumulating
+your losses over, ah as it keeps on performing
+as well as your ah accuracy of correct predictions
+as well, and then ah you store this data over
+there . Now, the next is ah what we need to
+find out is ah our testing. So, this was one
+part of my training epoch in which, I do a
+feed forward ah then my losses and then I
+back propagate it over there, and then find
+out that what is the networks current state,
+after this first update which has happened
+out . So, that is what we do with this testing
+data set over here, and that is also pretty
+simple except for the fact that, I do not
+have any further back propagation operation
+going down on my testing dataset. It is just
+the forward prop which takes place and you
+have your ah errors and predictions coming
+out over there .
+Now, from there ah we enter into ah this is
+just a simple plotting, ah routine which we
+had followed now. So, let us look at ah what
+it comes down to, so you start down with ah
+your first iteration, and ah the training
+loss initially is about ah 0.22; and then
+ah you see this loss keeps on going down.
+And your testing accuracy over there initially
+starts with about 59.5 percent and then it
+keeps on increasing. So, around the second
+epoch it is already at 88.5 percent .
+Then there is a bit of fluctuations, and then
+it keeps on going down to a steady point;
+where sometimes it even touches down a 100
+percent accuracy in classification . However,
+you need to keep in mind that the training
+data is said is small; your testing data set
+is even smaller. it just has ah third ah 60
+images present over there. So, there are chances
+of it getting over fit, but nonetheless this
+is something, which comes down ah between
+your 95, 200 percent of ah border and since
+you are using stochastic gradient decent.
+So, for that is one of the reasons why it
+is it is ah obviously, fluctuating a lot.
+Now, a better practice is basically you can
+pull down your ah learning rates over there.
+And shift over from a stochastic gradient
+to and adam and do it. However, this was just
+done for the purpose of that ah stochastic
+gradient descent computes much faster than
+an adam as such .
+Now, once you have that you can see your losses
+and then you are accuracy on training and
+testing, and this is our ah standard way of
+looking at it. But the interesting part comes
+after this, because once I have trained this
+network over there, now I will have to actually
+create out these weights for associating ah
+each channel ; and then what will be the weight
+associated for classifying a particular output
+ah or or localizing a particular category
+of object .
+So, for that purpose what we had done in activation
+maps was quite simple, that ah we take out
+the last activation map over there. And then
+you do a global average pooling on top of
+that map, and this this global average pooling
+is basically going to reduce, ah ah the last
+channel over there the x,y dimensions into
+just one single one. So, if you had I have
+512 channels over there . So, in essence what
+I get down after this global activation pooling
+is 512 cross 1 size tensor over there, for
+for each image. And then you have a fully
+connected layer which connects out and does
+the classification training once again
+So, that is ah essentially what ah you would
+run down over there and then finally, ah you
+can see your network comes out over here .
+Now, once you have trained it out. The next
+part is basically ah to copy down all of these
+bits and just keep it for your purpose, because
+ah what you have is we had sort it down with
+just a two class classification problem. So,
+I have 512 ah neurons which are connected
+down to 2 neurons over there. So, this is
+going to give me a 2 cross 512 sized tensor
+coming out over here .
+Now, there will obviously, be another bias
+tensor over there, but we are not interested
+in the bias at the current point, because
+that would just be giving a ah dc offset,
+and that was not part of the original formulation
+of ah using down ah ah global activation pooling
+for ah creating these kind of activation maps
+.
+Now, the next part is where we need to look
+into our, ah testing ah data from the other
+data set; where you have whole images. Because,
+here the objective is that I have my WBCS
+present at certain locations in my image,
+and I would like to find out where exactly
+is this WBC located . So, it is not know more
+about classification in any way. So, I am
+not going to need those smaller patches of
+images, but now I can give down a larger patch
+of image . And on the other side over as well,
+since I do not have a fully connected layer
+going down anywhere, and they are just convolutional
+connections.
+So, I can put down basically any sized input
+over there, and still it can give me an ah
+output coming out. So, I I do not need to
+restrict myself to 224 plus 224. I do not
+even need to restrict myself to ah say a square,
+like aspect ratio over there. I can pretty
+much give down a rectangular one, say 3,000
+cross 2,000 pixel ah images has input over
+there .
+However, one thing which we need to keep in
+mind is that, ah you cannot go much lesser
+than 224 cross 224, because over the subsequent
+ah convolutions which were there, ah say in
+your VGG in 19 architecture. You were doing
+a max pooling as well, and that is going to
+reduce it down. So, if you put down a 100
+cross 100, somewhere in between it might just
+vanish out, so this is a fact which you really
+have to keep in mind ah while doing it.
+And, the other fact which you need to also
+keep in mind is that, if the span of my object
+in in the original image; which I was using
+for classifying, if that is say 100 pixels,
+then on the target one also it should be about
+100 pixels. Now, suddenly on the target image
+if it becomes down about say 500 pixels cross
+500 pixels, then you will not be getting down
+exact features, which will translate across
+the network. So, this is becomes a scale ah
+problem, and we are not training out a scale
+agnostic network in anywhere. .
+So, these are few intricate ah points which
+you need to keep in mind, otherwise ah while
+trying to do a action ah localization over
+there. And in in fact, based this this is
+one of the reasons, why activation ah maps
+do not fare ah that great, as compared to
+a region proposal network; because in a region
+proposal network, you do not have this kind
+of restriction. You can actually get down
+objects of different sizes and you can train
+with that and ah the region proposals, can
+also be generated. You do not need to stick
+ah to this fixed aspect ratio or fixed attribute
+sized ah of of objects, ah while you are trying
+to train it down . Now, here what we do is
+ah we start reading from this other database
+which is IDB1 which is a whole slide image,
+it has WBCS RBCS everything spread over there
+.
+And, then ah ah. We just chunk out one of
+these images in order to demonstrate and show
+it to you ok. So, this is ah location 0 at
+the first image which comes up on that ah
+tensile location over there . Now, if you
+have a GPU, which ah in our case is what is
+available, so we are just going to convert
+it into an auto grad variable. Once this typecasting
+is ah present, and you have your transpose
+operations appropriately ah done over there
+as well .
+Next, ah for the visualization part over there
+what we need to do is, ah so you can do a
+feed forward over here . So, you get your
+output coming up ah completely . Now, if you
+have ah GPU over there, then ah everything
+is present onto a cuda ah kind of a construct,
+you need to convert it back onto a CPU, and
+then ah a retype (Refer Time: 16:44) numpy,
+so that is ah this other part of the network
+which you see. Whereas, if you are running
+it on a CPU, then you do not have this part
+in working out in any ways, because everything
+is still residing on your CPU RAM and is in
+nampy format Ah.
+So, over here ah what we end up doing is ah
+create something called as a mask. So, what
+this mask essentially does is you are going
+to take a weighted summation over all the
+channel outputs which come down, so if I have
+512 channels; then I have 512 weights associated
+with them . So, each channel is going to get
+ah weighed by the weights over there, and
+these weights are something which I get in
+my earlier case ah from here . Which is the
+weights which were connecting down these,
+512 neurons on to ah the two classification
+neurons over there. And this 512 were, coming
+down as the global ah average pooling of the
+activation maps over there .
+Now, ah so this is the second part of it,
+which you ah see over here. Now, once you
+get down this weighted ah masking coming up
+over there, the next part is just to take
+down an average along the axis along along
+each of these channels over there or the zeroth
+axis or the first dimension which comes out,
+and then you can pretty much see it out .
+Now, this ah first one which we see is ah
+in terms of trying to see, if we do not have
+a weighted ah ah weighted averaging over there
+across the pixels, but we took down just a
+plain simple averaging which is you take all
+the activation maps over there sum up all
+the activation maps and divide by 512 or the
+total number of channels which comes down
+over there, so that is going to be a plain
+simple . But then ah I did say that ah you
+would figure out that if ah different activation
+masks will be showing out different objects
+in a varying proportion and not everything
+is going to be not every activation is something
+which is related down to count your particular
+objects which you are trying to look for,
+and that is one of the reasons why this mechanism
+will not be working out. So, ah instead of
+that ah here this weighted combination is
+something which is preferred. So, we take
+this weighted one and that is also shown down.
+Next, what we do is we randomly pull out a
+few activation maps, just four activation
+maps over there to see exactly what comes
+out in them . Now, if you look over here,
+this first one and the second one, the first
+one is ah um if you go back onto my code over
+here, then I can see that my first one is
+basically a plain simple averaging. It it
+does not have ah the weighted averaging taken
+place.
+But, the second one is ah out Img1 is something
+which comes from here, and this is my weighted
+ah averaging which takes place .
+Now, on my weighted averaging, I do see a
+hotspot coming up over here, whereas over
+here, it is it is somewhat in the negatives,
+like wherever ah there is a high on this case
+[laughter] I see a low over here, but that
+is not a very distinct case as such to come
+down. And and our definition ah of what we
+had discussed in the last lecture, ah clearly
+said that wherever the object is present that
+is which is going to show you a higher probability
+and we will have a higher response .
+Now, if we pull out four ah different chunks
+from there, you would see in that in one of
+these ah activation channels, you have something
+high present somewhere near where the object
+was. Whereas, others were pretty much low
+and even this one had an activation which
+was almost at the periphery. So, it does not
+help out in any way .
+Now, let us look have a look at the actual
+image which was present. So, this was the
+actual image which we were trying to look
+at, and ah this is the WBC which is present
+over there. And the whole objective was just
+to localize what where this particular WBC
+is present. Now, if you go back and look into
+our activation map, it does do a very good
+amount of localization . What interestingly
+also comes out is, that the other one ah which
+kind of negates . Incidentally for this case
+ah I just created a negative of this map,
+so if you do a inversion of this map, you
+might end up [laughter] getting the WBC itself,
+but then this is not always the case. In some
+of these cases you might find these, ah averaged
+out maps to be really ah um erratic in in
+the nature of their behaviors over that. They
+might not be having much consistent behavior
+whereas, if you look down onto this ah other
+ah network, ah which is a weighted combination
+of all the activations which come out of the
+channels, then you can pretty much see where
+ah wherever this WBC is present you have a
+pretty distinct ah high probability coming
+out over there.
+Now, this was a principle example of how to
+use, ah activation maps ah ah from any kind
+of a classification network; in order to initialize
+entry in your ah object location ah tracker
+over there. Now, you have many more examples
+which you can ah pretty much take up at this
+point of time, you can train down just a classification
+network on smaller patches of images, and
+then go down and replicate it on bigger images.
+So, examples are you you can train something
+like; ah alphabet detectors, or ah character
+detectors over there. And then ah we use this
+kind of a linear at architecture for handwrite
+character detection run it over ah full scale
+images, and you can find out there is, something
+handwritten present on the images. Or you
+can create a number plate detector and then
+run it over images and you can find out, isolate
+out and and really get where is the number
+plate present on that whole image .
+So, there can be many more examples of practical
+problems, which we can solve it out. So, just
+just make yourself comfortable to go around
+with ah more data, which is available out
+there ah open to use in the world, and then
+ah get it ah going and solved. So, that is
+where we come to an end ah for ah these kind
+of problems on activation pooling and trying
+to localize our objects.
+In the next lecture, we are going to start
+with ah process called a semantic segmentation
+or simple segmentation, which is when instead
+of classifying one image, we are going to
+look into classifying each single pixel on
+an image and how it solved out. So, till then
+ah ah stay tuned and get up and.
+Thanks.

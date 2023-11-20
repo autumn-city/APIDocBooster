@@ -1,0 +1,753 @@
+hello everyone welcome to my youtube
+channel in today's video i'm going to
+show you
+how we can build a text classification
+model using deep learning
+we will be using python and pytorch and
+we will also be using tase a small by
+torch trainer that we developed in our
+previous videos
+so if you haven't seen that video i
+would highly recommend you to go back
+and take a look at it in this video we
+are going to do
+a binary classification problem using
+birth base uncased model
+and we will expand it to multi-class
+or multi-level classification model so
+in the end you will end up with
+less than 150 lines of code which is
+production
+ready so i hope you like the video so to
+build a text classification model we
+need some
+data obviously so first of all what we
+are going to do is look at what kind of
+data we have
+i already have downloaded and used this
+data many times
+it's called imdb set and i
+let me show you uh two lines
+so what what do i have in this area i
+have the review column i have the
+sentiment column and i also have a
+special k-fold column
+what the k-fold column does is it splits
+the data into five
+parts so data is already split in a
+stratified manner
+i have a sentiment to predict i have a
+review so this is a
+basic text classification problem so how
+do you solve this kind of problem
+what you do is you start with importing
+a few things first
+it's import torch we will probably need
+that
+and we will also import these
+which we have been using for the videos
+so if you haven't seen how we developed
+these you can go back to today's video
+and watch it there
+so now we will build a dataset class
+so i have let's say we are using a bird
+model
+so um let's say i create a data set
+class just to fetch the data set so what
+what do i have here
+um init function
+and this will take review and
+sentiment reviews rather
+sentiments and does it take anything
+else
+i don't think so let's just call it
+targets
+and let's call this one texts
+so this is like uh a very
+generic model it can be used for all
+kinds of text classification problem
+the next thing we need a tokenizer but
+before that i'm just going to
+map it to text text
+and self dot targets
+is targets and
+let's say i define a tokenizer here so
+you can also get the tokenizer from
+uh an argument here if you want
+if you want to make it more general so
+self.tokenizer is
+now i import transformers
+and share i do transformers dot
+tokenizer dot from pre-trained
+and here it will take arguments like
+what is the name of the model
+so let's say in our case for this video
+it's bird base encased so this is a
+model we are going to use
+and it's also going to require
+uh if you want to do lowercase or not
+[Applause]
+and we set it to false so now we have
+our tokenizer and we can just provide
+some kind of
+max length so these are
+some of the arguments that you can just
+add here
+so let's say i'll just add maxlin
+equal to 64. if it's not provided it's
+64.
+so i added maxlin and then i
+defined my len function
+and here we have it just returns
+a length of self.tx
+so this is all the samples in our data
+set and then we define a get item
+function
+and here it will take an index
+so idx let's say item index
+and my review so here we have
+um in the review so here we can write
+text
+is sdr of texts
+or self.texts and then
+idx so it just converts it to a string
+if required
+so now i'm going to say okay input
+self.tokenizer and it has an encode plus
+function
+in which you can put multiple texts if
+required so
+we're going to make it as generic as
+possible text and we don't have
+any second sentence so it's just one
+sentence so i'm just going to
+say none add special tokens so it will
+add the special tokens like cls or scp
+token
+and max length is self dot
+maxline and padding is
+max length so it will pad everything to
+max length and truncation is
+true and it will also truncate the
+larger sentences so we got all this and
+now
+we can we can return them so
+i can say okay return or
+rest and this is a dictionary
+and here we have ids
+torch dot tensor
+um and inside inside this you will have
+input ids
+or no sorry it should be input ids
+and then you have the you have to define
+the d
+type so d type equal to
+torsh dot long
+and similarly you have
+mask so attention mask you have the
+token type ids and you have a target
+so let me see so let's just call it mask
+and this is attention mask so all this
+comes from
+uh the inputs here and you have
+uh token type ids
+and this should it is the same
+it's the same here token type ids and
+you have targets
+so i can say torch dot tensor
+self dot targets
+item or idx it was
+idx okay and maybe i can
+also make it float if i want to
+so let's do that so this is what i have
+i hope you were able to see that and now
+this
+target here is a number zero or one
+so make it float and then we return
+our usb rest so our data loader is ready
+and it's very generic it can be used for
+almost
+any kind of text classification problem
+that you have
+you just need to change the tokenizer so
+tokenization is the only thing that you
+need to take care of
+otherwise you have everything here and
+it can be used for almost any kind of
+problem
+so now what we do is we build our model
+and we will build our model using phase
+so
+i say i write a new class
+so text model let's say and it imports
+from
+days dot model
+days is just a very super simple uh
+python wrapper trainer
+library in it
+and here we define some some of the
+things that we might need
+so probably we don't need many things
+here
+but it's it's just like you define
+your pi touch model so we will need
+we can say we we have the birth model
+so transformer start
+birth model dot from
+pre-trained and
+here you can say which model do you want
+so bird base
+encased and there is also a return dict
+argument and you can just set it to
+false you don't want to what wanted to
+return
+dictionary but you just want the old
+behavior
+so self dot bird drop so this adds a
+dropout
+so i can just say okay maybe i forgot to
+import as
+n
+so now uh we can say and then draw
+dropout
+and here you have um any dropout 0.3
+let's say and self dot out
+some kind of output layer and
+here this would be and then dot linear
+seven six eight now if it's a simple
+binary classification problem
+then the output is one but you can
+always write
+num classes and
+here goes your output
+okay so now we we got all this
+and with bird maybe we also want to have
+number of training steps so num train
+steps
+and i can say dot num
+train steps there's none train steps
+okay so now i i got this now i write
+our optimizer
+so def fetch
+optimizer so this is the fetch optimizer
+function
+uh if you're using these you can use
+that and here
+i will just return the optimizer so
+i'm not i'm not using i'm using all the
+model parameters
+for now so um
+i can i can also use any kind of
+optimizer i want
+but maybe let's import the one from
+transformers
+so from transformers import
+atom w and get
+linear schedule with warm up
+so we got all this and now we have the
+optimizer
+so opt is adam w and it should take the
+model parameters so here
+the parameters will just be
+self.parameters instead of
+model.parameters
+and you can specify a learning rate so
+let's say 1 e minus 4
+so we have a learning rate and we just
+return this and similarly we also have
+scheduler so fetch scheduler
+and this is self and here we can
+return our scheduler so sch is equal to
+get linear schedule with warm up and now
+this takes a few arguments
+so self.optimizer will become your
+optimizer not fetch optimizer
+and num warm-up steps let's set it zero
+num chain training steps is your self
+dot
+num train steps and everything else
+remains the same
+okay and now you
+return this return a ch
+so we got our optimizer we got our
+scheduler
+now what what we need to do is write a
+loss function
+or yeah okay let's write the loss
+function
+so self output
+targets so like we have in torch
+um so now this loss function is also
+part of this model class and here i say
+if
+targets is
+or maybe leave it or you just
+calculate the loss any way you want to
+calculate it
+so i say bce with logistics logic's
+and here you have outputs comma
+target start view minus one comma one
+so it's i'm just reshaping the targets
+okay so we got the loss and now we
+define uh another function where we will
+calculate
+um accuracy self comma
+outputs comma targets so let's say we
+want to calculate accuracy or any other
+metric that you want to calculate
+so outputs will be dodge
+dot um
+sigmoid yeah why not outputs
+and convert it to cpu
+and dot detach
+and drop num p
+okay and now this is greater than or
+equal to 0.5
+uh so i've just i've just taken
+everything and i have
+added sigmoid to it to convert
+everything between
+zero and one and i say okay if this is
+greater than zero point five outputs is
+one
+otherwise output is false
+and uh we also convert so my targets are
+already zeroes at once
+so i just take targets and i
+also convert to cpu and detach and then
+numpy okay
+so we got all this thing and now what do
+we need is
+calculate this accuracy so for
+calculating accuracy so from
+[Music]
+scikit learn import metrics
+or you can write your own accuracy
+function if you want
+and here we can return a dictionary
+and the dictionary should have a key
+so let's say accuracy
+is metrics not
+accuracy score now here it's
+other way around out targets and outputs
+okay so we got everything so we got our
+outputs targets we are monitoring it
+i think i'm importing torch but it's
+complaining me for some reason but
+okay let's forget about it and now we
+are missing the most important thing
+the forward function so
+it's written in the same way as you
+write in bytorg
+but the arguments that it should take
+should be
+the same as in your data set so it
+should take ids mask token type ids and
+targets
+and we can say ids
+mask token type ids and
+targets and we can keep targets to
+none by default because for test data we
+don't have the targets
+and now i can calculate
+um now i can pass
+pass the input through the bird model
+so i can say self dot bird
+ids should be mask
+attention mask is mask
+and token type ids is token type ids
+okay so we got this x which is the
+output of the bird cooler and
+now we add a at the drop out to
+itself.drop
+x and then x is
+self dot out
+it goes through the output layer and
+then we say
+okay calculate the loss so you can
+calculate the loss only when
+uh you have some targets otherwise you
+cannot calculate the loss
+so uh what i do is what we say
+is okay um
+if targets is
+not none so if we say like if there are
+targets available then calculate me some
+loss then loss is self.loss
+which takes outputs and
+targets and
+my metrics so i can just say metrics
+is self dot monitor metrics
+output comma targets whatever metrics
+i'm
+monitoring but here i don't have outputs
+i have
+x and
+then return x
+which is my output and loss and
+matrix let's not call it matrix let's
+call it met
+because from mascara and we import
+matrix otherwise
+you just return x comma none
+comma empty
+okay because matrix is a dictionary and
+loss is something or you can just return
+zero
+so if you don't have targets you just
+return zero loss or minus one loss
+whatever
+and uh empty dictionary
+so now what what i'm going to do is we
+are going to say
+okay if name
+main then let's read the data set first
+so
+from import
+ontars spd
+so now we read the data set so df equal
+to pt dot
+read csv home
+[Music]
+shake and that's it so this is just a
+part of my data set
+imdb folds dot csv
+okay so here i'm just reading the data
+set csv file
+and now i'm creating uh df underscore
+train
+let's say i want to train it on one fold
+uh for zero sorry i want to validate it
+on 4 0
+so what i'm going to do is dftrain
+um dftrain dot
+k fold equal is not equal to zero
+or i can just wrap it in a function so
+let me just wrap it in a function
+and we do this thing later and
+here train model
+and here fold underscore the variable
+so it takes a full
+argument so you can just pass it
+here and this is your df train and
+similarly you have
+df underscore valid
+[Applause]
+but here it will become two equals
+and both places you can also include
+reset index drop
+go to true so if you if you want to you
+can also reset the index i usually do
+that when
+i'm slicing so
+now i have a training data set
+validation dataset
+so let's create me the data set
+from the class dataset class that i have
+created
+so let's say we call it bird dataset
+okay
+so train dataset is my bird dataset and
+df underscore train
+dot review dot values
+and df underscore train dot sentiment
+dot
+values
+so i think uh in the sentiment
+i let's see
+i have ones and zeros so that's fine and
+similarly we also have valid data set
+[Applause]
+birth data blah blah blah df underscore
+[Applause]
+valid so that's the only difference that
+we have
+and number of training
+so num let's say num train
+steps or let's call it and train steps
+because we are using it
+outside so that's just your
+end of len of df underscore trend
+uh so your uh length of the training
+data set
+divided by batch size
+train
+training underscore bs
+uh multiplied by the number of
+[Applause]
+okay so this is your number of training
+steps and that you need for the model
+so my model will be worth bought
+a text model was it and here i have
+num classes which is two
+but i i have said okay i want num
+glasses is the number of
+outwards so here i just want one
+and because it's a binary classification
+so you can just do one and then do bce
+with logic laws or if you can do
+two classes in the end then you can
+calculate the cross entropy loss
+if you want but we are just going to do
+it this way
+and num train steps is my and
+underscore train underscore steps
+okay so we got the number of training
+steps
+and we have uh training batch size we
+have the epoch so we got the model
+and then we can make some early stopping
+so these are some call backs please dot
+call back start
+call back uh sorry
+early stopping so we have early stopping
+callback and i can monitor
+uh valid underscore accuracy
+so whatever i input here i can monitor
+that or i can just monitor
+valid underscore loss by default so
+let's monitor valid underscore loss
+and uh mode
+is min and patience is five so
+everything is
+fine or maybe i can make patients too
+three
+so we got early stopping and i can just
+do model.fit
+um train data set
+valid dataset is my valid data set
+and um my device
+is so you can see like all the options
+uh which are being recommended and all
+are quite good and quite correct
+uh epochs is epochs foreign bs and valid
+bs so those are the batch sizes
+so a box equal to
+a box train underscore bs
+so let let me make it like a hard-coded
+32
+and valid bs is 64 that's fine
+and since train bed size is defined here
+32 so this is also 32
+epochs is 10 let's say
+let's say the box is 10
+so now we are fitting the model here and
+here i can say callbacks
+which is a list so you can have many
+callbacks as many callbacks as you want
+yes and now we will fit our model
+so let's let's try doing that
+um
+this should be df and this should also
+be
+df so train model for
+four zero
+let's see if this works let's go to the
+terminal
+and python
+main dot y was it yeah sure
+do you have train as a reference before
+oh okay yeah sure yeah so because
+this will also be df and this is also tf
+and again
+so one thing that we forgot here is to
+initialize the super class so super
+in it like this so now
+hopefully it will work
+so i'm missing model path yeah okay so
+um
+early stopping needs a model path
+to save your model uh let's say
+model dot bin
+okay so we got uh
+this one fixed and now we run it again
+okay so this is working i think it's
+going to take
+um two two and a half minutes it's
+running on my titan rtx
+gpu uh and then it's going to save the
+model
+so let it run and let it save the model
+and i can show you how you can do
+inference using this so what we can do
+is we can just do model dot
+load and from model
+dot bin so this is your model path and
+load the model on
+[Music]
+cuda or cpu whatever you want
+so model has been loaded here and then
+you can do
+um like we can just use the validation
+data set
+as test dataset but
+test a test data doesn't have like this
+sentiment values
+but that's okay you can you can just
+pass in any uh fake target
+for test samples so i will say
+threads so like the predictions is
+model dot predict
+and here it will take um
+valid data set let's say it takes valid
+dataset devices
+cuda and
+now it is a generator so i can do for p
+in threads print p
+ah let's see let's keep it simple
+so now you see okay my validation
+accuracy is 79 and
+loss is 0.489 okay that's fine
+let's go back and here now i will
+disable
+this part so let me see
+i have disabled the model fit so instead
+i will just be loading the model and if
+we see we should have model.bin here
+so it is saved for us let's try we don't
+even need the
+early stopping so i'm just
+going to do this
+so we still have the model built in the
+same way we ever have everything same
+and we just take validation data set our
+as our
+sample test dataset and we generate the
+predictions
+let's see if that works
+if it works we are done okay
+so now you can see like it works in each
+iteration it gives me
+a list of arrays or something like that
+but you can flatten them you can do
+whatever you want with them
+so this is for these are predictions for
+one batch
+in every iteration you get predictions
+for one batch
+okay so now you can apply sigmoid on it
+if you want to
+and you're done so this is how you built
+your
+binary classification model now let's
+say you have to build
+a multi-class classification model how
+will you change this
+it's very simple very easy
+so one thing that i didn't show you okay
+uh
+for fetch scheduler uh just remember
+there's one more thing
+i you should you must remember that so
+there's a
+parameter called step
+scheduler after so which tells you when
+do you step the scheduler so you can
+either
+step it after one epoch or after one
+batch
+so you can just specify batch so
+the default is batch so it's going to
+step it after every batch
+anyways so step scheduler after batch
+and that should be specified in the init
+of the model
+or epoch so now we change this to
+multi-class classification
+so in those cases number of classes is
+going to be greater than one
+and when it's greater than one what you
+do is you don't change much
+you don't have to change anything in the
+code at all everything remains the same
+so target still remains uh the same so
+it returns
+a digit an integer from 0 to
+n and then you
+have everything in this model remains
+the same except for the loss
+so and then dot
+cross entropy loss
+so that's what you want to use and
+everything else remains the same
+and just remove this part
+so now your model is multi
+class classification and it should work
+hopefully
+let's let's see um what i'm going to do
+is i'm going to uncomment this and now i
+have two classes
+i mean i already had two classes for but
+for binary classification you can just
+do with one output but now we have two
+outputs
+so two outputs can easily be extended to
+three five ten
+hundred thousand um so now
+uh i have two here and
+uh i have cross
+entropy loss and here
+i would need to do it a bit differently
+so i can just do like for
+instead of torch sigmoid whatever
+[Applause]
+i can just do
+torch.arcmax
+and i can do here x is equal to one so
+this should give me the class
+let's see if it works
+i hope it works okay so it's giving me
+some problems
+expected object of scalar type long but
+caught float
+okay yeah fine a small change that you
+would need to do
+is in the dataset class just convert it
+to
+long the targets and now
+it should be fine
+okay now it's fine and it's training
+accuracy what training is increasing
+that's something i like so everything is
+going fine
+and i don't think you need more changes
+now for multi-label classification
+this part will change again so in
+here currently you have uh like one
+value one integer right and now it will
+become a vector
+and it becomes a vector and what you
+need to do is you need to change your
+loss function again so
+you you are done with binary
+classification multi-class
+classification multi-level
+classification
+if you want to do entity recognition
+using this you can also do that because
+that's just multi-label classification
+so yeah this is
+it i think uh i hope you liked the video
+and i'm looking forward to
+any comments that you have um
+so using these we have built a model
+in less than 150 lines of code
+and it's still very flexible so you can
+also change like if you if you want to
+change the training step or if you want
+to change the epoch how trains you can
+just go to this class and just change
+whatever you want to change here so it's
+right in front of you
+um so if you want to change one step so
+just take this function
+and write your own train one step
+function and that's it's as easy as that
+and you can just do
+fp16 equal to true and it will
+just use fp16 out of the box
+so that's it that's my video for you for
+today i hope you like it and if you do
+like it do click on the like button and
+do subscribe
+and see you next time goodbye

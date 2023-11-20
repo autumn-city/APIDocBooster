@@ -1,0 +1,411 @@
+hi folks my name is James and I'm a
+software engineer on the PI George team
+so we've already mentioned in this talk
+that two of the core design principles
+of Pi torch are developer efficiency and
+building for scale but how do we bridge
+the gap between those and make a
+framework that can support both in this
+section of the talk I'm going to dive
+deep into torch script and PI torch it
+and show how those technologies allow us
+to deliver a top-notch developer
+experience while still delivering top
+machine performance and efficiency let's
+elaborate on one way that we actually
+deliver developer efficiency one of the
+core principles we drive forward in PI
+torch is that building models is just
+programming building models leverages a
+familiar imperative and object-oriented
+style which we believe many people to
+find appealing not only that but a key
+point is that building PI Church models
+is just programming in Python and let's
+see why this is such an important
+consideration why do people like PI
+torch well it's pythonic what does that
+mean when we built PI torch in the
+Python programming language we inherited
+a design language called being pythonic
+you may have heard of the Zen of Python
+which is the small short poem that
+you'll see listed on the right of the
+screen it espouses several principles
+that us as well as the rest of the
+Python ecosystem try to follow how do we
+espouse these in PI towards specifically
+one way is that things are simple and
+explicit models are object-oriented
+Python programs and they use all the
+familiar concepts from regular Python
+programming second things are easy to
+use because they're debug or you can use
+all of your regular print statements you
+can use PDB to debug your code and you
+can use the Python interpreter to try
+out different ideas and test different
+things outside of the full program
+finally by building our library and
+Python we're able to plug into the rest
+of the Python ecosystem especially the
+numeric computing ecosystem so you can
+use these things seamlessly with your PI
+torch model so let's take a look at an
+example of a fragment of PI torch code
+on the right you'll see a simple
+convolutional neural net defined in PI
+George
+in the init method also called the
+constructor you'll see that we're
+setting up various basic building blocks
+for the convolutional net we're
+instantiating objects from the torch ññ
+namespace you can think of the NN
+namespace as sort of the standard
+library for pi torch these are fragments
+of code that we found repeatedly useful
+think convolutional blocks drop out
+linear layers things like that that
+we've made available to use
+out-of-the-box batteries included in the
+Python ecosystem we set these up and
+that initializes state such as the
+different weights for the different
+layers in the forward method we specify
+how the data actually flows through this
+convolutional neural network we've
+introduced a new concept in forward here
+which is the F identifier F is a
+shorthand for torch and n dot functional
+this is basically a set of standard
+library functions that do not have
+associated parameters with them so we
+can use them as regular functions you'll
+see in the forward method we're
+basically stringing together the
+convolutional layers the pooling layers
+and the reloj activation layers into the
+actual architecture of the convolutional
+net it's worth noting that all this code
+is just Python code and you can do
+whatever you would do with normal Python
+code in terms of debugging and
+interfacing with other libraries so
+python is great at all but what about
+production
+I started this section out talking about
+how we can build a framework that allows
+us to deliver scale and performance so
+how do we bridge the Python ecosystem
+with those requirements so when we think
+about production deployments of dural
+Nets there are two basic requirements
+that consistently show up the first of
+which is portability so what this means
+is that model should be exportable to a
+wide variety of environments for example
+not only should they be runnable from a
+Python interpreter process but we should
+also be able to run them in a C++ server
+running concurrent requests at scale
+well run it on a mobile device or an
+embedded device we should be able to
+move our model code wherever we want to
+unconstrained by the pipe
+language the second requirement is
+performance you can sort of split the
+performance requirement into two
+different sides one side is the latency
+constrained side you can think of
+different applications such as speech
+recognition or real-time translation
+that have hard deadlines on the response
+of the neural net the other side of the
+coin is the throughput oriented cases
+you can imagine if you're scaling the
+inference of a neural net out to
+thousands or even millions of servers
+any improvement in the throughput of the
+model could translate into literally
+millions of dollars of savings in cost
+for servers and electricity and things
+like that
+so how has pi towards historically done
+with these requirements for portability
+Pineridge models were tightly coupled to
+the Python runtime which meant that
+exporting them and running him them on a
+mobile device for example was difficult
+and for performance pythor's performance
+was pretty good but there are numerous
+further optimization opportunities that
+were left on the table that we can't do
+with the level of dynamism left in the
+Python language now you might stop me
+and say why not use a static framework
+why not use the right tool for the job
+use PI torch for your experimentation
+and research and use a different
+framework like Kappa - for the
+production framework and we've actually
+tried this but converting models between
+PI torch and Kappa - actually became a
+bottleneck in our internal usage at
+Facebook additionally people want a
+pythonic experience all the way through
+they don't want to have to move out of
+this good user experience to deploy
+their models to production so having
+said all this we can define some
+requirements for what the system needs
+to do we need it to one faithfully
+capture the structure of Pi towards
+programs with minimal user intervention
+and to use that structure to optimize
+export and run the bottles let's take a
+look at how toward script and the pipes
+which get fulfilled requirement number
+one of capturing the structure of Pi
+search programs for the purposes of
+understanding torch script we need to
+define basically two modes
+by charge code can run in the first is
+the eager mode which is the normal
+Python runtime mode that I've explained
+before and then the second is script
+mode so script mode is when Python code
+is run in our own runtime called the
+torch crypt runtime this runtime is
+separate from the Python interpreter and
+allows us to do things like run things
+threaded in parallel and do many
+performance optimizations on the code so
+we have these two modes but we need
+tools to transition between them
+the first tool to transmission from
+eager mode to the script mode is called
+the tracer the API for the tracer is the
+torch digit trace function basically
+what this function will do is it will
+take an existing you your model and take
+the inputs that you provide it and it'll
+run that model and record all of the
+tensor operations that happen while the
+model is being run we turned that
+recording into a torch script module
+what this means is that you can reuse
+all your existing eager model code and
+just easily convert it into torch script
+using the trace framework however
+tracing does not preserve control flow
+and other language features like data
+structures those will all be erased and
+the only thing that's preserved is the
+tensor operations so things like
+language models with dynamic control
+flow will not be faithfully captured by
+the trace mechanism to get around this
+limitation we built a second tool for
+transitioning your code the second way
+to transition your code from eager mode
+to the script mode is using the script
+compiler the API for the script compiler
+is the torch digit that script function
+what this will do is well it will go in
+and directly lexan parse all of the
+Python code and so it will have full
+visibility into all of the things that
+are happening in the code unlike the
+tracer you'll see in the example to the
+right we have in the forward method a
+for a loop
+that's looping over the size of the
+zeroth dimension of the x tensor and we
+have all this stuff happening like we
+have control flow where we'll print
+statistics on every 10th iteration
+things like this would not be captured
+by the tracer the script compiler
+supports a subset of the Python language
+but that subset of the language is
+becoming more and
+our rich and expansive as time goes on
+for example we now support creating
+user-defined classes and using methods
+on them
+as well as binding in classes from C++
+and calling into those to be debug code
+that's been compiled by the script
+compiler you can simply remove the
+script call and debug as normal Python
+code so we've covered how we faithfully
+capture the structure of Pyke large
+programs now let's look at that how we
+use that structure structure to optimize
+and run the programs the first thing we
+can do with this captured structure is
+serialize the code on the right you'll
+see an example of tracing a torch vision
+ResNet 15 model saving it to a
+serialized zip file and then in a c++
+process using the JIT : : load api to
+load that model in and run it and get
+the results what this demonstrates is
+that torch script code can be run
+entirely separately from the Python
+runtime this is useful for example for
+running this code on a server or on a
+mobile device now what do I mean by this
+captured structure
+let's get explicit about this when you
+trace or script compiled by torch code
+this is the actual artifact that's
+produced you can see we've captured a
+list of operations that are actually
+occurring on values in the code you can
+see we have lots of information here
+such as what is the scalar type of a
+tensor what are the shapes of the tensor
+and what's the actual data flow between
+operations in this code a few key design
+principles of this representation are
+listed here one is that it is statically
+typed static typing allows us to make
+better decisions about optimizations and
+to provide better and earlier error
+messages to the user second we use
+structured control flow which actually
+isn't shown in this example but it
+exists we support arbitrarily nested ifs
+and loops so if you need to write
+something like a recurrent network loop
+you can just use the familiar Python
+looping constructs and that will get
+compiled into our IR as these structured
+control flow constructs third this
+representation is functional by default
+the reason this is useful is that
+means that we can better reason about
+what transformations are legal on this
+representation and so we can make even
+better than optimization decisions so
+we're talking about optimizations what
+kind of optimizations do we want to do
+some examples of optimizations we might
+do include algebraic rewriting we could
+fold constants and pre compute them at
+compile time we could eliminate common
+sub-expressions and only compute them
+once and we could eliminate code that's
+not used dead code elimination another
+thing we can do is out of order
+execution we could move things around to
+reduce memory pressure and make
+efficient use of cache locality we
+confuse operations together we can
+combine several operations into a single
+kernel to avoid overheads from round
+trips to memory and over PCIe we can do
+target dependent code generation we can
+take sequences of operations and lower
+them into machine code for different
+platforms this is often mediated by
+third-party libraries such as TPM halide
+glow and Excel a but throughout all
+these optimizations the guarantee that
+we provide is that we want to preserve
+the same semantics we should get these
+optimizations for free there should
+never be a case where these
+optimizations are actually changing the
+result of your program now all this
+optimization sounds well and good but
+we've started out talking about the
+flexibility of the Python language the
+term we use for that is dynamism how do
+we deal with dynamism in toward script
+code even with torch crumbs more static
+semantics we still want to preserve the
+flexibility and ease of use of the eager
+mode that means there's still a lot of
+dynamism left we can look at this
+example here this is a simple lsdm code
+fragment now can we fuse the cells TM
+cell and a Mitch machine code for it in
+order to answer that question we need to
+answer several other questions first for
+example what devices are each of these
+tensors on how many dimensions do they
+have how big are those dimensions
+and are we using autograph do we need to
+preserve certain values for the backward
+pass well we don't actually have that
+information just from compiling this
+code it's something that we can only
+observe at runtime now many of the the
+answers to these questions are likely to
+remain static over multiple calls to the
+model whenever you have something that
+can be dynamic but is likely static a
+technique called just-in-time
+compilation may be useful here we see an
+overview of the optimization pipeline
+using just-in-time compilation first we
+want to collect statistics and
+information about the actual things that
+are happening in the program at run time
+we might collect information about the
+shapes of tensors what devices they
+reside on or whether they require a
+gradient or not once we've collected
+that information from one or more runs
+of the model we can pass that
+information on to the next stage of the
+pipeline to do optimization we can do a
+lot of those optimizations that I
+mentioned earlier Fusion rewriting and
+code generation once these optimizations
+kick in
+we now have an optimized version of the
+program that is specialized to the
+behavior that we've actually observed so
+we can pan that off to the actual
+interpreter you can think of the
+interpret the torch script interpreter
+as a virtual machine like the Java
+Virtual Machine we can execute this
+optimized program and do other runtime
+tricks like operation scheduling and
+parallelism to make it even faster so do
+models actually get faster the answer is
+yes in many cases they do you can look
+online and find a blog post we put out
+called optimizing CUDA recurrent neural
+networks with torch script on the slide
+here you can see a chart of the actual
+run time in milliseconds of the LS TM
+model on the x-axis we have different
+optimizations that we've applied through
+just-in-time compilation as we apply
+each of these optimizations the LS TM
+model gets faster and faster until
+finally we approach or exceed
+the performance of the handwritten kudi
+an end-run time to recap torch script
+and the pie towards G it comprised a
+compiler infrastructure that enables the
+gradual and fast transition of pipes
+which code from research to production
+without compromising on the user
+experience for further learning you can
+try out the interactive tutorial please
+google introduction to torch script or
+use the URL listed on the screen
+this tutorial will walk you through the
+user facing API s and show how you can
+convert PI torch code to torch script
+and compose the different techniques
+such as tracing and scripting together
+to create a full representation of your
+deep learning model

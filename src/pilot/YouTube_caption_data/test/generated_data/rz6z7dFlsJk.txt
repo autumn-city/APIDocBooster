@@ -1,0 +1,307 @@
+hi everyone today we are going to again
+model a function with an mlp
+but today we want to upgrade our
+optimization step
+and use the torch
+atom optimizer instead of our simple
+optimizer that we used in past videos
+and to demonstrate this we want to try
+modeling a more complex function
+so we're going to model this function
+drawn right here
+and what's interesting is that this
+denominator is going to evaluate to zero
+when we evaluate this over the range of
+negative one to one so it's going to
+create some singularities in our data
+so we're going to pick up from a
+notebook that we left
+off a
+[Music]
+in previous videos and just start there
+to get started so let's get coding
+okay so
+i've defined two functions one from my
+numerator and one for my denominator and
+just to show you why we're going to get
+singularities let's talk about the
+denominator so when i plot just the
+denominator as a function of x
+anywhere that it evaluates to 0
+is where we're going to have a
+singularity because ultimately our
+function is going to be
+like this
+so our function is just going to be the
+numerator
+divided by the denominator so anytime we
+divide by 0 normally
+that's going to create interesting
+problems because we can't actually
+divide by zero
+so if i look at this function which
+again it's just the denominator i can
+see it negative one
+negative 0.5
+0
+0.5
+somewhere around
+0.9
+and 1
+are all locations where it's going to
+evaluate the 0. if i take a look at my
+function
+we can figure out why this is the case
+so
+first i can make this go to 0 by giving
+this a negative 0.2 that would be about
+right here
+and indeed that's where this evaluates
+to zero
+also at 0.9
+then this function
+sine goes from zero to two pi
+to make a complete circle
+that's the unit circle
+so um
+at
+different intervals so it's 0
+it's going to evaluate to 0 and also
+when it's at
+pi it's going to divide to 0. so in this
+in this range because we've multiplied
+it by two pi that means that at negative
+one
+zero a negative zero point five
+um
+zero and
+zero point five and one it's all gonna
+evaluate to zero those locations
+so that's why this is what our function
+looks like now if we change it to
+see what the actual function is going to
+look like
+okay so i
+evaluated my function i got y test
+now i'm plotting x against y test
+and you can see the singularities that i
+was talking about
+at each of the locations and i limited
+the range
+so that as things go to positive or
+negative infinity it doesn't
+blow up our plot
+so obviously this is a little more
+complex than the previous
+than the the previous parabola that we
+used and we want to see how well our mlp
+can actually approximate this function
+so
+let's continue our code and see what we
+get
+okay so this is we've made our mlb
+we put our x and y values into batches
+we evaluated
+our mlp and we got our white prime we
+took it out of its batch format so that
+we can plot it and you can see our
+initial
+our initial
+um if
+model obviously is bad because we
+haven't trained it yet
+so let's see what happens when we
+actually begin to train our function
+okay so you can see that we actually
+have no values coming out which is kind
+of interesting what's going on let's
+take a quick look at our
+our values and they're all named
+okay so i had a few problems and i'm
+going to talk about the solution
+so the problem was when i trained this
+mlp
+it
+kept on giving nan values
+there's a few things i tried to solve
+the problem so first i thought vimeo is
+the
+i was getting num nan values
+so i
+try to add the torch and the num however
+i'm not using the newest version of
+torch don't have that available so i'd
+use the numpy equivalent
+so here i added
+a num and it can convert it back to a
+tensor
+that didn't work so
+then i started looking at the y values
+and right at the singularities i was
+talking about the values of y
+becoming unreasonably humongous
+and the solution was then to just clamp
+the values
+of
+the
+our function so the torch clamp i gave
+it a value i said it can go from
+negative 100 to 100
+using the clamp function here
+and that solve the problem
+of the nand values
+so
+with that
+problem solved let's keep moving
+uh with the tutorial
+so i'm going to train this now for
+a few more steps three thousand
+okay you can see when i
+train it for more steps
+you know
+three thousand steps know of the
+evaluation the ability of the mlp to
+model this function is bad let's try
+running this a few more times i'm just
+going to rerun this cell and see if it
+gets better
+a little bit better
+okay so i've run it several times now
+three times so this would be 9000 ebox
+and it's not a value it's not modeling
+this function super well so let's see if
+we can
+swap out our optimizer and see if we're
+able to
+improve the result
+okay so we've finished coding up our
+function
+i ran it for 3 000 epochs like i did
+with our simple mlp
+except for this time i used
+the atom optimizer
+and if i take a look at the results
+you can see that this is
+still it's not perfect
+but
+compared to this mlp that i optimized
+with just a simple
+a simple function where it's taking the
+gradient times the learning rate
+this is significantly better there's a
+lot more nuance than i've only run i
+actually read for a third
+of the number of ebox
+so let's just talk through what i
+actually did so i made
+this new class called stepper v2
+i used the fast core library which is
+going
+to restore my inputs right here so all
+it does is take these
+values from here and just stores them as
+attributes of the
+of this class
+then i made this function to ebooks
+so first i want to specify learning rate
+either i'm going to use this one
+if
+or i want to use feel the past one
+when i call this function so
+i say if this learning rate is none then
+use the one that we stored from earlier
+otherwise use the one that i just passed
+then when i actually make my atom
+optimizer itself
+i have to first pass it the parameters
+so it did solve for milpita parameters
+and again i stored this mlp with this
+store
+attributes function
+so i get all my parameters click on the
+parameters function and specify the
+learning rate
+i make a list
+so i can store my loss values
+um so if we want to plot it in a minute
+i could do that
+then i'm going to zero out my gradients
+send my x data through my mlp
+calculate the loss
+call backwards just like we did before
+so for this time instead of
+manually multiplying or updating the
+values
+based on the negative
+gradient times the learning rate we're
+just going to call step
+and that it's gonna basically do the
+same thing
+now the atom optimizer uses a thing
+called momentum in order to keep track
+of
+how fast a variable is changing when
+it's being optimized this is why it's
+better and also it can adapt its
+learning rate
+on the flight
+for each parameter which is really
+helpful
+let's just take a quick look at the
+loss actually
+all right if we take a quick look at the
+loss you can see it's going down
+looks like there's still a lot of room
+for improvement
+but the fact that it's going down is
+good looks like if we train it for more
+epochs which we can do right now it'll
+probably continue to get better
+all right so we ran it for
+three thousand more epochs this is
+getting more nuanced
+you can see it's still struggling with
+the singularity
+but
+over here it's doing reasonably well
+our error has actually gone down another
+loss value has gone down another 100
+which is impressive
+so that's
+showing the
+our simple
+optimizer that we've used in the past
+versus using the atom optimizer maybe to
+finish it off let's just plot the two
+results right next to each other
+and because we ran our mlp for our our
+first mlp just with the simple
+optimization that i had set up before
+for a 9000 by running
+i'm running the cell three times let's
+also run this three times and then see
+what we get
+okay so i knew there was something wrong
+it was plotting the wrong value that's
+right so
+now after running all my cells again you
+can see the simple graph descent
+algorithm
+doing pretty poorly
+whereas the atom optimizer is able to
+better model this complex function
+which is pretty interesting so that's
+telling us that the ability of a
+of a
+neural network to quickly optimize
+something is dependent not only on its
+actual
+like how we structure it but also how we
+go about optimizing its weights so the
+optimization algorithm we choose is
+actually going to play an important role
+in making sure their functions
+um are
+best approximating what we actually want
+them to do that's all for today thanks
+for watching

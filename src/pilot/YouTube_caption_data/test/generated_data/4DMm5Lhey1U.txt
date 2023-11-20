@@ -1,0 +1,219 @@
+in the 6th century BC Pythagoras yes
+that pythagoras proposed a concept
+called the music of the spheres to
+describe the proportional movements of
+celestial bodies like the Sun Moon and
+planets this music is not thought of as
+being literally audible but instead a
+mathematical concept math and music are
+intrinsically connected the field of
+algorithmic composition dates back to
+the early days of computer science
+translation models take an existing
+non-musical medium like a picture and
+translate it into a sound
+these are usually rule-based so a rule
+may be that if it sees a horizontal line
+in an image it will interpret that as a
+constant pitch whereas a vertical line
+represents an ascending scale
+evolutionary models are based off of
+genetic algorithms through mutation and
+natural selection different solutions
+evolve towards a suitable composition
+then there's the learning model by
+providing it musical data instead of
+rules we can let it learn for itself how
+to create music we're fast approaching
+the point where we'll no longer have to
+wonder how Mozart or Jimi Hendrix would
+have composed a piece on a certain topic
+we'll just be able to ask their
+algorithmic counterparts ourselves full
+world it's Suraj and today we're going
+to use deep learning to generate some
+jazz music the first attempt by anyone
+to use a computer to compose music was
+by two American professors at the
+University of Illinois urbana-champaign
+Hiller and Isaacson they program the
+universities iliac computer to compose
+music and it generated pitches using
+random numbers before testing them
+according to the rules of classical
+counterpoint so if a pitch didn't fit a
+piece another note was generated it also
+relied on probabilities via a Markov
+chain it used the past to determine the
+probabilities of the future the first
+piece was completed in 1957 and was
+called the iliac sweep for string
+quartet
+[Music]
+although it made headlines in Scientific
+American
+the musical establishment was pretty
+hostile to them they thought it
+undermined human creativity and didn't
+include them in their journals until
+after Hiller's death nowadays there are
+a ton of amazing generative programs for
+composers to aid them when they compose
+music like iTunes let's understand this
+process by building a model to generate
+jazz pieces using Karros will first
+examine the music we're going to train
+our model on our input data is going to
+be a collection of piano pieces by
+American jazz musician Pat Metheny in
+mid I format mid I or musical instrument
+digital interface is like the digital
+alphabet for music it contains a list of
+messages that tell an electronic device
+like a sound card how to generate a
+certain sound so it doesn't store actual
+sounds itself
+which lends to a much smaller file since
+these messages are a sequence will use a
+recurrent network as our sequence
+learning model for each MIDI file will
+extract the stream of notes for both the
+melody and the harmony the harmonies
+chords accompany the melodies single
+notes then will group them all together
+by a measure number so each measure has
+its own grouping of chords and this
+measure chord pair is what we'll call
+our abstract grammars we'll vectorize
+these inputs by converting them into
+binary matrices so we can feed them into
+our model now we can build our model
+this is going to be a double stack - LS
+TM network so our computation graph will
+look like this the vectorized sequence
+of notes will be input into the first LS
+TM cell then we'll apply dropout to help
+ensure that the model generalized well
+and we'll do that process one more time
+then we'll feed the data to our last
+fully connected layer labeled dense
+since every neuron in the previous layer
+is connecting to every neuron in this
+layer it will mix all the learn signals
+together so our prediction is truly
+based on the whole input sequence will
+actually transform the result with a
+softmax activation function into an
+output probability for what is likely
+the next note in the sequence when we
+build our first LS TM layer by default
+it will only return the last vector
+rather than the entire sequence so we
+set return
+sequences to true so that it returns the
+entire sequence which is necessary to be
+able to stack another lsdm later on
+using two LS TM layers instead of one
+allows for a more complex feature
+representation of the input which means
+more generalization ability and thus a
+better prediction recall that recurrent
+networks are essentially like a series
+of feed-forward networks that are
+connected to each other the output of
+each and its hidden layer is fed into
+the next one and when we back propagate
+with each layer the magnitude of the
+gradients gets exponentially smaller
+which makes the steps also very small
+which results in a very slow learning
+rate of the weights in the lower layers
+of a deep network this is the vanishing
+gradient problem and LS TM recurrent
+notes help solve that by preserving the
+error that can be back propagated
+through time and layers let's look a
+little closer at this process but first
+I gotta say an LS TM cell consists of
+three gates the input forget and output
+as well as a cell state the cell state
+is like a conveyor belt it just lets
+memory flow across unchanged except for
+a few minor linear interactions these
+interactions are the gates we can add or
+remove memory from the cell state
+regulated by them they optionally let
+memory through each is a sigmoid neural
+net layer in a multiplication operation
+the sigmoid outputs a value between 0 &
+1 which describes how much of each
+component should be led through will
+represent each of the gates with the
+following equations where W is the set
+of weights at each gate the way hits
+internal memory changes is similar to
+piping water through a pipe so think of
+memory as water it flows into a pipe if
+we want to change the memory flow this
+change is controlled by two valves the
+forgetten valve first if we shut it no
+old memory will be kept if we keep it
+open all old memory will pass through
+the other is the new memory valve new
+memory comes in through a t-shaped joint
+and merges with the old memory and the
+amount of new memory that comes in is
+controlled by this valve the input is an
+old memory and
+passes through the forget valve which is
+actually a multiplication operation the
+old memory hits the t-shaped joint pipe
+which represents a summation operation
+new and old memory merged through this
+operation in total this updates the old
+memory to the new memory well define our
+loss function as categorical cross
+entropy the cross entropy between two
+probability distributions measure the
+average number of bits needed to
+identify an event from a set of
+possibilities since our data is fed in
+sequences this measures the difference
+between the real next note and our
+predicted next note will minimize this
+loss function using rmsprop which is an
+implementation of stochastic gradient
+descent so will predict the next note in
+the sequence over and over again until
+we have a sequence of generated notes
+we'll translate this into mid I format
+and write it to a file so we can listen
+to it let's hear what this sounds like
+[Music]
+at least it's better than keniji so
+we're all good so to break it down we
+can generate music using LS TM networks
+to predict sequences of notes l STM's
+consists of three gates the input forget
+and output gate and we can think of
+these gates as valves controlling how
+memory is stored in our network to
+eliminate vanishing gradients the winner
+of the coding challenge from the last
+video is vishal Bachchu not only did he
+perform multiple style transfer but he
+took it a step further by applying it to
+video as well Wizard of the week and the
+runner-up is Michel Pekka he
+successfully performed multi style
+transfer through a clever matrix
+operation the coding challenge for this
+video is to generate a music clip for a
+genre that you choose remember it's just
+a sequence of MIDI messages post you're
+gambling in the comments and I'll
+announce the winner next video please
+subscribe for more programming videos
+check out this related video and for now
+I've got to memorize memory cells so
+thanks for watching

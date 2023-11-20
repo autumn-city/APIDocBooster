@@ -1,0 +1,1230 @@
+ADAM POWELL: Hello, everyone,
+and welcome to Fragment Tricks.
+Today we're going to be talking
+about a few effective patterns
+for using the fragment
+APIs in your apps.
+Now, some of these
+are going to BE--
+they may seem a
+little bit basic,
+but they're also things that
+are going to help you build apps
+in a way that factors your
+code effectively, encapsulates
+things, and makes sure that
+you can keep your code clean.
+GEORGE MOUNT: Stupid
+fragment tricks.
+ADAM POWELL: Yeah.
+GEORGE MOUNT: Stupid
+fragment tricks.
+ADAM POWELL: Anyway,
+so let's go in
+and start with a
+little bit of history
+behind this, which kind of
+helps understand where some
+of the fragment APIs came from.
+So as we started moving
+into large screen
+devices in the honeycomb
+era, we started
+realizing that there are
+a few specific patterns
+in the way that some
+apps are put together,
+especially apps of the time.
+You've got one area that's
+devoted to your navigation,
+and you've got another area
+that's devoted to content.
+And when you put these
+two things together,
+you can imagine
+on a small screen
+device you might see the
+navigation as one screen
+that advances to
+a content screen,
+and when you're on a
+larger screen device
+you're able to show the
+same things side by side.
+So we had this question of
+how do you write an app that
+works seamlessly across both?
+So the fragment APIs were born.
+It was something that you could
+use to factor out your activity
+components into
+two separate pieces
+that you could show differently
+based on different device
+configurations.
+Now this works really well for
+some applications, like Gmail,
+but your app
+probably isn't Gmail.
+If you followed the
+development of app design
+over the past several
+years, you realize
+that this sort of
+pattern just doesn't
+fit for a lot of things.
+However, it's still extremely
+useful for representing
+your application as a
+series of destinations.
+So even on a small
+screen device,
+you might have an app that
+looks something like this.
+We've got our little
+application that--
+where you can order
+some micro kitchen
+snacks around the Google campus.
+And for each one
+of these screens,
+you can perform a
+replace transaction
+to replace the destination
+that you were looking
+at previously with the new one.
+Replace transaction will remove
+any fragment in the container
+and then add the new fragment.
+So the nice thing
+about this is that you
+can place these particular
+transactions on the back stack,
+and we'll go ahead and handle
+that back navigation for you.
+Now the nice thing about this is
+that the content and navigation
+pane separation isn't limited
+to just large screens.
+This can really help to
+keep your chrome stable
+in your application.
+So any time that you have
+things like bars, net drawers,
+bottom navigation bars,
+any of these things
+that you want to keep
+stable and perform
+some consistent animations
+from one screen to another,
+this really lets you
+do it in a way that
+is really difficult to
+accomplish with the activity
+to activity transitions,
+where you can't preserve
+that kind of
+continuity in your UI
+as you navigate deeper
+in your app's hierarchy.
+GEORGE MOUNT: Let's talk
+a little navigation flows.
+Now, when I talk about
+navigation flows,
+I'm talking about those
+step-by-step flows
+that you have in
+your application.
+So when you have a checkout or
+a sign up or a setup wizard,
+the users are going
+to go step by step
+through their
+navigation, and then they
+might want to wander back
+using the back button
+and then go forward again.
+And then when
+they're all done, you
+want to be all done with that.
+You don't want
+that one user to be
+able to go back through
+the checkout process again
+with the back button.
+That would kind of
+suck, wouldn't it?
+So we're going to
+here focus on our app,
+the Micro Kitchen
+app, which we've
+been trying to sell
+to the Googlers
+to sell them the free
+micro kitchen snacks.
+ADAM POWELL: It hasn't
+been working very well
+GEORGE MOUNT: It has not.
+But we know we have
+new customers coming
+in the summer--
+interns-- so we're
+pretty sure that they
+will partake in our great
+free micro kitchen service.
+And when the user
+comes in, they're
+going to click on the check
+out-- on the cart button.
+And what we're
+going to do is we're
+going to remove the
+little cart at the bottom,
+that little fragment
+there, and then we're
+also going to move that big--
+replace that big fragment at
+the top with our new fragment,
+that we're going to label cart.
+Not the fragment,
+but we're going
+to label the state "Cart."
+And I'm going to talk
+about that a little bit
+later, why we're giving it
+a name on the back stack.
+And then when they
+hit check out,
+they can then choose the
+address they want to ship to,
+and we're just going to
+replace that fragment
+with their address
+selection one.
+And they can choose
+payment then,
+and we replace it again
+with a payment fragment.
+And again, it's
+at the back stack.
+And this time, we don't need a
+name for this back stack state.
+Because we don't need--
+well, we'll talk about it.
+Well they can go back through
+the back stack if they want.
+They can navigate back and
+choose a different address
+if they want by hitting
+the back button.
+And as developers, we don't
+have to do any other work.
+Back stack just pops
+that fragment right back
+into our state, and it's great.
+And then the user can go back
+through, choose a payment,
+and then confirm the purchase.
+Now here, in the
+confirm purchase screen,
+we're to do a couple
+of things all at once.
+We're going to do
+a pop back stack,
+all the way back to
+that original cart state
+that we said.
+And because we passed
+the inclusive flag there,
+now it pops that
+cart state also.
+And it'll go all the way
+back, pop all the states back,
+and then, at the same time,
+we add this new transaction,
+which will replace that state
+with our thank you page.
+Because we want to thank
+them for giving them--
+for giving us all their money.
+It's pretty good, I mean,
+we need to thank them
+for giving us all their money.
+Now on this one, we have
+a little different thing
+going on.
+The OK button doesn't just
+create a new transaction,
+it's going to pop a
+back stack as well.
+Now, no matter what the
+user does, it's going to--
+the user's going to
+do the right thing.
+They're not going to add
+a new transaction-- add
+to that state.
+We don't want to
+have that thank you
+page come back again if
+they pop the back stack.
+So it's going to come
+right back to where they
+can buy more stuff from us.
+So you can see some of the keys
+here to back stack management.
+Always maintain your
+back stack going forward.
+It's so much easier to
+manage your back stack
+if you choose the
+direction your user is
+going to go on the back stack
+as you navigate forward.
+Don't, at the time the user
+presses the back button,
+choose what they're going to do.
+That's a lot harder to manage.
+So to take advantage
+of this kind of thing,
+sometimes you need to do
+some synthetic back stack
+management.
+That means if you
+have an external link
+into your application, some
+kind of deep, nested thing,
+they're selecting a
+particular cart item.
+And when they hit
+the back button,
+you don't want them
+to go to some--
+the main screen, you want
+them to go into the category,
+perhaps.
+ADAM POWELL: Or even
+from a notification.
+GEORGE MOUNT: Or
+from a notification,
+that's a great example.
+From a notification.
+Or maybe a search
+inside your application,
+you might want to
+have the same thing.
+So what do we do?
+Well, we just execute a
+whole bunch of transactions
+all at the same time.
+Just build up the set for them,
+boom, boom, boom, boom, boom.
+Execute them.
+ADAM POWELL: Well,
+hang on, George.
+So if I can make
+repeated transactions,
+then that means that each
+one of those transactions I'm
+going to start and
+stop those fragments
+as I execute each one in turn.
+So that can be really
+expensive, right?
+So how do I go ahead and
+maintain that back stack state
+while still not doing a whole
+lot of really heavyweight work
+as I start and stop each one of
+those fragments along the way?
+GEORGE MOUNT: Yeah that's
+a really big problem.
+Because you have to
+create all those views,
+tear them down again, inflation.
+ADAM POWELL: Right, it seems
+like a lot of unnecessary work.
+GEORGE MOUNT: It is a
+lot of unnecessary work.
+Sorry, guys.
+Well-- you want to fix that?
+ADAM POWELL: Sure.
+GEORGE MOUNT: All right.
+Thanks, Adam.
+So now we have
+this new thing here
+called set reordering allowed.
+And what this does is it
+allows all of the execution
+to happen all at once, without
+changing your fragment state.
+And then at the very end, we
+bring up all the fragments
+that need to be brought up and
+tear down all the fragments
+that need be torn down.
+And now your fragments don't
+have to go through all that,
+oh, I got added, I got removed,
+I got added, I got removed.
+So we can optimize this for you.
+But you have to watch out,
+because if you expected
+a fragment to
+exist that didn't--
+that might have
+been optimized out,
+if you expected it to
+go through its creation,
+it might not have done that.
+So you have to
+watch out for this.
+So you use this in
+your applications.
+It's great to use, but expect
+some slightly different
+behavior than before.
+Now you might have seen
+in our application,
+that as the user clicked
+through the check out screen,
+it was just pop, pop, pop, pop.
+Those screens changed
+instantaneously,
+and that's not very pleasant.
+So what we can do is
+we can add transitions.
+The easiest ones to use
+are the basic transitions
+that come with fragments,
+and there are three options.
+And this is done
+on the transaction,
+you call set.Transition,
+and the basic transitions
+are fade, open, and close.
+And from this it's really
+hard to see the differences,
+but you can see the fade
+has just a simple crossfade,
+and the open and close
+also have a fade and zoom.
+So play with it a
+little bit, see what
+works well in your application.
+See what you like best.
+It provides a nice, subtle
+effect for your transitions.
+ADAM POWELL: What if I want to
+do something a little bit more
+in keeping with my
+own app's design?
+GEORGE MOUNT: Yeah.
+If you want something a
+little bit more custom, then
+we can use animations.
+Animations in this case
+is the view animations
+that allow you to change scale,
+rotation, translation, alpha,
+so fading.
+So you can set those four--
+and this is only on
+support library--
+you can set those on
+the view coming in,
+the fragment coming
+in, a separate one
+for the fragment being popped--
+sorry, being removed--
+and also the same things
+for the pop as well.
+The ones that are being
+added and removed.
+So you can have different
+animations for each of those,
+and you can an effect like
+this, which is very nice.
+A slide effect, which you
+couldn't do with the basic
+animations-- basic transitions.
+Now, if you're working with
+the framework fragments,
+you can do the same
+things with animators.
+But they provide
+even more benefit,
+because now you can animate
+any property on the view.
+That means you can have some
+really custom animations,
+whatever you want to do.
+It's great.
+And what's better
+is now you can also
+do that in the support library.
+AUDIENCE: [APPLAUSE]
+GEORGE MOUNT: Transition style
+is also added for the framework
+so that you can do this--
+set your animators in a style.
+Now, a lot of you have been
+using the activity transitions,
+and you want to have that
+work with fragments as well.
+So activity transitions
+allows this great ability
+to have a shared element change
+from one view to another.
+So in this case, from
+one fragment to another.
+And it works in activity
+transitions from Lollipop on.
+It's very useful.
+And so we added the
+ability to do that.
+So in fragments, instead of
+doing this on the transaction,
+you do this on the
+fragment itself.
+You can set the animation--
+the transition to do
+on the views that are coming in,
+and this is for all the views
+that are not the SharedElement.
+So that's the EnterTransition.
+And the
+SharedElementEnterTransition,
+this is the one you do on
+the view that is moving.
+This is our SharedElement,
+in this case,
+I don't know what it was.
+The almonds, maybe.
+And here this move
+uses a combination
+of change bounds, change
+transform, and change image
+transform.
+Too many things to
+fit on the slide,
+but that's what it is here.
+And then in the transaction, we
+add the SharedElement itself.
+And the SharedElement is the
+view that's in that fragment,
+and then we have a target name.
+This name, this is the
+SharedElement transition name,
+and this is the name that you've
+given the transition element
+in the fragment that has
+not been inflated yet.
+So in this case, it's
+in the my fragment
+that's being pulled in.
+And then, we can have our
+transition, which is great,
+but something's wrong.
+Can you see it?
+Everyone raise his
+hand if you can see it.
+What's the problem with this?
+OK, a lot of you
+can see the problem.
+Right, transition's
+only working one way.
+It works great getting
+into the detail view,
+but when we come back
+to that main view
+with all of these other
+elements, you're not seeing it,
+and why is that?
+Well that main view
+is a recycler view,
+and what's happening
+is the recycler view
+will lay out its views after
+the set adapter call is made.
+So we have to wait
+for the layout call
+after this set
+adapter call is made.
+And the transition's
+coming in and said, hey,
+I want the shared element.
+And it's not there,
+so what does it do?
+It says, oh, give up.
+Fade out.
+And so in activity
+transitions, what do we do?
+Well, it's great.
+We have this thing called
+postponing the transaction--
+postponing the transition.
+So we have a
+postponeEnterTransition,
+and then when the
+views are ready,
+we call
+startPostponedEnterTransition.
+So it gives you all
+the ability to say, OK,
+just hold on a second.
+Wait for my view, come on,
+come on, views, come on, views.
+[WHISTLES] And then when they're
+all ready, then you say go.
+So we want to do this
+for fragments as well.
+So here we go.
+We can do it for fragments.
+But there's one extra
+thing you need to do.
+You absolutely have to have
+the set reordering allowed.
+Because for a short time
+while you're postponing
+both fragments are there,
+they're both active.
+And that is not the
+order you expect, is it?
+You expected one to be removed,
+and another one to be added.
+So both views for both fragments
+are in the created save.
+So that's going to be
+a little weird for you,
+so we want to make sure
+that you know that you're
+getting into this situation.
+So let's see how it's
+done in our application.
+In my onCreate view-- now,
+you can do this anytime before
+onCreate--
+onCreate view.
+So if you wanted to, you
+could do it onCreate,
+whatever you want to do.
+You call
+postponeEnterTransition.
+Because I know at this point I
+am going to do a recycler view,
+and I know I need to worry
+about the transitions there.
+And because I love
+data binding--
+some of you might know
+that, I love data binding--
+and we have a few models here,
+too, so that's good, too.
+ADAM POWELL: Mhm.
+GEORGE MOUNT: Thank you, Adam.
+If you haven't
+seen that talk, you
+should go back and watch it.
+We're using that.
+So here I'm setting the
+adapter for my recycler view.
+Now I'm setting my adapter, now
+I have to wait for the layout.
+So I wait for the layout,
+and then that listener
+I call
+startPostponedEnterTransition.
+Now my transition is ready,
+and it will just go on ahead--
+and I think I skipped a slide.
+[LAUGH] Oh, OK.
+It works.
+ADAM POWELL: All right.
+So one of the other feature--
+moving along to something
+completely different-- one of
+the other features that we get
+a lot of questions
+about are the set
+retain instance
+method on fragments.
+So you retain an instance
+across an activity destruction
+and creation, across something
+like a configuration change.
+So this means that the
+object instance itself
+of the fragment that
+you've marked this way
+is transferred across
+the parent recreation.
+So anything that you put
+there is moved along with it.
+Full objects, you don't
+have to serialize this
+into a personable, passed
+across saved instance state.
+But the important thing to
+remember if you're doing this
+is that this doesn't happen
+if the process is recreated.
+Your objects aren't there.
+So you need to be a little
+bit careful about this.
+You need to make sure
+that you can still
+restore from
+instant state if you
+have to, even though
+in the common case
+you still have the full
+objects that you may have
+created in the first place.
+So this is a replacement
+for the old, unretained
+non-configuration instance
+method that was on activity.
+In fact, the same
+mechanism is used
+to implement the
+fragments version of this.
+But what's a little
+bit more interesting
+is that this
+mechanism is right now
+the backbone of am in
+view model component
+that we've been talking
+about earlier at I/O here.
+So the view models are actually
+saved within a retain instance
+fragment to shuffle them across
+from one activity to the next.
+And this just kind
+of goes to show
+the types of
+infrastructure that you
+can build on top of a
+routine instance fragment.
+It's something that's a little
+bit on the more abstract end
+of things, so we end up getting
+a lot of questions about,
+hey, what's this good for?
+This is a pretty good example.
+And just like we talked
+about with view models,
+it means that
+there's a few things
+that you really need to avoid.
+In this case, don't put views
+in a retain instance fragment,
+unless you want to do a
+lot of manual bookkeeping.
+Technically, you can
+kind of get away with it
+if you're really careful.
+Make sure that you release
+all your references
+and on destroy view of
+that particular fragment,
+so on and so forth.
+But really it ends up being
+best just to kind of avoid it,
+and we'll get into a few more
+patterns later in the talk here
+around what you can do instead.
+Context, specifically
+activity context.
+Well, we all know
+why you don't want
+to save an instance
+of an activity longer
+than the lifetime of
+that activity itself.
+But the thing that really
+tends to catch people
+is callback references.
+So if you register a
+listener or some sort
+of a callback with a
+fragment, and that fragment
+is going to outlive
+the container,
+it's really easy to accidentally
+close over that context
+that you had and have
+the activity still
+outlast the original host.
+So child fragments are
+something that bit a lot
+of people really
+hard a few years ago,
+because frankly, we had a
+lot of bugs around them.
+And they were created to
+solve a particular problem,
+and that was
+dependency management
+within a particular activity.
+So consider this case.
+You've got a fragment
+that has a ViewPager.
+Pretty common, right?
+The ViewPager uses a
+fragment pager adapter,
+because that's a pretty
+easy way to use a ViewPager,
+and then you remove
+the pager fragment.
+Well, now we have a problem.
+So what actually
+happens in that case,
+you've got all
+the fragments that
+were added by the PagerAdapter,
+but the host fragment--
+or the conceptual host
+fragment in this case
+that has the ViewPager--
+itself was removed.
+Now something has
+to be in charge
+of removing the
+individual page fragments,
+and this was something
+that really kind of went
+to show that a single collection
+of fragments is insufficient.
+In fact, when the fragment APIs
+were first sort of rolling out
+to a lot of internal developers
+right around Honeycomb,
+this was one of the first
+questions that we got,
+and it took us quite a while
+to come back and address this.
+What happens when you do
+have these dependencies
+in between fragments.
+And part of the reason
+why this was such a pain
+is because we didn't have
+any ordering guarantees
+around Fragments being created.
+And what's worse
+is a lot of times
+this only would come up much,
+much later in the process.
+Just because you added Fragments
+in one particular order,
+you could control
+that that order
+as you're running that and kind
+of run the initial transactions
+that builds up that state.
+But when your process dies
+and we restore those fragments
+from instance state later,
+the order of that recreation
+was always undefined.
+Depending on what
+all may have happened
+throughout the lifetime
+of your activity
+before, just kind of
+due to some artifacts
+of internal
+bookkeeping, this was
+something that could cause
+these things to be reordered
+in terms of which one
+would get onCreate first,
+so on and so forth.
+And it made it very
+difficult to reconnect
+any sorts of shared state.
+Now the source of
+shared state is
+something that's much easier
+to handle with the ViewModel
+system that we showed
+earlier, but at the time
+we really didn't have a good
+solution to this problem.
+So one of the other things
+that was kind of a pain
+is that the deferred transaction
+commits that have been common
+ever since we--
+up until we added
+the commit now method
+on Fragment transaction--
+the nice thing
+and the reason why
+this was done in the first place
+was to avoid reentering calls.
+You didn't have to worry about
+one particular transaction
+being half executed and then
+starting another transaction
+as a result of it.
+But this really did
+have a cost, and I
+think that if you're
+in this room right now,
+you've probably experienced
+some of the costs of this.
+Raise your hand if you called
+executePendingTransactions
+to fix a bug.
+Yeah, that's a lot of hands.
+So this is one of
+those things that
+ends up being really kind
+of difficult to work with.
+So child fragments as
+dependencies work out
+really well, because
+they solve a lot
+of these particular issues.
+It's a separate
+Fragment manager,
+so you don't get the re-entrant
+cases no matter what.
+If you go ahead and use commit
+now on a bunch of these things,
+you don't have to
+worry about your parent
+being in a potentially
+inconsistent state
+as you do this, because
+you're all working
+within your own local unit.
+So all of these things
+are added and removed
+as a unit, which means that it
+solves that ViewPager problem.
+It means that if you remove
+the containing fragment,
+then you don't have to care
+about the implementation
+details of that fragment.
+Well, this kind
+of seems like one
+of those duh things
+in hindsight,
+and it's all guaranteed
+to be restored after I
+called the super.onCreate.
+This is also important
+because now you
+can rely on when these things
+have actually been restored.
+You don't have to worry
+about these ordering things
+that are out of your control.
+But perhaps most importantly,
+the implementation details
+again don't leak into your
+surrounding containers.
+So in conclusion,
+many of you may
+have run into a lot
+of particular issues
+around child fragments.
+Please go try version 26.
+We have fixed more and
+more issues around this,
+specifically around
+inflating child fragments.
+This is one of my
+favorite uses of this.
+We talked earlier about using
+Fragments as very coarse grain
+destinations within
+your application.
+Something that takes up an
+entire UI pane of your app.
+But nesting within
+other Fragments,
+even if you inflate them from
+one of these coarser grain
+navigation destinations,
+it just kind of works.
+You don't have to
+worry about taking
+care of all these other sort
+of nested lifecycle issues,
+and it lets you build smarter
+encapsulated components I mean,
+we always kind of get this
+question, too: hey, do I build
+[INAUDIBLE], do I
+build a Fragment?
+And there's been a lot of ink
+spilled and keyboards smashed
+making these particular
+arguments online, as I'm sure--
+GEORGE MOUNT: I never
+know what to do with this.
+ADAM POWELL: Hm?
+GEORGE MOUNT: I never
+know what to do, building
+a ViewGroup or a Fragment.
+ADAM POWELL: Right.
+So--
+GEORGE MOUNT: I just tell
+people just use ViewGroups.
+ADAM POWELL: Exactly.
+So-- excuse me, Adam, you
+said that crossing the streams
+was bad.
+So the rule of thumb for this
+is essentially as follows.
+Views should really only be
+responsible for displaying
+information and publishing
+direct user interaction events.
+These end up being
+very low level events,
+like button was clicked,
+user scrolled something.
+These are responsible
+for drawing text
+and these other
+sorts of operations
+that are user interaction,
+whereas fragments integrate
+with the surrounding
+lifecycle, and they may be
+aware of other app components.
+This is really what gives
+context to everything
+that you're doing in your UI.
+So you might bind
+to a service, you
+might be communicating
+with your apps data model,
+performing a database
+query, so on and so forth.
+So you should never use a
+Fragment when a View will do,
+but you also want make
+sure that you're not
+adding outside
+dependencies to your Views.
+It's definitely a
+code smell if you ever
+find yourself doing
+something like trying
+to bind to a service from
+a view implementation,
+or trying to make a
+network call, or again,
+trying to integrate
+with anything
+that's outside of the realm of
+just that one individual view.
+But that means that
+there's a whole.
+It means that you can't
+build just something
+that simple as a completely
+self-contained like button
+that you can just stick
+right in the middle of one
+of your layouts and treat
+is as fire and forget.
+Give it some parameters and go.
+Well, this is one of the reasons
+why you can inflate Fragments.
+In this case, we're showing
+that you can define parameters
+to these that you
+can place inline.
+We can go ahead and inflate
+arguments in a way that--
+excuse me-- in a
+way that allows you
+to do this without
+having a lot of very
+heavyweight integration.
+You don't have to go find
+it, configure it separately,
+you just do it inline.
+So one of the things that made
+this really difficult to do
+in the past was again,
+just artifact of history,
+and that you couldn't actually
+set Fragment arguments,
+that arguments bundle
+after the Fragment
+had been added to
+a Fragment manager.
+So now we've relaxed
+that, and we've
+said that now
+Fragment arguments can
+be changed any time that
+the state isn't saved,
+including during inflation.
+So there's this case where
+after you rotate or so on and so
+forth and we're reconnecting
+inflated fragments, which
+is, again, something that
+we do automatically, then
+you can run in this
+case where we've already
+restored that Fragment.
+We're trying to hook
+it back up again,
+but it's already
+added, which means
+that you can't do what the
+natural thing is, which
+is to represent
+all those arguments
+that you may inflate as
+arguments in the bundle.
+So that way you have
+basically a single source
+of truth for all
+the configuration
+parameters of that Fragment.
+Well, now you can.
+GEORGE MOUNT: Wait a
+second, wait a second here.
+Go back.
+Go back.
+Was this not a state save thing?
+ADAM POWELL: Oh yeah.
+Again, a bunch of people had--
+I don't know where
+this comes from,
+but people apparently try to
+commit Fragment transactions
+when state's already been
+saved, and they've got--
+GEORGE MOUNT: Why
+would they do that?
+ADAM POWELL: I don't know, but--
+GEORGE MOUNT: Because
+they can't tell?
+ADAM POWELL: That
+might have been it.
+Yeah, so we added a
+simple getter on this one
+so that you can know
+when that happens.
+And it also makes things
+like writing lifecycle aware
+components that make
+sure that you don't
+try to commit Fragment
+transactions when it's not
+valid to do so is a whole
+heck of a lot easier.
+Thank you.
+So again, part of what
+we're trying to do here
+is create a much better
+layered infrastructure.
+We've traditionally hidden
+a lot of these internals
+in some of these
+Android components,
+such that only the internal
+components are twiddling them,
+which means that
+as soon as you all
+have a more complicated case
+that you're trying to handle,
+we've made it very difficult
+for you to do this in the past.
+So we tried to open a
+lot more of those things
+up, make these things
+a little bit easier
+to inspect from your own code,
+to deal with those cases that
+arise that we didn't think of.
+So in this case, the pattern
+that we really kind of want
+to encourage is mapping
+Fragment arguments
+to attributes for
+those UI Fragments.
+Again, this gives you kind
+of a single source of truth.
+So let's go ahead and go
+over to an example of this.
+So in this case, we've got
+a few nice little Kotlin
+based methods that are
+extensions, that make us
+a little bit easier to handle.
+In this case, we've got one
+utility methods that is just
+our withStyledAttributes here.
+So, many of you have dealt with
+inflating attributes for views,
+and you have to get
+that typed array,
+you have to recycle
+it afterwards.
+It's really easy to just
+kind of wrap these up
+inside some extension functions.
+Similarly, we have this
+simple little thing.
+Hey, is there a bundle there
+for arguments already, if so,
+reuse it, otherwise
+create a new one.
+So these are the sorts of
+things that Kotlin really
+adds to the Fragment API.
+All the things that are
+kind of a pain in the neck
+to do with Fragments, you can
+make some simple extensions
+that were really
+hard to do before.
+But for example, one of my
+favorite features for something
+like this is to use
+property delegates
+to deal with
+arguments, and you can
+wrap even more of this stuff
+and just basically treat them
+as normal properties on
+your Fragment objects.
+So putting a bunch
+of this together,
+Fragments help you maintain
+more of a content and chrome
+separation.
+They give you the ability
+to keep your content pages
+as fully encapsulated
+items without disturbing
+the rest of the UI around it.
+You get richer transitions.
+You get better
+shared components ,
+because you can reuse a lot of
+these things and you don't have
+to initialize all
+of them separately.
+And you can better
+encapsulate your dependencies.
+So you don't necessarily have
+to leak all of these things
+to the surrounding host.
+And thank you very
+much for coming.

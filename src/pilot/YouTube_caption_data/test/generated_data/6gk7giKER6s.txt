@@ -1,0 +1,652 @@
+what is going on everybody and welcome
+to part 6 of the PI torch tutorials in
+this tutorial what we're going to be
+talking about is running things on the
+GPU so up to this point we've been
+working on the CPU and it's been totally
+acceptable to be on the CPU but at some
+point you have to make the move to a
+real GPU that's like basically
+this goes this is the same for like free
+tier stuff online that you can get
+access to it's cool and you can say yeah
+I worked on the GPU but as soon as you
+actually start to do a real-world
+problem you're going to need a real GPU
+a high end GPU so if you don't have one
+locally you're gonna need one in the
+cloud if you intend to actually do real
+work with deep learning for the purposes
+of this series I'm gonna try to keep
+things as simple and small as possible
+so everyone can follow along but just
+know that if you want to continue here
+either you're going to need extreme
+patience or high end GPUs but really
+both so anyway with that let's talk
+about the the two major options you have
+one you can you can run locally if you
+run locally there's a series of steps
+that you have to run through so locally
+first of all you need a CUDA enable GPU
+that means an NVIDIA GPU that isn't just
+garbage most of their GPUs now are CUDA
+enabled but you need a high-end one if
+you I would say the absolute minimum is
+4 gigabytes of vram and the minimum for
+me personally would be 8 so there you go
+do what you will with that so so locally
+then there's two steps you have to take
+one you need to get CUDA toolkit just
+Google CUDA toolkit you can download and
+install that install that for CUDA 10
+and then kudi and n you get qu DNN to
+match the cuda toolkit you download that
+it's actually just a bunch of files you
+extract them and after you've installed
+cuda toolkit you extract those files and
+then at least for me on Windows for
+example if I go to C program files and
+video GPU computing toolkit CUDA CUDA 10
+you've got bin Lib and some other
+probably maybe source I don't know what
+the other one is but anyway when you
+extract ku D and N
+you get three directories merge them
+into these directories boom done you're
+done congratulations if you don't have a
+local GPU well then you're gonna need
+one in the cloud now I actually have a
+tutorial going over all of the cloud
+options and we end up going with limit
+who also is a sponsor for this series
+again just like that series it's not
+because they're a sponsor right now they
+are offering simply the best by far
+prices on GPUs it's double what you're
+getting for what you're paying on any of
+the other major providers so it's just a
+no-brainer if you want to do cloud GPUs
+at least right now eventually I'm sure
+that's going to change but right now
+Linode GPUs are just a killer deal so so
+go with them but if you have credits
+otherwise like or you want to use some
+other service go for it all you have to
+do there is I have a shell script for
+you that you can just run so I'll put a
+link in the description you just run
+this if you're doing the Linode route I
+would strongly recommend you follow this
+exact tutorial because we're literature
+we're like literally using Linode for
+the tutorial so follow that along get
+everything setup understand the workflow
+and you'll be good to go the biggest
+thing with cloud GPUs is you pay by the
+hour and so in sometimes it's prorated
+sometimes it's not like down to the
+minute or a second like I think AWS
+prorates either to the minute or even to
+the second I can't remember but I don't
+like Linode I think it's to the hour
+anyway the biggest thing is you want to
+use it and then as soon as you're done
+you want to destroy that server so you
+the biggest the big thing is like how do
+you set things up so you can destroy
+just the GPU server but not your data
+and all that so check that out if you
+want if you don't have a local GPU get
+everything set up there because there's
+so many ways I can't possibly go over
+like how to sew it up here and how to
+sew up here there's lots of guides
+online if you are confused but it's just
+get CUDA toolkit get kudiye and move the
+files to the CUDA toolkit files done if
+you're having any trouble with that
+though come into the discord that's
+discord dot G G slash cent X that's a
+URL just in case I was not clear coming
+to there and ask we'll be happy to help
+okay
+you've done that I guess the only other
+thing is if you don't have I just ran
+into an issue today that helped me to
+discover that now when you go I'll have
+to go back to the very first video and
+see if I ever clicked CUDA but in the in
+the past if you did pip yeah isn't that
+weird so on Windows you still have to
+download the very specific wheel file
+but if you're on Linux it's actually
+just as soon it's on it's on the Python
+package index so now if you're on Linux
+you don't have to do anything extra but
+if you're on Mac maybe yeah
+wow really Mac pip no no Mac is this - I
+just said this I was going to say Mac is
+mixed so that's weird anyway if you're
+on Windows and you didn't install the
+CUDA version you're gonna need to go
+back and specifically install the CUDA
+version via this wheel it looks like
+although I'm curious what if we say none
+is it the same no oh it literally is CPU
+versions interesting anyway so make sure
+you've got the CUDA version so alright
+oh that's a lot of stuff to talk about
+before we actually get into code
+so anyway I'm gonna be running this on
+through this notebook and actually this
+notebook is running off this limo GPU so
+all you have to do is install if you
+want to do it this way that way you're
+not like coding either in your terminal
+which would be absurd or inside of you
+can use like SCP edit the files and
+stuff but I really wanted to keep using
+the notebook so I'm actually just
+running the notebook on that server I'm
+sure whoever you know are the creators
+of ipython notebook are very nervous at
+the fact that anyone might actually make
+it publicly accessible so do what you
+want everybody who writes like non
+official web servers their number one
+thing is please do not use this it so
+anyway I'll be nuking this soon but
+there it is protected by a token so you
+do have your token but at least for me
+and probably for you the web address is
+not secure so anybody watching would get
+the token so you would definitely need
+to use this on a secure network or or
+you could enable secure HTTPS right
+so if you if you were going to continue
+down this path just know in your head
+that you absolutely need to install like
+open SSL okay just just put it on there
+that way you're not being stupid and
+someone doesn't actually gain access
+here okay because this is this is access
+to your machine it's running Python code
+so yes
+anyway instructions are in the
+text-based version of the tutorial if
+you want to set things up like this like
+I said for security purposes it's pretty
+safe don't use it on a public Wi-Fi and
+if you really want to use it like
+professionally or in your company
+install SSH as you set that up that's
+also really super simple I'm like
+totally blanking on the name for the
+provider of SSH I can't think of the
+free SSH I can't believe I can't think
+of this it'll come to me how and how is
+that not come up I can't think of the
+name anyway let's get on to the tutorial
+so so the first thing that we want to do
+is we want to actually check to see if
+someone comment below with that what it
+is
+it's a good you just basically sudo
+apt-get you set it up super simple I've
+used it for Django and all that let's
+encrypt done just had to make those
+little connections
+anyway Google let's encrypt it's super
+simple you can get it set up okay so
+okay so what we want to do the first
+thing we want to do is make sure we have
+access to the cuda device so let's say
+torch dot cuda dot is underscore
+available and marked what is this why is
+that not code was weird okay true that
+was weird why did that do then let's go
+to switch somehow so so as long as you
+get this okay we have access to some
+sort of GPU and then we could say you
+can you say hey what device do i want to
+run on it cuz later you you assign
+certain things to certain devices
+in our case we're gonna say device
+equals torch dot device and then it's
+the device which will be CUDA zero so if
+you have multiple GPUs you would say gee
+like this would actually be GPU 2 but we
+start at 0 just like indexing and
+everything else so that references are
+actual GPU so then we can just print out
+device and we see ok we've got this CUDA
+device index 0 so then what we can do is
+we could say whenever we have any sort
+of tensor you literally just do dot 2
+and then device now when we write code
+it would be nice if everyone running our
+code had GPUs but one quick thing that
+you can do to figure out what device you
+want just in case you want someone else
+to be able to run it or sometimes like
+well a lot of times your the training
+step of your model really does need to
+be done on a GPU but when you go to
+production you can totally run it on a
+CPU because like especially if you're
+not making like millions of queries a
+minute you're totally fine on the CPU
+the CPU can make a lot of queries a
+minute the reason why we use the GPU for
+training is because we're trying to
+train as many bat-like batches and as
+many of those batches as we can at a
+time and per minute and all that but if
+you're only trying to make a few
+predictions even a minute or something
+like that
+you can do that on the cpu so one thing
+that we can do is we could say if torch
+CUDA dot is underscore available so if
+we have ups I mean didn't mean to run
+that cell yet what we can say is device
+equals torch dot device CUDA 0 and then
+otherwise we could say else device
+equals torch torch dot device and this
+will be the CPU so then we can actually
+define you know dynamically which thing
+which thing we're running so here we'll
+just say running on the GPU
+and then here we'll say running running
+on the CPU run that cool the other thing
+I want to do is increase people were
+getting so angry that I didn't find this
+in my options
+I don't know how I missed it to be
+honest but I did you try recording a
+video and then thinking about increasing
+it and doing the video at the same time
+okay so okay so now we are running on
+the GPU cool the other thing that might
+come up is multiple GPUs so especially
+in PI torch it's really easy to assign
+specific layers to specific GPUs and
+then also a really common task is like a
+encoder and decoder network so you've
+got two networks in make that make up
+your model well each network could very
+easily run on separate GPUs so if you
+had multiple GPUs you totally would and
+then also just one gigantic network we
+can also assign different layers to
+different GPUs so another thing that we
+could do is we could say torch CUDA dot
+device underscore account we can
+actually get access to see how many GPUs
+do we even have because if we have more
+maybe we want to use so so if this said
+like four we could figure we could write
+logic to to logically dispense the
+workload across the GPUs cool hmm so the
+first thing that we would do is we would
+say hey we'll just take our network -
+and then device and this line of code
+takes our entire neural network pops it
+up on to our GPU now why can't we just
+simply have pi torch just automatically
+throw things on the GPU for us as needed
+well the reason why we can't do that is
+we're going to be constantly like moving
+things from the CPU to the GPU and back
+and forth back and forth and that IO and
+that conversion takes time so the less
+things that we need to convert the
+better but there's obviously many things
+that we can't convert so for example
+when we get toward
+we're going to find that at least on the
+cats and dogs dataset we totally could
+convert all of that and have that entire
+data set on the GPU for training
+purposes but on a realistic data set
+your data sets gonna be far too big to
+put on your GPU so you're gonna have to
+per batch convert move that to GPU train
+all that so anyway just keep that in
+mind and basically anything that's on
+the GPU like with tensors on the GPU can
+only interact with tensors on the GPU
+and the same thing on the CPU you can't
+cross in Iraq you've got to convert them
+put them exactly where you want them so
+while you could define the net and then
+move the net probably the more common
+thing from now on for you would be net
+equals net dot to device whatever the
+device is so when you create the neural
+network it just creates it right there
+on the device which also is somewhat
+interesting to note because this line
+actually took a little bit to run and it
+always has that wasn't just a fluke so
+so that's a it's like you can you can
+you can create apparently you can create
+the thing much quick or although I do
+wonder what if I said net net let me
+just I just want to try something really
+quick forgive me net dot - device just
+no that was pretty quick so maybe it was
+because of the weights or something like
+here we're just randomly starting it so
+yeah anyway net dot - device I thought
+maybe it was gonna be quicker to just
+immediately create it to the device than
+to create it and then move it but even
+here I would say probably you've created
+it then you've moved it anyway mmm
+continuing along so the next thing we
+want to do is let's take we're gonna
+convert both of these to use the GPU so
+again things on the CPU can't interact
+with things on the GPU yeah so so what
+we're going to do is convert them so the
+first thing I'll do is I'll just take
+the train net and I'm gonna copy that
+come down here
+pasta so the net is already on our GPU
+I'm also just going to throw train net
+here and then also let's take note of
+how long train takes so it's 23 seconds
+23 25 per epoch 25 seconds well let's
+say 24 seconds per epoch and then to
+actually test it was 6 seconds ok so
+coming down here what would we need to
+change so for epoch a ba ba ba
+so the first thing we could do is we
+could have put all of our data on the
+GPU again I'm aware that it all would
+fit but that's just not practical
+unlikely if you really have a real
+problem and you can just have all your
+data on the GPU do it but you got it
+it's a give and take because the more
+space you're wasting a VRAM on the GPU
+is less space that your network could
+occupy so to me I don't know I actually
+don't know what the answer is if it was
+if it's quicker to take data and have it
+on the GPU it would depend on how much
+data we're talking I suppose but or have
+more batch size let's say in the case of
+dogs versus cats would it be better more
+efficient like quicker iterations to
+have to allow for a larger batch size
+and not the data on the GPU or to let
+the whole data set sit on the GPU at the
+cost of batch size I don't know it's
+gonna be different every time and again
+at some point there's diminishing
+returns on the size of your batch size
+anyways so I'm going to just assume
+we're gonna not have the entire data set
+on the GPU so we've got batch X and
+batch Y so this needs to be converted to
+our GPU so I think we could say I think
+we could just do it right here dot 2
+device-to-device we'll try that I see
+what happens and that should be it I
+think no not allowed
+EPOC hmm - device entity device I think
+that should have worked
+let me just let me do this a little
+cleaner though we're gonna say batch
+underscore X batch underscore y equals
+batch X dot - device and then batch y
+dot - device this needs to be on the
+device this would already be on the
+device that's on the device I mean this
+should run man expected to vise CPU I'm
+just not sure why it expects our CPU
+running on the GPU
+when was our it's possible yeah I'm just
+wondering if at this point let me just
+take this we're gonna take optimizer and
+loss function and we're gonna move those
+to just train it right here I'm just
+wondering if that's what's happening
+like is loss function trying to be
+calculated there pause yeah I guess that
+was it
+interesting okay so that's kind of
+comical anyway as you can see things
+went way quicker one second as opposed
+to what was that 25 seconds yeah so huge
+huge huge huge difference then so 195
+the first iterations are going to be
+slightly slower but then after that is
+when you'll get your actual average
+so we'll say about let's say 193
+iterations per second as opposed to nine
+okay cool so one thing I note is our
+loss really doesn't improve all that
+much let's run that one more time we
+might actually have some other issue
+happening now doesn't really look like
+what I would expect okay but before we
+figure that out let's actually change
+test now to also contain our updates so
+paste in tests and again we want to
+convert everything to to be on the
+device that we need on the device so so
+basically that's going to be the real
+class needs to be torch art Max dot 2
+device the network out will actually
+already be on the device so really for
+comparison we just need the this
+on the device otherwise we're all set so
+let's go ahead and call tests to run
+test net what did I do
+dot - to devise new farms for device
+more errors input type float tensor CUDA
+what did you kill me
+um I don't think net out mmm real class
+and net out I don't believe net out
+would actually need to be on our device
+because that's test X dot view oh no so
+test X does have so we have to put test
+x2 device we need test X on the device
+in order to pass it through our neural
+network let me go back and look at that
+error input type and weight type yeah
+that was not the most clear error but
+I'm pretty sure that's all that was yeah
+so 51:5 accuracy I'm gonna say something
+is wrong with our neural network all
+right not what I wanted to see also
+wasn't the last like I just ran this and
+got 66 which is not random so now I'm
+curious what if we take let's take the
+train and test and let me just slap it
+up here so it'd be easier if
+everything's in like one spot so I think
+that's what I'm going to we're gonna
+edit that and then we'll see if we can't
+figure out why we're getting the same
+results there that's kind of tragic but
+nothing to fear so take train where is
+train here Boop
+I think we're probably calling train and
+test at the end somewhere yeah train
+test and then what I'm gonna do is let's
+take if torch so let's take this copy
+we'll paste that here just like right at
+the top of our script then net dot to
+device so we'll just remember to do that
+we've already done train now we need to
+move test so let's take test copy let's
+go up
+the very top here I'm tired I'm sleepy
+when things don't go my way I get good I
+get sleepy train net okay so these are
+the old values so just again test took
+six seconds I think we did it in one
+although we tested at four hundred
+iterations per second that's pretty
+quick how would you get here so actually
+the test wasn't that much quicker but
+test is is not ideal and we'll talk
+about that later this was like a really
+crummy test we're doing like one at a
+time
+I will we'll fix that don't worry it's
+just it's like one tragedy at a time
+right now okay so don't forget we have
+to define the network so look at this so
+we eventually we continue training we
+got 73 yeah something's up something's
+up okay so net we've already defined two
+device so we'll say dot - de voz rebuild
+data is false because we already have
+the data that's fine the network hasn't
+changed at all week actually kept that
+code come down here do three epochs loss
+function
+yeah unfortunately I'm just not seeing
+what would automatically be our problem
+now the last time we did this it took a
+second for whatever reason for things to
+start going but I do see that I've asked
+it to run so yeah cool okay that's sort
+of what I want to see but at the same
+time not what I want to see because I
+want to know why was it not working
+before some sometimes that is that's
+part of the reason why I don't like
+notebooks because you you execute
+certain cells and then it can very
+quickly occur that you've executed cells
+out of order and something screwed
+something else up I think that's what's
+gone on here interestingly or
+unfortunately enough so let's go ahead
+so we can see here that okay
+after three epochs we have a 70%
+accuracy which is actually the best
+accuracy that we've seen in three epochs
+the other ones were 66 and 66 I think so
+so at that point mmm you're gonna start
+wondering hmm can I keep training like
+how many epochs do I go through you know
+so then you're gonna do probably 6 or
+something like that let's do 10 so I can
+get yak and hopefully by the time I'm
+done yet yak and we'll have some results
+Plus this stuff runs so fast so and
+that's why we want to do the GPU because
+we can very quickly start testing all
+this stuff so so now what we need to
+figure out and be able to do is
+determine when do we stop training and
+then also not only when do we stop train
+so here we did 9 epochs and actually
+didn't get any improvement at all at
+least in terms of accuracy although loss
+continues to fall so which is a good
+sign so then we'd have to start
+wondering like can we could we keep
+going like what do we keep doing so then
+you might keep going
+and in fact I'm trying to think I think
+we could get away
+I think we need to get away with just
+calling train again so let's just call
+it train net let's see what the first
+loss is yeah we got away with it yeah we
+can see loss is still falling I wish I'd
+tested accuracy every epoch so we could
+see that as well which we'll get to
+because we have to do that anyway oh
+let's do test
+net so the quite really so here's a
+perfect example of so test is
+out-of-sample I'm going to wager or in
+if we did an in-sample test right now
+we'd get like 95% accuracy or better so
+so we're still pretty blind like all
+we're looking at is loss and like
+accuracy number well really we need to
+be paying attention to is overtime how
+how is the model reacting so the biggest
+thing that I always look for is one the
+biggest thing is is lost going down as
+long as loss is going down we're
+learning something but the the real
+biggest thing is how does in sample
+accuracy compared to out-of-sample
+accuracy so that is the real kicker
+because when you are training the model
+is eventually going to learn how to
+brute force and just memorize everything
+that you're feeding it especially on a
+data set this size 25,000 samples is not
+enough data to really not generalize if
+you cycle this enough this model is just
+going to brute force so that's probably
+what's already occurred is my guess but
+we need to be able to visualize this so
+that's what we're gonna be talking about
+in the next video but we needed to cover
+GPUs because otherwise just doing 20
+epochs would have taken ten minutes of
+running and then every time we test even
+more time and ideally we're gonna need
+to run tests at least every epoch
+ideally every
+batch so for in sample at least we would
+want to run during the batch so to do
+that we need to run way quicker and so
+that's why we needed to be on the GPU so
+anyways that is the GPU as you've seen
+it's actually pretty darn simple and one
+of the neat things about PI torch on the
+GPU is that it doesn't just
+automatically slap things on random GPUs
+you tell it I just keep this data on the
+CPU or no put this this bit on the GPU
+and then also it becomes just trivial T
+to add multiple GPUs to your machines so
+doing things like with with with many
+GPUs in one machine in one model that
+shares a model across many GPUs on pi
+torch is unbelievably simple it's it's a
+little more complicated on like
+tensorflow
+so anyways that's actually really really
+cool so I really was pleased when I
+found out how to do PI torch on the GPU
+it's just easy so really good job on
+that PI torch people thank you
+so speaking of thank yous shout out to
+more brand new channel members and
+Nitesh Niranjan Hensler software Baco
+can't pronounce that I can never
+pronounce those names so I'm gonna tell
+me below with that I probably
+mispronounced the first name as well
+someone tell me below how to pronounce
+that cam and Thiebaud heifer Ellie again
+probably mr. Brown's dead as well feel
+free to correct me but thank you guys
+very much for your support you guys are
+amazing
+ok so that concludes the GPU tutorials
+again there's really a lot of
+information covered on this one so if
+you're having any trouble feel free to
+leave a comment below come join us in
+discord as discord GG / antics otherwise
+I will see you guys in the next tutorial
+where we cover some analysis and
+visualizations of our neural networks
+I'll see you there

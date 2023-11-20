@@ -1,0 +1,680 @@
+thank you very much for being here
+before I get into this package that we
+developed I want to give you a little
+bit of information about myself so I am
+Paul miles my background is in
+mechanical engineering and I only
+recently started working in Python I
+started a position working for Ralph
+Smith at NC State in the Department of
+Mathematics about two years ago and
+that's really when I first started using
+Python so the last couple days have
+really been eye-opening for me it's my
+first time at SCI high so it's really
+been impressive to see just well what
+all is out there to use so I'm honored
+to be a part of this and I look forward
+to your feedback all right so what we've
+been working on is this Python package
+called Pi MCMC stat and what I'm going
+to go over today and give you a brief
+introduction as to what the package is
+for why we specifically decided to
+develop it
+the hardest part probably will be the
+methodology we're all them I'm gonna try
+to just give you an overview of the math
+and the statistics and admittedly I
+don't understand most of the math and
+the statistics so many of you are gonna
+be way ahead of me on that but after we
+get through that we're gonna go through
+a basic example which hopefully gives
+you a good idea of how the code is used
+and how you might apply it to your
+projects I'm gonna highlight I think
+some of the more useful features we've
+integrated I'm not gonna go into a lot
+of details with these case studies but
+I'll just mention a couple things and
+sort of maybe good ideas when you're
+looking to use this so yeah let's go and
+get started so the purpose of the
+package is for model calibration or
+parameter estimation and we want to do
+this in the context of uncertainty so
+we're acknowledging there's uncertainty
+that arises for various reasons so we
+want to do our calibration in the
+presence of that uncertainty and the
+methodology we use that will be a
+Bayesian perspective which I'll go into
+momentarily but really this particular
+package we've developed we designed to
+mimic a MATLAB toolbox on my background
+I have extensive experience with MATLAB
+and my advisor has done a lot of
+education when it comes to
+Bayesian methods using this matlab
+toolbox so we wanted to create a similar
+Python tool to that so the API is is
+sort of similar to that so that there's
+good and bad with that but that was kind
+of the motivation the other aspect of
+this this MCMC which is which is what
+the methodology is is we incorporate
+this delayed rejection algorithm so
+don't worry if you don't know what that
+is I'm gonna just briefly touch on it
+later on in the talk all right so the
+methodology I mentioned we're
+approaching this from a Bayesian
+perspective and at the end of day all
+this really means is the goal the model
+calibration is within our model we have
+these parameters and we're assuming they
+are random variables have some
+underlying distribution and we want to
+figure out what that distribution is all
+right and so from Bayes equation we see
+that this this we have posterior density
+so those are the probability of our
+parameter values given whatever data or
+observations we have to inform that and
+basic equation relates this to a
+likelihood function and a prior
+functions the likelihood is describing
+likely to your observations given your
+model or your parameters and then the
+prior is where you define anything you
+know a priority about your parameter so
+it's a sort of a natural framework for
+these type of problems Bayes equation is
+is great but computationally it's really
+unrealistic to evaluate it because the
+denominator requires integrating over R
+to the P where P is the number of
+parameters so that becomes very
+expensive real fast and that's where
+Markov chain Monte Carlo methods come in
+alright and I'm not gonna go through all
+the details of MCMC but I'm really just
+gonna highlight the inner workings
+before I do that I really want to point
+out within PI MCMC stat we are making an
+assumption with regard to the
+statistical model so this does narrow
+the application of the package but it is
+still we believe useful for a wide
+variety of potential problems so we're
+making this assumption that your
+observations or your experimental data
+should be equal to your model response
+plus some amount of observation error
+which is normally distributed with mean
+zero and some constant variance all
+right so
+I think this will be a little clearer
+once we look at an example later on but
+as a direct result of assuming this form
+of your statistical model you get a very
+nice-looking likelihood function this
+Gaussian likelihood function which
+depends on your sum of squares error so
+the reason this is kind of nice as many
+people aren't really familiar with
+Bayesian terminology and likelihoods and
+priors but at the end of the day users
+of Pi MCMC stat are primarily
+responsible for just defining a sum of
+squares error function and so they can
+kind of even if they're not familiar
+with the terminology hope that hopefully
+they've done some sort of minimization
+or optimization with sum of squares okay
+so with that in mind this is really a
+crash course on how inside of MCMC we
+use what's called metropolis algorithm
+to try to infer what these posterior
+distributions are and so way this works
+is that we start off our procedure with
+some initial parameter values which may
+be from expert knowledge or some initial
+optimization study we then go through a
+set number of MCMC simulations and each
+step along the way what we do is we
+construct a candidate and that candidate
+is really we're just taking a step away
+from the previous value and R and that
+equation is related to your parameter
+covariance matrix so it's essentially
+mapping to your physical parameter space
+so we take this step we get this
+proposal Q star is what I call it and
+then we compute the posterior ratio so
+this comes directly from Bayes equation
+but as a result of taking this ratio the
+denominator and Bayes equation cancels
+out and we're left with a nice
+expression in which we compare can
+compare our likelihood and prior with
+respect to our candidate Q star and with
+respect to our previous parameter set Q
+to the K minus 1 and then at this point
+we have this ratio and we make a
+decision and the decision is whether or
+not is this candidate a good candidate
+or is a bad candidate and the idea is if
+that posterior ratio is greater than 1
+we're definitely going to accept it
+that's a good thing I think it's a
+little easier to simplify this so taking
+what I described on the previous slide
+if we assume a likelihood function
+a Gaussian likelihood function that
+depends on that sum of squares value and
+then assume that your prior
+distributions are uniform the priors
+cancel out you're left with the
+likelihood functions and you can end up
+putting this this posterior ratio in
+terms of just those sum of square values
+so the intuition is if you reduce the
+error between your model and your data
+that's a good thing so we're gonna
+accept that parameter value if it goes
+up we're going to accept it
+based on that ratio so if it's close to
+what it was before it seems reasonable
+it could still be an OK parameter sets
+will potentially accept it but we won't
+outright reject it and this allows us to
+not get stuck in local minima and our
+error surfaces and things like that so
+that's that's really a crash course on
+metropolis and hopefully that's the
+worst math alright so I think let's look
+at a basic example all right I like
+simple examples we're gonna look at some
+data and we're gonna make the data so
+it's really nice data and it's just
+gonna follow a linear trend and we're
+just gonna say that it has a slope of
+two and an offset of three all right and
+I'll define this on the next slide but
+we're gonna also add some noise to it to
+make it a little more realistic and we
+just specify the amount of variance in
+that noise and in our infinite wisdom
+we're gonna fit a linear model to our
+linear trending data so here's an
+example of a potential data set whatever
+your quantity of the interest is and why
+and then whatever your measurement
+states are at X so we can evaluate the
+model add some noise to it however you
+get your data alright how do you
+actually do the calibration alright as I
+said earlier the users primary
+responsibility is to define this sum of
+squares function so the way that pi MCMC
+stat works it's going to send you a
+vector Q so this would be your candidate
+Q star it's also going to send you this
+data structure and you look at your data
+you evaluate your model and you
+calculate your sum of squares error
+however you want to and you return that
+IU to the code all right
+this is just for this simple example all
+this required to run the MC MC
+simulation you create an object you add
+the data you tell it what sum of squares
+function to use there's lots of options
+which I'll go into more and a little bit
+but basically you need to tell it how
+many MC MC simulations you want to run
+you need to tell it what parameters
+you're interested in so in this case the
+slope m and the offset B we give it an
+initial value it's not exactly the
+correct value and then in the case of
+the offset I've also applied like a
+minimum and a maximum so without knowing
+it I've actually imply or enforce some
+information regarding the prior function
+saying that it needs to be within those
+bounds but there really isn't too much
+hopefully statistical language here at
+that point you have enough information
+to run the simulation it takes a few
+seconds so you get some information
+about what's going on but then we need
+to analyze the results so if you're not
+familiar with MC MC this might be new
+for others this may be boring stuff
+which is ok but the basic idea is we
+have this metropolis process the MC MC
+we've been generating these samples and
+we want to look at that sampling history
+to see how it's evolved over time so you
+see at the beginning here we start off
+with the initial values that we assigned
+and then it fairly quickly appears to
+converge to a distribution centered
+about reasonable values close to M
+equals 2 and B equals 3 so it seems like
+the algorithm is working the way that we
+want it to and then I've added this red
+line sort of a general rule of thumb
+with these MCMC procedures it takes a
+little while for you to converge the
+correct distribution so you kind of want
+to just remove the first poor part as
+burn-in and so our analysis were really
+focused on just taking that portion of
+the chain to the right of that red line
+and we're calling that and we'll use
+that as our represent representative set
+of points for the posterior distribution
+we can take the burned in chain and do
+some sort of kernel density estimate and
+look at PDFs we can also look at
+pairwise correlation where we literally
+plot the chains against each other and
+see if there's any core
+between our parameters and we can also
+do things like uncertainty propagation
+and looked at in this particular example
+prediction incredible intervals credible
+intervals are simply result propagating
+those parameter distributions through
+your model so essentially you're getting
+a distribution on your model response
+prediction interval also propagates the
+uncertainty associated with your
+observation errors kind of a rule of
+thumb with those 95% prediction
+intervals is 95% of the time you expect
+a future observation to fall within
+those bounds another way to look at is
+of the observations you currently have
+you'd probably expect about 95% of those
+points to be inside those intervals as
+well so that's the basic example and
+those are some simple Diagnostics that
+are included in the package obviously
+there's a lot of other plotting routines
+available if you want to use those so
+some of the more advanced features
+available within the package so I just
+highlighted a couple earlier you need to
+specify the number of MCMC simulations
+there's also different metropolis
+algorithms available and I'm gonna go
+through that more in just a second you
+can specify whether or not to update the
+observation error variance not gonna
+worry about that too much here some
+bookkeeping tools a lot of times you're
+running these simulations say on a
+cluster because that's where your models
+at it takes a long time and so you can
+be running this and specify ok every
+thousand simulations I want you to stop
+append the current set of chain results
+to a file and then keep going and that
+way you can download your file
+it could be theirs you can do binary or
+text files you can download it to your
+local machine plot it and see how the
+simulation is going but just let it keep
+running in the background there's
+there's other features available as well
+so I mentioned the metropolis algorithm
+at the beginning I gave you a crash
+course the features that we really want
+to point out is the addition of what's
+called adaptation where as we accept
+candidates in this algorithm as we learn
+more about the proposal distribution we
+want to update our estimate for the
+parameter covariance matrix which I
+mentioned this is related to the R in
+when the process or in the
+where we construct our candidate by
+updating that are we can more
+efficiently explore our parameter space
+so that's a trick that we can use and
+there's certain statistical things that
+have to be satisfied which I don't know
+enough to answer but we can talk about
+it and then the other feature that we
+like is what's called delayed rejection
+so instead of outright rejecting a
+candidate bate in the standard
+metropolis step when we reach the
+rejection point we instead enter this
+delayed rejection algorithm or
+essentially what we do is we go back to
+the candidate stage and take we sample
+from an error proposal distribution
+essentially what I mean is in this are
+we basically take a smaller step away
+from Q to the K minus 1 or smaller step
+away from your previous step so you're
+gonna be more similar to previous step
+and more likely to have similar values
+so you're more likely to accept and this
+helps stimulate mixing so you're not
+constantly get the same value over and
+over and over so we can talk about that
+more later if you want all right so this
+these these are the metropolis about
+algorithms available so just to
+highlight for this problem
+we can run this is just the metropolis
+Hastings if you look at the 5,000 burned
+in value so that's the last half of the
+chain there's actually only about 5% of
+those that are unique so it's only
+accepting just a small percentage of the
+time all right so if we add in the
+adaptation feature and then run that we
+see that it can be bumped up to
+something like between 21 and 22 percent
+so that's good by getting more mixing
+potentially means you're going to
+converge the posterior faster so we like
+that what if we just look at delayed
+rejection so we're not adapting the
+covariance matrix we're just adding
+delayed rejection now we're looking at
+something closer to 40% acceptance rate
+and you see that here there was two
+steps Stage one is your standard
+metropolis and it's about what it was
+before and then through this delayed
+rejection step we see that we're
+accepting a lot more by sampling from
+that narrow narrower proposal
+finally we can add both those features
+together and get something more along
+the lines closer to 80 percent alright
+so that could potentially you could run
+fewer MCMC simulations by more
+efficiently exploring the parameter
+space that's that's why we like this
+algorithm alright so I'm just gonna
+highlight a few really basic features of
+a couple case studies so don't worry if
+you don't know much about these problems
+this this stems back from when I used to
+be a mechanical engineer but it's just a
+model
+it's got parameters in it and we want to
+try to figure out what these
+distributions are I just want to
+highlight some of the problems that you
+often face when doing this analysis so
+as you may have realized that the most
+expensive part of MCMC is the actual
+model evaluation so doing something
+simple like writing your code in a
+faster programming language can make a
+huge difference that may or may not be
+an easy thing to do but just an example
+for this particular problem you can see
+significant computational performance
+just by putting it in C++ and it's nice
+to use the C types package in order to
+just very cleanly wrap that into your
+Python scripts so I have examples of
+that on the tutorials for the package
+something else that's often common is
+you may run into a situation where the
+parameters in your model are not
+sensitive so you're doing this
+calibration and you're never and
+informing what that parameters
+distribution is you're getting maybe
+you're basically just getting a uniform
+distribution out so that you may know
+this from sensitivity analysis something
+like that so you could say that what
+it's not identifiable given the data
+that you have so instead you still want
+to include it as a model parameter but
+you don't want to sample it so you can
+just add this keyword argument and set
+sample equal to false and then just pass
+it in as a fixed value and this is nice
+because then in the sum of squares
+function you can pass in this function
+and it's the same as just unpacking this
+candidate with all of your model
+parameters whatever they may be but if
+you later decide to sample this you can
+set it to true
+and not have to change or sum of squares
+function so this was another project and
+this this may be more realistic for for
+what people work on this was this was
+something fun getting to work with
+nuclear engineers but we're trying to do
+source localization in a 3d environment
+which presents a lot of challenges one
+they don't let you take radiation source
+around an urban environment and run
+experiments so we had to do this
+computationally to do that we use what's
+called Monte Carlo and particle
+simulations this model gives us a
+prediction of what you would expect
+detectors in this domain to give you as
+readings in terms of counts given a
+source placed at different different
+points within this domain so this is a
+simulated urban environment representing
+an area of Ann Arbor Michigan and it's a
+complicated domain different types of
+buildings different materials and that
+so that presents a lot of a lot of
+challenges but we have to do this
+numerical approach to represent as best
+as possible a real-world problem and so
+for example to simulate four thousand
+different source locations and get our
+expected detector readings for four
+thousand so just four four thousand
+essentially models of model evaluations
+we're looking at three or four weeks on
+a supercomputer so that's not going to
+work for MCMC what we may need to do
+fifty thousand or a hundred thousand so
+instead we we go back and we use
+something from scikit-learn one in this
+case this was made of the Gaussian
+process I think regression model I just
+call it a surrogate model but basically
+it's just trained based on a finite set
+of high fidelity model simulations and
+then we use this really fast surrogate
+model inside of MCMC to try to infer
+what our parameters are in this case the
+source location X Y Z and the source
+intensity so I'm not sure how how easy
+it is to see in these plots but these
+are essentially two-dimensional
+probability contours highlighting our
+posterior distributions for the source
+location with respect to x and y and
+with respect to x and c
+and so it's price there is sort of that
+darker region and it's kind of close to
+the true source which is denoted by that
+red star so this is actually a useful
+result obviously this is a fairly spread
+out posterior distribution but it is
+realistic given the uncertainty just
+associated with the physics of the
+problem right so this is something that
+we're still working on but it is what we
+think it's useful anyway so coming back
+to where we started we developed this
+package to do model calibration in the
+presence of uncertainty the specific
+implementation was motivated by
+educational tools that we've been using
+based on a MATLAB package so we wanted
+to provide sort of a similar interface
+when we're when we're interacting with
+groups of people some are Python users
+some are MATLAB users but we can use the
+same tools to teach them because it's
+essentially the same code it's just in a
+different different language and so also
+the addition of that delayed rejection
+algorithm which may exist in some other
+Python packages now I'm not sure but
+that was something that we we use a lot
+so we wanted to make that available and
+then I've highlighted a couple areas
+where we're using it and theoretically I
+other people have started using it for
+their problems as well and I hope that's
+going well so I'd like to thank my
+people that have been sponsoring this
+work the N n s a as well as a fos R and
+certainly my advisor Ralph Smith for
+letting me take the time to kind of
+learn how Python works and more or less
+be successful at it so I appreciate your
+attention some additional references are
+there any questions
+[Applause]
+thinks I was really great I noticed that
+you had a point to specify the burn-in
+is there any way to do thinning on this
+so in terms of yeah yeah yeah okay
+in terms of thinning just the chain that
+you have at the end so I mean it's just
+an umpire race so you can you can thin
+it but yourself or in terms of the plot
+I did have another demo where you could
+specify the knack max number of points
+you want to include in the plot so it's
+sort of thinning already so there's 5000
+points and those plots I actually only
+plot 500 yeah thanks for the book so my
+question is related to is like quick
+question and I'm not familiarize with
+the MATLAB to that you mentioned I'm not
+an expert in Bayesian statistics but I
+do use Bayesian statistical methods for
+my research but II I've come for that I
+use our tools like Jack's so I'm not
+read you I don't know if you're familiar
+eyes with that but if so like I don't
+know I think that you should incorporate
+things that come from the Jack's world
+because that will allow you to like
+potentially more users and I think that
+like it would it would have been nice to
+have things like Gilman plots things
+like that in your package and also I
+don't know are you working towards that
+are you familiarize with Jack's yeah I
+sort of intentionally didn't include
+future work on the project because I'm
+starting a new job in like three weeks
+and I don't know if they're gonna let me
+work on it but it's a good point so
+maybe we could follow up afterwards be
+good questions
+I was going to ask if you have thoughts
+or plans but it sounds like I can only
+get your thoughts on Hamiltonian methods
+for this yeah so like Hamiltonian Monte
+Carlo so obviously there's a lot of
+tools available for doing MC MC and like
+this is nothing compared to say like hi
+MC 3 like I often encourage people to do
+that but that's somebody earlier was
+calling this a high-level probabilistic
+programming approach and this is sort of
+this minimalist define a sum of squares
+function but I have looked at HM see
+certainly very powerful approach as well
+yeah but there's other tools available
+for doing that so I haven't I haven't
+tried to embed it and what I'm doing
+yeah hi thanks for the talk I'm also
+coming from an HMC background and there
+was kind of role found also strictly any
+ways of setting your targeting your
+acceptance rate around 45 percent
+because if it gets too high your
+autocorrelation simply gets high you
+don't really have that many independent
+samples so can you comment on kind of
+the trade-offs in this algorithm yeah
+that's a good point so I think
+unfortunately the example I chose that
+using both delayed rejection and
+adaptive metropolis was extremely high
+acceptance rate and that that's more
+than I would like but I was I was too
+lazy to find a better examples so yeah
+there's sort of a trade-off when you get
+too much mixing like that and I I'm not
+sure what the exact range of acceptable
+rates are I try to say anywhere from 20
+to 60 is sort of okay and most the
+problems I work out like the source
+localization problem I'm getting around
+30 to 48 percent the acceptance with
+DRAM with both the delayed rejection and
+the adaptive metropolis put together so
+it may just be a product of that
+simplistic example I was doing that's a
+good question any other questions
+so I have a maybe naive question so is
+there a good way on this plot I think
+you chose five thousand iterations to
+stop say you've converted for the right
+distribution is is there a good rule of
+thumb or a way to automate that Oh so
+how to choose whether or not you've
+converged yeah oh yeah so actual
+Diagnostics on chains I didn't go into
+the Diagnostics available there's a few
+tools you can look at like
+autocorrelation time some people mention
+that those are those are available
+probably the best one and this is
+available as you can run parallel chains
+separately and then take those chains
+and do what's called Gelman Reuben
+Diagnostics just sort of an analysis of
+the variance of the different chains how
+they relate to each other and that's
+sort of our robust they've converged
+metric but I haven't automated that so
+it's still sort of up to you to take a
+look and be like okay the galvan Reuben
+Gelman Reuben values are good and the
+chains look good and you can and you can
+also do like energy statistics to say oh
+yeah these are actually the same
+distributions at the end so if you've
+got separate changed and they've kind of
+urged to the same thing so I didn't
+highlight those but I've touched on them
+I can't say that I I'm an expert any of
+that though so good question any other
+questions
+if not let's think Paul again
+[Applause]
+you

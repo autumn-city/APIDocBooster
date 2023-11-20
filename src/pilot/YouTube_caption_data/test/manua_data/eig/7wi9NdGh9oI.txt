@@ -1,0 +1,242 @@
+Hello everyone, my name is Cory McLean,
+and I'm an engineer on 
+the genomics team in Google Brain.
+Today I'm excited 
+to tell you about Nucleus,
+which is a library we've released today
+to make it easy to bring 
+genomics data to TensorFlow.
+So genomics is a study of the structure
+and function of genomes.
+In every cell in your body 
+you have two copies of the genome,
+one from each parent.
+And this is the strings of DNA,
+which is a four-letter alphabet,
+and about 3 billion letters in the genome.
+So here is a picture of a snapshot
+on chromosome 1 - 150,000 letters.
+What we can see is there's a number
+of known things about this area.
+One, there are functional elements,
+like the genes depicted 
+in that second row.
+Biological measurements allow us 
+to analyze what are different things
+that are active in cells, 
+so on that third row
+we can see the amount of gene expression
+across different tissue types
+is quantified there.
+And at the bottom, 
+through sequencing many people,
+we can identify places where 
+there's variation across individuals.
+There's many different 
+computational algorithmic challenges
+in developing that image.
+This ranges from: 
+on the experimental data generation side,
+can we better take the output 
+of these physical measurements
+to get accurate DNA readings?
+Or reduce noise in the experiments
+that quantify this expression?
+Can we take the DNA sequence
+and interpret where are 
+functional elements like these genes?
+Or predict how active 
+are they in different tissue types?
+And can we identify places 
+where individuals vary
+compared to our reference?
+And how is that different 
+in small variance versus, say, in cancer?
+And how did those changes 
+influence human traits?
+One thing that is really exciting for us
+is there are many opportunities
+for deep learning in genomics.
+Now a lot of that is driven 
+by the increase
+in the amount of data available.
+This graph shows 
+the dramatic reduction in cost
+to sequence a million bases of DNA 
+over the past decade.
+But also there's a lot of structure
+in these data sets
+that is often complex 
+and difficult to represent
+with relatively simple models.
+But this may display 
+a convolutional structure
+so we can use techniques 
+from image classification
+as well as sequence models.
+And there have been 
+a number of proven successes
+of applying deep learning
+to problems in genomics
+such as DeepVariant, 
+which is a tool our group developed
+to identify small variants
+using convolutional neural networks.
+So our goals in genomics 
+are multifaceted.
+One is to make it easy to apply 
+TensorFlow to problems in genomics,
+and do this by creating libraries
+to make it easy to work
+with genomics data.
+We're also interested in developing tools
+and pushing the boundaries
+on some of these scientific questions
+using those things that we've built,
+and then want to make 
+all of that publicly available
+as tools that can be 
+used by the community.
+So today I'll focus on 
+the first part of making it easy
+to bring genomics data to TensorFlow.
+So what is a major problem?
+One major difficulty is that 
+there are many different types of data
+that are generated for genomics research.
+You can see here on the right,
+a subset of different types used,
+and these different file formats
+have varying amounts of support
+and in general no uniform APIs.
+We also have some concerns
+about efficiency and language support
+where we would like to be able to express
+some manipulations in Python
+but it needs some effective ways 
+to efficiently go through this data
+such that native Python 
+wouldn't make that possible.
+So to address these challenges
+we developed Nucleus,
+which is a C++ and Python library
+for reading and writing genomic data
+to make it easy to bring 
+to TensorFlow models,
+and then feed through the TF data API
+that Derek talked about earlier today,
+for turning models 
+for your particular task of interest.
+In this release we support the reading
+of many of the most common
+data formats in genomics
+and provide a unified API 
+across the different data types.
+So we're able to iterate 
+through the different records
+of these different types, 
+and be able to query
+on specific regions of the genome
+to access the data there.
+The way that we developed this
+uses protocol buffers under the hood
+so that we can implement 
+all of the general parsing in C++
+and then make those available 
+to other languages, like Python.
+For those of you familiar with genomics,
+we end up using HTSlib
+which is a canonical parser 
+for the high-throughput sequencing formats
+like the aligned reads and variants,
+and then wrap that to generate
+the protocol buffers.
+And then use CLIF on top of this
+to make the data available to Python.
+And finally we use 
+some of the TensorFlow core libraries
+so that we can write out this data
+as TFRecords
+so that they can be ingested
+by the TF data API.
+So the data types that 
+we currently support are the following
+ranging from general genome annotation
+to reference genomes
+and different sequence reads,
+whether they're direct off a sequencer
+or mapped, as well as genetic variants.
+So to give an example of the reading API
+it's quite straightforward.
+So this is a toy example,
+but is essentially similar 
+to what is used for DeepVariant,
+when we want to train a model
+to identify actual genome variations
+based on mapped sequence reads
+and a reference genome.
+So we have three different 
+data types that we need.
+We import the different reader types
+and then, say, in this region 
+that we're interested in
+we can issue queries
+to each of the different reader types
+and then have iterables
+of these protocol buffers as output,
+which we can then manipulate
+and turn into TensorFlow examples.
+On the writing side, 
+it's similarly straightforward.
+So if we have a list of variants,
+for the common VCF format,
+we'll have an associated header
+which provides metadata about this
+and then open a writer with that header
+and then just loop through 
+the variants and write them.
+And note that we support
+writing to block [inaudible] format
+which is common for 
+the subsequent indexing by other tools.
+However, we can also write 
+directly to TFRecords
+and here I'll provide 
+some convenient methods
+to write out chartered data
+which we found helps avoiding 
+certain hotspots in the genome,
+using a very similar API.
+Finally, we have been working 
+with the Google Cloud team
+which has some tools
+for analyzing variant data
+and so they have developed a tool
+called Variant Transforms
+which allows you to load 
+the VCF variant files to BigQuery
+using Apache Beam.
+And then you can do
+structured queries over that data.
+And so we're working now to integrate 
+here to have Nucleus under the hood
+providing that generation of the variants.
+And to learn more about that tool,
+you can go to the link below.
+So to summarize, we have developed Nucleus
+which is a C++ and Python library
+to make it easy to bring 
+genomics data to TensorFlow,
+to train your models of interest
+for genomic problems.
+We have the ability to interoperate
+with Cloud Genomics
+and are being integrated into 
+the variant transforms at the moment.
+This ended up being the foundation
+of our CNN-based variant caller
+which is also available, 
+open-source, at the link below.
+So with that I would like to thank you all
+for your attention today.
+(applause)

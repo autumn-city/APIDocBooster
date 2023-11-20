@@ -1,0 +1,1085 @@
+Hey everybody,
+welcome to this session.
+I'm Shashank Prasanna,
+I'm one of the co-presenters.
+And in this session,
+we'll be talking about
+deploying Pytorch models
+for production
+using open source library
+called TorchServe.
+I'm joined with my co-presenter
+Greeta from Facebook.
+And for the rest of the session,
+here's how we structure our two parts
+of this presentation,
+I start off by talking about
+some of the challenges
+with deploying Pytorch models.
+And then we'll take
+a look at TorchServe,
+which is an open source library
+jointly developed by AWS
+and Facebook that helps you
+deploy Pytorch models to production.
+We'll take a look at some of the key
+features and benefits of TorchServe.
+We'll also see how it works,
+what makes it tick under the hood.
+And then we'll spend
+most of the time in a demo,
+showing all the APIs
+and how it works,
+how to install it,
+how to get started,
+how to invoke and get inference
+results, and so on.
+We'll also take a look at deploying
+Pytorch models with Amazon SageMaker.
+So, let's get started.
+And once I finished my part,
+we'll have Greeta talk about
+some of the best practices
+for production deployment.
+So, let's get started.
+Let's say you're a developer
+or data scientist,
+and one of the objectives
+of training models
+is to deploy these models
+into production and host them
+so that you can help clients
+either using mobile app or web apps
+invoke your application
+and get results.
+Now, your model is surrounded
+by pre-processing
+and post processing steps,
+which constitutes
+your business logic.
+And you want to use this model
+as an endpoint in the cloud.
+Now, as you consider deploying
+your Pytorch models to production,
+there are a few factors
+that become very important,
+you want good performance,
+you want it to be easy to use,
+to deploy, you want to make sure
+it's efficient,
+cost efficiency is high.
+Also, you want to be able
+to scale out deployment.
+Let's take a closer look
+at each of these challenges.
+Performance is very important
+as you're considering deploying,
+because you need good throughput,
+to be able to make sure that
+you're catering influence
+requests to large number
+of customers,
+but also you want
+low latency results,
+especially if you're deploying things
+like conversational assistants
+or other latency
+sensitive applications.
+You also want it
+to be easy to deploy.
+As a developer or data scientist,
+you want to be able
+to take your model,
+and not have to write a lot
+of pre-processing
+and post processing steps.
+But you want it to be
+very easy to deploy,
+take your model
+and deploy it to production.
+You also want to have
+high cost efficiency,
+which quickly translates
+to making sure
+that your deployment
+instance is highly utilized.
+Which means if you have
+a number of CPU threads,
+if you have a GPU,
+you want to make sure
+that it's fully utilized
+as you consider a model deployment
+to keep your deployment costs low.
+You also want to make sure
+that your model scales
+as you have more number
+of requests
+coming in as you have
+large number of customers
+accessing your model
+when it is in production.
+You also want capabilities
+such as A/B testing,
+because you're going to have
+different versions of models,
+you want to be able to
+monitor model performance
+as it is running in production.
+In order to address
+some of these challenges.
+AWS in collaboration with Facebook
+developed an open source library
+called TorchServe to help you
+deploy Pytorch models to production.
+And here are some of
+the key benefits.
+First and foremost, it's a
+high performance model server
+previously had to build
+your own model servers
+or put together your own serving
+solution based on using Pytorch.
+But with TorchServe, you get
+a high performance model server
+that provides low latency
+APIs right out of the box.
+It's also optimized
+for CPUs and GPUs.
+If you have both these resources,
+it can take advantage
+of both hardware resources.
+It's also super easy to use.
+In many cases, you get
+zero code deployment,
+which means you take your model.
+If you're deploying
+image classification
+and object detection,
+semantic segmentation models,
+you just take your model
+and use some of the default handlers
+that come with TorchServe.
+So you can deploy these to production
+without any code changes.
+And we'll take a look
+at this in demo.
+It's also fully customizable
+and flexible,
+staying true to spirit
+as an open source project
+and as a Pytorch project.
+You get multiple model
+hosting capabilities,
+you get model versioning.
+You get server side
+batching so that your clients
+don't have to batch requests
+before sending requesting
+influence reserved.
+And you'll get monitoring
+and logging capabilities.
+And we'll take a closer look
+at each of these capabilities.
+Now, before we jump into
+how TorchServe works,
+there are a few different ways
+to deploy your models with TorchServe
+and we'll take a look
+at these three options
+based on how much flexibility
+and control you want,
+versus how much of
+a managed solution you want.
+So you don't have to
+manage infrastructure.
+So the easiest way to do this
+is to install TorchServe
+on an Amazon EC2 instance
+and run your own model server.
+And because it's open source,
+you can build it from source
+or use PIP or Conda to do this.
+Many customers prefer using some
+sort of an orchestration service
+such as Amazon EKS,
+so that you can still manage
+the underlying infrastructure
+such as the Amazon EC2 instances.
+But Amazon EKS will make sure
+that you can easily orchestrate scale
+out and scale back
+when you don't have demand.
+And some customers prefer
+a fully managed solution,
+and this is where Amazon SageMaker
+comes into picture.
+And with Amazon SageMaker with just
+a couple of lines shown here,
+you can create a model
+and deploy a model
+to get a highly secure,
+reliable, scalable endpoint
+just by specifying
+how many instances you want.
+And whether it's a CPU
+or a GPU instance.
+So depending on where you are in
+the spectrum of flexibility control
+versus a fully managed solution,
+you can use TorchServe
+to deploy your model
+by touch models to production
+using any of these three options.
+Now, let's take a look
+at how this works.
+Let's say you're a developer or data
+scientist training a Pytorch model,
+the first thing you want to do
+to stand up a TorchServe model server
+is to run this command shown here,
+TorchServe start.
+You can also run this in a Docker
+container, as we'll see in the demo.
+So as soon as you stand up
+TorchServe model server,
+it stands up a server
+and offers a few different APIs.
+The purple boxes here represent
+a Management API
+and Inference API and Metrics API,
+we'll take a look at what these are.
+You also get logging capabilities
+out of the box
+and it needs access to a model store
+from where it will pick up
+your models to host.
+So the first thing you have to do
+as a developer is to create
+what is known
+as a model archive file.
+A model archive file basically
+ensures your model definition,
+also your state information,
+and packages,
+all of this into a single archive
+file that ends with .mar extension.
+And, once you have
+this model archive,
+and it can be created
+through TorchScript or eager mode.
+And once you have this, you can
+invoke the Management API,
+which is by default hosted on port
+8080, but it's fully customizable.
+And what this lets you do
+is register new models,
+scale number of workers
+associated with the model,
+you can set different model versions,
+and so on.
+And once you register a model,
+what happens behind the scenes
+is it'll stand up these endpoints,
+depending on how much resources
+you requested,
+how many CPU threads,
+you need to host a specific module,
+or whether it needs a GPU or no.
+And you can also specify
+server side batching.
+How many requests to batch
+before you run the inference?
+And once this is hosted,
+your clients,
+which could be mobile app,
+web app and other microservice,
+they make requests to the inference
+API, by default hosted at Port 8081,
+but customizable, again,
+to get back inference requests.
+And while this is running,
+you can always query the metrics
+API to get metrics information,
+as these inference requests
+are being made to the model server.
+At a high level, this is how
+TorchServe so works under the hood.
+But as a user, of course,
+you don't have to worry
+about the inner workings,
+you just have to know
+what APIs are available to you.
+Now, as I mentioned,
+it's really easy to use.
+And one of the reasons
+it's so easy to use
+is as a developer data scientist,
+if you have models
+that do image classification,
+image semantic segmentation,
+object detection,
+or text classification.
+We have thoughts of offers
+these default model handlers,
+which gives you default
+pre-processing
+and post processing steps,
+so that you can just deploy a model
+as you'll see in the demo.
+But, staying true to the spirit
+of an open source project,
+it also can be extended
+and customized.
+So here's an example of a handler,
+and it can be fully customized by you
+if you have special
+pre-processing requirements
+or post processing requirements.
+And you also have the ability
+to provide
+a JSON file which maps index to name
+so that your inference requests
+are friendly, and readable.
+It doesn't have to be probability,
+so scores
+but you can get labels back.
+So that's an option
+that's baked into TorchServe.
+Now, we'll spend more time
+on the different
+APIs in the demo, but at high level
+the Management API is
+Very simple and easy to use here
+are HTTP requests
+to do query model status
+register different models
+on which to models and scale workers.
+These APIs are also available
+with as GRPC APIs.
+And here's also an example
+of inference
+API right at the bottom.
+So it's fairly easy to use
+and the best way to experience this
+is to see this in action in a demo.
+With that, let's take a look
+at a quick demo.
+Here's what I'll cover in a demo.
+First, we'll take a look at launching
+TorchServe using a Docker container
+on an Amazon EC2 instance.
+We'll go through all the different
+API's, we'll see how it works,
+how you can make requests,
+how you can register model
+understood models,
+scale models, and so on.
+We'll then take a look at an easier
+way to do this using Amazon SageMaker
+where you just bring in a model
+and just with a single line of code
+host a model.
+With that, let's jump
+right into the demo.
+To get started,
+the first thing we'll do is head over
+to github.com/pytorch/serve.
+TorchServe as I mentioned
+is fully open source project,
+and there are a couple of ways to
+install TorchServe as described here
+depending on your platform
+and your preference.
+The approach we'll be taking
+in this example
+is quick start with Docker container,
+this is the easiest way
+to get started.
+Because there's a Docker container
+readily available for you to download
+and start running
+the TorchServe model server.
+While we are here,
+I'd also like to point out
+that there are documentation
+pages here
+with more information
+about how to use TorchServe,
+and all the different APIs
+that are available to you,
+which we'll also take a look at
+in this demo.
+So with that, let's quickly head over
+to our demo here.
+And what I've done is launched up
+an Amazon EC2 instance with AWS
+deep learning AMI.
+Really, this could be any EC2
+instance,
+with either a CPU
+or GPU of your choosing.
+The very first step is to download
+a TorchServe model.
+Now as a developer or data scientist,
+you already likely are training
+Pytorch models,
+and you have models
+that you want to deploy.
+For the purpose of this example,
+what I will do is download
+readily available model
+on the official Pytorch repository.
+This is a dense net 161 model
+and as soon as this model downloads,
+this is available to me here,
+right here in this directory.
+And the first step,
+if you recall from our slides
+is to create a model archive file.
+And to do this, we use a utility
+called torch model archiver.
+And this is can be installed
+along with TorchServe.
+And it takes a couple
+of important arguments
+that I'll go through in detail.
+The first thing is to specify
+a model name.
+And importantly,
+you can also specify a model version.
+And this becomes important
+as you're training
+other models with improvements
+and you want to work on them
+rather than categorize it
+as a completely different model.
+Then there are two key pieces of
+information that you need to specify.
+The first is the model file itself.
+This is your definition
+of your model.
+And then, you also want to specify
+the serialized file,
+which includes state take
+information, this is the .pth file.
+Optionally, you can also specify
+the model store
+where you want to store
+the model archive file.
+And this becomes important
+because your model server
+needs to have access
+to this location.
+So, it can pick up and host
+an endpoint with this specific model.
+You can also optionally
+provide extra files.
+And in this case,
+we have an index to name JSON file
+so that inference requests
+can be human readable
+rather than just course
+of probabilities.
+And finally,
+you can specify a handler.
+And this is a really easy
+to use convenience feature
+because if you're deploying
+image classification,
+object detection
+and text classification,
+all the pre-processing,
+post processing is
+automatically handled for you
+when you use one of
+the default handlers.
+So, let's go ahead and run this.
+And as soon as you do that,
+you will see here that in a moment,
+the torch model archiver utility
+takes your PTH file
+and under the model store directory,
+save it with the .mar file.
+Now this model is ready
+to be hosted with TorchServe.
+To make things interesting,
+I will do the repeat the same steps
+with another model
+and in this case,
+this is a faster rcnn model.
+Again, I download the model as well
+as create the model archive file.
+So, in this process
+was we download a model,
+this is a slightly bigger model,
+and it is an object detection model.
+So, it does slightly
+different things in the sense
+that it will find and bounding box
+around the object of interest
+along with identifying
+what the object is.
+And, if we look
+at the model store directory,
+I now have two
+different model archive files.
+With that, we are now ready to launch
+a server and host these models.
+As I mentioned, one of the easiest
+way to launch a server
+is to use
+the TorchServe Docker container.
+And if you're new to Docker,
+it's fairly straightforward.
+You just need to launch
+an AMI with Docker installed
+or you use the Amazon AWS
+deep learning AMI,
+which includes Docker
+as part of the AMI.
+To run this TorchServe container,
+you need to specify
+what ports are need to be accessible
+in this case, 8080 and 8081
+because this corresponds
+to the Management API
+as well as the Inference API.
+And you can also specify the model
+store where the models are hosted.
+And you specify the type
+the container AMIs that you want.
+In this case,
+I'm using Pytorch/TorchServe latest.
+But if you want to use a GPU
+compatible container,
+then you will say latest-GPU,
+and then we launch the server.
+So let's go ahead
+and run this quickly.
+And as soon as I do this,
+I see that my TorchServe server
+is ready running.
+What we'll do now is submit request.
+And while this is up, let's go ahead
+and register our very first model.
+And to do that, we will use
+the Management API
+and specify the model that we want
+to register or host as an endpoint.
+And we provide
+a couple of different options here.
+One is initial workers,
+which is number of workers
+you want CPU threads, essentially.
+The bat size,
+so you can do server side batching,
+as well as the name
+of the model archive.
+And you can also do the same
+with faster rcnn.
+Let me go ahead and register
+both these models
+by running these commands.
+And as soon as I do that,
+I see that both
+these models are registered.
+And you can also use
+the Management API
+to query what models are currently
+registered by running a cURL,
+at 808/models.
+You see, these two models
+are currently registered,
+we just registered them.
+You can also get more detailed
+information
+about a specific model
+that has been registered.
+So by specifying the model name,
+you get more information about
+the model whether for example,
+how many workers,
+what is the batch size
+and also to support a GPU
+or not in this case,
+no, because I am on a CPU instance.
+Great.
+So the only thing left to do now
+is to submit inference requests.
+And to do that, I'm going to download
+an image of kitten.
+As you will see here, I have an image
+called kittensmall.gpg.
+And in order to submit requests,
+I can use the inference API,
+which is hosted on port 8080.
+As opposed to the Management
+API at 8081.
+These are of course defaults
+that you can change.
+And as soon as I submit the request,
+I get my responses
+with the top five categories.
+And I also get
+the friendly names here
+because I specified the name
+indexed in a JSON file
+while creating
+the model archive file.
+I can also unregister models so that
+they are no longer being hosted.
+Let me show you what models
+are first registered.
+So these two are registered
+in order to run register,
+I can submit a delete request
+and this model has been unregistered
+and I can verify
+that I only have the faster rcnn
+and dense net has been removed
+because I just unregistered it.
+Awesome. So this is a quick example
+of using TorchServe
+using Amazon EC2 instance if you want
+a fully managed experience.
+Let me show you a way to do this
+using Amazon SageMaker.
+If you’re new to SageMaker,
+SageMaker is a fully managed service
+for every step of the machine
+learning workflow.
+All the way from data labeling
+to hosted notebooks,
+large scale training, and inference
+deployment and hosting endpoints,
+which is what we'll
+take a look at now.
+And also for doing data processing,
+and many other things.
+I’ll let you explore on your own.
+So let's head over
+to Amazon SageMaker studio,
+where I have a notebook that shows
+how to deploy a model
+using TorchServe and hosting it
+with Amazon SageMaker.
+So the first order of business
+is to import the SageMaker SDK,
+in order to call and make requests
+to SageMaker to host an endpoint.
+After that will first download
+a dense net 161 model
+just like we saw
+in the Amazon EC2 example.
+Once you download the model,
+you have this model available here
+and you don't actually have to create
+the model archive file
+with SageMaker,
+it will do it automatically for you,
+all you need to do is create
+a TAR file with your model file
+as well as the PTH file,
+as described in this cell here.
+You just create a TAR file,
+and then you just upload
+the tar file to Amazon S3.
+After that, you just have two steps
+to host a model.
+The first step is to create
+a Pytorch model object.
+And you do this by specifying the
+location of your model in Amazon S3,
+where you just upload it
+and other things.
+Like what the entry point
+is the framework version
+as well as Python version.
+And then it is just one line of code
+to deploy your Pytorch model.
+You just say model.deploy,
+you specify the number of instances.
+If you want 100,000 or more.
+And all the load balancing
+is automatically handled for you.
+And the type of instance
+whether you want a CPU instance
+or a GPU instance.
+After that, you can submit
+an inference request to this endpoint
+and you will get these results.
+So that's the quick and easy way to
+use TorchServe with Amazon SageMaker,
+you get all the other benefits
+of SageMaker,
+including modern monitoring
+to catch drift detection and so on.
+So that was a quick demo.
+Let's head back to our slides.
+Thanks Shashank.
+Let's dive into the best practices
+for production deployment.
+In order to have success
+by your models in production,
+one needs to start
+with the responsible AI
+with fairness
+and Human Centered Design in mind.
+After the model is trained, one has
+to go through the optimization phase
+which involves looking at things
+like performance
+versus latency optimizations,
+top scripting the model
+for higher throughput,
+taking into consideration
+whether the model will be deployed
+in offline versus real-time
+and the cost considerations.
+For the deployment
+architecture itself
+based on whether you will be
+deploying on the cloud or on-prem,
+you have to look at whether you will
+be using orchestration solutions,
+you will be deploying it
+in a primary versus backup scenario
+or standalone mode.
+To get robust solutions
+which are high resilient,
+you need to have a robust endpoint,
+you need to take into
+consideration things
+like auto scaling,
+canary deployments, AB deployments,
+and then there needs to be
+a continuous measurement
+of the right metrics of the model for
+right performance interpretability
+and a feedback loop
+is a continuous refinement.
+For responsible AI fairness
+by design and Human Centered Design
+will play a key role.
+On the fairness side,
+one has to consider model bias,
+data bias look at ways for measuring
+the skewness of the data.
+Identify relevant metrics,
+like false positive rates
+for class demographics,
+provide transparency
+to the users
+and how exactly will their data
+be used by the AI models.
+For explainability provide
+visibility into the decision
+making process of why
+a certain recommendation was made
+by the model
+have an inclusive design
+which takes into consideration
+all the age groups and demographics.
+From a home human
+centered perspective,
+when you are designing
+your models think
+about what will be
+the impact of the AI decision
+making on the people who are going to
+be using that particular application,
+do they have human
+recourse available
+or the solution should not be
+fully automated in all cases?
+As an example, if you take
+a mortgage application,
+which is using AI systems,
+and all of a sudden you start
+seeing high rejection rates
+for a certain category or a race,
+the people should have recourse to be
+able to connect to a human person
+and get their application
+reviewed.
+If you're looking at the computer
+vision models,
+you should be in looking at
+is the model trained across
+the diverse population.
+So, is it taking care of people
+for different skin tones
+different age groups,
+so, there is no bias
+introduced as a result.
+On the optimization side,
+you will look at building
+the model for performance
+versus latency goes in mind,
+you can reduce the size of the model
+using techniques like quantization,
+pruning,
+mixed precision training.
+In order to increase
+the throughput you can
+TorchScript models and TorchServe
+provides a very nice
+SnakeViz profiler
+to do this analysis.
+For large NLP models
+transformer based models,
+you may want to deploy that
+on a GPU for low latency.
+And now that with
+the TorchServe 0.3 release,
+we have support for gRPC,
+you may want to analyze
+whether gRPC gives you better
+performance versus rest.
+This will be especially relevant
+for the audio and the video models.
+Here are some examples
+of the benefits
+that we have seen
+the quantization inside Facebook.
+So as you can see,
+with all these different models
+ResNet, MobileNet,
+Translate/FairSeq pair, there is zero
+to very less loss of accuracy
+when the models
+are converted to eight.
+And we have seen two to 4X speed
+up in the inference speed.
+This is an example
+of the SnakeViz profiler
+that is bundled with TorchServe.
+So what you're seeing here
+is an eager mode,
+both models
+with eager mode profiling.
+And, this is the same model
+with TorchScript
+profiling
+and we saw speed up to 4X
+because the serialization overhead
+is not there in case
+of TorchScript models.
+Other considerations include
+if you're doing offline predictions,
+you can do dynamic
+batching of your predictions.
+If you're doing online predictions,
+you should consider
+asynchronous processing
+either in a push or a pull mode.
+If you're storing the results
+in a database,
+you could be pulling for it.
+If there are certain elements
+which do not change through the day,
+you can do the pre
+computed predictions at night
+and use that for the entire day.
+So you can introduce
+techniques like this.
+For cost optimization side,
+for offline models,
+you can look at spot instances.
+So if an instance goes away,
+you can have a retry loop
+in your predictions
+and try until
+the next instance comes on,
+you can use techniques
+like auto scaling
+based on metrics
+for an on demand cluster.
+So, Shashank talked about
+the flexibility
+and the managed deployment.
+So this is the full spectrum
+of all the deployment
+that are supported by TorchServe.
+So on the on-prem, for example,
+when you're doing the develop test,
+you can start off with install
+from source or Docker containers,
+you can then deploy it
+in an ML flow
+or a cube flow and Marmont
+with the ML microservices.
+Now we have support for TF
+serving and Kubernetes
+with all auto scaling
+and canary rollouts.
+On the CloudFront, you can start
+with the AWS CloudFormation
+template that we provide
+out of the box to quickly get going,
+you can deploy it as a microservice
+behind an API gateway,
+or with the sage maker
+endpoints with the default
+inbuilt mechanism inside SageMaker
+or using your bring
+your own container.
+For a fully managed solution,
+you can consider serverless
+functions of SageMaker.
+If you're doing ML flow, you can use
+the Databricks managed ML flow.
+And of course with SageMaker,
+you have the option to do
+the full canary rollouts,
+and we have support
+for EKS as well.
+For the resiliency side, you do need
+to make sure that the rope endpoints
+that you create for your model
+serving, they are robust.
+SageMaker provides
+a mechanism for doing that.
+And you can do your own custom
+endpoints as well behind
+an API gateway.
+For auto scaling,
+you need to look at
+when you're doing a deployment
+in an orchestration scenario,
+you can do the auto scaling
+based on metrics.
+So this could be SageMaker
+auto scaling,
+or on Kubernetes
+or with TF serving.
+TorchServe supports
+multi node deployment.
+So if you're doing this on EC2,
+you can do the multi
+node deployments.
+We highly encourage you
+to use the canary rollouts
+when you are deploying
+your models for production.
+So test the new version
+on a small subset of users
+and then rolled out
+to the entire population.
+In certain cases, when you're
+building a new model,
+you may want to do things
+like Shadow inference
+when the model is getting trained.
+So that the new version of the model
+is highly performant
+when you deploy it in production.
+When you have multiple models
+and you need to choose
+between which model is going to
+give you the best results
+then you will use techniques
+like AB testing
+and TorchServe allows you
+to support deploy all these models.
+For the measurement side,
+you should define performance
+metrics such as accuracy
+while designing
+the AI service itself.
+And this will be
+very use case specific,
+TorchServe has support
+for custom metrics
+and you can log them
+on CloudWatch or parameters
+and you can monitor
+your model performance.
+With B0.3 release,
+we added support for model
+interpretability with Captum.
+So please experiment with that
+and do the explainability analysis
+and do the feedback loop.
+If the model accuracy
+drops over time,
+do the analysis
+like concept drift analysis
+whether the model data
+is becoming stale
+or the model is become old
+and continue to refine your model.
+So, this is what the loop looks like.
+So you will start off
+by understanding the requirements
+of the product or the application
+where the AI model
+will be rolled out.
+Get an alignment across
+all the stakeholders
+and define what are the metrics
+that will be used for monitoring,
+define the measurement criteria
+and the mitigation criteria
+and then do the continuous monitoring
+and refine the model
+as you go around your service.
+In the future versions,
+we are rolling out support
+for ensemble models.
+We are adding performance
+improvements with the memory
+and better resource utilization
+for better scalability.
+C++ inference back end
+is coming for the lower latency.
+We are adding support for AWS
+Inferentia AI accelerator chips
+and enhanced profiling tools
+will be provided.
+I’ll hand it back to Shashank now.
+Here are some resources for you
+to get started with TorchServe,
+TorchServe is an open source project.
+So, head out
+to GitHub Pytorch repository
+and take a look at TorchServe
+for more information
+about how do you start TorchServe
+and documentation and so on.
+We also did a launch blog post
+that has more information
+about what is TorchServe
+and how to use it with an example
+it shows how to deployed SageMaker.
+There's also video that are recorded
+with more information
+on how to run TorchServe.
+If you want to know more
+about SageMaker here
+are some documentation
+and samples linked on GitHub
+that shows you how to train
+and deploy by torch models.
+And finally, if you're interested
+in the topic of deployment
+and accelerating model deployment
+in this talk,
+we talk about how to accelerate
+models for inference
+using CPS and GPS and elastic
+inference and AWS Inferentia.
+Feel free to watch the stock and also
+check out the related blog posts
+that more information on this topic.
+With that, I want to thank you
+for taking time
+to listen to me and Greeta.
+If you have questions, feel free
+to reach out to me on Twitter,
+LinkedIn or Medium.
+Here are some links.
+Thanks again for listening
+and please take a few minutes
+to fill out the survey.
+Thank you.

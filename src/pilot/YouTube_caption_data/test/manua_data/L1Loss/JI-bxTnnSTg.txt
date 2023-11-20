@@ -1,0 +1,644 @@
+We will continue now with dense sampling 
+methods for object detection. 
+ 
+Before we go there, the exercise that we left 
+behind from the last lecture. Why is smooth  
+L1 loss less sensitive to outliers than L2 loss? 
+When the deviation of the predicted output from  
+the ground truth is high, which happens when 
+you have outliers, the squared loss or the  
+L2 loss exaggerates the deviation which also 
+results in the gradient exaggerating it which  
+could cause an exploding gradient problem. This 
+issue gets mitigated within L1 loss because L1  
+loss is not differentiable at 0 we use a smooth 
+version of it known as a smooth L1 loss which  
+mitigates the problems caused due to outliers.
+So, we said that contemporary methods can broadly  
+be divided into Region Proposal methods and 
+Dense Sampling Methods. So, we will now go into  
+Dense Sampling Methods which are 
+single stage detection frameworks. 
+ 
+The most popular that is still used today is known 
+as YOLO or You Only Look Once. The first version  
+of YOLO was developed in CVPR of 2016. It is a 
+single stage detector, you could say that all  
+these single stage detectors are loosely based on 
+OverFeat, they all use only convolutional layers,  
+no fully connected layers and speed along 
+with good performance is the main aim. So,  
+the high level pipeline is you resize an 
+imag,e you run a convolutional network,  
+you get a set of outputs then you do non-max 
+suppression to identify your final bounding boxes.  
+Let us see it in more detail. 
+So, here is an overall flow, given an input image,  
+you first divide the image into an S by S grid 
+and each grid cell is responsible for the object  
+with its coinciding center. So for example, 
+if you took this particular grid cell here  
+that would be responsible for this object dog here 
+and has to predict those bounding box offsets.  
+So, each grid cell predicts B bounding boxes, B 
+is another hyper parameter and confidence scores  
+for each of these boxes.
+So, you can see here that each grid  
+cell can predict multiple bounding boxes and 
+a confidence for each of those bounding boxes  
+and each grid cell predicts just one probability 
+per class. So, total of C classes would mean C  
+total probabilities. You could consider that 
+this is computing a quantity which is given  
+by probability of class I given an object. So 
+that is a conditional probability. The final  
+predictions can be encoded as, you have an S cross 
+S grid then in each grid location you predict B  
+bounding boxes. For each of those B bounding boxes 
+you have 5 values. What are those 5 values? 
+ 
+4 coordinates that could be the center of 
+the object and the width and the height and  
+a confidence for each bounding box so that amounts 
+to 5 and then you have C class probabilities per  
+grid cell and that is how you get S into S into 
+S into B into 5 plus C. That is the total number  
+of outputs that you would have in your output 
+layer before applying non-max suppression.
+ 
+So, each bounding box gives 4 coordinates  
+x, y, w, h; x, y are the coordinates representing 
+the center of the object related to the grid cell  
+and w, h are the width and height of 
+the object relative to the whole image  
+and the confidence score given for each 
+bounding box reflects how confident the model is  
+that that bounding box contains an 
+object and also how accurate the boxes.  
+So, you could view the confidence to be the 
+probability of an object, any object at this  
+point you do not know which class it belongs 
+to, so it is just the probability of an object  
+into the intersection over union of the ground 
+truth with the predicted box. So, confidence  
+takes into account both of these quantities. 
+And you have the conditional class probabilities  
+for each class in each grid cell 
+regardless of the number of boxes B  
+predicted by each grid cell.YOLO predicts 
+only C class probabilities for one grid cell.  
+So, you could assume that those C class 
+probabilities are these conditionals here given by  
+probability of class i given an object. So, 
+if you multiply these confidence scores,  
+these class conditionals with your confidences, 
+you would get probability of class i given an  
+object which is the conditional class 
+probability and the confidence which is  
+given by probability of object into the IOU 
+between ground truth and predicted values  
+which amounts to the probability of class i into 
+the IOU of the ground truth and predicted box.
+ 
+So, for each cell we are saying what is the 
+probability that this class occurs in this  
+grid cell and for the predicted box, how much 
+IOU does it have with the ground truth.
+ 
+What loss function do you use to train YOLO? 
+The loss function effectively combines the  
+several components that you need to ensure that 
+each of these quantities that is being predicted  
+is close to the ground truth. So you 
+see here there are multiple terms,  
+so the first term, so let me first explain these 
+indicators here.One i j object indicates if  
+the jth bounding box predictor in cell 
+i is responsible for that prediction.  
+Remember, every cell predicts b bounding boxes, 
+so i j here corresponds to the jth bounding box  
+predicted by ith cell and one i denotes 
+if object appears in cell i. 
+ 
+Now let us look at what each of these quantities 
+are doing. So, if you are looking at a particular  
+bounding box predicted by a particular cell 
+you are first trying to ensure that the xi yi  
+predicted by the network is close to the expected 
+xi hat yi hat then you are ensuring that the width  
+and the height predicted by the network is 
+close to the original width and the height,  
+these are taken a square root because you 
+have a width and a height in two dimensions  
+so you take a square root here and the C 
+and Ci hat are the confidence values.
+ 
+So, you also try to ensure that if the confidence 
+is low with respect to what the confidence should  
+have been which would have been 1 if an object 
+was there, you also try to ensure that that is  
+minimized and all these summations as you 
+can see is done for across all of your  
+grid cells and across all of the bounding boxes 
+predicted by each of these grid cells and you do  
+the same even when an object is not present you 
+would want the confidence to match the expected  
+confidence which in this case would be 0. So, that 
+is what these two terms in sense are complementary  
+for positive and negative classes. 
+And finally, the last term here denotes  
+the conditional class Probabilities matching the 
+expected conditional class probabilities. So,  
+these are the different terms in the loss 
+function used to train the network.
+ 
+What about, what are the limitations of such 
+an approach? YOLO v1 had a few limitations.  
+Firstly it detects only a small number of 
+objects. It misses objects that are small  
+or close to each other because of the methodology 
+itself because of the spatial constraints of the  
+methodology and how many objects you 
+can present that could be overlapping.  
+It ended up having a high localization 
+error and a relatively low recall. 
+ 
+To overcome these issues YOLO v2 which 
+was proposed as an extension of YOLO v1  
+introduced the idea of anchor boxes into 
+the YOLO framework, these anchor boxes  
+are similar to what you saw with faster R- CNN. 
+So, let us see how these anchor boxes work.  
+So there are 5 coordinates predicted per anchor 
+box tx ,ty ,th, tw and to. Let us see each of  
+them. So, if the cell is offset from the top left 
+corner by cx cy, top left corner of the image and  
+the bounding box has width and height pw and ph, 
+then the predictions corresponding to the anchor  
+box are given by bx is sigma of tx plus cx.
+So, you can see here that sigma of tx is right  
+here similarly by would be sigma of ty so that is 
+that is the other coordinate of the same location  
+plus cy and bw and bh are written in terms 
+of scaling multiples over pw and ph. So,  
+bw and bh are pw into exponent of tw. So, 
+tw is a predicted quantity so bw is given by  
+what scaling factor should you change the width 
+or the height? It is similar to predicting an  
+offset but the offset is a multiplicative factor 
+for width and height and finally, the probability  
+of the object into the IOU which is the quantity 
+that we just saw for YOLO v1 is sigma of to,  
+that is the conditional class probability.
+So, those are the different quantities that are  
+predicted by the network and which relate to the 
+actual bounding box that that grid location is  
+trying to point to. Remember that each anchor box 
+predicts only these 5 values, this is the bx, by,  
+bw, bh are the actual bounding box corresponding 
+to these values given by the anchor box.
+ 
+Moving on, there was another single stage 
+detection method known as the single shot  
+multi-box detector known as SSD. SSD again 
+uses an OverFeat like methodology. You can see  
+here that given an input image the initial 
+part of the network is a VGG like network  
+then on there are convolution 
+layers that keep reducing the size  
+and you can see there are some skip connections 
+that take you from a convolutional layer  
+directly to the classifier. Let us 
+see them in a bit more detail.
+ 
+So you have multi-scale feature maps for 
+detection because you are sending these  
+convolutional layers directly to the output, these 
+convolutional feature maps directly to the output,  
+these ones directly to the output. So, the 
+output layer receives the feature maps from  
+convolutional layers of different scales 
+that is why multi-scale feature maps. 
+ 
+Then we also see that for each of these 
+convolutional layers there are a different  
+set of convolutional filters that connect it to 
+the output layer. So, this initial layer here  
+goes through a 3 cross 3 cross 4 into classes 
+plus 4 that is the number of outputs that it has,  
+that is the number of that is the size of the 
+convolutional filters that you have rather  
+which gives the corresponding output in the 
+output layer and so on and so forth for each  
+of these intermediate convolutional layers.
+So, if you took anyone of these feature maps,  
+let us take a feature map layer a layer with a 
+feature map of size m cross n with c channels,  
+then that would give m cross n locations. So, 
+each of those pixel locations in one of those  
+feature maps could be a center of an object for 
+instance, So, each of them is like a grid cell  
+if you could compare this to YOLO and the bounding 
+box offset values are relative to that grid cell  
+location. So, you have, remember you see 
+here that each of these convolutional maps  
+predict classes plus 4 that is the 
+number of values that they would predict.  
+So a class probability for each class 
+plus 4 values for the bounding box offset  
+corresponding to each pixel location 
+in these convolutional feature maps.
+ 
+So, as feature maps get smaller and smaller 
+when you go through later parts of the network  
+so you can see here if this was your 
+ground truth boxes in your original image  
+and you can see here an 8 by 8 feature map 
+followed by a 4 cross 4 feature map. So in an 8  
+cross 8 feature map, if you looked at the anchor 
+boxes for each of these grid cell locations,  
+each of these anchor boxes would predict 
+a set of values the way we talked about it  
+the previous slide. So, if you had k anchor boxes 
+with different aspect ratios as you can see here,  
+SSD would predict c class specific scores 
+plus 4 anchor box of offsets. That is what  
+we saw on the earlier slide as c plus 4 
+is the number of channels that you had  
+for each of your convolutional layers when 
+you connected them to the output layer. 
+ 
+So, for an m cross n feature map, you would 
+totally have c plus 4 into k anchor boxes  
+into m n outputs because you are assuming now that 
+each pixel can be the center of an object and you  
+have k anchor boxes around each of those pixels 
+and each anchor box predicts c class probabilities  
+and 4 bounding box offsets. So, that is why 
+for each m cross n feature map, you would have  
+these many outputs in the SSD framework.
+What is the loss function you use here? Very  
+similar to the loss functions we have seen so 
+far, SSD implements a localization loss function  
+and a confidence loss function. So, the confidence 
+loss function compares the confidences of x and c,  
+c are the predicted class probabilities and x are 
+the ground truth and the way the ground truth is  
+written is you have x sub i j superscript p is 
+given by 1 or 0 depending on whether there is an  
+object or not an object, if the ith default box 
+or the anchor box, default box and anchor box  
+are the same synonymous here, the ith default box 
+matches the jth ground truth box of category p.  
+That is the notation for these x i's and l and g 
+are the predicted and ground truth box parameters.  
+Let us see each of these loss 
+functions in a bit more detail. 
+ 
+The localization loss for SSD is given by,  
+once again a smooth L1 loss. It also has a 
+factor xij k in the beginning to say whether  
+that is a class or not because you only want to 
+evaluate this quantity when a class is involved,  
+that is when this would turn out to be 
+1 and this 1s are the predicted offsets  
+and gj hats are the ground truth offsets and these 
+ground truth offsets are given by gj hat cx is gj  
+cx minus di cx which is the center of the current 
+anchor box. You are just ensuring that your  
+gj represents the correct offset with respect 
+to the anchor box under question and you are  
+normalizing it with respect to the width and 
+the height for the x and y dimensions. 
+ 
+And this quantity here is the exponential 
+factor that we were using to scale the width  
+and the height. Instead of an additive factor 
+we said that YOLO uses a multiplicative factor  
+for the width and the height and because that 
+had an exponential term there, you are using  
+a log here to reverse the operation, so 
+that is going to be your ground truth  
+scaling factor that you would want your network to 
+predict and when you take an exponent of that li,  
+you would get rid of the log here and you would 
+get your correct expected width and height.  
+The confidence loss which 
+is the other loss with SSD  
+is a soft max loss of class 
+confidence probabilities.
+ 
+So, it is given by the first term for 
+all your positive bounding boxes which  
+is your standard cross entropy loss and the 
+second term for your negative bounding boxes  
+where there is a class label corresponding to a 
+background class which you would want to maximize.  
+So, ci0 here corresponds to a class label known 
+as background which is considered as one of the  
+classes you would like to predict and ci hat is 
+your standard Softmax activation function.
+ 
+In its practical implementation, both 
+YOLO and SSD have this problem is that,  
+most anchor boxes are likely to be negative 
+when you compare with something like a faster  
+R-CNN. So, to counter this, you select 
+negative examples that have the highest  
+confidence loss such that you maintain a ratio 
+of negative to positive to be about 3 is to 1  
+because otherwise remember that even if 
+you had 100 objects in a single image,  
+the number of anchor boxes and the grid 
+cells that you have if you take SSD,  
+it is in fact going to be per pixel, you will have 
+k different anchor boxes and that can be a huge  
+number in terms of the number of boxes that 
+are negative and have no object in them. 
+ 
+And then learning can get affected and which is 
+the reason you do this hard negative mining which  
+when you train, you only select some of those 
+boxes that have a very high confidence loss  
+and only use them in the loss function that 
+we talked about. Remember the loss function  
+considered those negative boxes also. SSD also 
+used a data augmentation strategy where given an  
+original image the original image was also used. 
+It also randomly sampled patches from images  
+trying to ensure that the minimum 
+IOU with the actual object  
+is in a predefined set of ranges to ensure that 
+the network gets exposed to different kinds  
+of patches from images and different 
+kinds of objects and their overlaps. 
+ 
+With this approach, SSD could outperform 
+YOLO and faster R-CNN. All detection methods  
+are measured using an evaluation metric 
+known as MAP or Mean Average Precision.  
+Precision refers to the standard precision 
+metric used in machine learning methods, average  
+precision talks about the average precision 
+obtained across all of your classes and the mean  
+is across all of your bounding boxes. So, one 
+typically measures mAP at a particular IOU.  
+So, how do you confirm whether you have 
+predicted a bounding box or not?
+ 
+So, you pre-specify a particular IOU such as 
+0.5 and say that as long as my predicted box  
+has at least an IOU of 0.5 with my ground truth 
+box, I am going to consider my prediction correct.  
+So, that is how correctness is defined to get your 
+precision and then you take the average across the  
+classes and the boxes that you have predicted. So, 
+you can see here that SSD matched faster R-CNN in  
+its mAP but at a significantly higher FPS, at 
+a significantly higher frames per second rate  
+which was the main objective to make the single 
+stage methods much faster in practice. 
+ 
+You can see that (this was also) 
+the number of output boxes are  
+significantly higher obviously with 
+SSD because you do it for every pixel  
+and they also showed that this works reasonably 
+well with different input resolutions.
+ 
+A third single stage detector approach is 
+known as the Feature Pyramid Network or  
+FPN. FPN uses the idea that feature layers from 
+feature maps from initial layers may not really be  
+suitable for detection, they are high resolution. 
+When you go through a convolutional network,  
+the initial layers are high resolution and 
+then as you go deeper, the resolution gets  
+lower and lower and lower but the initial 
+layers although they are high resolution,  
+we have seen from our visualizations of CNNS that 
+they may not really be capturing semantics of  
+objects in those initial feature maps but 
+they are the higher resolution ones.
+ 
+So, we are caught with this dilemma where the 
+lower resolution feature maps have more richer  
+features for detection whereas the higher 
+resolution is in this initial feature maps.  
+How do we bridge this gap is what 
+feature pyramid network tries to do. 
+ 
+So, here, here is a visualization of how a Feature 
+Pyramid Network attempts to bridge this gap.  
+So, if you were to use an image pyramid to be able 
+to do detection, so you, one thing you could do  
+is you could subsample your images and for each 
+resolution of the image, construct a feature map  
+and predict for each of those feature 
+maps or you could take your input image,  
+construct feature maps at lower and 
+lower resolutions and finally predict  
+at the least resolution or given an input image 
+construct feature maps at different resolutions  
+that as you build many convolutional layers 
+and predict at each of these resolutions.
+ 
+And what feature map, feature pyramid network 
+suggests is you do construct feature maps  
+at different resolutions as you 
+go through a convolutional network  
+but now you upsample and get back feature maps at 
+higher resolutions and now make predictions. So,  
+this way you try to get your semantics at your, 
+at your least resolution but upsample back to  
+transfer the semantics to a higher resolution.
+Let us see how this is done in the architecture.  
+So this is the overall architecture. So you 
+have an image, you have a conv layer stride 2,  
+then 0.5 x denotes a sub sampling max pool layer 
+2 cross 2 pool max pool, then you have a conv  
+2 with a stride 4, a max pool, a conv 3 with a 
+stride 8, a max pool, a conv 4 with a stride 16,  
+a max pool and a conv 5 with a stride 32. So, you 
+can consider that is like a restnet that is used.  
+In the FPN, all convolutional 
+featuremaps C1 to C5 are treated  
+with a one cross 1convolution which you 
+see on these arrows here with 256 channels  
+and M5 is up sampled by a factor 
+of 2 to to get the next M4. 
+ 
+But before you get M4 you get the signals from 
+C4 after applying your 1 cross 1 convolution  
+and combine these output of C4 with 1 
+cross 1 convolution and M5 to get M4  
+and you similarly continue to do this to get M3 
+and M2. Once you do this, a 3 cross 3 convolution  
+is applied on M4, M3 and M2 and this is done 
+to reduce the aliasing effect of M's. Remember,  
+that we are up sampling when we go from M5 to M4, 
+M4 to M3 and M3 to M2 and up sampling, recall,  
+we said could result in aliasing. 
+So, to smoothen out those aliasing factors  
+we use a 3 cross 3 convolution which takes us from 
+M4 to P4, P3, P2 so on and so forth. So finally,  
+you are left with all of these P's here 
+which are provided to individual object  
+detectors to get your final predictions. 
+A more recent approach to object detection  
+focused on the loss function that is 
+used to train these object detectors. So,  
+this was known as RetinaNet and the loss function 
+that was proposed is known as the focal loss which  
+was proposed in ICCV of 2017and this relies on the 
+intuition that two stage detectors were known to  
+be more accurate than one stage detectors. 
+One stage detectors were obviously faster  
+and it surmised that two stage detectors are 
+more accurate because this lesser class imbalance  
+between background or negative classes and 
+object containing or positive proposals.
+ 
+Remember, when you do selective search we 
+restricted ourselves to only 2000 region proposals  
+whereas in one stage detectors you could be 
+dealing with 100,000 regions because you could  
+be getting multiple anchor boxes around each grid 
+cell, in SSD it is on each pixel of the feature  
+map but even with YOLO you may be predicting b 
+bounding boxes for each of those s by s grid cells  
+which could be a very high quantity. So, how 
+do we address this imbalance between negative  
+or background classes and the 
+actual positive classes?
+ 
+Whenever you have such an issue of where there 
+are many negative examples which really do not  
+help the model and there are only a few positive 
+examples, certain things that could happen are  
+training could become inefficient because the easy 
+negatives are not really giving any useful signal  
+there could be so many kinds of easy negatives 
+that it is not really going to help the model  
+learn how to distinguish the positives from those 
+negatives because that class of negatives or the  
+background will be extremely vast in detection, so 
+the background could be the sky, could be grass,  
+could be buildings, it could be any of those 
+and all of them are still a background .
+ 
+Secondly, the loss could get overwhelmed because 
+of the negatives instead of the positives  
+and this could degenerate the training process 
+lead to degenerate models. To some extent the hard  
+negative mining that we spoke about in SSD where 
+we try to ensure that the final loss only uses  
+where there is a significant confidence loss 
+and ensures that the ratio of 3 is to 1 between  
+negative and positive. That does alleviate 
+these issues but the issue still remains. 
+ 
+So, what this particular paper proposes is 
+that cross entropy loss for using for the  
+classification branch of detection could 
+be inherently bad. Let us try to see why.  
+Remember that the cross entropy loss is defined 
+by minus log p. In the multi-class setting  
+it just turns out to be minus 
+log pt, log loss as we mentioned  
+and over their empirical studies they 
+observed this graph here where if you notice  
+even when you have, if you observe the gamma is 
+equal to 0 remember when gamma is equal to 0,  
+this loss introduced by them known as the focal 
+loss would turn out to be this coefficient  
+will turn out to be 1 when gamma is 0.
+And the loss would just become your standard log  
+loss or cross entropy loss so when gamma is equal 
+to 0, blue is your standard cross entropy loss  
+and you can see here that even when the 
+network predicts a high probability for  
+the ground truth class, the loss value is 
+fairly non-trivial, you get a fairly high  
+loss even when the model is predicting 
+a high probability for the correct class  
+and this can defeat the purpose of learning. 
+So, what RetinaNet with focal loss proposes  
+is, one, you could do a balanced cross 
+entropy where the minus log pt, the log loss,  
+is weighted by some quantity alpha and alpha can 
+be given as some inverse class frequency. That is  
+one way to do this, but this RetinaNet Method 
+also proposes a focal loss which considers the  
+predicted probability itself to fine tune the 
+loss. So you weight your log loss with 1 minus  
+pt times gamma where gamma is a tunable focusing 
+parameter so gamma is a hyper parameter that you  
+have to provide while training the network and 
+the final focal loss gives this quantity.
+ 
+If you observe here, let us assume gamma is 
+a certain values such as 5, so when pt is  
+high, this quantity is going to become low and you 
+are bringing down the overall loss because when  
+pt is high you want the loss to be low and when pt 
+is low let us say it is 0.1 because gamma is 5 you  
+would still have this quantity to be a reasonable 
+quantity and the log loss would be maintained  
+at a high level when your probability, predicted 
+probability pt for the ground truth class is low.  
+That is the main idea of the Focal loss. 
+The RetinaNet architecture otherwise uses  
+FPN, the feature pyramid network that 
+we spoke about along with the focal loss  
+where you can see here the first part of 
+it is the feature pyramid network itself  
+then for each of these scales you have a 
+classification sub network and a bounding box  
+regression subnetwork and the classification 
+subnetwork uses the focal loss to learn.
+ 
+There are all implementations of all 
+of these contemporary detection methods  
+both Dense Sampling Methods and the Region Based 
+Proposal methods in a popular library known as  
+Detectron. Detectron was provided by Facebook AI 
+Research especially to promote usage of object  
+detection algorithms. So, if you are interested 
+in implementing any of these object detection  
+algorithms for any of your projects, you can look 
+at Detectron or Detectron2 for further details.
+ 
+So, your readings are a continuation of Object 
+Detection for Dummies, this time Part 4 for the  
+dense sampling methods. Here is a tutorial of the 
+entire YOLO family of methods and tutorials on  
+understanding SSD, FPN and RetinaNet. 
+A few exercises to leave behind,  
+we only covered YOLOv1 and YOLOv2 in this lecture. 
+YOLO also had a YOLO9000 which talked about  
+scaling YOLO to 9000 categories and a YOLOv3 
+which was very close to YOLO9000 in its ideas.  
+How were these different from YOLO 
+v2 is going to be a homework for you.  
+Please do read the link that was given in 
+the reading section in the previous slide  
+for understanding YOLO and a couple of more simple 
+problems, given two bounding boxes in an image,  
+an upper left box which is 2 cross 2 and a 
+lower right box which is 2 cross 3 and an  
+overlapping region of 1 cross 1, What 
+is the IOU between the two boxes? 
+ 
+To understand YOLO better, consider using 
+YOLO on a 19 cross 19 grid on a detection  
+problem with 20 classes and 5 anchor boxes. During 
+training you have to construct an output volume  
+y as the target value for the neural network. 
+What would be the dimension of this output volume?  
+Remember, that in YOLO we said s into s into 
+5 b plus c, try to use that formula here to  
+find out what should be the output volume 
+for this particular YOLO object detector.  
+Please do these exercises and we will continue 
+the discussion in the next lecture.

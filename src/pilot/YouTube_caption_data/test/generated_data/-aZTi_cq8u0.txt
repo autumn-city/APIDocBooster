@@ -1,0 +1,1562 @@
+yeah so so I'll start with a couple of
+confessions first the sow King made me
+feel very bad right that's an actual
+science talk I'm a computer scientist by
+training in s to say everything that has
+science in its name probably isn't one
+and so so we'll go back to more
+engineering focused topics now the the
+other aspect this was a rich corpora of
+probably 20 years of research we started
+this work two years ago so maybe maybe
+not quite the big picture here anyway so
+what I'm going to talk about today is
+deep autoregressive generative modeling
+with applications to prediction of human
+activity why well when Cu and andreas
+asked me what I was going to talk about
+this is what I taught in my class that's
+that's the truth the the other aspect is
+that what we do in our research is all
+about understanding human activity right
+and there's lots of lots of application
+domains from special effects in movies
+animation to human robot interaction
+sports and physical rehabilitation and
+so forth right and for all of these
+application domains you need to
+understand what humans are doing and in
+particularly you need to understand the
+dynamics and that's what we are
+specialized on so we do a lot of
+tracking of people hands in particular
+eyes I'm not going to talk about much of
+this today but that's the underlying
+motivation yeah and then there's been a
+lot of progress in this domain driven by
+by deep learning by CNN's and in
+particular in the beginning at least in
+terms of discriminative models right
+very simple idea or a very simple
+picture of a discriminative model after
+if you've trained it you press a button
+after you see if you receive an input X
+and then you give it a label this is an
+image of a cat right a generative model
+is also a simple box with a button but
+if you press the button then it produces
+a novel it produces a novel label right
+or another
+no I'm sorry not another label in novel
+image right so one time you press the
+button it could be cap next time you
+press the button it could be a doc or
+something else right and so generating
+something from nothing
+normally doesn't work right so typically
+these models really take noise as input
+then they learn a function that map's
+this noise to doubt put domain and in
+the case of natural images that would be
+well pixels right and then there's
+another the last box that I want to
+briefly briefly show and those are
+conditional generative models that not
+only take a noise vector as input but
+also take some other form of input that
+steers the generation right so I may
+actually put in what type of image I
+want whether I want a cat noir or a dog
+image right and then hopefully when I
+press the green button the right thing
+comes out so why why is this interesting
+right so in this talk we're going to
+focus on generative models and in
+particular on probabilistic generative
+models
+so basically models that can generate
+conditionally and that can basically
+produce a distribution that I can draw
+samples from right so this may be
+interesting if you're actually
+interested in predicting into the future
+you can draw different samples and get
+different representations of possible
+future events right so in the context of
+driverless cars autonomous driving this
+should sound interesting in the context
+even of simple people tracking right so
+you can predict different trajectories
+and then later see which of the future
+observations met best best to your
+generated to your generated samples and
+so there's lots of interesting
+applications and with lots of attention
+of course also currently in computer
+vision to generating natural images
+right so the the 800-pound gorilla in
+the room obviously is
+our Ganz and this is the progress on
+learning based image synthesis using
+this generative that the serial networks
+right in in very few years in four years
+from grainy black-and-white pictures we
+went all the way to what to me at least
+indistinguishable from from real faces
+another area are or another class of
+generative models I'm not going to talk
+about Ganz at all today just as a little
+bit of warning another class that's very
+popular in computer vision also that I'm
+only going to touch briefly upon our
+variation of autoencoders so this is
+work that we've presented that at cvpr
+last year basically where we use a
+generative model for hand pose
+estimation and there's two things that
+are interesting the first one is if you
+use such a generative model then it can
+outperform discriminative approaches
+even on a discriminative task right if
+you only predict the joint positions off
+the hand but of course you get this
+additional nice side effect that you can
+generate novel configurations right so
+what we did here basically is we take
+two real images project them into the
+latent space of the variational auto
+encoder and then walk along the manifold
+and then you can generate both and
+importantly consistent pairs of hand
+posts and images of course the images
+are not at the same level of image
+quality than what you've seen from ganz
+before but yeah you get this nice effect
+that you can create new samples and in
+that paper we actually show that this
+can then help in training in the
+semi-supervised fashion yet the same
+thing also works for for depths images
+so the same method kind of generalizes
+across RGB 2d images and RGB images and
+you know you could say that this is
+because the model learned something
+about the underlying physical
+model of demotion okay so those are
+canned against and via East those are
+actually the class of generative models
+that you're probably already all
+familiar with and I won't really talk
+about them I won't talk about them in
+the remainder of today's talk what I do
+want to talk about is models that are
+specifically well-suited for predictive
+time series modeling right so here's one
+task that seen a lot of attention in
+computer vision where you're basically
+given a seat sequence of poses that
+could be extracted from images or it
+could come from a motion capture system
+and then the task is to either over a
+short time horizon or a long time
+horizon predict the motions right the
+future motion so some of the application
+scenarios that I mentioned earlier would
+would benefit from this this is a
+preview of one of the methods that I'm
+going to talk about later or an
+application of one of the methods then
+we're going to talk about later but I
+can't really disclose many of the of the
+details here so but what's interesting
+about this particular approach is that
+you have a probabilistic model that can
+produce if you want alternative futures
+right so you can generate plausible
+motions over a relatively long time
+horizons and you can test different
+hypotheses okay so now I spend a lot of
+words and what I'm not going to talk
+about let's try to get to what I am
+going to talk about in general you can
+create this taxonomy of generative
+models this is borrowed from Ian
+Goodfellow of course where you have Ganz
+in the family of implicit density models
+so you never actually have access to the
+density function and then you have a
+family of models that have an explicitly
+explicit density of representation right
+so you have a probability distribution
+of images that you sample from and then
+there's the variational auto coder and
+Boltzmann machines that approximate and
+intractable density function and then
+there is family of models and that's the
+one that I want to talk about today that
+actually have a tractable density
+function so you can really compute the
+PDF and you can very simply sample from
+it and these are called Auto regressive
+generative models now there's a there's
+a lot of work right the law of deep
+learning tells you that bengi and Hinton
+did it all in the early 2000s and then
+there's typically a school of people
+that did it again with deep neural
+networks like roughly 10 years ago and
+so Nate and made are examples of the
+second wave and then there's the third
+wave if you want that also shows very
+interesting applications to vision tasks
+yeah so the outline for today then is
+kind of falls into two parts when I
+asked andreas what type of talk he wants
+he said teach for 45 minutes and only
+then talk about your research I think
+I'm the only one who took this literally
+apologies for that so I'll give a little
+bit of background right so the the
+school part in the computer vision
+summer school where we kind of give a
+short history on these deep auto
+regressive models none of this is our
+own work right so this is this is
+basically the work that we built on and
+then I'm gonna talk about some of our
+own work in the in the second half okay
+so why why are auto regressive models
+called Auto regressive well because they
+fulfill what's what's known as the auto
+regressive property right so a this is
+the most simple simplest possible
+regression model right so you have a
+linear combination of the inputs and
+that gives you an estimate Y hat in this
+case right and and this linear
+combination can obviously also be
+applied to time series data right so
+here we have one input two coefficients
+here we have the same input
+different time steps right but again a
+linear combination of the same input
+variable at different time steps what's
+important is that there is no direct
+computational pass from X T so the the
+prediction variable at the same time
+step right so it's XT minus 1 XT minus 2
+that predict XT and because well this
+this model basically receives inputs
+from itself if you continue this into
+the future its regression off itself and
+hence this is called Auto regressive
+models and so obviously I don't even
+need to put a slide up on this that
+recurrent neural networks fulfill their
+auto regressive property if trained and
+tested in a particular configuration so
+that all these what all these Auto
+regressive or current state-of-the-art
+auto regressive models attempt to do is
+they basically try to learn the Joint
+Distribution over data right so this
+could be over natural images over pixels
+over audio a lot of the work actually
+right now is in audio and speech
+synthesis and as you can see don't look
+too closely because some of the indexing
+is not entirely right but what's nice is
+that with different input dimensionality
+you can apply the very same idea to
+different types of data right temporal
+data 2d 3d data and so forth and here's
+some representatives of of these
+different ideas and so yeah what's going
+on here basically is that we need to
+find the Joint Distribution if we're
+talking about images over all possible
+images right and that makes that this a
+pretty hard task why is that the case
+well it's a explicit density function
+right probabilities have to add up to 1
+so if I now give probability to a random
+image
+then by necessity I have to reduce the
+probability of a real image right so I
+have to get this right everywhere and
+this makes makes actually training such
+more such such models tricky but if
+successful it allows us to sample yeah
+well I mean a lot of these models I'm
+not entirely sure about the second half
+of the papers that you mentioned I'm not
+super familiar with those but a lot of
+this stuff is used almost everywhere
+where you have time serious data so this
+you know I know that for example Walmart
+uses the simplest version that on the on
+the first slide actually because they
+know you know before Christmas people
+buy stuff so they hand tune those
+parameters to predict what they should
+keep on on shelves and whatnot so this
+has been around for for a long time I
+guess I have two slides now why you
+should parameterize it by a neural
+network and not by a fixed set of
+parameters this is really the main thing
+that has changed yeah and then then
+we'll see that now it it starts to work
+on pretty interesting tasks it's not
+quite as quite as prominent I guess in
+computer vision yet I mean we have a
+little bit of work in our lab that looks
+promising it's not yet done so we'll see
+it if this really will get gather
+attention in computer vision as well but
+it's it's used a lot outside does that
+roughly answer your question
+this kind of stuff was prominent service
+attack right right so the for example
+Nate and mate
+that's exactly yes that's what that is
+yeah and then there's newer versions
+that are different that actually I mean
+the main the main competitor if you want
+are actually RN ents right so you can
+I'll show you later that you can beat
+very very high-end RN ends and you get
+rid of the explicit temporal temporal
+consistency which gives you a lot of
+computational wins right you can train
+these models on the same data as an RNN
+in an hour and a half versus bass right
+on on large large audio set yes but then
+you have to I mean you then have to
+specify exactly you know how what the M
+is right and this kind of you cue maybe
+we'll take it offline but this you know
+there's a lot of people that have this
+attention is all you need right attitude
+in in audio synthesis where you try to
+basically you try just to learn which of
+the samples from the past which sparse
+samples from the past influence your
+prediction and that's what these models
+are pretty good at basically right so it
+takes that bad engineering out to some
+degree okay so yeah basically what we
+want to do right is we want to compute
+the joint probability in terms of
+notation this here this means that you
+take all the inputs up to I and this of
+course implies that you have some
+ordering right so this could be from for
+in images from the tip looked top left
+pixel just by scanline it could be
+random ordering as long as that ordering
+is fixed
+right so you have all previous inputs up
+to AI and they are used to condition the
+probability or the likelihood of the ice
+element of of some time series right and
+by the chain rule of probabilities this
+can be factorized and then you can use
+straight-up tabular methods to then
+actually compute compute these
+conditionals
+if you were to do this for the n element
+X of n then you need to keep all the
+possible combinations right so X x2
+given x1 and x2 given x1 x2 given x1 and
+x2 and so forth so that gives you an
+exponential number of parameters 2 to
+the power of n minus 1 and obviously
+this doesn't scale to large large ends
+so a different attempt would be to do
+this with a fixed number of parameters
+right so here's a very simple
+parametrizations where you have
+basically a function that computes
+computes the mean of a Bernoulli
+distribution and then this could be used
+for binary predictions right this would
+either be what 1 or 0 and now you have a
+fixed number of parameters if you do
+this for example via logistic regression
+then you have n square or order of n
+square number of parameters it's much
+better but you still have this problem
+that Alyosha mentioned that you have to
+decide how many parameters you're gonna
+use right and and the number of
+parameters somehow has to match the
+number of inputs so there's no direct
+way to scale this up and this is where
+well who go in la rochelle and and
+colleagues came in and said so why don't
+we parameterize this via a neural
+network right so it's still same idea
+you have to join probability you want to
+compute the likelihood let's say of an
+image and this is computed via
+a looking at the conditional probability
+of the product of conditional
+probabilities given a fixed order of
+previous pixels in this case right and
+then well that the idea really is just
+to replace the parametrizations with a
+neural network and so 20 2011 this is
+Nate which basically uses a neural
+network with a slightly peculiar
+parameterization to do this task where
+you have your input so these are the X's
+and up there would be your your
+conditional probabilities right as
+before this is for binary predictions
+and a specific trick is that you do
+basically parameter sharing right so
+first you start by putting in basically
+a hidden layer into a activation
+function sigmoid function in the first
+case there's no inputs connected to it
+right so this is just a sigmoid of B
+which computes H of I and then you have
+another mapping from the hidden state to
+the to the output to your output
+prediction and then basically this is
+one of your of your conditional
+probabilities which you then feed as an
+input and you rinse and repeat
+right so you basically then compute all
+the other conditional probabilities and
+the product of those gives you the joint
+probability distribution that we're
+after two aspects that that are
+interesting here is basically this like
+these blue lines here indicate that you
+always use the same network right so
+it's a very efficient parametrizations
+and basically what you need to do if you
+get a new sample you basically just take
+one more roll of you sorry one more
+column of your weight matrix and
+multiply your input with this right
+and then for the output you do a similar
+trick where you simply use the I throw
+so this is just to explain that notation
+here the reason why you would do this
+and the reason why you would do any of
+this is computational efficiency right
+so these all these models are not
+necessarily at the same modeling power
+than let's say gowns and VA is but
+they're much more efficient right so to
+to to get an idea what's actually going
+on here right like if you compute the
+the output or the the hidden layer for
+the X I plus ones input then what you
+need to do is append another column to
+your weight matrix to the vector matrix
+multiplication but if you compare this
+computation with what you've done
+previously then basically only the I
+plus ones column of that matrix really
+remains right so all you have to do is a
+vector vector multiplication and so this
+makes this both at inference and
+training time really fast another nice
+aspect about this is the training is
+simply done by maximizing the the
+log-likelihood right so anyone here who
+has worked with scans yeah quite a few
+of those so what this means basically is
+that you can compare different models by
+just comparing the numerical value of
+the NLL negative log likelihood score
+that they produce
+does that sound nice comparing to
+evaluate against to me it does right it
+gives you it gives you a metric where
+you can say this model performs better
+than another model in a generative
+setting of course whether that then
+correlates to qualitative performances
+yet another question
+go back one slide I'm slightly confused
+about the patients and maybe others are
+also that the W's are the W matrix is
+fixed at training time at a fixed size
+or is it it's ever being yeah you you
+train it and then it stays the same but
+you use different columns of it right
+different parts it's a fixed fixed size
+matrix right and then you have to set a
+ordering on the exes and you also have
+to set a number of of XS for this
+particular setting right otherwise that
+trick doesn't work so in this case right
+this this three is the maximum size of
+columns in this example and you feed
+three inputs into this right and in
+chunks so that you have to fix yeah yep
+okay so that's the the basic basic idea
+behind Nate there's lots of extension to
+this to real-valued and and other things
+just for comparison I guess you know all
+of us are more familiar with the outputs
+of more let's say powerful generative
+models but this is 2011 right so this is
+M NIST results in 2011 where I guess the
+the left side samples drawn from the
+distribution right which is one of the
+other benefits that I mentioned it's
+nice you have access to P of X and you
+can draw samples from it and then the
+middle is basically the middle is the
+probability so this is yeah this is
+probabilities and these are samples of
+the weights which which I think
+corresponds a little bit to your
+question right yes
+they're showing us images here what's
+really going on is that there's some
+sequence exactly yeah really yeah yes
+yes exactly yeah and this is in this is
+the case for all of what I'm gonna show
+you is that you take a render this is
+all generated actually in random
+ordering but it's predefined the
+ordering right so you you select one and
+then you generate it sequentially and
+then yeah here these are are basically
+individual pixels so the the brighter a
+pixel in here is the higher the
+probability that this would be a
+foreground picture I'll skip the
+extensions these are yeah these are
+different versions of Nate but clearly
+what you can see is that this is is
+producing something that looks like
+looks like em nest samples but it's not
+very great visual quality so the next
+attempt and this is now 2015 is made
+another nice acronym which basically
+tries to change the ought encoder
+framework so that it fulfills the auto
+regressive property right so normally in
+auto encoder all the outputs are
+connected to all the inputs because you
+need to reconstruct exactly the input so
+this this generator story is not there
+right an auto encoder cannot really
+create novel novel samples because there
+will always be a path from one of the
+inputs to the outputs and so the the
+central idea here is that you basically
+create a mask that knocks out
+connections between some of the hidden
+layers and the output layers such that
+there's no connection from a particular
+input to the particular conditioner
+right so here's here's an example maybe
+so again you pick an order in this in
+this instance a random ordering of the
+inputs so x2 is the first one x1 is the
+third
+and x3 is the second and then you should
+and you can verify this by looking at
+the arrows right like for the third
+input and the third conditional there's
+no pass actually this is not connected
+to anything and if you look at the light
+gray arrows you can verify the same
+thing and for the dark gray arrows as
+well so the way this mask is found is
+actually very very simple trick right
+you basically sample random integers and
+then you only connect the layer below a
+particular note if that integer that you
+sampled is greater or equal to the
+integer that's in the layer below it
+right so two is not greater or equal
+than three so there's no connection but
+who is greater or equal to one so it's
+fully connected here and then for the
+for the output you do basically the same
+only that you say that you drop the
+equal condition so the output actually
+has to be greater and then it will be
+connected right so three is connected to
+twos and ones one is not greater than
+any of them so it's not connected at all
+right and this gives you these masks
+that you can then apply directly on to
+your weight matrix and this in fact and
+there's a proof in the paper I'm I'm
+going to skip this of course that shows
+that then an autoencoder fulfills the
+autoregressive property right so again
+you have to the same nice property that
+you have negative log likelihood for
+training computing P of X is just a
+matter of performing a forward pass
+through the autoencoder sampling
+requires several passes but it's still
+relatively fast here again some some
+outputs of this there's a binarized M
+list again in practice I think these
+things only work if you have huge hidden
+layers
+but the general idea is a it's an
+important one that all of us probably
+know and use quite often because this
+actually led to two two models that are
+really state of the art in in several
+tasks and several subtasks and vision
+and audio processing and so forth
+so this is Nate and mate and the auto
+regressive property those are kind of
+the the ideas that I want you to to keep
+in mind as we go forward to more state
+of the art things they're questions at
+this point okay good so the next model
+that I briefly wanna factorizing the
+joint probability so here here you
+actually see the individual yeah so yes
+you do you always need to decide the
+ordering right which output produces
+which conditioner and which input is is
+processed in which ordering yes this is
+because I normally scribble on my slides
+and I didn't scribble it on to that
+slide but I think I have it I have it
+somewhere but you have the same thing
+the same assumption that each output and
+let's go back to Nate maybe I can
+actually show you yeah this one so this
+is how I teach it in class
+so you have the individual conditional
+probabilities here each of them produces
+one and the ordering is is predefined if
+you do it sequentially then this would
+be P of x1 this would be P of x2 given
+x1 and so forth and then the product
+over all of them is P of X
+where were we
+yeah so in computer vision right lots of
+people use this model pixel RN ends
+pixel cnn's which actually are a direct
+follow-up to mate the as I said right RN
+ends by by design almost fulfil the
+autoregressive property not really gonna
+talk about how how this works and all
+the different variants that are explored
+in the paper because people in computer
+vision know anyways so what you do is
+you basically fix the ordering to start
+at the top left corner and then you use
+an iron and to predict the pixels going
+outwards right so the dependency on
+previous pixels here is modeled using an
+LSTA right and so you kinda sequentially
+generate this image and the obvious
+issue here is that the sequential
+generation process is slow especially if
+the image is large and this is going to
+take a lot of time and of course the the
+direct modeling of dependencies in R and
+n makes both generation and training
+very slow pixel cnn's
+are kind of very simple have very
+similar idea only now that the
+dependency of pixels is modeled via the
+receptive field of the CNN right so to
+predict the central pixel you take the
+the surrounding pixels as input and then
+one by one
+predict the the the current pixel right
+again training is done by a maximizing
+the log likelihood of training images
+and this using a CNN to model the
+dependency speeds of training generation
+is still still slow hang on
+so the the the way you basically mask
+the mast out the connections in a
+convolution is done in in pixels Ian and
+actually via auto regression over over
+the colors right so you basically at the
+lowest level you connect everything in
+intermediate levels to the context to
+the red in the green channel but not to
+the blue channel right and this then
+gives you yeah auto regression over the
+color channels but it fulfills the same
+the same property as made right it also
+gives you the same efficiency at least
+in the forward pass but it kind of
+circumvents this more complicated
+construction of the model itself and the
+connectivity ok so there's there's lots
+of additional tricks on pixel CNN that
+I'm gonna skip for the interest of time
+again to kind of compare with the
+state-of-the-art in generative
+adversarial modeling even with VA ease
+this is sorta well maybe was back then
+2015 was competitive so you see
+something that probably from where you
+are looks like natural images if you
+look closer it's mostly random random
+pixels that kind maybe sometimes portray
+things but again the the nice property
+is that you can actually create these
+tables you can look at the negative log
+likelihood and compare which model is
+performing better at least in terms of
+of that metric pixel cnn's of course
+have been extended to conditional
+generation so this is a follow up paper
+from nips 2016 where now you can really
+make out things so this is yep
+so yeah I mentioned this earlier that it
+doesn't always correlate very well but
+in many tasks it does right so if you
+have a lower negative log likelihood or
+a higher likelihood of in a particular
+image on the test dataset then typically
+the samples actually are of higher
+quality right so it at least an audio
+this really correlates quite well if you
+have a low likelihood then you get a bad
+sample if you have a high likelihood and
+you get a better sample right and so yes
+yes yes yeah so yeah you do it on with
+ground truth data it basically in in a
+reconstruction setting right so you take
+an image and then you compute the
+likelihood of that image and then you
+compare it to to what your model
+predicts I think I had this on the
+slides earlier okay um I forgot what I
+wanted to say about conditional image
+generation but basically this shows that
+you can provide a class label as input
+with extensions to pixel CNN and then
+actually control the generation which
+will become important later on yeah
+so in summary that's kind of like the
+the school part right so we we looked at
+these Auto regressive generative models
+I like them because they give you this
+likelihood explicit density function
+that you can sample from the what we
+just discussed that the likelihood also
+at least sometimes is a meaningful
+metric and on many tasks at least
+state-of-the-art models produce good
+samples
+but also well as three pixels and or
+operation of your on the right to
+generate pixel generally sequentially
+from left and you see you know one and
+one and one you have no idea what the
+third example would be because it could
+be either sorry from the right you'll be
+through anyone and you exactly know
+they're not sequentially generated yet
+yeah yes and you can actually see this
+if you look into the sample sometimes
+you really see like scanning artifacts
+rightly especially if you at you know
+transitions from like a homogeneous
+background to a very heterogeneous
+region yes you see these the artifacts
+all of these papers typically explore
+the ordering in the generation pattern
+but I mean the the underlying problem
+exists right that you always have you
+know your condition on everything that
+you've done before if you do something
+wrong before then you're gonna continue
+to do something wrong and actually yeah
+I don't have a real solution for that
+right this is this is part of yeah yeah
+this is one of the certainly one of the
+weaknesses actually the the nape paper
+explores this in the most detail that
+looks at really all the possible
+orderings and so the conclusion is that
+random actually works best
+rather than sequential but then more
+modern models typically do it
+sequentially
+yeah so the kind of the next class of
+models and this will actually bring us
+to our own research that are briefly
+want to talk about our temporal
+convolutional networks or better known
+as wavenet so this is pretty much the
+thing that powers google's assistant
+right the speech synthesis in in the
+google assistant which is pretty good
+you know most of us are more interested
+in pixels but audio is actually are well
+you could argue that it's a more
+challenging problem in this setting it
+certainly is because you have a much
+higher dimensionality right so every
+sample has or every second you have
+16,000 samples and the datasets actually
+have very long sequences already so this
+is very high dimensional and remember
+you need to define an ordering on them
+so before we talk more about actually I
+won't talk much about audio but wavenet
+is all about audio so let's do a quick
+detour and talk a little bit about the
+importance of context right this is
+actually slides that I stole from Fisher
+Fisher you so this is about the
+importance of context right so we're
+going to play a little game and you're
+going to classify whether this is a cat
+or a dog cat
+to cats everyone else thinks this is dog
+come on raise your hand for cats keeps
+you from not falling asleep few people
+think it's a cat okay how about now cat
+or doc right right neither neither its
+binary classification raise your hand
+for cats still - okay everyone else
+thinks it's a dog how about now some
+people switch back to cats
+it's it's an the dog people one out it's
+in fact the dog the more obviously the
+more you see the easier this task
+becomes you don't need to see all the
+details right like what's important
+really is having the context to the
+details here's basically that the filter
+size if you want so of a convolutional
+kernel or the receptive field size right
+and the quicker you expand this the
+easier it should be to solve that
+classification task and this is where
+the idea of dilated convolutions came in
+and rightfully a very influential paper
+a lot of us probably know this I can be
+quick
+the idea is to simply strike the support
+of the convolutional kernel right so
+instead of using using a densely packed
+kernel you keep the number of elements
+in your kernel the same but you strike
+them and so which in fact and turns at
+very few levels of depth to very large
+receptive field size right so here red
+is basically the footprints aware are
+the individual pixels of your
+convolution kernel on the image the
+shaded part is the is the receptive
+field size for a single layer of
+convolutions and then on the next slide
+there will be darker areas where you
+have actually receptive fields
+overlapping right and then so so this is
+with very few layers
+this is three layers of dilated
+convolutions are actually a convolution
+where at each layer you increase the
+dilation right so the distance between
+where you place the pixels or where you
+place the kernel elements over the
+pixels increases with every level and
+then three levels you cover a very large
+area of the image which should help in
+telling whether it's a cat or a dog
+right not sure if this place this is an
+animation of the different convolutions
+you can see that I stole the slides from
+an actual class so maybe bit more
+detailed and unique and so yeah these
+dilated convolutions have been very very
+influential in computer vision but
+they're also the backbone of wavenet so
+the idea is in wavelet that you use
+these style dilated convolutions over
+the entire sequence of your inputs right
+all your audio samples here in blue and
+then at each hidden layer you increase
+the dilation so with very few layers you
+will get to a very large receptive field
+size typically covering the entire input
+sequence right and then the intuition
+would be that by being able to look at
+the whole sequence you get a very good
+understanding of the of the input signal
+without having to look at everything
+right and without in particular needing
+very deep CNN architectures right so you
+get a very large receptive field here's
+a direct comparison on the same sequence
+with a regular convolution and then
+dilated convolution switch which gives
+you a very large field yeah so so this
+is wave in it I will get back to that
+after after a little detour right so
+we're still talking about this we're
+still talking about auto regressive
+models wavelet is an auto regressive
+model
+but first I want to talk about some some
+of our own work that basically establish
+a bit of a baseline for a wavelet like
+architecture F afterwards so as I said
+our n ends are basically a class of
+models that inherently fulfill the
+autoregressive property right so the
+hidden layer summarizes the input seen
+up to t minus one and then if i predict
+the next time step that basically is the
+parameterization of the output
+conditional that we're after right so
+drawn as a graphical model you kinda get
+get this image here is from the straight
+up from the deep learning book right
+where you take the input you compute
+your your hidden layers state and then
+the output itself becomes the next input
+to the RNN right and that's basically an
+autoregressive setting or the
+autoregressive setting what i briefly
+want to show is is really who are
+currently the state of the artist we
+think are an N and then taken Ellis tiem
+if you look at the actual performance a
+class of RN ends that embeds a
+stochastic latent variable in the RN n
+is actually what outperforms most are in
+architectures by a large margin on many
+tasks so what we're going to talk about
+this is a combination of an RN with a
+variational latent model so the idea is
+to increase the expressive power of RN
+ends by using a latent variable layer so
+the task that we did this on is
+generative model modeling of digital
+handwriting maybe not so interesting for
+for computer vision folks but it's
+basically a time series right so the
+task is you have to decode units along
+the stroke and then given actually an EU
+will draw this way given like a
+upset of stroke elements predict the
+next or predict the future of strokes
+right that's the task and iron ends
+typically have been evaluated on this
+right so what's important here I'm not
+gonna recap RN ends is that the
+transition function that takes the
+previous hidden time step and the input
+at the current time step and computes
+the value of the hidden value at time T
+is deterministic right that's that's
+important here everything else you
+probably know so this is kind of from
+Alex gravis early work twenty thirteen
+this already produces pretty good
+looking input you can even bias this for
+towards the style of a particular user
+by training it with lots of samples then
+a couple of years later showing at all
+proposed that's not actually called VR
+and ends but everybody else calls it VR
+and ends so I'll do two which is
+basically a VA II variational auto
+encoder
+embedded in an RNN and primarily so the
+graphical model works like this you take
+your hidden state and your input you use
+that to update a latent variable and
+then you sample from that latent
+variable to produce the hidden state at
+time T and primarily what this actually
+does is it regular Rises training right
+because yes the hostility in the
+training process and the model needs to
+learn to deal with that so that actually
+makes vrn ends a lot more robust than
+than traditional RN aids so the main
+difference for the purpose of today is
+that now the transition function tau
+here depends still on HT minus 1 and XT
+but it also depends on the sample that
+you draw from from the random variable
+he
+output from from AVR nn which kind of is
+much more consistent in terms of style
+but you have no control over what it
+produces right so this there's no real
+conditioning I briefly want to talk
+about work that my student Emre did
+presented last year which basically
+takes ideas from both and adds
+conditioning on top of it right so
+there's again a variational RNN but you
+now produce conditional probabilities
+right so what this means is basically
+that you get a model that can produce
+very high-quality samples of handwritten
+ink so this is completely synthetic in
+the style of different authors I think
+the top one is for each - the second one
+is M ref ooh and it gives you complete
+control over individual stroke elements
+right so here we basically do a we hook
+it up to an API for for character
+recognition and then do correction and
+editing of individual words without
+losing the style right so it's
+consistent with the previous elements in
+the time series here we go
+so these are basically two random
+variables right that encode different
+aspects right so pi is a continuous
+random variable that in captures were we
+assumed that it kept encapsulate stew
+style
+right so slained and you know your
+personal characteristics and then pi is
+a discrete distribution that really
+encodes the content so the s key
+characters if you want write in a
+traditional variational auto encoder
+only has one only has a Z so here
+there's a disentangling of factors right
+and you can basically see this in two
+ways one is you provide textus input and
+then you try to
+well disentangle the style from the
+content which is kind of shown as a
+graphical model here or you try to take
+a style vector right which is kind of
+latent representation of your
+handwriting and give it some different
+ASCII characters as input and then you
+synthesize new samples the whole thing
+is trained via in this case the the
+elbow so very similar actually to a
+variational auto encoder only that
+encoder and decoder are our intents in
+this case and there's a few tricks on
+shaping shaping the approximate
+posterior distributions for style and
+content I can't really go into all the
+details briefly try to try to summarize
+it right so this as I said the cue the
+approximate posterior of the style and
+then Q of Pi of T which is the
+approximate posterior of the content and
+then this whole thing is a dynamical
+system so these these black dots here
+are basically our intents right so they
+take the hidden state from the previous
+time step and a training time a current
+sample is input compute the updates for
+the latent variables there's an KL
+divergence with respective distributions
+and then use samples from both of them
+and reconstruct a training time the same
+sample right so this is X T and that's
+accept T so it happens at the same time
+and then you also use the stroke element
+and samples from these two random
+variables to update hidden state right
+so this is the transition function that
+has a sample of Z and PI in it this
+should be somewhere on this light there
+we go
+so yeah the main difference really is is
+here that you use samples from both
+these distributions
+because yes so yeah this is collapsed
+there's basically a Gaussian mixture
+model on top of it and so this selects
+the Gaussian in the Gaussian mixture
+model and then you sample from that so
+basically and also yeah let me try to
+summarize this in one sentence so yeah
+the gradients don't flow entirely
+through this right they flow to the
+Gaussian mixture model and then there's
+a classification loss that's injected
+and that flows to the inputs but yeah I
+don't really have time to to talk about
+all of that so that's the hidden state
+in an iron in right so in it caps it
+encapsulates all the data up to time t
+minus 1 right so yeah this is this is
+standard in in recurrent networks you
+take the input you compute a hidden
+state and then from the hidden state you
+compute the prediction for the next time
+step
+okay so last aspect that I do want to
+mention here is is that of course here
+to compute the new HT you actually rely
+on the sample and this if you remember
+my very first slide kind of breaks the
+autoregressive property right because
+now you need XT to compute X hat T and
+that's what we don't want
+so incomes actually a fairly important
+idea that's that of a dynamic prior
+rights ovae uses just a gaussian as
+prior but if you want to do this on time
+series then you basically need a dynamic
+prior that is predictive of the next
+step and so what we do is we we add two
+auxiliary distributions
+ztp and pi TP over here and there made
+predictive right by adding an additional
+KL term between the pious and diseased
+right so by making basically the the
+prior and the current latent variables
+as similar as possible to each other we
+assume that P Z T and P PI T then become
+predictive of the next stroke element
+and this then allows you to do inference
+without having access to X of T right so
+this restores the auto regressive
+property so the you then sample instead
+of using instead of using XT to update
+this you use samples from ZT p and PI TP
+let's have a little bit of fun before
+before I do I still have time how we're
+doing we're doing okay right okay very
+good so let's have a little bit of fun
+this is the abstract of the paper
+written in the handwriting of each of
+the authors I guarantee you that the
+data set does not contain my signature
+but it is available online right so if
+you want to play around with this all
+all my students are in the data set and
+here's proof that this predictive aspect
+actually works so this is what I meant
+what I showed earlier already and this
+is actually an app that runs on an iPad
+you write something the model by
+necessity right like by disentangling
+styles from content learns the OCR tasks
+on on the site almost so we we pipe the
+content element right so the PI of T
+into an OCR software let me play that
+again that was very fast which then I
+know sorry this is the wrong video I'm
+talking about a different video here we
+don't do anything no no text correction
+all we show here is
+basically the back-and-forth right so
+this connects to the slide that I had
+earlier we recognize the text the
+handwritten text but not was an
+auxiliary model this is a byproduct of
+the model right it has to understand the
+text then the user goes away edits the
+ASCII representation and then we
+regenerate that sample by by running the
+model basically forward from from that
+time step right and then you get
+different content same style and so you
+can do different things going back and
+forth between ascii and and and
+handwritten text the whole word so so we
+train this with a few exhilarate
+sickness and one of them is pen up and
+pen down so we actually know the word
+the word segments or segmentation for
+words we don't know it for characters
+now you would have to be in in the data
+set or someone who writes yeah yes yeah
+so yeah this this depends a little bit
+so you can do the same thing what Alex
+gravis and those guys did you take the
+pre-training model and bias it with new
+samples and then probably I don't know
+if you've write four or five sentences
+that would be enough but if you want
+stable prediction so if you want to
+generate a lot of text then the biasing
+actually doesn't work right so it will
+then converge back to like a mean style
+because it doesn't have enough evidence
+of your style and if you really want
+this to be stable then you need quite a
+lot of your samples I don't actually
+remember how many samples there are per
+per user but it took I remember doing
+the data collection and it took
+about half an hour writing different
+samples so it's I don't know 50
+sentences maybe 80 I don't remember
+exactly
+I mean there is quite a lot of the semi
+cursive in the data because that's how
+people write but if there's very if the
+pen up event is very sparse it fails
+actually so it kind of converges to like
+a mean scribble and fully cursive is is
+actually very very difficult yeah we
+even I think that I am I am on DB which
+is actually the core of the data set so
+we augmented that I am on DB data set
+has fully cursive samples and those we
+excluded because it's very difficult to
+model and there's not enough of them yep
+yes so if you regenerate with the same
+style vector it is truly a stochastic
+model so it will produce different
+samples every time and this is one of
+the things one of the unwanted side
+effects that eventually or sometimes the
+changes from especially A's right so
+this is I guess the Germanic way of
+writing in a if you grew up in Italy you
+write it differently and it switches
+this occasionally although it keeps the
+same slant and anything so this yeah
+this is an unwanted side effect
+what do you mean by enhance so I mean
+okay so in principle the stochastic
+latent space should make it more robust
+to noise in the training data and I
+would say if you look at IMDB it's very
+noisy right it's recorded with some
+weird laser pointer on some camera based
+whiteboard and it's yeah low sampling
+rate that's it's really not very nice
+and then our data set is recorded with
+an iPad right the state-of-the-art
+digitizer has actually very nice ink
+and that seemed to be that seemed to be
+beneficial right that you have different
+quality of samples in the training data
+so in principle I would say yes it does
+help if you have you know more more
+variants we do we did not do any
+experiments with non-latin characters
+because we didn't have any data we do
+have people that you know know write
+Chinese characters or whatnot but we
+don't have enough data yes yeah yeah
+yeah
+yeah stroke ordering and all these kind
+of things are super difficult
+so here it's red you see that it
+actually picks up dynamics of when it
+puts the dot on an eye for example and
+it does the other part of your question
+was punctuation it does learn to
+occasionally insert a period or a
+question mark
+sometimes it inserts this halfway into
+the sentence if you let it auto generate
+right so if you provide the s the
+content and of course not but if you
+just generate for example you give it a
+seat sequence and let it continue then
+occasionally it'll put a question mark
+or exclamation mark halfway into a
+sentence so it learns that these things
+exist in the distribution but of course
+there's no language model or anything
+okay so so and this is actually yeah I
+mean if you compare these two hostak
+stochastic are an ends on many temporal
+tasks they actually outperform Ellis
+tiems by or by a large margin and that's
+actually why I wanted to talk about this
+because yeah there's a very powerful
+powerful model for time series modeling
+still with quite a bit of tricks
+fulfills this Auto regressive property
+the one downside of this particular
+approach is that it's super expensive to
+train yeah so it takes very very long
+time you have to play all sorts of
+tricks with terms of sequence links
+because you have to fit it into memory
+so it's slow to train and finicky to
+train on top of that comes from this
+elastic nature and very memory very
+memory hungry so to conclude what I do
+want to talk about is an obvious
+follow-up idea I would say if you've
+worked with stochastic are an ends and
+you've heard about temporal
+convolutional networks you might may be
+tempted to just go and say well I want
+all these properties right I want
+computational efficiency and
+expressivity of wavenet like
+architectures and I want the modeling
+power of variation of models and and
+that's exactly what Emory did this is
+paper from I clear from this year where
+we basically take the idea of a
+stochastic latent space embedded into a
+temporal convolutional Network which
+then gives you a fairly powerful time
+serious model so quick recap right like
+wavenet uses these dilated convolutions
+to compute basically a Diptera ballistic
+so a deterministic representation of T
+given the time time series up to t minus
+1 and so what what we propose is
+basically a direct plug in so you can
+take wavelet or other TC n TC n models
+or even an RN n anything that has this
+property that it produces these
+summations of previous time steps and
+then combine it with a variation or a
+stochastic module right so the same
+thing happens right given all the
+samples up to t minus 1 we used the same
+building blocks actually the code from
+wavenet to deterministically compute
+these these intermediate representations
+right and then the idea is that each
+layer kinda encapsulate a different
+scale of the time series right so here
+here you have very very short term
+effects and then the higher you go the
+larger the receptive field and the more
+long term effect should matter right and
+then at each of these levels we
+basically introduce a stochastic random
+variable which we update using the the
+two mystic summary of the inputs
+via by a simple neural network right so
+we take the summary of the of the inputs
+DT minus 1 and a sample from the random
+variable above and compute mean and
+variance of the Gaussian via an or the
+network right so and then you basically
+rinse and repeat you do ancestral
+sampling so this is a standard technique
+in via ES and hierarchical via East
+where you just have several layers of
+latent variables and so you you always
+take the deterministic part computed by
+wavenet you update the Z using that
+deterministic part and a sample that's
+drawn from the layer above and then you
+continue this all the way to the bottom
+and then the final conditional
+probability is then conditioned on all
+disease above right so this is a trick
+that you know the internet for example
+uses where you basically where you
+basically so these errors are purely for
+performance reasons right so technically
+the ancestral sampling should contain
+all the information that you need to to
+make the prediction for a time step T
+but adding these things connections just
+improve the performance of the model
+that's that's just a MLP multi-layer
+perceptrons a neural network that it
+computes the mean and the variance of
+the random variable so this is it just
+takes the dependent deterministic part
+computes a mean and variance and then we
+sample from it that's the update of the
+random variable basically but it's yeah
+it's it's a single layer nor the network
+and so so a few important aspect here
+there's no internal state right so
+there's no more transition function the
+latent variable ztl are conditioned
+vertically they're not conditioned
+across time steps at all right so
+they're really independent of each other
+and this is well this is the the reason
+why this is computationally efficient
+this is also the biggest problem that I
+don't actually have have evidence for
+this but if you try to predict for a
+long time this relatively quickly
+diverges
+right because there's no explicit
+modeling of temporal dependencies yeah
+but so this is the generative model this
+is basically what you used to produce
+new samples for training you need an
+inference model and here we actually
+well implicitly introduced temporal
+dependency right so oops this is a
+repetition here's the inference model so
+what we do is basically first you
+compute the approximate likelihood and
+then you correct the estimate via a
+prior right so I'll have this
+graphically that's maybe easier to look
+at so here everything is only up to t
+minus 1 so that's basically the
+generative model and then during
+training you actually have access to the
+T's time step so the current time step
+but later when you want to use this
+model that you you don't have access to
+this so on the left hand side we do the
+same thing that I described earlier for
+the generative part and on the
+right-hand part we basically compute a
+prior from the current from the current
+time T sorry approximate posterior this
+this is the prior from previous time and
+approximate posterior and then we do a
+precision way that update which then
+gives you a a z TQ so an approximate
+posterior that is basically correct
+so you correct
+likelihood estimate that you get from
+the generative model with information
+from the current time step but we only
+do this of course a training time right
+so this information you don't have at
+runtime but the training process makes
+the ZT predictive at least over short
+time horizons and then you rinse and
+repeat basically so at every layer the
+the process is exactly the same and in
+the end you end up with a AZT that we
+assume is the same as the true posterior
+right there's nothing that we really do
+to enforce this but we assume that it
+approximates the true posterior so yeah
+there's two aspects to this there's the
+inference model that's only used a
+training time and then the generative
+model where you throw away the right
+hand side and only use the the prior the
+ZT piece to predict novel samples yeah
+and so if you look at kind of this
+performance of lots of state-of-the-art
+models here now higher is better you see
+kind of waving it up there
+30,000 way from the dense that's the
+same like using our trick with dense
+connections basically the V R and n is a
+little a little worse than wavenet on
+the same data set here are models so
+between these two bars they actually
+have information from the past and the
+future so there are bi-directional
+models which increases the performance
+and then down here is ours and different
+data sets so this is timid lizard
+I am only be in our own the deep riding
+data set that I talked talked about
+before outperforms that a large number
+of models yeah
+it's it's Gaussian yeah everything is
+assumed to be Gaussian does KL
+divergence terms across the vertical
+hierarchy not across time scales
+no single Gaussian in this case yeah
+yeah actually I think in the paper no
+not in the paper in the appendix we have
+experiments with output layers that use
+a Gaussian mixture model because often
+in particular the the RN invariants
+perform much better if you have a
+Gaussian mixture in the output yeah
+pretty sure this is still in the
+appendix but yeah it's this the same
+picture basically so this yeah there's
+an extended table that either use a
+single gaussians output or gaussian
+mixture but the order doesn't really
+change on some data sets it does in like
+in this range here but overall the
+picture remains the same
+yes we well I mean we're doing this
+right now
+it it depends on the time scale so the
+the problem that we have right now is
+that it produce it produces very high
+quality samples for a short time period
+and then completely diverges and this is
+because there's no explicit modeling
+right off so the motion we use the
+motion modeling datasets oh3 6m right
+has sequences of poses and so we feed in
+poses and then predict poses into the
+future do you didn't mean a different
+task here yeah oh you mean the previous
+the the stochastic here and then I
+actually have I actually have a video of
+this so this is the the stochastic VR
+and then on simple and this is kind of I
+don't actually know here somewhere the
+seat sequence stops and then we just let
+it run and it kind of discovers it
+sometimes even switches activity so it
+this looks like window cleaning here I
+think like it looks like it's getting on
+to some sort of swing or where a ladder
+and so the the stochastic VR and
+actually produces pretty good motion
+over so at this point it's predicting
+it's almost yeah so this is very
+possible that it's memorizing a lot of
+it and this is unpublished work for
+exactly that reason that we don't quite
+know yet which how much is true
+generation and how much is is is
+memorization and anyways this is all
+ongoing work so we're doing both
+exploring experiments was both models
+was to silastic viernes to astok TCN on
+various post related tasks hands and and
+full-body the C V R and n produces as
+you say almost too good to be true
+results and the STC n produces very good
+results in very short time frames and
+but not on longer time frames so we'll
+have to we'll have to combine the
+advantages of those before we before we
+get some somewhere but this is all
+unfinished unpublished work so I don't
+know yet right okay so yeah that that's
+about it of the the boast papers and
+code and models for all of this or
+online if you're interested in summary
+what we talked about is basically a
+larger family of autoregressive models
+that I think in computer vision gets too
+little attention because they're very
+promising I like them because they're
+simple because they give you an explicit
+density function you can compare
+generative models numerically it's not a
+replacement for qualitative analysis
+yeah and they're typically easy to Train
+easy to sample of course sometimes
+sampling can be slow because you have to
+run the model many many times and it
+depends on the in the SDC and also on on
+the depths of your network yeah and I I
+can't really show you this yet but in
+our lab we're actually working on
+applying this and many different vision
+tasks and some of them look look
+promising and I'd be excited to see more
+of this
+in computer vision and and human motion
+modeling and that's it for me thanks for
+your attention and I'm happy to answer
+more questions

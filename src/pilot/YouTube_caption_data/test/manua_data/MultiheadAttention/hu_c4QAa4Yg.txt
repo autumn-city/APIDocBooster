@@ -1,0 +1,764 @@
+- Hello everyone.
+Welcome to this talk
+on Accelerating Training
+of Transformer Models.
+My name is Kaarthik.
+I'm an Engineering Manager
+in the Azure AI Platform
+group at Microsoft.
+My teammate Sherlock is a
+corporate center for this talk.
+He is here with me today.
+We are in the frameworks
+group in Azure AI.
+In this talk,
+we are going to briefly
+discuss what ONNX Runtime is,
+and how it integrates
+with training frameworks
+to accelerate model training.
+Then we will look at what
+contributes to acceleration
+and other training capabilities.
+In the last part of the talk,
+we will talk about performance
+improvements observed
+in pre-training and
+fine-tuning of BERT, GPT-2,
+and turing models.
+We will end the talk with a demo on using
+ONNX Runtime for accelerated training
+in Databricks.
+Let's take a quick look
+at ONNX and ONNX Runtime first.
+ORT is the short form for ONNX Runtime,
+and I have used that short
+form a lot in this talk.
+So if you hear me say ORT know
+that I mean ONNX Runtime.
+ONNX is a format for ML models.
+It stands for Open
+Neural Network Exchange.
+It makes ML models portable.
+ONNX defines a common set of operators,
+the building blocks of machine learning
+and deep learning models,
+and a common file format
+to enable AI developers
+to use models with a variety
+of frameworks, tools,
+runtimes and compilers.
+It enables users to train models
+using any framework compatible with ONNX.
+The train models can
+then be converted to ONNX
+and represented in open
+and interoperable format
+and can be deployed to
+any compatible target.
+For example, a PyTorch
+model can be exported
+using torch.onnx.export functionality.
+ONNX also enables hardware providers
+to optimize for a single format
+and offer the best performance on that
+instead of trying to
+optimize for many frameworks.
+ONNX was originally
+developed and open sourced
+by Microsoft and Facebook.
+Now, ONNX format is managed
+under Linux Foundation AI Foundation.
+ONNX specification is a standardized
+intermediate representation.
+And it includes schema for
+operators defining inputs,
+outputs, attributes, et
+cetera for that operator.
+What you see in the right
+side is the visual notation
+of an operator.
+It shows general matrix
+multiplication operator
+with inputs X, weight, and bias.
+It also shows attributes alpha
+and beta of this operator
+and output Y.
+Using the specification for ops
+like the one in the previous slide.
+A traditional ML or deep
+learning model can be represented
+in ONNX format as a graph
+of computational nodes.
+Each node can be a built-in
+or a custom operator.
+A model represented in ONNX format,
+like the one in the previous slide,
+can be accelerated using ONNX Runtime,
+which is a cross-platform accelerator
+for training and inferencing.
+ORT is architected to plug
+in custom operators, optimizers,
+and hardware accelerators.
+ORT is an open source
+project developed in GitHub.
+ONNX Runtime was originally
+built for inferencing.
+Support for training was
+introduced earlier this year
+in May.
+As a part of that announcement
+we shared how ORT can be used
+to accelerate PyTorch
+training of transformer models
+on a multi-node GPU setup.
+ORT is a core part
+of ML Stack at Microsoft
+bringing together innovations
+from across Microsoft and the industry.
+There are many natural
+language processing scenarios
+like classification,
+missing machine translation,
+question answering,
+information extraction,
+summarization, text prediction, et cetera.
+That are relevant to different products
+and services shipped at Microsoft.
+With ORT is acceleration
+on transformer models.
+It is being adopted by many
+teams within Microsoft.
+There are also some external partners,
+who are soon going to publish blogs
+on how ORT helped with
+their training scenarios.
+Our current focus is
+on transformer models.
+There is nothing
+inherently limiting in ORT
+that prevents using it
+for other types of models.
+We picked transformer models
+as the first ones to use
+with ORT because they are typically,
+orders of magnitude
+larger than other models,
+like the ones used in
+computer vision scenarios.
+And training transformer
+models take a very long time,
+even with transfer learning.
+Let's see how ORT is used for training.
+Here you see an illustration
+of different steps
+in a training implementation.
+Whether you are familiar
+with PyTorch or TensorFlow
+or some other framework,
+the outline of the training
+implementation would look
+like what is shown here.
+To accelerate using ORT,
+few changes are needed to these steps.
+Specifically, instead of using the model
+that is defined using the
+frameworks aka directly,
+an ORTTrainer is created first using,
+(indistinct) is created
+first using the model
+and later used in the subsequent steps.
+ORT trainer's train_step() method
+encapsulates optimized computation
+of loss and gradients
+and weight updates.
+This is where the ORT acceleration happens
+and that is shown here in the slide
+in the light green box.
+Rest of the implementation does not change
+and still leverages the original
+framework's API represented
+in dark green boxes in the slide.
+With this approach,
+ORT focuses on optimization
+of computation,
+and does not replace the framework itself.
+Since it can be thought of
+as a backend to a framework,
+ORT can be the compute
+engine for graph generated
+from different frameworks.
+Let's see what the experience looks like
+and what happens behind the scenes.
+Here on the left,
+there is a simple model training
+code template in PyTorch
+that defines the model,
+instantiates the model loss and optimizer,
+and goes through the train look.
+On the right side,
+you see how ONNX runtime
+is used for acceleration.
+The changes are that the
+model created using PyTorch
+is passed to ORT trainer
+along with other parameters.
+And the train loop
+involves simply calling
+train_step() method on it.
+This is the experience that exists
+in the ORT Python API training.
+And we are working on an updated version
+of the API that will
+further reduce the number
+of lines of code changes needed
+to use ORT for acceleration.
+And that will enable
+incremental changes in code
+towards optimizing the
+training speed using ORT
+instead of having users do all
+of the changes upfront.
+So this is how it works in the background.
+ORT trainer is a
+framework specific adapter
+that exports model to ONNX,
+and passes GPU buffers
+created by the framework
+to ORT Training Session API.
+Training Session API
+handles the acceleration
+of computation through ONNX
+Runtime in the backend.
+Training session is framework agnostic,
+and adapters can be implemented
+for different frameworks
+to work with ORT through
+the Training Session API.
+In this slide,
+you see ORT trainers for PyTorch
+and TensorFlow inputs.
+Let's take a quick look at
+the capabilities available
+in ORT for training.
+We saw earlier that ONNX
+model is a graph composed
+of computational nodes.
+The way ORT works is
+that it exports the
+model inferencing graph
+and uses it as a forward
+graph for training.
+ORT then augments the
+graph with loss function
+and work backwards to build
+a gradient or backward graph
+with gradient operators
+corresponding to each operator
+in the forward graph.
+Then optimizer nodes are added
+to finish building the
+entire training graph.
+ORT acceleration comes
+from optimizations done
+to entire computation graph
+using standard techniques
+like constant folding and
+redundant operation elimination.
+ORT also boosts an
+optimized gradient graph
+using automatic differentiation.
+ORT uses the global knowledge
+of data dependencies
+in the static graph to
+optimize memory and compute.
+Other perf improvement contributors are,
+efficient memory management
+and optimizations
+to CUDA kernels.
+The main aspect to call
+on are memory efficiency,
+is the way tensor placement
+in GPUs is optimized,
+(indistinct) space of memory, and time.
+Tensor lifespan is pre-determined
+by the execution order
+and ORT heavily reuses
+allocated buffer space.
+It also minimizes memory fragmentations,
+and could calculate
+peak memory consumption
+before running the model.
+With such aversive memory efficiency,
+ORT can run BERT-Large pre-training
+with batch size that is twice the size
+that is possible in PyTorch
+without ORT acceleration.
+For GPT-2 PyTorch
+implementation would result
+in out of memory error
+in a V100 GPU with 16GB memory.
+With ORT it is possible to run GPT-2
+on that GPU without getting
+out of memory error.
+Next is the kernel optimizations.
+There are three types of kernel
+optimizations done in ORT.
+The first one is op fusion.
+By reducing the number of ops of kernels,
+ORT reduces the computation
+and memory usage because
+the intermediate activations
+for each op do not need to be
+stashed when ops are fused.
+(indistinct) activation is used in BERT.
+ORT fuse that into one op.
+Same thing was done with
+LayerNorm, BiasGylo,
+BiasDropout, MathML, et cetera.
+The second kernel optimization
+is on reimplementation.
+ORT optimized some CUDA
+kernels to make them faster.
+The last kernel optimization is
+on eliminating some redundant
+computations in the kernels.
+ORT also supports capabilities
+like DeepSpeed ZeRO stage one,
+mixed precision training,
+and distributed training
+that helps speed up training.
+Let's double click on these
+native training capabilities.
+Here we see a list of capabilities
+that are natively supported
+in ORT for training.
+Some of them are widely
+used in the industry.
+For example, mixed precision training,
+gradient accumulation,
+and data parallelism
+modes are commonly used.
+Some of these capabilities
+are not necessarily
+as popular as others,
+but these innovations
+from different parts of
+Microsoft help optimize
+and scale model training.
+Mixed precision training
+helps make training faster
+and use less memory.
+It is a commonly used technique.
+The next one is on
+distributed training modes.
+To accommodate large
+models and data sizes,
+parallelism is employed.
+ORT supports three different
+types of parallelism.
+They are data parallelism,
+horizontal parallelism,
+and pipeline parallelism.
+Data parallelism is the
+most common where every GPU
+or rank has the same model,
+but the data used in the batch
+in each rank is different.
+Horizontal parallelism
+involves maintaining
+the entire training graph
+in each node or rank,
+but each of them have only
+a subset of the weights.
+Lastly, pipeline parallelism.
+This involves splitting the model
+and distributing it across GPUs.
+For example, BERT-Large
+model has 24 layers,
+and it can be split into eight stages each
+with three layers from the model.
+With these parallelism modes,
+ORT can help scale model training.
+The next capability is
+gradient accumulation,
+and it is about computing
+gradients multiple times
+and average them before updating weights.
+In training batch size is
+the number of samples used
+to train the model
+before one weight update.
+It impacts training accuracy.
+Optimal size of the batch
+is optimizer dependent,
+and it is a hyper parameter for training.
+However, batch size is limited
+by the available GPU memory.
+To accommodate batch sizes bigger
+than what can be accommodated
+in the GPU memory,
+the solution is to employ
+gradient accumulation
+and achieve the desired batch size.
+The next item here is the
+gradient checkpointing,
+and it is about reducing
+memory consumption
+by discarding activations
+and recomputing them when
+they are needed again
+instead of keeping them around.
+This is a trade off between memory usage
+and computation cost.
+Next item is AdaSum,
+which is a technique published
+by Microsoft Research
+that our team has already contributed to
+and made available in our work.
+This technique does not help
+with the training speed,
+but because of the innovative approach
+to combine ingredients,
+it helps model training converge faster
+than the approach of average ingredients.
+Using it in ORT is just as
+simple as setting a flag.
+And the same is true
+with the next item here
+and that is DeepSpeed.
+So DeepSpeed ZeRO
+optimizer makes it possible
+to support models that are
+connect size of the models
+that can be trained using
+PyTorch without ORT acceleration.
+So these topics are big topics
+in themselves so I'm not
+gonna get into details
+on each of these topics here,
+but you should be able to look them up
+and get details on DeepSpeed, AdaSum,
+and other techniques like
+gradient checkpointing.
+(mouse clicking)
+The next section covers ORT
+training recipes available
+in GitHub for BERT and GPT-2 models.
+And code snippets from BERT
+pre-training implementation
+to show the code updates necessary
+on a PyTorch trainer code
+to accelerate using ORT.
+These are the different training recipes
+that are available in GitHub.
+We are working to publish more examples
+on transformer training like BERT or T5.
+It should be relatively straightforward
+to take these examples as a references
+and use ORT with any transformer model
+like the ones published
+in HuggingFace model repository.
+One call up here is that
+turing model repo here
+is a private repo
+but if you want to use it,
+you could request for access.
+You can get details on the
+turing model architecture
+and instructions to
+access it at msturing.org.
+The code changes needed for
+ORT acceleration are shown here
+in this slide.
+The first change is shown
+in the top left section
+of the slide,
+and it is called model description,
+which defines input and
+output shapes of the model.
+In the next version of the
+API it will be optional,
+but using it will help
+with more efficient memory management.
+On top of the,
+on the top right section of the slide,
+you see ORT trainer options.
+And it is used for
+capturing training options
+like distributed training configuration,
+or the flags to invoke
+the native capabilities
+like mixed position training
+that we looked at earlier.
+Model description,
+optimizer configuration,
+and trainer configuration are used along
+with the model itself
+to create ORT trainer.
+As a part of the train loop shown
+in the bottom section of the slide,
+train_step() method on
+ORT trainer is called
+to train the model.
+We will look at the code
+changes again during the demo
+on a simpler model training code.
+Let's look at performance
+improvements observed
+in BERT pre-training with
+ONNX Runtime acceleration.
+This table compares ORT's performance
+for phase one and two of BERT-Large model
+with PyTorch perf numbers on NVIDIA GTX 2.
+With four GTX 2,
+each with 16 GPUs were used,
+the speedup was about 11% in total.
+That comes from the throughput increase
+of about 11.3% in phase one
+and 14.6% in phase two.
+There was no change in
+the accuracy metrics
+between the accelerated and
+non-accelerated model training.
+ORT could train with local batch size,
+that is twice the size of
+the batch size possible
+in training using PyTorch without ORT.
+ORT ran at a local
+batch size of 128 and 16
+for phase one and two respectively.
+Whereas PyTorch ran at
+batch size of 64 and eight.
+The effective global
+batch size was the same
+in both cases for Apple's
+to Apple's comparison.
+With optimization in memory
+utilization and computation,
+ORT can speed up training
+of transformer models.
+The actual performance
+improvements depends
+on a lot of factors.
+Based on the models we
+have trained with ORT
+and the data used for training,
+we have seen perf improvement
+of about 1.2x to 7x
+on different models covering GPT-2,
+BERT, RoBERTa, and turing.
+One observation here is
+that generally perf improvement is better
+with large model sizes.
+Let's head over to a Databricks cluster
+for the demo on using ONNX Runtime
+with PyTorch on the cluster.
+- [Tutor] Let's take a look
+at how to use ONNX Runtime
+for accelerated training in Databricks.
+I have a notebook open here
+and connected to a Databricks cluster.
+This notebook has PyTorch code
+to train a simple
+sequence-to-sequence model.
+It is the same implementation
+available in the tutorial
+on transformer module in PyTorch
+with a slight modification
+to use Adam optimization instead of SGD.
+(mouse clicking)
+So this is the PyTorch tutorial example
+that I'm referring to.
+(mouse clicking)
+If you want more details on this example,
+you can look at the
+documentation in that link.
+The copy of this notebook
+is available in GitHub
+at this location and shown here.
+This is that location.
+The same notebook is used in this demo.
+If you have any feedback or comments,
+you can leave that in this GitHub repo.
+Other training recipes to use ONNX Runtime
+to accelerate pre-training and fine-tuning
+of BERT and GPT-2 models are available
+in this location here.
+And that is this repo.
+Here you can find details on how to use it
+with BERT and GPT-2,
+and also details on the perf
+improvements one can expect.
+To run this notebook,
+the prerequisites are a Databricks cluster
+with 7.3 LTS ML runtime
+and a node with V100 GPU.
+I'm using Databricks in Azure.
+So I am using one of the node types
+that has V100 GPU.
+In this case, specifically,
+I'm using Standard_NC6s_v3 node in Azure.
+I've already installed
+the Python packages needed
+to run this example in this cluster.
+These are those packages
+that are pre-installed
+in this cluster.
+It will take about four minutes
+to run the entire notebook.
+It will train a sequence-to-sequence model
+for three epochs in PyTorch
+without ONNX Runtime acceleration first,
+and then train another model
+using the same hyper parameters
+but with the acceleration
+using ONNX runtime.
+In the output of the cells below
+and in the matrix view of the experiment,
+you can see that the training
+time is almost reduced
+by half with acceleration
+without any change in
+the accuracy metrics.
+I'm going to run the notebook now
+before we look at individual steps.
+(mouse clicking)
+The first step is to define the model
+that uses the transformer
+module in PyTorch.
+The next few steps are to load the data
+and methods to create data batches
+to use in training loop.
+These are those cells that does that.
+We also initialize few variables
+and create this method
+to calculate the loss.
+That is followed by model instantiation
+for training without acceleration.
+So this is where the
+model is instantiated,
+and the loss function and the
+optimizers are instantiated
+as well.
+Then we have methods for MLflow logging,
+and train and evaluate methods.
+The train method you can see
+the conditional execution
+needed for code paths
+with and without acceleration.
+And this is where that if else block
+the conditional execution happens.
+In the acceleration path,
+this trainer object is used.
+That is not created yet in this notebook
+because we are not going
+to use acceleration
+in training the first model.
+Later in this notebook
+before training the second
+model with acceleration,
+we will create this trainer object.
+For now, just know that
+this train step here
+on trainer encapsulates all
+of these individual steps
+that are typically used in training.
+This is the evaluate
+method implementation.
+And finally, like we have
+the train loop implementation
+in train_model() method.
+The last step is to invoke
+that train_model() implementation
+by passing this flag parameter as false,
+which will, which will not use
+acceleration during training.
+There is also this evaluate call
+that will evaluate the
+model that is trained
+in the previous step.
+The next section of this notebook is
+on accelerating this
+training using ONNX runtime.
+The only thing that is
+needed on in addition
+to the code that has already created
+in the cells above is
+to create a new model
+from scratch and create ORT trainer.
+So a new model is created here,
+and this ORT trainer,
+this trainer object that we
+mentioned earlier is created.
+This wraps the model
+and this thing called model description,
+which captures the shapes
+of the inputs and outputs
+and also the optimizer configuration
+and the loss function.
+With this ORT trainer,
+we can work the same train_model() method
+but with this accelerate flag set to true.
+This will enable
+acceleration during training.
+And as you can see,
+like it takes about like
+six milliseconds per batch
+unlike the training here
+that took about like 12
+milliseconds per batch.
+So the training time is reduced by half
+without any impact to the
+loss and ppl metrics here.
+We can see that later when
+we look at the metrics chart.
+Again, there is another
+cell here that can be used
+to evaluate the model trained
+using ORT acceleration.
+So let's take a look at the
+metrics that are generated
+from the ones that I did
+earlier in this notebook.
+This shows the per-batch execution time.
+And as I mentioned,
+the training time per
+batch is reduced by half,
+and the overall training
+time was also reduced by 40%,
+or 50%.
+The other metrics loss and ppl
+are captured in these charts.
+And as you can see,
+they are the same between the baseline run
+without acceleration
+and ONNX Runtime based run
+that includes acceleration.
+There are a couple of links
+available in this notebook
+that cover details on how ORT is able
+to accelerate the training
+and what one could expect on
+training BERT and GPT-2 models.
+That's the demo of this notebook.
+Please try it out and leave
+any questions or comments
+on the GitHub repo that
+hosts this notebook.
+- ONNX Runtime is an open source project.
+You can use it too to optimize
+and accelerate model training
+and see the same benefits
+that we have seen.
+Why training very large transformer models
+that are used in various
+Microsoft services
+like Bing advertising,
+office productivity suite,
+Visual Studio, and others.
+Thanks for watching this talk.
+Please read and review the session.
+Sherlock and I are happy to
+take any questions you have now.
+Thank you.

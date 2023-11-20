@@ -1,0 +1,247 @@
+Hi, my name is Zihang Lai.
+I would like to introduce you to our paper,
+Video Autoencoder: self-supervised disentanglement
+of static 3D structure and motion.
+The visual world arrives at a human eye as
+a streaming, entangled mess of colors and
+patterns.
+The art of seeing, to a large extent, is in
+our ability to disentangle this mess into
+physically and geometrically coherent factors,
+such as movement, depth, structure, change
+of viewpoint and so on.
+From its very beginnings, computer vision
+has been concerned with acquiring this impressive
+human ability, including such classics as
+Barrow and Tenenbaum’s Intrinsic Image decomposition
+in the 1970s, or Tomasi- Kanade factorization
+in the 1990s.
+In the modern deep era, learning a disentangled
+visual representation has been a hot topic
+of research, often taking the form of an autoencoder.
+However, almost all prior work has focused
+on disentanglement within the 2D image plane
+using datasets of still images.
+Recently, learning based methods that try
+to understand 3D from 2D supervision is also
+widely studied.
+Tung et al. leverages view prediction for
+learning latent 3D voxel structure from the
+scene.
+HoloGAN, shown at the top right, proposed
+inserting the voxel representation into Generative
+Adversarial Networks, enabling the disentanglement
+of 3D structure, style and pose.
+Novel view synthesis literatures also learn
+3D representations using 2D supervision.
+For instance, Wiles et al proposed to utilize
+the point cloud as an intermediate representation
+for novel view synthesis.
+However, most of these methods still need
+true camera pose to provide supervision.
+In this work, we propose a method that learns
+a disentangled 3D scene representation, such
+that raw input video can be automatically
+disentangled into 3D scene structure and camera
+trajectory.
+At test time, the features obtained using
+our Video Autoencoder can be used for several
+downstream tasks, including novel view synthesis,
+pose estimation in video, and video following.
+Because we use a large-scale dataset consisting
+of many scenes for training, the model generalizes
+well to unseen images and videos at test time.
+As an example, for novel view synthesis, given
+a single input image, we first encode it as
+a 3D scene feature, and then render to novel
+views by providing new camera poses.
+Importantly, we employ videos as training
+data of our model, using the temporal continuity
+within a video as a source of training signal
+for self-supervised disentanglement.
+Note, we cannot leverage this spatio-temporal
+continuity if we train on datasets that consists
+of only still images.
+More specifically, we make the assumption
+that a local snippet of video (shown here
+as frame 1 to 5) is capturing a static scene,
+so the changes in appearance must be due to
+camera motion.
+This leads to our Video Autoencoder formulation:
+an input video is encoded into two codes,
+one for 3D scene structure (which is forced
+to remain fixed cross frames) and the other
+for the camera trajectory (up- dated for every
+frame).
+The 3D structure is represented by 3D deep
+voxels and the camera pose with 6-dimension
+rotation and translation vectors.
+Note while there are other possible 3D representations
+such as point cloud and polygon mesh, none
+of these methods are as easy to work with
+as voxels, which allows reshaping and could
+be applied with convolutions easily.
+We use voxel representation to keep things
+simple, but other representations could potentially
+work as well.
+To reconstruct the original video, we simply
+apply the camera transformation to the 3D
+structure features and then decode back to
+pixels.
+Our Video Autoencoder is a conceptually simple
+method for encoding a video into a 3D representation.
+The model consists of 3 subcomponents: a 3D
+encoder, a trajectory encoder and a decoder.
+Like other auto-encoders, we encode data into
+a deep representation and decode the representation
+back to reconstruct the original input, relying
+on the consistency between the input and the
+reconstruction to learn sub-modules of multiple
+neural networks.
+In our case, the goal is encoding a video
+into two disentangled components: a static
+3D representation and a dynamic camera trajectory.
+By assuming that the input video clip shows
+a static scene which remains unchanged in
+the video clip, we can construct a single
+3D structure (represented by deep voxels)
+and apply camera transformations on the structure
+to reconstruct corresponding video frames.
+Unlike other existing methods, our model does
+not need ground truth camera poses.
+Instead, we use another network to predict
+the camera motion, which is then jointly optimized
+with the 3D structure.
+By doing so, we find that the 3D motion and
+structure can automatically emerge from the
+auto-encoding process.
+All three submodules are relatively simple
+neural networks.
+The 3D encoder encodes an image input into
+a 3D deep voxels that represents the same
+scene as the output.
+The trajectory encoder estimates trajectory
+from input videos by computing the relative
+camera pose with respect to the first frame
+for each image in a sequence.
+Finally, The decoder is very similar to an
+inverse process of the 3D encoder: it renders
+a 3D deep voxel representation back into image
+space with a given camera transformation.
+We apply 3 losses during training:
+Firstly, we apply a reconstruction loss between
+reconstructed video clips and the original
+video clips.
+The reconstruction loss is a combination of
+L1 loss and perceptual loss.
+To enhance the image quality of the reconstructed
+images, we also apply a WGAN-GP adversarial
+loss on each output frame in addition to the
+reconstruction loss.
+Finally, in order to ensure that a single
+3D structure is used to represent different
+frames of the same scene, we apply a consistency
+loss between the 3D voxels extracted from
+different frames.
+Next, we show some results from our model.
+We report results on three public datasets:
+RealEstate10K, Matterport3D and Replica.
+RealEstate10K is a collection of real estate
+footages that typically feature a series of
+shots of indoor and outdoor scenes.
+Both the Matterport3D dataset and the Replica
+dataset are collections of 3D models of scanned
+and reconstructed properties.
+We use a navigation agent in the simulator
+to render training videos that shows an agent
+navigating from one point in the scene to
+another point.
+While we use the Matterport3D dataset for
+training and testing, we use the Replica dataset
+only for testing in order to benchmark the
+generalization ability of our approach.
+Here are some of our novel view synthesis
+results
+Our model could also work for out-of-distribution
+datas, anime scenes,
+and even paintings
+Qualitatively, our method is able to generate
+photorealistic results with correct motion.
+Mustikovela et al. make use of the least supervision
+signals.
+However, their view synthesis results are
+quite unsatisfactory.
+Tung et al. share the most similar representation
+with ours, but it fails to generate clear
+images for reasons including their model could
+only handle 2 degrees of freedom of camera
+transformation.
+Yu et al. warp the image with predicted depth
+and pose.
+However, this warping operation could also
+cause large blank areas where no corresponding
+original pixels could be found.
+Wiles et al. show the most competitive performance
+but the model requires much stronger supervision.
+It could also show more artefacts.
+Here is another set of comparisons.
+Here, we quantitatively compare our method
+with previous approaches on the RealEstate10K
+dataset.
+The vertical axis shows the accuracy and the
+horizontal axis divides previous methods into
+three groups, depending on their supervision
+data.
+As shown in the plot, we compare favourably
+to most single-image view synthesis algorithms,
+even though our method does not train on camera
+pose ground-truths while others do.
+Compared to an early baseline method that
+also requires no camera supervision, our method
+obtains a significantly better result, with
+an almost two-fold increase in PSNR.
+Comparing to other methods on the Matterport3D
+dataset, we also perform favourably to most
+single-image view synthesis algorithms.
+When testing on Replica without any finetuning,
+We observe the same trend as in other datasets,
+with our method comparable to existing methods
+that require camera supervision.
+This indicates that our method is able to
+generalize well to out-of-domain data.
+Here is an example trajectory prediction.
+You can see that the predicted trajectory
+roughly correspond to the movement in the
+scene.
+Here is another example.
+We quantitatively evaluate our pose estimation
+results on 30-frame video clips from the RealEstate10K
+testing set, which consists of videos unseen
+during training.
+For each video clip, we estimate the relative
+pose of between every two video frames and
+chain them together to get the full trajectory.
+Our result drastically reduces the error rate
+of the learning-based baseline method with
+about 69% less in mean error and 72% less
+in maximum error, suggesting that our approach
+learns much better viewpoint representations.
+Comparing to the Structure from Motion pipeline
+COLMAP, our method can obtain higher accuracy
+under the 30-frame testing setup.
+Our model can also animate a single image
+(shown left) with the motion trajectories
+from a different video (shown in the middle).
+We call this video following.
+This is another example of video following.
+Finally, In seeking to remove the need for
+running pose estimation as preprocessing,
+we provide a possible way of training on raw
+videos, which potentially contains much richer
+and more diverse information, due to their
+almost infinite amount of data.
+We hope that our method is working towards
+a way of training on such completely unstructured
+datasets.
+Thank you very much for your attention.
+Please see our paper and website for details.

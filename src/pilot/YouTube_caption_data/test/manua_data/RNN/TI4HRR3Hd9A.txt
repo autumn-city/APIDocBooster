@@ -1,0 +1,357 @@
+ Alright, so the plan is now to implement a recurrent neural
+ network with an LSTM as a classifier to classify texts. So
+ this will be a many to one word RNN because we are going to read
+ in texts, and then we regard each word as a token in that
+ sequence. So in this video, I'm going to outline the different
+ steps that are necessary for that. And then in the next
+ video, we will take a look at how that looks like in pytorch.
+ So now, these slides won't be pretty, but I hope they will
+ kind of convey the big picture that underlies the pytorch
+ implementation. So, because we are talking about a
+ classification task, we are talking about a many to one
+ network here. So we have as input, for example, sentence,
+ and then the output is a class label. So that will be a class
+ label prediction. For instance, we are going to take a look at a
+ IMDb movie review data set. And then we are going to predict
+ whether the reviewer thinks that the movie is positive or negative.
+ So, um, just to recap, this is a slide I've shown you in the
+ very beginning of this lecture. So this is the classic approach
+ for text classification using the so called back of words
+ model. I don't want to discuss this again, because yeah, I
+ already discussed this in an earlier video. But I wanted to
+ highlight again that we are using the so called vocabulary
+ here. For the RNN, we are also going to use a vocabulary that
+ is similar to this one. The only thing is that this part here
+ will be different. So we won't have a design matrix as a input
+ Yeah, input to the machine learning algorithm, we will have
+ an embedding. So basically word embedding. So this will be now
+ in four different steps. So I'm trying to do it step by step,
+ because it can be a little bit complicated. So breaking it
+ down into smaller steps might help understanding the process.
+ And these steps are also approximately how we would
+ implement them in pytorch. So this is for the recurrent neural
+ network now. So step one would be also building a vocabulary
+ similar to the classic approach. So you can see the vocabulary
+ here is quite similar to the vocabulary I've shown you here.
+ So I added two things here are unknown is for unknown words. And
+ this is a padding for making sequences the same length, this
+ will become clear later. But essentially, the vocabulary is
+ also a vocabulary that consists of all the unique words that can
+ be found in the training set. So if this is my training set
+ here, the vocabulary contains all the unique words, it's a set
+ of unique words, and it's mapping to integers here. So
+ you can see, the order doesn't really matter, you can do it
+ alphabetically, but any order is really fine. It doesn't really
+ matter which order the vocabulary is. It's just a
+ mapping dictionary. And yeah, so we have this vocabulary here.
+ And then step two would be using this vocabulary to convert the
+ training example texts to indices. So again, if on the
+ left hand side, this is my training data set. Let's now use
+ the vocabulary to convert it into these integer indices. Why
+ are we doing this, by the way, in the first place, that is
+ because the machine learning algorithms like to work with
+ numbers, right, because we have matrix multiplications, and so
+ forth, and we can't do a matrix multiplication with letters or
+ words, right. So we have to somehow get the inputs into a
+ representation that is numeric, something that we can do math
+ with. So, um, let's focus maybe on the first training example
+ here, x one, the first training example is the sentence, the sun
+ is shining. So using the vocabulary, we are not
+ translating. So this is the first word, the, the is index
+ seven. So for the integer representation here, so this is
+ on the right hand side, or integer representation of that
+ sentence. So we are now adding the seven here, right, because
+ that's how it goes here. Then for the second one, this is sun,
+ we have five. So this goes here, and then five here. The next one
+ is this one, one more shining. This one goes here. Alright, so
+ now we have mapped everything to integers. And compared to the
+ to the back of words model, we keep the order here. So the
+ order here in the sentence is the same as this order here.
+ Because yeah, the RNN is a sequence model. And like we
+ talked about in an earlier video, the order matters when we
+ work with text. So why are there dot dot dot and 10 1010 here?
+ So let's consider first the other sequences. So exam
+ training example two and training example three here. So
+ if we convert them to you, you see that example two has four
+ words, example one has four words. So we have four words,
+ four words, but sentence three has 12345678910111214 words,
+ actually, it's a much longer sentence. And because what we
+ usually do is we arrange things in a batch, we would have to
+ Yeah, well, we want to make everything the same length. So
+ if I have, let's say a batch, this is really for efficiency
+ purposes. And we have in our first one here, four words. We
+ do it like this. 1234. My second one is four words, we can't
+ have like nothing. I mean, we can't have a matrix where there's
+ nothing that would not be a matrix anymore. Everything has
+ to be in a matrix the same length. So we have to put some
+ values here. And these are our padding very, very values. These
+ are basically, yeah, placeholders in a sense. So we
+ are putting placeholders here to make everything the same size as
+ this last one here. So this is really, yeah, it's not really
+ necessary. If we had an RNN where we only feed one training
+ example at a time. But if we want to feed them as a batch,
+ then it would be necessary because there is a matrix
+ multiplication at some point. And for that, we have to have
+ everything the same length.
+ Alright, but moving on. So let's now say we have our training set
+ converted into these integers. If I go back one more time, it's
+ not considered these that we have converted. So this was step
+ two. Let's now go to step three, that is converting these
+ indices to a one hot representation. So this one
+ here, this is our sentence, we are only taking a look at one
+ sentence here, only one training example, just for keeping things
+ smaller here, otherwise, they won't fit onto the slide. So
+ let's only focus on this training example, the first one.
+ So this goes then into the integer representation, why did
+ I put it like 90 degree rotated, just wanted to show you where we
+ get these numbers from 7524. This is from the vocabulary,
+ this is exactly the same that I've shown you before. So these
+ are these numbers here. And then here the padding. So everything
+ I'm showing you here, these, this is the integer
+ representation from the previous slide. Now, the new thing here is
+ that we convert those to a one hot representation. So how does
+ it look like? So we would essentially have a matrix now
+ where this is for one training example. So this matrix has the
+ dimension here, the columns, this would be the dimension of
+ vocabulary size. And the rows would be the sentence length. So
+ we have the sentence, it's a bit hard to write this way, sentence
+ length, and then the vocabulary size. And then for each word,
+ so each row, this one would be essentially the first word, we
+ would then look up the wall, create the one hot
+ representation. If our vocabulary size in this case is, it should
+ be 111234567891011. So we have a vocabulary size of 11. This is
+ index 10. This is index zero. So the first one is a seven here,
+ let me use maybe a different color, let me use the green. So
+ seven, so we got 1234567. Second one is five, so we go
+ 12345. Third one is a two. So we go
+ 1012. And then
+ let me see, I think I've yeah, I've okay, this is should have
+ put this model right. But anyway, it's the same concept
+ applies. Okay, so the four here, zero, one, two, three, four.
+ Okay. All right. So this is how we create our one hot
+ representation of that sentence. And then for sorry, this is no
+ wrong thing. I just copied and pasted the last one, these
+ should be zeros. And the ones here are because of the padding.
+ So these are padded ones. So if you only focus on the input
+ sentence, you can actually also ignore those. But these come
+ from the fact that we did a padding earlier here, here to
+ put everything to the same size as sentence number three. Okay,
+ we have now our one hot representation, we have
+ converted the text into integers into integer representation, and
+ then text, then one hot. So that's step two, step three, and
+ creating this vocabulary was step one.
+ Alright, so the next step now is to go from the one hot
+ representation into a representation that is containing
+ real numbers like decimal numbers, using an embedding
+ matrix. This is a weight matrix, a specific type of made weight
+ matrix. But let's do it one at a time. So first here is a recap
+ of what I explained in the previous night. So this is a
+ recap. And we are now going to focus only in this overview here
+ on one particular word. So let's consider we have this training
+ example x one. And for this training example x one, we only
+ focus on the first word for simplicity. So we built already
+ this vocabulary, this was step one, let me use black for this.
+ We used what we both have vocabulary in step one. In step
+ two, we learned how to convert the word together with the
+ vocabulary into this integer representation. So step three
+ was converting into the integer representation. Oh, sorry, step
+ two was converting it into integer presentation. So we
+ have this seven, step three was actually the other one hot
+ encoding. So step three would be the one hot encoding. So this is
+ what we had before, we are focusing only on this word, the
+ the no money this the this is for simplicity. And I will show
+ you on this slide, how we convert this one hot encoding
+ to a real number vector. So this one hot encoding here, I just
+ copied this over to this position here, this is just
+ copied over. And now we have this embedding matrix, this is
+ a weight matrix that is initialized with random values.
+ And this is updated during training, just like a hidden
+ layer. And in fact, actually, the embedding can be implemented
+ as, let's say, torch dot n n dot linear, fully connected linear
+ or use a different color fully connected layer. This is
+ nothing new. It's just the regular weight layer. We don't
+ need a bias for this one, though. Um, okay, so here at the
+ bottom, I'm now showing you how we go from this one hot vector
+ into this embedded vector. So this is the hidden layer output,
+ or we can also call it the embedded vector, or word. Or we
+ can also call it the embedding. Actually, there are some
+ dedicated methods for doing that there's something called, for
+ example, word to make, there's also something called glove.
+ These are models just trained to produce embeddings. So these are
+ special models that can produce such embeddings like this one,
+ the real value vector. In this class, we're not doing this, this
+ is an optional thing to do. So you could do this instead of
+ learning the embedding. But here, the embedding matrix is
+ essentially a part of this RNN. So here, I'm just showing you
+ the RNN, the mini to one to one RNN. And the embedding matrix is
+ just something that is used here. It's just a weight matrix
+ that is learned a matrix between the input and the hidden
+ activations or hidden values. And really, this is just like in
+ a regular perceptron, there's nothing really special about it.
+ Alright, so how do we get from this one hot vector with
+ embedding matrix to the hidden layer output? Yeah, it's a
+ matrix multiplication. So if you think of the one hot vector
+ that we have from here, this is essentially you can think of it
+ as a one times on v dimensional matrix, where we v is the
+ vocabulary size. So if you think about the matrix multiplication,
+ it would be zero times point one plus zero times 1.1 plus zero times 2.1
+ and so forth. There's only one value that is a one here. So the
+ matrix multiplication between this vector here, and this one,
+ the first column would be 7.1. And for the second one, if we
+ multiply this one with a second column, this would be 2.5, 1.5,
+ 1.5. So the output would be 7.1, 2.5, 1.5, 1.5. So this would be
+ the embedded vector corresponding to this word the
+ so that's how we get from a word to actually a real vector that
+ can then be used in the RNN. So this word would be then the
+ input to this hidden activation. And if there was a previous
+ time step, that two things as input here, one input would be
+ really this vector here. And the other input would be the hidden
+ state from t minus oops, t minus two, if it's the first, if it's
+ the first in the sequence, there is no input. So in this case,
+ it's the first word of our sentence. So there won't won't
+ be any t minus one, it would be the first time step. So this
+ would be actually the first time step. And this is how we input,
+ let's say a word into an RNN as a real value vector. Alright,
+ this is only one word though. Now we have to do the same
+ thing. Let me go back one side, we will have to do the same
+ thing for sun is and shining. So this would be then a four by
+ four matrix for the sentence. By the way, this is the embedding
+ size, I just chose it to be four because coincidentally just fit
+ well into this slide. But there's no correspondence
+ between let's say the embedding size here and the sentence
+ length, this is really independent. In fact, when you
+ implement an RNN, you can choose the embedding size. So typically
+ embedding sizes are something like 128 or 256, and so forth.
+ But it really depends on how large the data set is and how
+ difficult the classification task is as many different it's
+ just another hyper parameter. Essentially, it's similar to
+ choosing a good batch size. It's also about choosing the embedding
+ size, the embedding size is essentially a hidden layer. So
+ like you experienced in the homework three, it's just a
+ hyper parameter to tune. Okay, so once going one step further,
+ now I'm telling you something that maybe makes you hate me. So
+ steps three and four are actually not done in practice.
+ So everything I've showed you here, from converting everything
+ to a one hot vector, and then getting this real value vector,
+ this is not done in practice, I just explained it to you. So
+ yeah, that you understand what's going on, like, conceptually,
+ this is how we would do it conceptually. But in practice,
+ actually. So now, it's, of course, a very complicated set
+ up here, I understand. So you probably may have to watch the
+ several times, or think about it a little bit. It's not
+ immediately obvious. But so this thing here, we discussed this
+ just before, this is kind of inefficient, right? Because we
+ have, when we multiply this one with this first column, we have
+ zero times point one plus zero times 1.1 plus zero times 2.1. If
+ we have 11 values here, it's like 11 computations, but only
+ only one matters, right? So we do like 10 computations for
+ nothing really here. And this is also a small vocabulary, we only
+ have 11 different things in our vocabulary. If you have a real
+ vocabulary, usually, based on the training set, they are
+ they are usually around, let's say 200,000 words, usually, we
+ make them smaller, let's say 20,000. But you have 20,000
+ words in the vocabulary, and then you have 19,999 wasted
+ computations in each matrix multiplication. So to make this
+ efficient, there's actually a torch dot n n dot embedding
+ layer that just does the lookup. So instead of really doing the
+ matrix multiplication between this one and this one, it just
+ uses the index, the index seven here, and say, okay, just give
+ me the value corresponding to index seven, look it up in the
+ embedding matrix and put it here. So in this way, we don't
+ have to do the whole matrix multiplication is just a lookup
+ table. So this is what I have here on the next slide. So
+ there's actually this lookup function, lookup approach called
+ torch and n dot embedding. This is doing the same thing that
+ we've done in steps three and four, but it's more efficient
+ because it's just looking up this value. So now let's
+ consider the whole sentence again. So sentence number one,
+ the sun is shining. So in step one, we created the vocabulary.
+ In step two, we converted the sentence to this integer
+ representation or integer vector. Then in step three, we
+ converted this integer vector into a one hot encoding, but we
+ are not doing step three. Now, there's no step three. Instead,
+ we're taking this integer vector directly. Together with our
+ embedding matrix, this is the exact same embedding matrix that
+ I've shown you. And then we are looking up these values now. So
+ for word seven, say this one. So for the word, the which
+ corresponds to the seven here, we're now looking up the row
+ corresponding to seven. And this is then used here, this is our
+ embedded sentence for the first training example. Then for the
+ second word, some sun should be here, five. We look it up here,
+ we put it here, then next one is, this is two. Looking it up,
+ this one goes here. The last one, shining, shining is four.
+ This one goes here. And this one goes here. And the remaining
+ ones are padding because we had one sentence that was longer
+ than four. So these remaining ones would be the padding. But
+ yeah, this is how actually, this shouldn't be here. There is this
+ to these
+ padding, if we have sentences longer than four words, but you
+ can see now, the matrix we have here is the embedding
+ size times the sentence sentence length. And this is for one
+ training example. If we have more than one training example,
+ of course, we would have a batch size, we would have a tensor, a
+ 3d tensor for considering the batch size as well. This will
+ become more clear in the code example that I will show you.
+ Do we have one more slide? Yeah, so okay, so now I was showing
+ you these different steps here from converting a sentence into
+ this input to the hidden layers in the recurrent neural network.
+ In the code example, we are going to work with this setup,
+ we are doing exactly that for a specific data set, we will be
+ working with this IMDB data set. So this is just a binary
+ classification data set, it's a sentiment classification data
+ set sentiment just means like the perception, like whether
+ something is emotionally positive or negative, like
+ what's the sentiment of something. So this IMDB movie
+ data set comes from the internet website, the internet movie
+ database. And this contains the ratings for movies. And the
+ rating can be between I think zero and 10. And the researchers
+ here, you can find the data set here have the researchers have
+ prepared it such that the I think maybe I kind of forgot
+ it's long time ago since I took a look at the paper, or method
+ where they proposed this data set. So I think the movie
+ reviews are from zero to 10. But they only use one to four, sorry,
+ sorry, zero to four for negative and seven to 10 for positive,
+ they don't use 565 and six because it's ambiguous. They
+ only use these and they refer to them as highly polar movie
+ reviews. So anything with a rating between zero and four is
+ considered negative. And anything between the seven and
+ 10 is considered positive. And they have 25,000 reviews for
+ training and 25,000 for testing. And here's just an example CSV
+ file, how the data set looks like. So there's some text. And
+ then there's a label one for positive, I think and zero for
+ negative could also be the other way around. I actually can't
+ tell based on readings this year. Alright, so but yeah, you
+ have two sentiment labeled zero and one. And then this review
+ text and we are going to build a classifier that can classify
+ these reviews. By the way, yeah, in the next video, I will show
+ you the code example for this mdb movie review classification
+ data set. I just wanted to share this additional resource with
+ you because I will only show you one video with code
+ implementations. For an example, I actually found this repository
+ which looks super helpful. It has more methods for yeah, RNN
+ SDM classification, and also several tricks. There are some
+ nice written tutorials. So there are more than these two, I just
+ clip this screenshot. But if you are interested in building RNNs
+ for classification, I highly recommend this repository here.
+ So there's also some library we are going to use it's called
+ torch text. So torch text is like torch vision, but for text,
+ so there's pytorch. And then there are libraries associated
+ with that torch vision is specifically for working with
+ image data. And torch text is specifically for working with
+ text data. There was recently an major update in torch text. So
+ most or many things have changed a lot. And this tutorial, when I
+ looked at it, it seemed like it was built for the original
+ torch text. So now in point nine, things have changed quite,
+ quite a bit. The old codes still work, but they are now considered
+ legacy. So if you want to convert these codes here, I mean,
+ technically, you can just use them like they are, it works
+ fine. But in the future, maybe in a few years, they may not
+ work anymore. I don't know. I don't know what the exact plan
+ plan plans are by torch text, whether they want to remove the
+ legacy code. But if you're interested, there's also this
+ migration tutorial, which explain what have or what the
+ things are that has changed between torch earlier version of
+ torch text and torch text 0.9. So but this is for this class
+ entirely optional. It's just fine to use any of this if you
+ are interested. So in the next code, in the next video, I will
+ show you one of my codes for implementing RNN and pytorch.

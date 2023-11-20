@@ -1,0 +1,1061 @@
+Alright, so welcome to class Wednesday the 7th of April 9 30 New York City Live Today we're going to have in Ishan Misra today talking about self supervised learning.
+Ishan is a research scientist at Facebook. He's currently working on computer vision and machine learning. His research interest.
+Is in reducing the need for supervision in visual learning? He holds a PhD from Robotics Institute at Carnegie Mellon University and graduated in 2018 when he joined FAIR.
+So his work are like in high performance supervised image classification with contrastive learning and many more things like a new way to assess AI bias. Also in object recognition systems so.
+Here we go and I guess I disappear from the screen and I'll let Ishan talk for the rest of the lesson.
+Thank you for the introduction.
+Thanks, thank you.
+Thanks for having me. Thanks for today. So good morning everyone. Today I'll be talking about self-supervised learning in computer vision.
+So without even getting into like a lot of motivation of why this is necessary, I think this used to be like *the* slide.
+I would spend a lot of time, but I think now it has become more and more clear about the limits of supervised learning. So let's just recap it for a little bit. So getting real label is really difficult and expensive.
+If you ImageNet data set, which is considered one of the largest datasets, it has about 14,000,000 images in total, about 22,000 categories. And to label this data set, it took about 22 human years.
+And if you think about it, 22,000 concepts that initial has is not a whole load of concepts because there are far more like concepts in the visual world.
+English it is just an image based data set so it does not have videos, so there are more sort of temporal concepts.
+There are no actions really annotated in this data set, so either all the 22,000 concepts really captured it.
+Very small motion of the visual runs etc. Interesting.
+And even that of medical tools so.
+Clearly, like labeling does not scale anymore.
+So in the past few years, a lot of research already gone into obtaining labels in or semi automatic or automatic one.
+For example, there is Vt supervised learning which takes images or videos and their associated metadata. For example hashtags or captions or something or GPS locations for example.
+Associated with those images.
+And then there is another paradigm which says that the data itself has enough structure or enough structure in itself to really be of importance and we can basically just use the data itself to learn powerful feature representations.
+Start brings us to self supervisor a sort of once like.
+Definition of self supervised.
+Learning can be that you have observed data.
+And you basically split it into 2 groups. You observe one date, one part of the data, and then you try to predict some property about a hidden part of the data from this observation and basically by setting up this sort of a prediction problem, we're able to learn fairly meaningful features.
+So let's look at supervised.
+Learning in the context of computer vision.
+So in computer vision.
+So supervised learning really started taking up a few years ago and there is any sort of concept of pretext tasks.
+So pretext task is basically a task to solve, just to learn a feature representation. It's often not a real task, so pH task is just where you're taking this observed data and then you're predicting properties about.
+This radiant data.
+Really care about and the.
+It's not the chance to.
+Only reason you're solving it.
+Is because you want to learn representations.
+So let's take a sort of make few examples of what this means, and in general in vision there has been.
+A lot of.
+PTX tasks defined for images. For video, for video and sound, but we don't have time to cover all of them period, so I'll just talk about a few examples using images.
+So one of the fairly popular pretext tasks for images is predicting relative position of patches.
+So in this task you take 2 image patches. So in this case a blue patch.
+And a red touch.
+And you sample them.
+Randomly on your image.
+Now the task.
+Is you need to predict the relative position of the red patch given the.
+So much so you take an assignment 2 time too young and we basically just feet together. The image patches into this Siamese network.
+We concatenate the features and then we basically predict, uh, basically, solver 8 classification problem predicting the relative position of the red trash with respect to the blue patch.
+So this is one kind of pretext task. Again, the interest over here is not to solve this relative position task.
+The interest is to basically.
+Use this task as a way to learn features.
+Another popular task was jigsaw puzzles, so here the idea is that we.
+Basically take 9 image patches.
+And you coordinate them randomly.
+And now the task is.
+To basically classify which permutation was applied.
+Because the set of permutations that you have for 9 patches is very large, 9 factorial, you basically restricted.
+Of permutation, we do apply, so you basically just say that I only have a fixed set of.
+1000 permutations.
+And you're going to sample a population from within you.
+Another fairly popular task was basically predicting rotations, so you take an image.
+And you apply it.
+One of 4 rotations basically.
+Zero degrees 91 equal to 70.
+And then you output.
+So basically a 4 way classification problem. So the idea here is basically going to be that it solves just.
+The classification problem to predict the rotation by each.
+He asked.
+So these tasks were so popular, what was missing?
+From him and.
+Why did we have to really change the way?
+We look at self supervisor.
+So if you think about what's happening in a sort of pre training stage set supervisory, there is a big mismatch between what we're doing at pre training and what we really want to transfer to. So retraining we're solving these tasks like jigsaw or like rotation.
+Which have very little to do with the transfer tasks that we.
+Care about which?
+Are say about transparent images or detecting objects.
+And this is a fairly big mismatch, which means that.
+Is not probably going to be fairly suitable for.
+This pre training.
+It's a lot.
+Of the hope that we had that.
+This stuff would generalize.
+So the one way to check this basically is that we introduce then we.
+Get this pre.
+Trained network so we take a bunch of training data.
+We apply the jigsaw problem and we take out take the continent that basically 3 using this we.
+Classifiers to the intermediate layers so straight out.
+Can apply linear?
+What the feature like what the feature is basically at each of these intermediate layers. So what we'll do is we'll take features from these layers.
+We learn a linear classifier to solve a particular image classification task, and then we can measure the performance of each of these layers to see what this network is doing.
+So on this plot, what I basically have is for a resident I took 5 lives and and basically plotted the performance of.
+Each one of them.
+So from count one basically being the layer that is closest to the.
+Input is fine.
+But you know it it going to be closest to the output.
+And we look at the image classification.
+Performance on a data set and measure using the 18 metrics so higher is better.
+So what we observe is basically go from 0.1 to raise 2. There is an improvement in performance all the way.
+Basically, the performance will keep improving as you go deeper.
+Which is like.
+Into the network.
+To be expected because as you detailed, network image features are probably going to get far more semantic.
+But then the sharp drop in performance when you go from this 4 to this file. And this is basically this file is the layer that is closest to the jigsaw task.
+And what this means is that at the last year, the features that are being learned are very specific to the tricks or task.
+And these specific features are.
+Not really transferring valuable image specifications.
+And so this kind of brings.
+Uh, they mean empirical evidence for suspicion right? In the pretraining state we were solving something like Jigsaw, which has nothing to do with classification, so the features that we learned at the last layer became very specific projects or tasks and would not transfer very well.
+To image classification.
+So if this is a problem, what is the solution well?
+Let's take a.
+Step back and try to figure out what should pre trained features.
+So between features can satisfy 2 sort.
+Of fundamental properties.
+One is that they're useful to represent.
+How images relate to one another.
+So if I have a picture of a tree and picture of another 3I, should.
+Figure out.
+Be able to.
+That these 2 pictures are related.
+That maybe there is the same concept and if I had another picture of a cat then basically I should be able to figure out that this cat picture is not as related to the group picture.
+And the second property is being robustness inspectors. If I have a tree, I should be able to.
+Recognize that tree.
+In basically different lighting conditions in different weather conditions across the year and maybe with like different number of leads. So there are a lot of nuisance factors and the feature should basically be robust.
+All of these kind of nuisance factors.
+So in the past.
+Periods popular and common principle for most of those sort of high performing self supervised methods has been to learn features that are robust to data augmentation.
+So the idea over here is basically that you are learning.
+A function F.
+Which is basically parameterized by Theta parameters. So this can be parameterized by appointment.
+And what you want is. The feature is produced by this network or for an image I should basically be stable under different types of image augmentations that we've applied. So if I augment the image with I, I should still basically get that business feature.
+Everything major.
+And again, the reason it's useful is because when we basically satisfy this property, the features are going to be invariant.
+2 reasons factors or data augmentation and this basically means that I can recognize the scene dear, no matter the sort of colour of it, or like the time of.
+The day or so.
+So let's try to see.
+If such certain approach can.
+Be Google, so let's go back to the sign. These kind of networks and try to see if we can implement this.
+So we take an image and we apply 2 different data augmentations to and we feed it rainbow so we encode it, basically assigning.
+And we get features for both of these great organizations and we.
+Try to maximize similarity.
+So again, we're trying to basically say that F street of I should be very similar to F Theta augmented 5.
+And the similarity can be your favorite loss function. You can try to maximize the cosine similarity, or you can try to minimize the L 2 distance.
+Whatever you want.
+You get basically gradients by doing this and you can back propagate all the way through updated interval.
+So why is like?
+If this is so simple, then it should just work right? Why? Why is there any?
+Sort of research needed for this.
+The problem is if you.
+Just provide this naive approach.
+To solve into this trap of trivial solutions, but this measure will learn to do is essentially ignore.
+The image input.
+And produce a constant representation for the image.
+So this constant representation.
+Will satisfy the property that we want. F Theta Phi is X.
+That essentially it's going to produce the same.
+And Y is.
+Feature, no matter what image you're feeding into.
+So yes, the property is satisfied with this feature is not really useful for any downstream technician task, because it's going to not really capture this property that how images are related to one number.
+It will produce the same feature for regular image. It will produce the same feature for Tiger image for a tree image and so on. So essentially it's not really helping satisfy this property.
+Of how it is related to.
+And So what we can do is basically we can categorize most of the recent self supervised methods as you know basically their different ways in which they're.
+Trying to avoid this trivial solution.
+So why do we not click the model after every 4?
+Come when you can. So essentially you keep seeing the same pattern if you click the model at rest 4 then basically and you had a resonate, it is only 4 series. Why you would get the same pattern that you would get poor performance address 3.
+So at least it's not really dependent on like whether it's rest 5 or S 4. The point is that the feature that is.
+At the end it ends.
+Going to happen.
+Up basically becoming very specific to the task.
+Yes, so we've going.
+To be helpful, but sort of most of my presentation is not going to be about these kind.
+Of generated models.
+It's going to be about.
+Fairly like discriminative models for working.
+OK, so moving on, so most of the recent self supervised methods can really be categorized in ways that they're avoiding trivial solution.
+So within those methods, we can actually draw like 2 different 2 different kinds of methods. So the first is.
+A class of.
+Methods that's really going to maximize the similarity.
+Between features and image I.
+Either by using contrastive learning or by using clustering, or by using distillation.
+And there's another class of methods that basically going to use the redundancy reduction to reduce. Basically to prevent trivial solutions.
+So let's look at the first class of cricket which is.
+Going to be contrasted with.
+So before we start like talking about details, let me just give you a sense of what it means when you're sort of evaluating these methods.
+So for instance, when we're training them using a self supervised objective, we really rely on the original data set for fair comparisons, so we continued limited data, set the subset of it with 1000 classes, and we removed the labels. So we get about 1.3.
+Million images without labels.
+And we pre trained arrested 50 model initialize randomly.
+And when we want to evaluate this representation, we basically take the pretenders in 50 model and we can evaluate it in 2 ways.
+We can either just take a linear classifier on top of frozen features, so this is really evaluating the feature quality.
+Or we can actually maintain the input for.
+A downstream task.
+So in this case you're basically saying.
+How good open?
+Installation management provides.
+So one of the first ones we did with contractual during whisper, which stands for pretext invariant representation version and I'll show you how this sort of relates contrasted learning to pretext tasks.
+So I'll try to told you that.
+You guys have already seen.
+Quadratic learning a lot of details, so I try to be fairly quick about this part.
+But if anyone has any questions, please talking.
+So interactivity, you have groups of related and unrelated images, so you have light blue and blue which are related or green and all the green images are related.
+So the problem is that related.
+And what we first do is we basically take a shared network, assign these network, and we compute embeddings for each of these items. So we basically get over the embedding on the right hand side.
+And then the last function is essentially trying to say that all the related in bedrooms should be closed in feature space compared to the animated images.
+So it can essentially.
+Compares or to sort of satisfy this big string. I can say that all would be the distance between the blue embeddings should be less than the distance between the blue and green invariants.
+Right?
+So it's fairly straightforward how we sort of.
+What we do is we basically feed in.
+Image I and transform.
+Right?
+And we basically.
+Then added contrasted on top to encourage similarity.
+So this image transform is basically going to be any pretext task that we have. For example a jigsaw task or a rotation task.
+And basically by sort of applying this kind of data augmentation, we are learning a network that is going to.
+Be invariant to the pretext task.
+So the last function again to sort of put it back into this slide, you have the image features and detached features which are basically being compared and you want both of them to be similar and you want them to be far away from any sort of random image or any other image in the data set.
+So the idea is basically that.
+But because tasks can actually be considered as another.
+Way of big augmentation.
+Rather than thinking of them as basically doing something you want to predict, you basically think of something that you want to be invariant.
+So let's not try to see. Basically, by doing this kind of a property, we're actually learning something meaningful.
+So in this graph again, we are basically taking linear classifiers tool and figure out what the accuracy for each of the layers in.
+Our government is.
+So we have 2 inputs, one trained in Jigsaw and one trained in both. And the only difference between them is essentially in the weighted.
+Here treating the.
+Pretext task checks or really trying to predict the permutation.
+This poll is trying to be.
+Invited to the presentation.
+And local observers. Basically that the performance for the pole model actually keeps increasing as you go deeper into the network, which suggests that basically the feature is becoming more and more aligned to the downstream classification task. Complete assumption, legends over the performance kind of plateaus at rest 4 and then drops down sharply.
+And the reason is again, that basically you're really satisfying fundamental property of what you want the features to be.
+You want the features to be invariant to these.
+Kind of data augmentations.
+And with something that sticks out is really trying to retain all of that information. Orange are basically becoming not.
+As both for transformation.
+So this is just one way of doing contrasted learning. In fact, like in the past. Although there have been multiple sort of books which show different ways of creating these related images and unrelated images, also called positives and negatives and possible so, CPC style models basically say that it patches.
+From an image.
+Which are close by together should be related and patches from the scene image which are far away.
+So this is how you basically form your.
+Should be unblocked.
+Positives and negatives.
+On the other side of doing it is basically saying that patches from the same image are positive and patches from any other image are unrelated or negatives.
+And this basically showing the sort of backbone for a lot of popular methods like new codes in Sierra.
+And all of them sort of rely on this kind of.
+Framing for contracts or building.
+But why stop there? Why stop jested images so people are really coming up with all sorts of creative ways to really use videos and video and audio to define positive and negatives, for example.
+Given a sequence of frames, you can say that in frames that are actually closed by in the temporal space are actually related, and frames that are far away are unrelated.
+The same thing goes for video and module. If you have a video and its corresponding audio, you can say that these 2 modalities are related and if you get an audio from some other video then that is unrelated and essentially by sort of doing this you find your related and perform contrasted learning and you basically learn feature representation.
+And this has also been used for something like tracking, so you can essentially take an object in a video frame and you can track it across multiple frames.
+And now the patches that you get from this tracking or actually the related patches and patches that are coming from a different video are unrelated, so they become the unrelated patches and so basically by setting up this related and non related patches you can again solve the contrastive working problem and then a feature representation.
+So this is all great. About one transition voted the fundamental property about it. That's really preventing trivial solutions. Well, it's basically coming up because of this kind of objective function that.
+And if you were to sort of.
+Coming to the trivial solution, you would not satisfy this property.
+Also contrastive loss function. So let's look at how.
+This is happening.
+So if you have the embeddings for the related groups the positives, the distance between these embeddings should be smaller than the distance between related embeddings, so the distance between 2 embedding in every number.
+If you were to say all of these embeddings to be constant, this loss function would not basically would not minimize this source function, so by basically having this attraction force between the positives and if any force between the negatives, we're preventing the trivial solution.
+And these good negatives are really, really important. Untrustable. We've got a lot of research has really gone into figuring out how you can get both negatives and how that would.
+Be improves performance.
+So I will talk about 3 other sort of standard.
+Ways of doing it of course.
+There are a lot more.
+Yeah, but these 3 are sort of also informative because they talk about 3 fairly related self supervised methods.
+So the first is sincere so insincere are the way that you are actually able to get negative exam.
+Is basically by creating.
+A very large batch.
+Size, So what you have is your F. Theta Mapper is spread across multiple GPS. So in this case 3 G equals you feed forward your images across all these 3 GPS independently and now you get embedded in each of these goals.
+So to use negatives, what you can do?
+Is you can.
+Just collect the embeddings coming from a different GPU and you can just use them as negatives.
+So if you have a batch of 1000 then basically you get a lot.
+Of negatives coming from different people.
+So essentially it's a fairly straightforward way of building negatives, because you just scale your batch size to a very large number, and you can just collect the embeddings by spreading this batch size across multiple GP US. So it's fairly simple to implement.
+The bigger drawback is that.
+You need a large batch.
+Size to do this only since you might need a large number of GP accelerators to basically get such a large batch size.
+The other way of doing this is.
+To use something called memory.
+So we really bad. What you do is you basically maintain a momentum of the activations across all of your features.
+So if I had 1000 examples in my data set, so I'll basically having memory Bank of 1000 features and every time I compute a forward bus.
+I will basically update this memory bank and update this windibank by basically embedding that I'm getting right now from the forward pass and I'll use this memory bank or memory banks features. Also, it's negative when I'm computing my contrast.
+So this is fairly.
+Complete efficient because in the way that it's implemented, you're giving me just one forward pass.
+But sort of bigger drawback of this method is that it's not online. Essentially, you're storing these memory features in memory.
+And we're basically updating them only once per airport, which means that they get stale very quickly. It also requires a large number of.
+Like large sort of GPU RAM as well, because if your data set increases from 1000 samples to 1,000,000 samples, then basically you need to store features for 1,000,000 integers and basically after a point it becomes harder and harder to store very large data set.
+The 3rd way of doing this was proposed global, which is basically that you have.
+You try to use the memory bank idea, but you really try to remove its constraint that it's not online and it requires like this entire data set of activations.
+So to do this you have 2 in separate intervals. The FQDN coder which is duration and cover that you really want to learn and you also maintain a moving average.
+The parameters so.
+Which is an exponential moving average of this represented by FTW.
+And so now I reach forward, pass you basically forward this sample through your F, Theta encoder and your F Theta improved and that basically gives you a set of positive embeddings and you keep the sort of negative embeddings which is going to be fairly small.
+Much smaller than what you would have for something like memory then and that basically helps you solve this complex problem positive.
+So or even embedding is propagated through F, Theta, the.
+Positive embedding comes from.
+And the negative embeddings basically come from a few set of stored features that you have. So now this basically helps you scale the memory because you don't really need.
+Unlike the full data set store which you did in the memory map, you need a.
+Very small number of features.
+The only additional thing that we needed in extra forward pass every time you want to go through the key to Umm.
+OK.
+So this kind of concludes this.
+The explanation for all the contrasted methods.
+So now let's move on to the setting sort of way of doing sort of avoiding trivial solutions, which is through clustering based methods.
+So to do that, let's first try to relate what, how contrasted learning and clustering are even related to one another before we see how clustering is actually avoiding forward solutions.
+So in contrast to learning, we have these positive samples. We have these negative samples and they trying to bring together embeddings from the positives.
+And we repeat.
+Basically, for each pair of positives.
+So essentially what we're doing is we're kind of creating groups in feature space. If I had all, so all the Members are basically the embeddings that I'm getting shown a single sample, but different augmentations of it all.
+The green embeddings are the embeddings that I'm getting from a single sample, and.
+Its rate of.
+Mutations I really want all of these embeddings to be close by.
+To one another, but far away from so far away from like different samples. So essentially creating these sort of little groups in the feature space. Then I'm doing one possible.
+So another direct way of doing this is essentially to just do clustering, because clustering naturally creates.
+Groups in the feature space.
+So one implementing propose this method for spark, which can be viewed as an online clustering based method.
+So the key idea here is again we want to maximize similarity between the image I and vented versions of it, and to do that we are always going to say that the feature from image I and.
+The feature from.
+Augmented image I should belong to the same group and as long as we belong to the same group and maximizing medical.
+Of course, because if I keep doing this, I can actually have a trivial solution that everything gets assigned to the same group or the same cluster. So prevent these trivial solutions by controlling my clustering process.
+Let's take a complete example purpose.
+So you have a bunch of embeddings coming from your data set, so the blue and building related, reinventing related, and you have a set of prototypes which can be thought of.
+As cluster centers.
+So here in this case 3 clusters Windows.
+So what we want to do is we want to compute a similarity between each of the data set, embeddings and the prototypes, and this similarity helps us figure out which cluster it is. A single sample belong to.
+So in the ideal case, what we would want is some sort of similarity that looks like this. All the blue samples get mapped to one nice cluster.
+The Gray samples get mapped to 1 + 2 and the purple samples get mapped.
+To one possible.
+So in this case what I've done is basically that.
+Ah, my all. The blue samples are basically coming together in person. The group and that group is separate from the group to which the total samples.
+Belong to so.
+I basically satisfied my sort of invariance property.
+And relation property.
+The problem is of course that there are lots of trivial solutions if I'm not careful about how we how we're basically doing this.
+How we're basically doing this thing we can. Basically we can get these kind of trivial solutions where everything gets assigned with singles or single.
+Prototype, which means that now I've basically.
+Solution or collapsed representation?
+One of the simple ways that we sort of enforce this constraint is by solving this.
+Sort of equal partition country.
+So the idea is basically that given north samples and K prototypes, we say that each prototype is going to be similar to at Max N by K sample.
+So these prototypes basically are going to.
+Be equally partitioned.
+Sorry, the embeddings are equally partitioned amongst my prototypes and so this really prevents the trivial solution where everything could go to just one product or one product and basically dominating movements.
+And to do this, we rather than using something like K means. So K means does not really have this equal partition constraint. We basically use the clustering algorithm.
+Uh, voicing pool now, which is basically related to open air transport.
+I won't go into the details of what this algorithm is, but you can think of this as a clustering algorithm, which basically automatically has this EP partition constraint.
+So every time I perform clustering and automatically kind of guarantee that none of the prototypes are going to be dominant and that I'm creating clusters which are going to be of uniform.
+So if I had any samples, if I want to create clusters, all of my classes are going to be of size and bulky.
+There asking something like K means does not.
+Really guarantee such a property.
+So we basically have now this good clustering constraint we have basically a way to take each of the embeddings and assign them to the prototypes. So what next?
+So the first change being made is basically rather than computing a hard sort of assignment.
+Or hard clustering.
+The clustering soft.
+We make.
+So rather than saying that one sample can only belong to one prototype, we basically say that it there is a distribution that it can basically satisfy over each of these prototypes.
+So the blue sample.
+Have a soft assignment to.
+Each prototype so you can. You can think of this over soft similarity. So it had basically scores like 0.8 to the first 1.1 to the second prototype 0.1 to the 3rd voltage, so these similarities will sum up to one, but it's basically a soft assignment that is going that is telling you how each embedding is relatively equal.
+And what you can think of these assignments tools, so they are basically the user end of codes. They're telling you how each embedding can be included. If you were to just put.
+Up the prototype space.
+So they will basically train this report. What we do is.
+We take 2 crops.
+From the image.
+We feel it's over through their network Theta. We compute 2 embeddings which were the blue ambulance and now we solve this sort of same point or optimal transport problem to compute these codes given the prototype.
+In the next stage, what we do is we basically this solver.
+Solve prediction though.
+So we try to predict your code from the deck code number 2 from the embedding number one.
+And similarly code number one for handwriting number 2.
+The idea basically.
+Is where if these booktalks are related, and if I was in very documentation.
+I should be.
+Able to predict code number. One full feature number.
+Because both of these should basically fall.
+In the same group or in the same class?
+OK.
+So once I'm able to sort of solve this kind of a prediction problem.
+I can just compute the gradients and you can back propagate and in this case I back propagate to be important and I can actually back propagates over prototypes as well. So the prototypes or the personal centers are actually updated online for back propagation.
+And we don't really require explicit set of negatives, so there is no contrast of working the way the solutions.
+It's just by basically this sort of nice optimal transport or the simple way of creating these codes, which ensures that there are.
+Can you let us?
+A bit more about the prototypes.
+OK, so the prototypes are basically just initialized randomly at first so.
+You can think.
+Of them as just a bag of embeddings.
+And that each forward pass. What you're doing is you're taking the embedding that you.
+Get from the metal FTW.
+And you're computing a similarity similarity to each of the prototypes.
+So if you had say B embeddings in your batch size, you have K prototypes. We're computing B times K matrix.
+And now I basically say that I'm going to.
+And then I basically perform this optimal transport algorithm, which kind of ensures that my pores are nicely and evenly distributed across these K prototypes.
+And then I just solve this sort of cross prediction problem. So because the prototypes were used in computing the.
+Makes sense.
+Actually, back propagate and update them using this like standardizing.
+Code I can.
+Yeah, so it is like it's not claiming then like basically if you try to do something like K means very quickly you can get into trivial solution.
+So this is the reason for basically using.
+Sync point what?
+The optimal transport method so that you have this kind of equal partition constraint.
+So what is the name of the algorithm? Can you show once again?
+It's simply.
+Not OK.
+So solving this category of optimal transport algorithm, synchrony is just an efficient way of doing optimal transport, but generally all the optimal transport algorithms have this guarantee of equal partition.
+OK.
+So now we basically are able to learn this feature embedding and let's try to see what what this wall method basically ends up doing.
+So we evaluate this method by looking at transferring performance and like it mentioned earlier, transfer learning can be evaluated in 2 different ways. You can take a linear classifier which is basically trained on top of fixed features.
+The full network.
+Or you can fine tune.
+So in this case we're going to fine tune the.
+Full input for detection task and.
+We're going to train limited classifier for image classification.
+So the top are basically a supervised input, so the supervised purpose trained using labels on image, net, and then we're transferring it to different downstream tasks.
+So so basically here the Supervised network performs really well on a mission, and that's kind of to be expected because it was preparing or invested and you're basically transferring it to image mix, validation set and so if there is like a very large sort of nice.
+Overlapping the image distribution and the class distributions. So the features that we learned during pre training are really well aligned to the downstream task.
+Compared to when you basically have.
+Like other felt supervised methods in the second group and you basically see that they're also transferring fairly well.
+The one thing to note is that on tasks like object detection step, supervised learning is already performing far better than supervisor.
+And on the total, we basically have solved which is really closing the gap to supervise working on vision. So it's basically coming up within like a percentage point and then another downstream tasks. It's outperforming engagements with the best degree.
+So what this shows is that if at beating you're learning this sort of generic feature representation, you can transfer to different downstream datasets which are not very well aligned with emotion.
+What I mean by that is for something like places and data set, the name classification task is to identify scenes.
+So whether this is a shopping new or whether this is a beach, or whether this is a church, and so on and and in addition there are very few classes which really overlap with places. So if you do supervised.
+Really, the feature ends up really becoming specific to.
+The middle classes.
+And so it does not really translate very well to data set set please.
+Then you know self supervised beginning. You're lowering features without really moving their labels of condition. So basically it makes it easier for you to learn, generate feature representations so when you transfer to datasets like places where there is limited overlap from the management concepts, we're actually able to perform much better to better.
+So there is a question here from Camilla.
+How do we analyze the cost function when we have multiple clusters for embeddings which are not explicitly of negative samples nature?
+I mean, how does the model figure out which is the most suitable cluster for its embedding? If you could not.
+Explain this a bit.
+If you could.
+Think about it. Think about it. Basically, what happens at initialization. At initialization, you have these random prototypes, right? So when you feed forward the embeddings from 2 crops, they're naturally because of, like the way the images are there, naturally going to be more related than the embedding that you get from another.
+So if you.
+Think of this as just a random prediction, so the prototypes are just random feature vectors. What you're doing is you're taking this blue embedding and you're computing a random prediction onto this prototype prototype set.
+And if you get a green embedding your again, computing a random prediction.
+To the prototype set.
+So at initialization, Excel because of how like how images are at initialization itself, the boom embedding is actually going to have a different signature or a different code compared to.
+A green body.
+And all you're doing is basically kind of really bootstrapping that signal, so you're taking that fitting and making it even stronger and stronger, so we're enforcing that OK, at initialization, you're kind of random your, but your signatures are different.
+But I want you to keep having very, very different signatures. So as training progresses, I want your signatures to become even more and more different.
+OK, then we have another question from our rule. My question was if we have a high class imbalance and then we have K partitions, it divides into the capital N divided by Capital K, one that creates a problem in learning the features because a lot of negative examples.
+Could be in one cluster.
+It's so that's exactly why we use soft, like the soft code rather than the hard boots. So with the hard mode this is kind of a problem we get into because we we actually observed that with hard code we were getting more performs with software told you kind of say that it's not really creating K hard classes, it's actually creating far more.
+Number of parts like fun number of classes. Because rather than saying that you're only similar to prototype, number one and number 2 prototypes.
+Number 2I can actually create a class which is I'm moving 0.8 similar to prototype number one and 0.2 similar to prototype number 2 and nothing to protect number 2 so I can actually create far more number of classes than just K. So these soft codes basically end up giving you a far richer representation so we become less.
+And less sensitive.
+To the number K. If you were doing this hard assignment where the codes were binary where you have to be similar to one and not 2, then basically the cable value matters a lot.
+All right, both students are satisfied with your answer, and so finally you minimize the KL distance, right divergences between the 2 right?
+Yeah, that was it.
+So there were also few advantages that we kind of saw, which was that it actually had faster convergence than contrasted.
+So the reason for this is basically that.
+It's all all those sort of computation or all the similarities happening in the in the code space. You're never really comparing the embedding directly, so and because the whole space basically imposes its own constraints, we're actually able to converge.
+Possible for something like contrastive learning? Everything happens in the embedding space.
+Which means that.
+You need a lot of samples to.
+Be able to converge.
+To converge and the convergence itself is slow.
+And it was also sort of easy to train this model on smaller number of GP US, so that was another sort of practical advantage.
+So before we move to the next part, let's take a look at at what we have done so far for both contrasted methods and like the clustering based methods.
+I made this sort of claim initially that we're going to evaluate all of these methods on Imagenet without labels right?
+So this is not real sense, supervised only one can impact. Argue that this is pretend self supervised learning because you're like closing your eyes and you're pretending that there are rules. But really there are lots of labels on each.
+So what does this assumption?
+Do for us.
+So when we take.
+Images without label. We are basically taking all.
+Of these images.
+And sure.
+They don't have any labels.
+For them.
+But if you look at the images, they're very nicely curated, like on the top left. You basically have all these side mirrors.
+Of a car.
+Then in the bottom right you basically have this like 4 signal in the top right. You basically have like the yards and the planes, so there are lots of these sort of nice curated images in this data set.
+Which means that even though we're directly not using the labels, we are really kind of giving this curation process or this hand selection process of the images.
+So to completely tell you what what I mean is encrypted data is curated because the images naturally belong to these 1000 classes.
+All the videos contain a prominent.
+Object, that's actually how.
+It was created.
+And there is very limited amount of clutter because there is a single prominent object.
+There are going to.
+Be very few background concepts and this really affects self supervised learning. This is actually one of the hidden assumptions for it.
+So there was this really nice paper on demystifying contrastive voting, which brought this sort of assumption.
+To the flow.
+So when you painting one dimensional data.
+It really hurts performance.
+So this image this of this scene.
+Such images are not really typical image because the whole scene in it would just have something like a chair and like a Zumba division of this particular chair.
+Now what happens when I take?
+Multiple props from this scene.
+I get these other crops and in contrast to learning or industry, I'm going to say that what you want is the embeddings from all of these 4 samples. Of all these 4 crops should basically be the same.
+Which means that.
+Really, I'm saying that uh refrigerator embedding should be very close to.
+A chair embedding.
+Which is not really what we want.
+We don't want embeddings. We wanted to recognize the refrigerator and documentations of refrigerator. We didn't want refrigerator embeddings to be similar to share embedding single table models.
+Compared to something.
+Like the real.
+World immediately have different distributions, right? Images cannot necessarily just speak up like clear images, they can be cartoon images.
+Nowadays there are lots of means as well. There is likely that there is no single component object. Sometimes there is no dominant object or no object at all.
+So related data really has very very different problem.
+Now to sort of verify whether he had fallen into this.
+So trap that.
+Image and it was the data set that everything worked on and outside automated. Nothing works. We decided to take like the solve method and really try it out on large scale data.
+So this brings us to sear, which is basically taking stock and testing it on billions of images which are random and these images are not filtered in anything.
+So over here I'm basically showing you 3 ring like 3 different or 4 different models.
+Which are going to which are basically the fine tune performance of models when transferred to engagement.
+So on the top we.
+Have here which is.
+A regnant model trained on 1.3 billion random Internet images, so.
+Completely random, not filtered in any way.
+So yes, this can include something like means it can be seen. It can be completely text data. It can be Part 2. We basically do filter.
+In the next ruling that saw, which I guess presented which is a resident monitoring machine.
+Next we have similar which is another modified version of resonate, omniscient, and then the last order vision transformer, which is a supervised algorithm treatment resistant.
+And then you transfer all of these. What you observe is basically that the stair models are working very well and they're working well across different model capacities.
+So on the X axis we are basically looking at the number of parameters and each of the dots or each of the points in the plot represent a different model. So we can train those 3 models like more than a billion parameters.
+Which are going to transfer.
+And all of this is happening on completely random Internet images without really looking at any labels or without incubating those images in the deep.
+So the next thing we wanted to see is basically how much of.
+A difference there is.
+When we are looking in discoloration images and then we're ignoring metadata, right? So all of the images that we had on the Internet had some kind of metadata associated with them. So what happens if we try to use admitted data?
+So in the top row.
+We have a hashtag direction.
+It was pre trained on one billion images and leave one billion images already selected such that the hashtags aligned with Imagenet classes.
+So if I had a hashtag for example of a concept that is not in image and this image was filtered out and the idea is basically that just by doing this sort of simple filtering process, you are creating a nice alignment between a pre training data set and your transfer data set is closed.
+Then we trained resonates one one model numbers which has 19 parameters.
+So you get a 9 transfer accuracy.
+Of 82%.
+Which is like really nice being given that you're not looking at any image net image at reading.
+In the second movie apps here, which is also one billion images, but these images are not curated anyway, so we don't have any filtering processes associated with them. Also, of course we're not doing any hashtag prediction, so it's a self supervised method.
+Here, within one percentage point of this hashtag prediction.
+And we basically.
+It is showing.
+You that there is like.
+This nice generalization property that you have self supervised learning. You can really scale it to lots of images and you can down fairly powerful representation.
+So before we move on to the next part, are there?
+Any questions for this?
+You pick seems.
+No one is typing here.
+Second, that's good.
+Do they understand?
+Yeah right, so the next part when I talked about contrasted learning and clustering, I presented them as 2 separate things, but actually there is a very simple way to combine these methods.
+So at this year, CVPR, we have this paper which shows that really you can combine sort of nice properties in both contrasted learning.
+And clustering.
+So in this case we're.
+Studying rather than images. We were studying videos because videos provide this as you see, next, uh, very nice avenue to combine clustering and images and addressable.
+So we studied this audio video discrimination task where, like I mentioned earlier, the positives are basically coming from.
+Audio and video of this.
+Example, so you have 2 encoders, a video encoder and audio input. Are you feeding the video so the video encoder? You get an embedding?
+If we can be audio for audio encoder and we'll get it buddy, and now what you say? Basically both of these embeddings that are coming from the same sample should be closed in feature space compared to any other embedding.
+Basically that is coming from any other sample, so it's really saying that across these 2 modalities of video and audio, the embedding should be the same.
+It should be negative.
+So this is straight.
+There is no clustering.
+To introduce this kind of clustering, we expanded the notion of positives. When I say expanded, we basically take a reference point, so that is a point on the top right and we compute its similarity in the video features or the video evidence and the audio embeddings to all the other samples.
+That's it.
+In the data set.
+So basically this is sort of trying to show you there are lots of their routing. Lots of different samples when you're computing this similarity.
+And for samples where both the video similarity and.
+The audio similarity.
+Is high we basically just called any positives also.
+So you can see this as a weak way of doing clustering, because rather than in contrast coding where you just had a very sort of limited concept of positive, it has to be the audio from the same sample.
+It has to be the video from this example or invasive images. It is basically the same image and just different perturbations.
+In this case, we are actually looking at positives which are different samples altogether, and the way we've computed these samples is just by looking at similarity in both the video space and the audience.
+And we call this basically looking at audiovisual arguments, because we're looking at every sample that agreeing with the reference sample in both the rule similarity.
+And glorious in that.
+And So what will be sample group like? So on the top we have basically 3 different references.
+And I'm showing you what a positive looks, which basically agrees in both the visual similarity and the audio similarity. I'm showing you what virtual negative is. Do it on unity.
+So if you take the first, like basically the first column, in this case we have a person dancing and either positive which is basically similar in both video and audio, which is.
+Also present dancing.
+If you were to completely ignore the audio and just look at visual similarity, you could get it smooth exercising because visually both of these concepts really look fairly simple.
+But in our.
+Case if you.
+Just look at the audio. It's going to be very different for someone who's dancing they dance to like a particular kind of music.
+There are some new exercising that actually done like.
+Exercise for different kind of music or have a different word.
+And if you want to just look.
+At the audio part, but then that is confusing too because someone could be finishing with just the same background music.
+So if you were to just use the audio to computer or like expand the set of positives, then you go get a very good signal there, right?
+And similarly, we have like 2 more dishes here a moving train. It sounds very similar to a moving boat, but of course visually it's very different and a moving train.
+Also time maybe?
+Looks similar because of like the texture and so on to something like a truck station.
+But both of them are going.
+To sound very different.
+So basically by doing all of these things, you're actually able to expand the set of positives, and now we can kind of combine the advantages of contrastive learning with clustering, by basically having this nice relation.
+To different images.
+And creating these groups in feature space.
+So this brings us to the end clustering based methods.
+And we can. Now we can move on to distillation. Or if anyone have any question.
+I don't see.
+So these decision based methods are again going to fall under this category of similarity maximization. So we have F 3 of I which we want to be similar to.
+FT dot into.
+The path, it's just a different way of boom so you.
+Can view this as a student teacher distillation process.
+Right, so we are going to compute an embedding from the student for the image I and we're going to compute an embedding from the teacher for the.
+Augmented version of.
+File and we're going to enforce similarity.
+Between these 2.
+And of course.
+If the student, then the teachers were exactly identical and everything about them was exactly identical.
+Solution, so we're going to prevent a trivial solution by asymmetry and decision making, and basically come in 2 different ways.
+Yeah, and both of them actually can be jointly, so there is going to be a symmetric learning room between the student and teacher, so the student weights and the feature.
+Be updated in exactly the same day when we're doing backpropagation.
+Weights may not.
+And there is another asymmetry in the architect.
+So the student architecture and the teacher architecture are going to be different in subtle ways just so that again there is kind of any symmetry and that helps you prevent a trivial solution.
+So the first method we look at is blue.
+Uh, which explicitly constructs a student teacher.
+So you have a student encoder.
+Through which you feed in image features and you add a separate another sort of prediction head for the predictor and you get an embedding.
+So this should encode.
+From the teacher encoder you pre forward the.
+Get an embedding directly so predictor is.
+Image and you.
+Not being applied.
+So you can see over here already there is a difference in the architecture or asymmetry in the architecture between the student and the teacher.
+Then you back propagate and then the gradients are only flow through the student encoder and not through the teacher input. So there is an asymmetry.
+In the learning itself.
+Now there is a 3rd edition Silver Face symmetry over which is in the weights of the student encoder and the teacher input.
+The teacher encoder is actually being created as.
+A moving average of the.
+Student input so.
+It's the same sort of Norco style winter included that is being used as a teacher.
+So now basically what we've done is we've created 3. So basic metrics. We have an asymmetry in the architecture.
+Basically, between the student and the teacher we have an asymmetry in the learning rule, which is basically that the gradient only updates the student and not the teacher.
+And then there's a 3rd for pay symmetry, which is in the weights of the student and the teacher.
+And teacher rates are very different.
+So by introducing these 3 kinds of base symmetry, we can actually provide trivial solutions. So they say this will actually learn meaningful representations. Network collapse.
+So we do need all these 3 sources of information.
+But it turns out that in 2020 another set of authors introduce ensina, which shows that you don't really need.
+All the resources of basically.
+So in particular, they show that you don't really need a separate set of weights for the teacher teacher.
+So in this case the student and teacher.
+Input have the same exact weights.
+And all you have are.
+2 sources of asymmetry one.
+That the student uses this special predictor head.
+On top
+So yes, there is an asymmetry in the architecture and setting when you're back propagating, you only flow gradients through the student and not through.
+The teacher so yes.
+Relation between Gaylord Monday. But we don't really need a separate set of weights for the teacher info.
+So now basically you.
+Can see that only by just using like 2 sets of asymmetry we're still able to learn fairly powerful feature representations.
+So this sort of covered the distillation part of it. Which brings us to the final part of this lecture, which is going to be about redundancy reduction.
+So is does anyone have any questions?
+So we don't update the teacher.
+In which one?
+I don't know there is a question.
+Vivek, can you clarify your question, please?
+I think it's about since yeah, the question about since we don't do the teacher body gets automatically updated because it shares the weights with the student, yes?
+Yes, exactly.
+So in the forward pass you basically compute these embeddings, so the student included in the teacher. So in the forward path, basically both of them are identical rates and in the backwards you will.
+Not update the.
+Teacher, but then before the next forward pass will copy over the rates of the student anyway, so that's how it's going to get keep getting updated.
+Makes sense, and we're certainly satisfied.
+So this brings us to.
+Lecture I think we're going to have.
+The last part of the.
+A lot of time.
+So I encourage folks to ask questions.
+In general because.
+I don't have that much meeting. I think we have.
+Like about him on your left.
+All right so.
+So, so this like this last set of like the last sort of objective function, is not really all about similarity maximization, it's about redundancy reduction, so it's called Barlow prints these awesome folks.
+So the teacher hypothesis here is actually inspired by neuroscience. The the idea basically being that neurons in a brain communicate via spiking boats, and because your brain has a limited amount of real estate, you can't really pack a lot of neurons into it like this, not arbitrarily large.
+I mean because it also has another sort of.
+Energy constraint you can't really power the brain with like infinite amount of energy. So there are 2 sort of real physical constraints will be, which means that naturally you kind of expect that the communication that happens between these neurons is going to be an efficient sort of communication protocol. It will be completely in addition.
+And so hardest part was really inspired by information theory, which came after like a decade before we proposed this sort of efficient coding hypothesis, and the idea that he said is that these spiky codes should really try to reduce the redundancy between bonds.
+I mean, if you think about it, it kind of makes sense. So if you have like say, 10 neurons, you don't want all the 10 neurons to input the same exact information.
+If you're doing that, you're kind of being wasteful, right? If all the 10 neurons encode the same information about the input, then you basically you're not sort of maximizing the sort of structure in representing.
+Certainly runs, but would I? I really want is a subset of. It focuses on a different concept, a subset of it focused on a different concept.
+So how do you take this sort of insight and try to apply it to representations?
+So at a very high level and this is.
+Like very very.
+Roughly speaking, what you have are saying, neurons which produce representation which is going to be N dimensional.
+So this can be the channels in your content. So say for a resident that could be 2000.
+14 dimensional feature.
+And for each of these neurons.
+We don't do properties to be satisfied, so we want the representation produced by neuron.
+To be in Vail.
+So remember the documentation that.
+Is being applied.
+So the spying or the representation that being produced in Iran should be.
+Inventory documentation India stimulus that's actually been.
+And the second.
+Is that it should be independent of?
+The other results.
+Because you don't want all the rooms to capture the same exact thing, there should be some kind of.
+Perfect.
+D correlation between them.
+So where you?
+Are really speaking. If you had FP dot I which is basically producing this individual representation and with these square brackets and indexing this representation.
+So what we have is FP Divie at the scene we ran should basically be the same under different data augmentation, so that's the first property invariants, and in the second property we want them to be independent, so you don't want them to be kind of producing the same output, and this is not exactly mathematical mathematically, right?
+But roughly speaking, this is these are the kind of properties.
+That we want to impose.
+So to illustrate this idea.
+You have the.
+Image that is basically being you're computing like 2 distorted versions of it or to be documented.
+Versions of it.
+Which we actually included.
+Unitary representations in this case ZED and Zed B are representations of the same image under different data augmentations.
+And let's suppose for a minute that we had 3 mediums, right? So this red, green and blue.
+So the first property, which is about invariants.
+OK.
+Says that basically will bloom should produce the same representation for both J&ZB.
+And this basically the same feature happened for being nude on the same picture happened for a blue moon.
+Basically, should produce the same sort of representation across the different inputs.
+Can you put the Peach life? There's a question about the I variable, is I?
+Here, representing a different neuron.
+So yes, this small I in.
+The bracket you can think of it as like.
+Indexing into a vector.
+And so I.
+And J are basically representing a.
+Different one.
+So you want the same I the same yarn is going to be behaving the same way for the normal image in the augmented image, but the other neurons should be differently have different.
+Volume, yes, that's right.
+So the other thing about this is that it's also preventing like preventing a trivial solution, right?
+Potential solution would basically say that OK all.
+The neurons produce the.
+Same output, so in this case the second property is not satisfied, only the.
+First property is satisfied.
+Makes sense.
+OK, so coming to this. We basically have the invariants, which is going to say that all the neurons are producing the same output.
+And the second is redundancy reduction, which says that all the neurons should kind of produce.
+A different output.
+We don't want all of them representing the.
+Same thing, so that's kind.
+Of driven to collapse.
+So in implementation, the way to do this is to first basically compute the cross correlation between the between these feature matrices.
+So if you had a feature matrix of dimensions B times D where these batch size and these like the dimension of the feature, you will compute or D times D. So a feature dimension type feature.
+Matrix which is going to be the cross correlation of D. So it's just going to.
+Be like the outer product.
+So now, once you have this feature feature matrix, the cross correlation matrix to satisfy the properties that we mentioned earlier. We want this matrix to be fairly similar or as close as possible to an identity matrix.
+And so basically the identity matrix will enforce that all the neurons because in in the diagram you're basically enforcing that all the neurons.
+And across the different data augmentation are producing the same output and all the off tablet only sort of telling you that those neurons should not be like different neurons to produce different.
+And so basically the loss and we're trying to say that the cross correlation that you predict from the feature should be variation better.
+Divided between events.
+And once you minimize this loss, we basically get it back. We can back propagating the gradient and updated.
+So one thing over here is that in this entire process we have really not added any asymmetric operation.
+So we think of this in terms of the.
+Student teacher model that we talked about earlier.
+The student and the teacher have the same.
+Exact makes so this is like.
+Would be in some sign.
+But both distributed images are actually being updated, so there is no relation between the loading it and there is no asymmetry in the architecture.
+There is no extra.
+Parameter in the student which are not present.
+In the teacher.
+So basically in this case we've sort of remove that asymmetry.
+So in terms of math, here is what the sort of.
+Dictation looks like the CID matrix can be computed as a cross correlation between zed A&ZD.
+And this is basically a like a function to sort through that.
+The loss is being computed.
+In terms of like the cross correlation matrix being very similar to the identity matrix and you can.
+Basically, split it out into 2 terms.
+The first one that is basically taking the identity of the identity values and so that's going to.
+Be one minus CI.
+That's the invariants terms saying that everyone should produce the same output under different augmentations, and the second term will be off that later. That's basically saying that all the different neurons should be different.
+Well, they should be different.
+Now, why do you have that?
+Lambda parameter there.
+Where the Lambda parameter is basically taking computing a trade off. So if you think about a matrix which is going to be like north by north, there are going to be just north diagonal entries in it, so the first one, the invariants term, just has north values inside.
+And the second term.
+Has N squared minus N values.
+Right, so all the.
+Bill terms, so the Lambda basically just trying to balance the contribution of both of these terms because we have a lot more redundancy reduction terms, then we have invariants tools.
+So Lambda basically just trying to say that OK, don't try to minimize the loss by just focusing, focusing on redundancy reduction. Try to balance both of these terms because both these.
+Properties are really important.
+He's asking a question here. Is it correct to assume the distortions or for the images are random every time?
+Yes yes. So we sampled like every time you computer forward passing. Basically before the code patch it is computing the.
+Random distortion field.
+So good, so now all this loss function that I've talked about.
+Uh, preventable solutions like in one way.
+Right, so if you had.
+Yeah, then you want like if you had a constant representation where organisms produce the same output then you would not be able to sort of minimize this loss function and you would basically have a trivial solution so.
+You're kind of preventing translations this way.
+There is actually another set of trivial solutions which this won't any prevent all that work.
+So in that.
+Table solution, then you know they're producing basically different outputs, so they're completely decorrelated, but they're constant across the entire input.
+So essentially each new one is producing a very different kind of an output, and even or very basically we will be producing different types of output, but they're very, very similar across a bunch of entities.
+Turn on lights.
+So now to prevent that, we basically this center the ZA&ZB vectors before computing the cross correlation.
+So when I say center or what what we're doing is, it's kind of like a batch norm operation. So you take Z 8 and you subtract its mean and you divide by the standard deviation. This is like a fairly standard centering transform.
+And the reason it prevents this kind of trivial solution is because if if you for producing the same sort of output.
+Feature across all the images. Then when you send it will basically get a zero matrix right? So if I had a matrix of North Times D and if everything is roughly the same when I subtract to mean, I'll basically get our entire matrix of zeros.
+So just by doing this kind of centering before computing the cross correlation, we can kind of diet network away from this kind.
+Of particles each.
+And centering is kind of super super standard when we're trying to cross correlation in general.
+So now there are 2 ways that we prevented this. So first we basically having this invariant and redundancy reduction from that prevents this kind of completely constant output across all neurons, and the second is basically that you can still have this weird kind of a constant output, where neurons are kind of being populated but still producing the same feature.
+Or the images. So that is prevented by basically doing.
+A sampling operation.
+So in this entire process we presented trivial solutions without looking at negative samples, because at each point when you're considering these embeddings, we're only considering the positive tests.
+And we are able to prevent these trivial solutions without this kind of asymmetric load. So in swab behind that sync on operator which was non differentiable and their kind of prevented trivial solutions by doing this sort of equal partition constraint in building.
+Since I am the distinguish methods, we had some kind of feeder asymmetry in the learning update in the student teacher.
+Or basically having this special predictor head?
+Involving wings, basically there is the lowering orbit is similar. The encoder the student and teacher. If you want to think about it that they are also.
+And the entire sort of trivial solution that prevented basically by the loss function and the way the cross correlation is computed.
+So this makes Barbarians fairly easy.
+So this is kind of like a Python pseudocode for the entire method, including like the data loader and the optimization step. So we can basically.
+Doing this will be straightforward because.
+More sort of asymmetric clicks are required to really.
+Make it work.
+So the first.
+Thing that we want to do now is once we have this method we want to measure its transfer performance on downstream tasks.
+So the first thing that we did was basically finding this balance method on initial data set.
+And when we're doing this fine tuning, we are basically doing the fine tuning using a very limited set of labels.
+So we take this 1% of the image net labels and we find a moving this to 1% or we take 10% and define 2 only using 10%.
+So the variables measured the representation that we learn.
+It's fairly competitive with state of the art methods, so you get the top one accuracy when you when you're using just 1% of the data. It's fairly competitive and performs like at par with.
+If we're complex now.
+On the right hand side, we are evaluating the representation.
+We're taking the representation with freezing and we're learning a linear classifier on top.
+Of the activity.
+And in this case again we transferred into places you see 9 attributes and again at this point you can basically see that it's performing at par with state of the art methods. It's slightly worse answer for certain datasets, slightly better on certain datasets.
+So what this shows you that there is, it is possible to develop a simpler method that can perform as well as state of the art, and it really advances our understanding in what it means to sort of learn representations and avoid trouble solutions. How many tricks or permitted to prevent further solutions?
+So the other thing that we wanted to observe was basically.
+There are questions here. So first of all, why don't we perform better than other methods in low data settings?
+Everything there is any like particular. I don't have any insight into why that's happening, it's just really an empirical observation.
+I don't think we have any reasoning for this. I mean most of these things are at least empirical observations.
+OK, OK, and the previous slide someone is asking.
+YZZ
+A&ZB always belong. Do they always belong?
+To the same image.
+Then AZP.
+It's the same day and.
+Yeah, so I mean ZD can be considered as like matrices, so it's north by D matrix and Z is over north by D matrix and each entry basically corresponded to the stage.
+So there's zero entry like the ONZ 8 is the same image as the the O 3.
+OK.
+So the next thing, code Inspector, basically whether the Barber pinch method or how sensitive it is to the batch size that is being used.
+Because I did mention that we have this.
+Centering operation that we need to do before computing across compilation.
+So let's forget about Valentine's.
+For a minute and let's look at Cynthia to understand what how that size can actually get imported.
+So when I talk about Cynthia in terms of pics on plastic burning, I said that the way you get negatives is basically by spreading the sort of like taking a very large batch and spreading it across GP US, right?
+So, and in contrast, moving. I also said that good negatives are super super important because that ends up.
+Solution also previously like these nice sort of feature clusters.
+So for simpler, if you reduce the number of like the number of samples in a batch, you're effectively reducing the number of negatives that you are using for computing, like full transfer blocks.
+So when you go from bad Table 4000 to a backside of 256, you can see this sort of degradation in performance, which is directly related to the number of negatives that are being used.
+The second method to look at it, bill, which is has this sort of distillation based flavor student teacher, and in this case it turns out that basically.
+You don't really have that kind of.
+You're fairly stable to batch.
+Size, it doesn't matter whether you using.
+A very large batch size or a very small taxes.
+In the case of volume means, the stability is supported between, so it's not as sensitive to the latencies as sencilla, and it's basically like robust or batch size, but not as robust compared to.
+Say bill and in recent like past few weeks so that we push this to the limit and we trained with even smaller batch sizes were funded 20 and we can actually observe that it's still robustly even beyond discussion.
+So the other thing that we wanted to study was basically that there is some importance of data augmentation when we're trying to learn these methods, right so?
+So the previous slide.
+If they drop in accuracy for BT due to the use of batch norm action.
+So I mean, that's the reason to actually verify it at 128 patch size. So at 128 batch mode, like basically the variance in bathroom is going to be higher, but it turns out even 128 performance.
+After that he fairly similar to that works like Bill. So it turns out I don't suspect it's because of that.
+And at the right end where you're seeing like a big drop in performance at 4:00, 1000, I suspect it's more because of the optimization rather than PowerPoint itself. So The thing is.
+Can you change batch sizes? You need to adapt?
+A lot of people have been like natural parameters.
+That would be great for both DK and basically like how you sort of became the learning rate and so on, so I suspected the right hand side like Google drop in performance is.
+Not because of.
+The algorithm it's because of, like the optimization method parameters that we used.
+So also Raul is asking can you tell us in detail why different batch sizes create so much differences? I mean I think you just mentioned that you just answer this question.
+And I mean.
+Apart from that, like, uh, perform optimization, then certain loss functions are like more sensitive to the backside.
+So like contrast with those functions, because especially the way it's implemented in cincilla, it really relies on the batch size to get its negatives, and so depending on the batch size you can actually see a very dramatic difference.
+In performance.
+Because you will actually get fewer number of chemicals.
+Yeah, it makes sense.
+Alright, so the next thing to study was how important data augmentations are when you're creating these sort of different distorted or perturbed versions.
+But it's.
+So in this case, again, we're studying saidul.
+Barlow tools and simsala.
+So the baseline you basically have what baseline in this graph means is like you are using all the data augmentations and then at each step then we basically move towards the right. We're removing a particular kind of data augmentation.
+The first thing to observe is basically like Simcere and Bonnie rings are roughly similar, so similar for training when you're looking at different data augmentations.
+Both of them seem to be fairly sensitive to the way like what the documentation is being used, whereas jewels seems to be far more robust to their documentation like you can remove a lot more data.
+Station enter drop.
+In performance is actually going to be much more.
+So if you think about it.
+There is a very different way in which both of these models are working, so in Baldwin.
+'s you take the.
+Image or in simpler to take?
+The image and you.
+Feed it to exactly the same encoder, right?
+So the signing network that you have is basically has the same exact weights for both inputs and.
+You get a.
+Feature output.
+And now what?
+You're saying is basically both of these features should be like in the case of hardware to install redundancy, reduction loss.
+But in the case of simpler, basically saying that both of these should be similar by using more transfer mode.
+So the power that you have in this sort of case is that the data augmentation really needs to produce very different features so that we're actually like at every step we're basically doing something different.
+Whereas in the case of Bill, when you're feeding in the image through the encoder, the weights actually are completely different for the student and the teacher.
+So even if you will repeat the exact same image through the encoder, you would actually get a.
+Very different output.
+Because the student rates and the teacher rates are updated, so naturally the teacher is actually applying some. You can think of it as.
+There is a natural amount of both augmentation that's coming from this moving average in Google.
+So essentially this is one of the reasons why.
+Google seems to be far more sort of prostate data of mutation compared to other methods, like say Barber to enter some data.
+Now the next thing that we wanted to check was whether any sort of asymmetry is actually beneficial for bound opens.
+So far we've seen that asymmetry without asymmetry. We can actually prevent total solutions, but there's adding any asymmetry actually help.
+So we tried basically the same kind of asymmetric ideas that are present in sunshine. So basically using a stop gradient. So stopping the rate into one branch or adding a different sort of predictive head.
+And it turns out really who we like in barnacles, adding in both of these methods really does not seem to improve performance by Holger.
+In fact, adding.
+Both of them together actually seems to hurt performance.
+So we kind of suggest that the like the way we have sort of prevented the trivial solution asymmetry is not needed at all, and in fact, adding it will probably not give you much benefit anyway.
+The 3rd for the property to verify is the number of non redundant neurons. This entire, like the entire photos discussion started with taking saying that you have neurons and you want to be different.
+So to do it, I'll talk about a little sort of detailed in power grids, which is important to understand when you have the image.
+When you feel it should be encoded, get particular feature dimension so that would be 2.
+1048
+And then that feature is actually projected to an energy before applying C redundancy reduction box. And this is also standard inside.
+Contrasted working, you actually apply from the 2014 dimension feature to apply NLP to compute a very small embedding, and then you perform contrasting working.
+In that.
+And similarly for something like.
+Though you have a predictive.
+So the invalid wins. All the redundancy reduction is happening on the feature that is computed after reality.
+So what we do now study is basically does that feature dimension matter and how much it matters?
+So to do this we will vary the MLP dimensions. So basically the MLP will go from say 2048 to so it will take as input a 2014 dimensional feature and it can produce say there are 256 dimensional feature or 4 like 4000 dimensional feature.
+So you just.
+Right?
+And for all of the methods, we basically evaluate still with the 2048.
+Image representing from the encoder.
+Yeah, it shows that we are just measuring the encoder 's performance and sorry coupling it from the MLP that.
+Is being used.
+So on the X axis we have basically a different dimension for the projector, so we were going from say 16 dimension to like in this case 16,000 dimension and we again have a 3 methods, powder horns, bullets in Sierra.
+So for Barbara means the performance, really like really improves that you increase your dimensionality of.
+It's so funny.
+The project so.
+If you go from 30 to like 16,000, the performance is going to like really really improve.
+As we keep increasing the dimension, in fact it's not even plateaued. At 16:00 1000. You can keep increasing it.
+Or something like Jewel and sencilla. It seems to be slightly more robust to this, but do basically.
+I think you will see a drop in performance if you keep reducing the depth a little bit, so be 128. It really starts.
+So performance, little bit.
+Actually far more robust like you can increase the number or you can decrease the number and it's going to perform.
+So why is this called sort of a different trend for these 3 methods?
+So in Baldwin 's that.
+We're doing this redundancy reduction.
+'cause we're really encouraging, kind of sparse representation. We are saying that all the neurons should include something very different.
+So now suppose you had like 10 concepts represented an image. It means that we are basically kind of saying that all the rewards will capture different aspects of it. So we need maybe a slightly larger number of neurons because we're enforcing this sparse representation.
+We want the neurons to be completely decoded.
+Whereas for something like Simpson and Blue, we're actually taking these very dense vectors and these vectors themselves. We're not enforcing any sparsity on.
+Top of that.
+So that's one of the reasons we suspected for Baldwin 's we actually we benefit a lot more with higher predictor dimensionality compared to some of them.
+And that actually brings me to the.
+End of my lecture.
+Uh, and finished over here, but if you have questions then.
+Happy to take them.
+Not really.
+What is the depth of MLB used?
+In the draft network.
+There should be many Englishmen.
+Waiting for clarification, then trajector.
+They put in Bangalore, India. So basically it's like 2,000,000 years.
+And in build by default it's 100 year. We also tried 2 builders. It does not.
+Make that much of a difference.
+So Robin is asking.
+The following there has been so much development in the field and you have just presented different methods or what should be the blueprint to follow.
+If we have to run a model for SSL task since someone is doing a project, I think in this thing with these things.
+Yes, so every question that we want to that you want to pick.
+Yeah, which model are better for which kind of tasks?
+OK, so like without knowing much about the data set and what you're trying to do, it's harder to sort of give you a general advice for this.
+But there are.
+Different kinds of pros and cons for each.
+One of them.
+So right now we have 4 on this.
+One this particular slide.
+Right, so so if you talk.
+About like how.
+These models converge. Clustering based models converge faster. So if you want to just talk about in that you have limited computing world stuff to move very fast then I will go with something.
+Like this clustering based model.
+Because it will just end up converging.
+Faster if you.
+Care about significant implementation. I will go with something like Battlefield because it's it's like I showed you like the Python code is fairly simple.
+There are like very few sort of parameters that we, so I would.
+Just go with something like that.
+If you have like very different modalities that you're trying to compare, like we talk about video, audio, or if you're trying to do something like RGB pixels to death, then in those cases it turns out that maybe using substrate.
+Trusted learning is generally better because you have 2 very very different types of encoders and 2 very very different types of architectures and the optimization problem is really really hard. So in those cases we generally found that using simpler contracts.
+Yeah, one thing I wanted to point out. So shine as you were going to be aware of.
+There's going to be a, uh, a project. Follow class and it's it. It basically has to do with self supervised learning, so the students are quite interested by questions around you. Know what works best for running features.
+Yeah I yeah I I want to paint.
+In the in the classroom you know explains some of those techniques that are very high level, and so I think your lecture is useful of, you know in terms of giving more details about exactly how this works and you.
+You know I may be biased, but I I like the non contrasting methods.
+There there's a question as to whether battle twins is actually not sort of a.
+Uh, secret contrasting method, because it it does, you know, cortachy training across features as opposed to across samples.
+Right?
+But it was an indie Royale. Also is very mysterious, right works, but we serve implicit contrastive term due to the you know funny effects of of batch normalization.
+Like have you come?
+You know, there's like a number of publications from from deep learning, others about Web URL works by basically removing parts.
+And you know.
+See what if, when it fails, do you have an intuition for?
+What makes below works?
+I really think it's just the fact that I mean so there is a batch normal sort of. There is of course like this computational batch mode, which people.
+I say sort of wrinkled options one, but I think.
+And interpreting that as a hidden contrasted method is taking it a little bit too far in my opinion. So yes, you're relying on the batch statistic to really sort of right in the data, which is so I would think of it as like preconditioning, like preconditioning or sort of improving optimization.
+Completely contrast.
+Contracted movie you really need lots of negatives. I mean, everything is really relying thousands and thousands of tickets because if something is really working with like Bachelor 128, I don't think it's fair to call it a contrast.
+So we now coming to like whether it can actually work with certain.
+Different types of.
+Normalization, so yes, it can actually work with different types of normalization.
+It depends on the architecture that you're using, and with careful optimization. So we recently found Transformers and you can basically train.
+Something like build and in that case you're not really using batch normalization.
+So you cannot retrain these methods without using batch normalization. And yeah, because the architecture in itself does.
+Not have it.
+So I mean this is paper, right? But declined right? That tries to analyze like removing batch normalization advice, various levels and oil.
+And if you remove it in.
+The last layer is just completely.
+Collapses, so I think we have a trade for it where you can basically initialize like we can use learning and you can try to.
+This is the parameter slightly differently.
+And in that case it tends to work, but I think more of it is probably like it. It's just because of the difficulty in optimization rather than something tight to the method, so I do believe that if you were to like move on to different types of architectures for the student, important teacher encoder is probably good goal.
+So move to centimeter transformer, which does not have.
+Any batch now?
+Is the new question coming from the student? What do you see in the future of SSL and what is the North Star for it?
+I think we've.
+Been not started.
+Uh, I think in the future. So if you think about like all the image based SSL work, it's really bootstrapping the same signal everyone is going with augmentations of the same image and basically saying that that should be the same and all like all the other images should be different or augmentations of them should be different. So everything in this slide and everything.
+Actually, in the past few years, it's really sort of working is kind of using this signal in some way or the other.
+So, so it's good because yes, now we're kind of understanding more and more what is necessary to make it work.
+But I think there should also be some kind of effort to understand. Are there any other signals that we should really focus on?
+So all of this is all about augmentation invariants, and because there is a trivial solution there, let's come up with.
+But is there any other signal is in there? Is the only thing that we care about? Or are there other like interesting property that should really?
+Be modeled in.
+Self supplies, I think that's.
+Like the bigger open question.
+That makes sense.
+So I have a question actually so, So what do you think of?
+The possibility of applying isn't some methods, perhaps somewhat different, from the one that we heard to video learning features from video, as opposed to steal images because in some extent the the idea of distorting an image is just a way of building kind of a nearest neighbor graph, right? You you you have a collection of collection of images.
+And you you generate images that you know are similar in terms of content.
+And what you what you have in the end, what you use is a similarity graph, right? A bunch of groups of images or universe similar.
+Now if you have video, you can imagine the kind of a similar thing where successive frames in the video are deemed to have similar content. Or you could imagine that you know one of the branches in a joint.
+Winning architecture would have a bunch of frames and then the other branch would have maybe just fine framing even you know predicting.
+The next frame, with some time in the middle.
+Can you comment on this cell phone video?
+So like if it would video so far it really followed, I would say like most of the times like video sort of architecture in video class with tasks.
+He sort of mirror image tasks or image like architectures. So in the same way like in SS. And it had really been, I would say a mirror effect.
+So there are the same kind of fantastic methods like we talk about where you consider like images from like from the same neighborhood to be close by.
+We apply similar integrate augmentations, cropping and like basically like colour distortions and so on.
+So all of it is basically the same thing, and we're doing contrasted working again. The only sort of newer thing that I have seen is like using audio or supervision, and that's really been because we were computing these data augmentations in a video.
+There is a lot of redundant information, so the contractor task becomes fairly easy, so you need.
+To be even more.
+Cognition, because the task over here is to recognition different clips from the same video, and because there are like 10 frames, all 10 frames are going to have some more background stuff. Is there moving amongst them so the.
+Transfer comes easier.
+I think predictive movie definitely like one of the more sort of interesting and open problems there, but it is really I would say about the hardest problem because video prediction.
+I mean, we've talked about this also multiple times. Video prediction is like one of the hardest things to do, but.
+I do think it is like the right way forward. I just don't think we.
+Know how to do it right now.
+Our question coming in for SSL, has anyone ever tried to stick a gun to generate noise for data augmentation? Like trying to learn some limited noise that tweak the encoder in the worst way possible.
+I see so kind of an atmosphere setting where you're wearing adversarial network to.
+Like create a augmentations. Expect their losses like maximize valid minimums.
+Uh beliefs, yes.
+Yeah, so there has been some work on it that I have seen, but not like it hasn't become super popular.
+But I know like also like I have tried to do experiments myself and I know other folks who tried this is basically trying to inject like some kind of upload it along with the network.
+Can it? And it's like very similar to with standards or adverse side effects that you get like, really distinguish what's really going on.
+There is super high frequency signal being added and that makes the sort of Glasgow very very like it completely goes nuts.
+All right, so it seems like we have satisfied the curiosity of.
+Everyone in the room.
+Oh OK, uh platform to reach John. How do how do?
+They reach you.
+I mean.
+Women OK?
+Do we know your email?
+Yeah, it's like.
+I am sorry my first clip.
+I am.
+OK, very good. We provide the student the email in case they ask.
+Alright, alright so.
+Thank you again for being with us today. It was very enlightening.
+So the slides are very good. I saw yesterday. Yes, I saw them yesterday already so I really knew what was coming more or less, but the last one is very pretty. I haven't seen business.
+Anyway, so again thanks for for for you know, explaining Indiana in answering every question we throw at you. So looking forward to see. Oh around. Perhaps after the pandemic and.
+And to hang out a little.
+Thanks, thank you.
+Right?
+Thank you, Ishan. Thank you again, thanks everyone.

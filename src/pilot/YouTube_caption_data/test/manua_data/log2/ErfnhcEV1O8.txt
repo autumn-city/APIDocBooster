@@ -1,0 +1,252 @@
+Hi, my name is Aurélien Géron and in this
+video I’ll try to give you a deeper understanding
+of what entropy, cross-entropy and KL-divergence
+actually are.
+In Machine Learning, cross-entropy is very
+commonly used as a cost function when training
+classifiers and so we’ll see why that is.
+Those concepts come from Claude Shannon’s
+Information Theory.
+Shannon was an American mathematician, electrical
+engineer, and cryptographer.
+And in his 1948 paper “A Mathematical Theory
+of Communication” he founded what is now
+known as Information Theory.
+The goal is to reliably and efficiently transmit
+a message from a sender to a recipient.
+In our digital age, messages are composed
+of bits.
+Of course you know that a bit is a number
+that is either equal to 0 or 1.
+But not all bits are useful: some of them
+are redundant, some of them are errors, and
+so on.
+So when we communicate a message, we want
+as much useful information as possible to
+get through.
+In Shannon’s theory, to transmit one bit
+of information means to reduce the recipient’s
+uncertainty by a factor of 2.
+For example, say that the weather is completely
+random, with a 50/50 chance of being either
+sunny or rainy every day.
+If a weather station tells you that it’s
+going to be rainy tomorrow then they have
+actually reduced your uncertainty by a factor
+of two.
+There were two equally likely options, now
+there is just one.
+So the weather channel actually sent you a
+single bit of useful information.
+And this is true no matter how they encoded
+this information.
+If they encoded it as a string, with 5 characters,
+each encoded on 1 byte, then they actually
+sent you a 40 bit message, but they still
+only communicated 1 bit of useful information.
+Now suppose the weather has actually 8 possible
+states, all equally likely.
+Now when the weather station gives you tomorrow’s
+weather, they are dividing your uncertainty
+by a factor of 8, which is 2 to the power
+of 3.
+So they sent you 3 bits of useful information.
+It’s easy to find the number of bits of
+information that were actually communicated
+by computing the binary logarithm of the uncertainty
+reduction factor, which in this example is
+8.
+But what if the possibilities are not equally
+likely?
+Say 75% chance sunny, and 25% chance rainy.
+If the weather station tells you it’s going
+to be rainy tomorrow, then your uncertainty
+has dropped by a factor of 4, which is 2 bits
+of information.
+The uncertainty reduction is just the inverse
+of the event’s probability, in this case
+the inverse of 25% is 4.
+Now the log of 1/x is equal to -log(x), so
+the equation to compute the number of bits
+simplifies to minus the binary log of the
+probability, 25%.
+Now if the weather station tells you it’s
+going to be sunny tomorrow then your uncertainty
+hasn’t dropped much.
+In fact, you get just over .41 bits of information.
+So how much information are you actually going
+to get from the weather station, on average?
+Well, there’s a 75% chance that it will
+be sunny tomorrow, so that’s what the weather
+station would tell you and that’s .41 bits
+of information.
+Then there’s a 25% chance that it will be
+rainy, in which case the weather station will
+tell you so, and this will give you 2 bits
+of information.
+So on average, you will get .81 bits of information
+from the weather station, every day.
+So what we just computed is called the Entropy.
+It is a nice measure of how uncertain the
+events are.
+Hopefully the Entropy’s equation should
+now make complete sense: it measures the average
+amount of information that you get when you
+learn the weather each day, or more generally
+the average amount of information that you
+get from one sample drawn from a given probability
+distribution p.
+It tells you how unpredictable that probability
+distribution is.
+If you live in the middle of a desert where
+it’s sunny every day, on average you won’t
+get much information from the weather station.
+The entropy will be close to zero.
+Conversely, if the weather varies a lot, the
+entropy will be much larger.
+Okay, now let’s talk about cross-entropy.
+It is really quite simple: it’s just the
+average message length.
+For example, if the weather station encodes
+each of the 8 possible options using a 3-bit
+code like this then every message will have
+3 bits, so the average message length will
+of course be 3 bits, and that’s the cross-entropy.
+But now suppose that you live in a sunny region,
+and the weather’s probability distribution
+looks like this.
+Each day, there’s a 35% chance of being
+sunny, and only 1% chance of thunderstorm.
+So you can compute the Entropy of this probability
+distribution, and you will find that it is
+equal to 2.23 bits.
+So it’s a shame the weather station is sending
+3 bits per message on average, when the weather’s
+entropy is just 2.23 bits.
+In other words, on average we send 3 bits,
+but the recipient gets only 2.23 useful bits.
+We can do better.
+For example, let’s change the code like
+this.
+We’re now just using 2-bit messages for
+the sunny or partially sunny weather, 3 bits
+for cloudy and mostly cloudy, 4 bits for light
+and medium rain, and 5 bits for heavy rain
+and thunderstorm.
+Note that our code is unambiguous: if you
+chain multiple messages, there’s only one
+way to interpret the sequence of bits.
+For example 011100 can only mean partially
+sunny followed by light rain.
+Okay, so if you compute the average number
+of bits that we will send every day you get
+2.42 bits.
+That’s our new and improved cross-entropy!
+It’s better than our previous 3 bits, but
+still not down to 2.23 bits.
+Anyway, now suppose we used the same code
+in a different location, where the weather
+is reversed, it’s mostly rainy.
+Now if you compute the cross-entropy, you
+will find that it is equal to 4.58 bits.
+Wow, that’s really bad, it’s roughly twice
+the entropy.
+In other words, on average we will send 4.58
+bits but only 2.23 bits will really be useful
+to the recipient.
+We’re sending twice as much information
+per message as is necessary.
+This is because the code we are using makes
+some implicit assumptions about the weather
+distribution.
+For example, when we use a 2-bit message for
+sunny weather, we’re implicitly assuming
+that it will be sunny every 4 days (2 to the
+power of 2), at least on average.
+In other words, by using this code, we’re
+implicitly predicting a probability of 25%
+for sunny weather, or else our code will not
+be optimal.
+So now it’s pretty obvious that the predicted
+distribution q is quite different from the
+true distribution p.
+Note that our code doesn’t use messages
+starting with 1111, so that’s why if you
+add up all the predicted probabilities in
+this example, they don’t add up to 100%.
+Anyway, now we can express cross-entropy as
+a function of both the true probability distribution
+p and the predicted probability distribution
+q.
+As you can see, it looks pretty similar to
+the equation for the Entropy, but instead
+of computing the log of the true probability,
+we use the log of the predicted probability,
+which is equal to the message length.
+If our predictions are perfect, that is the
+predicted distribution is equal to the true
+distribution, then the cross-entropy is simply
+equal to the entropy.
+But if the distributions differ, then the
+cross-entropy will be greater than the entropy
+by some number of bits.
+This amount by which the cross-entropy exceeds
+the entropy is called the relative entropy,
+or more commonly the Kullback-Leibler Divergence
+(or KL Divergence).
+So in short: cross-entropy is equal to the
+entropy plus the KL divergence.
+Or equivalently, the KL divergence, which
+is noted D_KL(p||q) is equal to the cross-entropy
+H(p,q) minus the entropy H(p).
+In this particular example, the cross-entropy
+is 4.58 bits, and the entropy is 2.23 bits,
+so the KL Divergence is 2.35 bits.
+Okay, now let’s use cross-entropy in Machine
+Learning!
+Say we want to train an image classifier that
+will detect some animals.
+For each of the 7 possible classes, the classifier
+outputs an estimated probability.
+This is the predicted probability distribution.
+Now this is a supervised learning problem,
+so we know the true distribution: in this
+example, we know that this is an image of
+a cute red panda, so the probability is 100%
+for Red Panda, and 0% for the rest.
+We can use the cross-entropy between these
+two distributions as a cost function.
+This is called the cross-entropy loss, or
+simply the log loss, and it’s just the equation
+we saw earlier except it usually uses the
+natural logarithm rather than the binary logarithm.
+This doesn’t change much for training, since
+the binary log of x is just equal to the natural
+log of x divided by a constant (the natural
+log of 2).
+So when the labels are one-hot vectors, meaning
+one class has a probability of 100% and the
+rest are 0, as is the case in this example,
+then the cross entropy is just the negative
+log of the estimated probability for the true
+class.
+So in this example, the cross-entropy is -log(0.25).
+You can see that the cost will grow very large
+if the predicted probability for the true
+class is close to 0.
+But if the predicted probability is close
+to 1, then the cost will be close to the true
+distribution’s entropy, which in this case
+is equal to 0 since it’s a one-hot vector.
+And that’s it for this short presentation
+of Entropy, Cross-Entropy and KL-Divergence,
+I hope you found it interesting.
+If you did, you know the drill, please like,
+share, comment, subscribe, follow me on twitter,
+and so on.
+If you want to learn more about Machine Learning,
+Deep Learning and Deep Reinforcement Learning,
+check out my book Hands-on Machine Learning
+with Scikit-Learn and TensorFlow.
+That’s all for today, have fun and see you
+next time!

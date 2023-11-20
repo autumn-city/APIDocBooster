@@ -1,0 +1,545 @@
+hello everyone my name is
+and
+i'm excited to talk to you about a new
+method for learning your presentations
+with modifier time series
+it's based on a transformer framework
+first
+what do we mean by a multivariate time
+series well simply put it's just a group
+of synchronous variables which evolve as
+a function
+so this can be the result of
+simultaneously recording different
+physical quantities
+however
+despite the presence of the word time
+and the terminology more generally
+we refer to we can refer to a group of
+dependent variables align with respect
+to any common independent variable as a
+moderate time series as a more classic
+example of multivariate time series we
+see here simultaneous measurements of
+different atmospheric conditions
+and which can be the concentration of
+different molecules the atmosphere the
+temperature pressure
+the amount of rainfall or the wind speed
+and now what
+we're trying to predict as a task here
+is an extrinsic regression task is
+different scalars which we believe can
+be
+can depend on this measurement for
+example
+this would be the concentration of fine
+particulate
+we now look at an example of a
+classification
+or multiplayer time series so here the
+independent variable is frequency
+and the different variables are
+basically
+different bands of the power spectrum of
+audio recording of insects that pass
+through a sensor
+the objective is to identify which
+species out of the 10 different species
+of insect
+so more generally we can see that
+multivariate time series are ubiquitous
+in science medicine finance engineering
+and lots of industrial applications
+and often there is an abundance of data
+but unfortunately the label data
+annotated data are far more limited
+and
+this is because it's often very
+expensive or impractical to annotate
+data and as a result there is great
+interest
+for unsupervised or supervised
+approaches which can leverage unlabeled
+data
+and also for methods that are data
+sample efficient
+okay so why is it a good idea to use
+transformers for multivariate time
+series
+well first of all transformer
+architectures
+have had remarkable success in the field
+of natural language processing and
+this is for a very good reason they
+possess certain
+distinct advantages which i believe
+translate very well the field of
+time series
+and so for example they can concurrently
+and selectively attend over a long
+context of input sequence elements
+and importantly they do this
+by treating each
+element of the input sequence on equal
+footing so they don't treat
+elements
+near the middle and the beginning and
+the end of the sequence differently
+is not the case with
+lstms for example even bi-directional
+lstms
+furthermore they have multiple attention
+heads
+which means that they can actually
+consider multiple aspects of relevance
+between
+input sequence elements for example some
+some of these attention heads may
+specialize
+to consider the relationship between a
+specific subset of
+input variables
+and in case the signal
+consists of multiple periodicities so
+these
+different
+frequencies at different important
+frequencies
+then some attention has been actually
+tuned into
+recognizing
+these different periodicities
+now
+a very important factor
+that contributed to the success of
+transformers in natural languages
+their effectiveness for unsupervised
+so in fact
+currently the state-of-the-art all
+state-of-the-art models in natural land
+of course rely on unsupervised training
+and there are different objectives that
+can be used for this training for
+example denoising the input masking and
+then unmasking
+the input as well as what is called
+language modeling
+in natural language working which is
+predicting the continuation of a
+sentence which is akin to forecasting
+and time series
+however they are not exactly well known
+for
+the data sample efficient
+quite the contrary they
+basically they are infamous for
+requiring tons of data
+and then training for several weeks on
+how to use
+so how well are they going to perform on
+the relatively small
+data sets that are available from other
+products
+so far
+transformers consisting of a full
+encoder decoder architecture
+have been exclusively
+used for supervised learning and
+invariant time series and in particular
+for the specific cost of forecasting and
+missing value computation
+by contrasting this work we aspire to
+develop a generally applicable
+methodology framework
+that leverages unlabeled data by first
+retraining a transformer model and then
+using
+transfer lane device learning
+and then apply it on several downstream
+applications
+which include invert forecasting and
+value computation but also
+tasks such as classification regression
+anomaly detection
+and many others finally it's time to
+look at the architecture of the model we
+use in our method
+and immediately we noticed that
+unlike the original transformer
+architecture here there is no decoder
+this is because the original confirm
+architecture
+was intended for a generative task
+whereas here we also deal with
+non-generated so basically tasks such as
+a classification
+where the output is not a sequence of
+variable
+so we start with our multivariate time
+series at the bottom
+and we see that this
+can be seen as a
+sequence of distinct vectors of
+dimensionality m which is the number of
+variables that we have at different time
+steps first we need to linearly project
+these vectors
+to a vector space of different
+dimensionality
+e
+which is the number of dimensions of the
+internal representation
+of our transformer model and this is a
+design hybrid parameter
+of the model which is best to take into
+consideration
+what data set we're doing
+so on top of these vectors we add
+positional encodings in order to make
+our model aware of the
+order of the input sequence elements
+otherwise conformers are fragmentation
+in there
+so unlike the original transform and
+here the positional encodings that we
+use are
+fully learnable parameters
+and
+now that we have our input we can
+finally
+add
+transformer blocks
+several of them and potentially one of
+the other
+and
+finally at the output of the final
+transformer encoder block
+we get the final representations shown
+here as purple right
+now
+the computational complexity of the
+transformer depends on the square of the
+input sequence length
+so in case we have very long
+time series
+then
+we can follow a hierarchical approach
+for example we can use a 1d
+convolutional layer
+to do a smart
+down sampling of the input
+and
+at the output of this one
+deconvolutional layer we now have
+another sequence
+of less
+samples of a smaller number of samples
+depending on the sprite that we use
+and maybe we do dilations and so on
+um and also of different dimensionality
+and now this serves as the input to our
+transformer encoder
+so we additionally preprocess the data
+doing variable wise normalization
+which means we subtract the mean and
+divide by the standard deviation of the
+variable
+and on top of that we also
+use a batch normalization
+instead of layer normalization which is
+what is used in transformers for natural
+language processing
+now
+the intuition behind this is that
+first of all
+lay normalization can be seen as a cheap
+approximation of flash normalization and
+secondly
+the reason
+why lay normalization works better for
+natural language processing as has been
+shown in recent work is due to the
+specific
+statistics of natural language sentences
+and the statistics we have here
+multivariate dimensions are quite
+different and in fact there are several
+occasions where batch normalization
+would help with
+outlier samples
+now let's see how we do pre-training
+essentially we apply a mask
+on the input time series sequence
+which you see depicted here as grey
+blocks
+we zero out the corresponding
+sequence elements now we ask our model
+to predict
+what were the hidden mask values at the
+position we have masked
+so in particular
+we
+predict at each time step the entire
+input
+vector
+but only
+the masked elements enter the loss
+function which is the mean squared error
+however
+the way that we
+select which elements to mask matters
+if you think about it if you naively
+select uniformly at random
+for example using a bernoulli
+distribution
+um
+elements to mask then
+most times it will be trivially simple
+for the model to predict
+what the missing values are just
+replicating
+the value
+on its left or on its right or maybe
+taking
+the average between
+instead we want to make the task more
+challenging
+by masking a long enough segment of the
+input sequence
+and in general we want to encourage the
+model
+to learn to attend
+to the past and the future of the hidden
+segments but also we want to model
+dependencies between
+different variables so the way that we
+do that
+is by
+separately masking a proportion r
+of each variable
+these r
+we actually found that something around
+15 works best
+and we use a markov chain with two
+states mass and a mass with different
+transition probabilities which are
+selected in a way
+to give us an average length of
+l
+which we chose to be three
+which corresponds to
+masked segments
+each followed by an unmasked segment
+here i'm showing you a comparison
+between
+four different masking schemes
+and highlighted with blue you see the
+schema i just showed you which overall
+works best across
+data sets
+um the other schemes are first one is
+separately masking its variable using a
+bernoulli distribution
+the second one is synchronously masking
+variables using a bernoulli distribution
+what synchronous means you can see at
+the bottom right basically it means
+hiding the entire
+input vectors or all variables at once
+and the final column corresponds to
+synchronous masking and also staples so
+using
+a
+markov chain for the temporal
+evolution of the mask
+ultimately
+which scheme works best will also depend
+on the data that we have
+for example
+in case there is no dependency between
+variables
+as is the case
+for the insecurity
+data set where different variables
+correspond to different frequency bands
+then
+maybe the synchronous
+masking will work best because we don't
+need to model dependencies between
+variables and instead what is more
+important is to examine the temporal
+context
+now that we have a pre-trained model we
+can use supervised learning to fine-tune
+it
+so we apply the model on a multivariate
+time series
+then we extract
+the
+output
+final layer representations and we
+concatenate them
+and we can simply now use
+a dense output layer to get a prediction
+so in the case we have a regression
+problem this prediction directly enters
+the mean square error loss
+in case
+we're dealing with classification we
+pass this value through a soft max
+and
+then we use cross entry
+so how well does this work well you see
+here a comparison between
+the state-of-the-art methods currently
+on six different regression data sets
+our models correspond to the last two
+columns one for a model trained only
+through supervised learning and one for
+a model which has been first retrained
+you see that out of the six datasets
+they
+achieve best performance
+four of them and second best performance
+on the remaining two which gives them an
+average rank of about 1.3
+by contrast no other method
+manages to
+score consistently well across
+data sets and
+stand out the second best method was xg
+boost which achieved an average rank of
+3.5
+now interestingly
+the
+three deep learning methods
+resonant inception architecture and poly
+convolutional network
+it fairly
+poorly
+and also interestingly we see that
+most of the diseases are actually quite
+small for example applies applies this
+energy
+and has only
+about 96 less than 100
+training examples
+now let's look at how pre-training can
+help performance
+imagine we have a data set of a certain
+size here we use the one with the most
+data samples
+which is only partially labeled
+so here we restrict the number of labels
+artificially to 10
+and progressively we're adding more
+labels so as you can see and as is
+expected the model that has been playing
+through supervised learning
+gets better and better as we have more
+labels
+but importantly the model that has been
+first pre-trained on all available data
+samples including the unlabeled ones
+performs better always across the entire
+range of
+label availability at least for this
+data set
+crucially we see here that
+doing unsupervised retraining can lead
+to the same performance benefits as
+increasing the number of available
+labels by a factor of four
+now we asked a subtly different question
+what happens if we don't vary the number
+of label data but unlabeled data which
+are available for unsupervised
+retraining so
+zero in the horizontal axis corresponds
+to purely supervised
+learning and then we progressively add
+more and more unlabeled data which are
+used for unsupervised retraining and we
+see that
+both for
+10 annotation level and also 20
+annotation level the more unlabeled data
+we use the better the performance
+now let's look at classification results
+we observe that on seven out of the 11
+multivariate classification datasets we
+have examined
+our models the first two columns perform
+best
+and achieve an average range of 1.7
+in particular we see that they perform
+especially well on very high dimensional
+datasets
+as well as datasets with a relatively
+higher number of training samples
+by contrast they seem to be relatively
+weaker when it comes to very low
+dimensional time series so
+three out of the four times where they
+weren't best
+the data set was only three dimension
+and my hypothesis is that
+the reason for this is that in low
+dimensions
+that positional encodings
+can destructively interfere with the
+input vectors
+and also that the self-attention
+mechanism encounters difficulties with
+low dimensional
+finally i'm showing you some qualitative
+results on invitation of missing values
+and the original signal is depicted as a
+continuous blue line
+the hidden mass values are shown as
+light blue circles and the most
+predictions are depicted as orange dots
+and the bottom
+left grid
+each column corresponds to a different
+signal dimension and its row corresponds
+to a different sample we can observe
+that the model can do a very decent job
+predicting the hidden values even in
+cases where we have rapid transitions in
+the signal or where we have a contiguous
+segment
+masked and missing
+to conclude i have shown you how a
+transformer encoder architecture can be
+used as a framework for multivariate
+time series representation learning
+and we have seen that
+this is unsupervised reclaiming through
+input masking and denoising
+it can offer substantial performance
+benefits over fully supervised learning
+and interestingly it can do so even
+without
+additional unlabeled data simply by
+reusing existing data samples
+we've seen that it performs
+significantly better than the state of
+the art for regression and
+classification
+and again interestingly even for
+databases which only contain a few
+hundred training samples which is not
+necessarily expected of transforming
+architectures
+by doing so
+it becomes the first
+sulfur unsupervised method which pushes
+the limits of the state of the art for
+regression and classification
+and finally something that i have not
+demonstrated in the current presentation
+this method is computationally
+practicable especially on rgb
+thank you very much

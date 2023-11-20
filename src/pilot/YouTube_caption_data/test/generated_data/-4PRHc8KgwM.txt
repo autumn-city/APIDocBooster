@@ -1,0 +1,365 @@
+hi guys in this video we're going to see
+yet another neural network that you
+probably already know
+so this neural network will be logistic
+regression
+and we will show that even logistic
+regression can be expressed in terms of
+a neural network so let's dive in and
+see what are the differences between
+logistic regression in the glm framework
+and as a neural network so logistic
+regression is basically a form of binary
+classification problem okay you assume
+that your y's your response variables
+distributes bernoulli
+they are either zero or one you usually
+code it with zero one sometimes you can
+code it with minus one and one but for
+regular logistic regression with zero
+and one
+and you assume that the mean the
+the probability is affected by the x's
+by the covariance in glms so
+i have a whole series about it you
+should maybe check it out if you haven't
+already uh we assume that the link
+function not the mean itself but some
+function of the mean is some linear
+combination of the covariates and some
+coefficients
+so here usually the link function for
+logistic regression is the logic is the
+log of p
+divided by 1 minus p
+the main reason we do this is so that
+this quantity will be unconstrained yeah
+so p
+is between 0 and 1 right so p has to be
+between 0 and 1
+and this term over here will almost
+certainly won't be between 0 and 1 it is
+unconstrained it will be between minus
+infinity and infinity so we want to
+somehow change the quantity that we have
+to be unconstrained we take p divided by
+1 minus p
+this quantity is between 0 and infinity
+and then we take the log of it and now
+it's between minus infinity and infinity
+this is the main reason why we um
+take this link function
+and then if we invert the link function
+so p is actually the inverse of the
+logit which is actually the sigmoid
+so
+if you have an x for a given x p is
+equal to
+[Music]
+e to the power of x transpose beta
+divided by 1 plus e to the power of x
+transpose beta and here the beta also
+include the beta0 and x also includes
+one for the intercept
+okay so how do you solve this
+in the glm framework unlike linear
+regression there is no closed form
+solution
+but you can still try to maximize the
+log likelihood
+so this is the likelihood right you
+express each observation
+of the bernoulli like this and then you
+take the product of this over all your
+observation you assume independence of
+your data
+and we said that the p of x i's are
+basically can be expressed with this
+inverse link function you plug that in
+and then you take the log of it and you
+come to this expression over here i'm
+going over this pretty fast but
+again you should check out my glm series
+for more information
+okay so we have this log
+likelihood and then we want to maximize
+it the way you do this in glm is usually
+by fischer scoring which is a variant of
+newton method and newton method is a
+second order gradient method so it's
+similar to a gradient ascent or gradient
+descent but you also use the second
+derivative you use the hashing matrix
+yes so you take the second derivative of
+this
+log likelihood
+and you invert it
+and then you multiply this by the
+gradient and you take a step in that
+direction and this is newton-raphson
+fischer scoring just approximates this
+hessian
+using the expectation of the negative
+hashem
+okay i have a video about this you
+should check it out
+so this is how you solve it in the glm
+framework how can we express this as a
+neural network again let's suppose our
+axis is two-dimensional
+the architecture we will use is again a
+single layer no hidden layers
+but this time not only the linear
+operation but also we'll add the
+activation function and we'll add the
+sigmoid activation function so the
+sigmoid activation function just means
+take the input
+and if your input is x just pass it
+through this function okay and this is
+how it looks so if this is x
+this is
+sigma of x this is the sigmoid of x
+okay
+and you can see that
+when you go to negative you're basically
+zero when uh you pass some threshold you
+are basically one and there is a small
+area where you kind of go from zero to
+one
+uh
+in the middle
+okay so again you have x1
+x2
+um
+maybe a bias term
+you multiply it by w1 w2 and maybe w0 or
+a bias okay and then you take the
+activation yeah you take this sigma over
+here and you give the output
+okay so
+the output of the neural network will
+look something like this
+but notice that this is exactly this
+thing over here yeah this is exactly
+the inverse link function
+okay so the output of the neural network
+actually gives you the expected p for
+that x
+okay and so this was the architecture
+the second component is the last we will
+use the binary cross-entropy loss which
+looks something like this
+but now if we plug this in instead of
+the y-hat we get this thing over here
+but this is exactly
+this expression over here from the glm
+framework the only difference is that
+here we have a plus
+and here we have a minus
+so this is the only difference here we
+are trying to minimize the negative
+binary cross entropy loss
+which is this expression so we want to
+minimize this expression and here we
+want to maximize this expression without
+the minus in front of it so it's exactly
+the same and so
+the
+architecture allows us to express
+exactly the same model the loss allows
+us to express exactly the same objective
+function
+the only little difference is the
+optimization so instead of fischer
+scoring which is what you use in the glm
+framework in neural network we will use
+gradient descent yeah we will use
+stochastic gradient descent or some
+variant of it like momentum
+adam etc
+okay so let's code this up uh i here
+use the same imports from before i add
+two imports to it one is the
+statsmodel.api
+and this is so that i can run the glm
+framework this already implements the
+fischer scoring algorithm and it helps
+me do it without actually coding it up
+and it requires that i give the data as
+a pandas data frame so i also import
+pandas but the rest is exactly like in
+the last video we generate the data i
+take 1000 points and again x is two
+dimensional i take a uniform between
+minus 3 and minus 3 to 3 and 3. so it's
+a 2
+2 dimensional uniform box basically and
+i sample n samples from it i already add
+a columns of 1 to make this a design
+matrix and these are my true parameters
+my true weights and so i just take the
+multiplication of this to get the logit
+so this is the so this is the linear
+term and in order to
+transform this to p i have to take the
+sigmoid of it
+okay so i can define the sigmoid
+function like this
+and then i can just take the sigmoid
+over the logits and i get the p's
+and if i scatter the piece
+you can see
+that it looks like the sigmoid
+activation yeah so for some ps
+for some x's you get a really big
+logit and then when you pass it through
+the sigmoid you get that it's almost one
+for some you get a very
+small logic a very negative logic and
+then when you pass it through the
+sigmoid you get close to zero and for
+some things in the middle you get
+something is in the middle
+okay now to create the data i'm just
+going to sample from a bernoulli
+distribution and give it the ps the
+probabilities
+i could have also
+instead of defining the sigmoid and
+creating the p i could have already just
+give it the logits and it knows how to
+do it itself but for the purpose of
+understanding i also
+showed you how you can create the piece
+and now if we scatter it we can see that
+for
+observations with very large logic their
+p's were almost one so they almost
+certainly got one
+and the vice versa with lot some
+observation that had a very low logic
+their p's were almost zero and so they
+almost certainly got zeros
+and then for the ones in the middle well
+here you get more
+zeros than one but as you go further you
+get more ones than zeros okay so this is
+the plot that i expected to have
+now i'm just going to
+change my y's my zero and ones to be a
+data frame and also my axes to be a data
+frame
+uh pandas data frame and this is the
+input i will give
+to the um
+stats model api with
+i will call sm.glm
+give it the y's give it the xs and say
+that i want it to be a binomial
+family
+i will fit the model
+and so this basically does the fischer
+scoring or the newton-raphson method and
+now i can print the results
+okay so we can see that
+it took seven iterations of fischer
+scoring
+the rest is not so important uh we can
+see that the link was the logit
+and it gives us the coefficients yeah so
+it gives us 0.4 minus 0.9 and 2. so
+pretty close to the 0.3 right the true
+parameters were 0.3 minus 1 and 2 and
+this gives us 0.4 minus 0.9 and 2. and
+you can also just access the parameters
+you don't have to print this whole table
+okay now let's do everything just with
+neural networks this times it requires a
+bit more of a work it's not just one
+line like in the last video i think the
+default way to do this is to define a
+class and give it some name so this can
+be my network or logistic regression
+network or whatever i just called it net
+and we wanted to inherit from nn module
+we defined the init model and just call
+super in it it just says okay go to this
+class and do whatever the init there
+asks you and then we just define one
+layer a linear layer and we say it takes
+two as input and gives one as output i
+could have also defined another layer as
+the activation layer so i could have
+said self.sigmoid is equal to nn.sigmoid
+and make it an extra layer instead i
+just decided to use it as an operation
+and not as a separate layer i'm not sure
+what is best but it's both ways that you
+can do it
+so this is one
+function you have to implement in this
+class the second function is the forward
+class uh
+which takes the input and then you just
+say it okay pass it through the linear
+layer and then pass it through the
+activation function and this is your y
+hat and then you just return it so doing
+this will define the architecture
+then we just instantiate this
+architecture
+so and that's it we have our neural
+network architecture just not trained
+yet we define the loss i define it to be
+the binary cross entropy loss
+an optimizer just like before we'll take
+a stochastic gradient descent
+and give it the parameters of the
+network and a learning rate
+and then we do the training in this case
+i take 10 000 steps
+just because i experimented with it a
+bit and you need a bit more steps in
+this case
+but this is also a very naive
+implementation yeah i don't check for
+anything i don't check for converges of
+the network i just say okay run for 10
+000 steps and we'll see what you got
+so again every iteration i zero the
+gradients i do forward propagation i
+compute the loss i do back propagation
+and i tell the optimizer to take a step
+in the direction of
+the gradients so let's run this
+okay and now let's see what the
+parameters are so 0.41 minus 0.94 and
+1.99 almost exactly like we got using
+the glm framework but here it took us
+about 10 000
+steps or 10 000 iterations
+uh maybe we could have done it less if
+we use the better optimizer instead of
+stochastic gradient descent maybe adam
+if we
+use some more smart training maybe we
+could have reduced it but it's nowhere
+near the seven iterations that we used
+using the glm framework however here it
+also had to calculate the hessian matrix
+or the expected adhesion matrix yeah so
+it's not exactly that it only did seven
+operations or seven iteration it also
+had additional computations but still
+overall
+i think
+uh
+the glm frameworks work better for the
+problems of glms
+but this is just to show you that
+they can also be expressed in neural
+networks and they can also be solved
+using these very simple neural networks
+so this is all for this video i hope you
+enjoyed and see you in the next one

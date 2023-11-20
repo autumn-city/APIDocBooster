@@ -1,0 +1,181 @@
+So there are days when I'll be checking out some awesome Android app, when I run into an
+anti-pattern that's pure anti-Android and which 
+totally destroys the magic, and I'm all like:
+Well, my team are sick of me making a mess of their workspace, so I'm channeling my energy
+into something more productive. Welcome:
+To Tableflip.
+Today I'm returning to the topic of one of my earliest Android UX rants:
+"exit" menu items.
+Back in the days before time began when humans typed into terminal prompts
+while huddled in dark caves, Googling Wikipedia for fire;
+single-tasking operating systems like MS-DOS allowed us to run one app at a time.
+"Exit" was unambiguous. A necessity for leaving one app and starting another.
+The instruction itself had semantic meaning.
+"Exit" mapped to the C function Exit(), which terminated the calling process.
+As we crawled from our hidden caves hunting the last of the Woolly Mammoth
+multi-tasking operating systems like Windows enabled us to run multiple
+programs at once
+each represented by its own window.
+As before, our exit menu-item is used to call exit(), to terminate the process, and
+allow us to reclaim the resources used by the task window.
+Having grown fat and complacent within multi-tasking Operating Systems gorging
+on a glut of RAM and CPU resources provided by Moore's Law, smartphones
+introduced a new challenge.
+How do we create a responsive multi-tasking operating system with a fraction of the
+resources?
+Unlike windowed operating systems, smart phones generally present apps full-screen
+and one at a time -- so it's easy to establish a relative priority
+between applications
+following Android's Three Laws of Robotics.
+One. Whichever App is in the foreground
+must have the resources it needs to run
+and run responsively.
+Two. Any application with a visible activity
+or a running Service, should be allowed to run, except when doing so would be in
+violation of the first law.
+And three.
+Any application without a visible Activity or a running service should be kept in
+memory to reduce startup latency
+except when doing so would be in violation of the first and second
+laws.
+Much as Asimov's three laws were build into all positronic brains
+so to have Android's laws been baked into the platform.
+This has three implications for app design.
+Firstly, knowing the OS can terminate your app's process without
+warning at any time
+you can't rely on having an onExit() handler that will be called when your app is
+closed.
+Instead, your Activities should listen for
+onPause handlers that
+indicate your app is no longer active.
+At this point is may be terminated at any time, so it should save any user
+data to prevent potential data loss.
+When your Activity is no longer visible
+it'll receive an onStop handler.
+A good app will treat this handler as the equivalent of an onExit() handler, reducing its
+resource usage as much as possible.
+We already know that background apps are low priority, so they should consume the
+absolute minimum in terms of resources
+even without the system having to
+terminate them.
+Doing so will increase the chances of your app remaining running, thereby
+decreasing startup time and improving responsiveness.
+So thanks to the three laws, your app doesn't need an exit button, but what's the harm 
+in having one anyway? 
+Why do these seemingly insignificant UI elements fill me with a dark and fire-ey
+rage that burns as intensely as the heart of a neutron star?
+Where does that anger go?
+Well, I bottle up my emotions into a dark fist of psychic hate that I can
+harness and unleash on unwary foes.
+And an "Exit" Menu Item in Android has no system-wide
+semantic meaning.
+so including one in your app introduces ambiguity.
+Consider the Google apps that typically ship with most Android devices. Imagine if Gmail
+gallery, or the Contacts apps had exit buttons.
+What would you expect them to do?
+Chances are you've never looked for an exit button in these apps, and have never been
+disappointed that it's not there.
+If you build an application that properly
+handles its state transitions: Is predictable, configurable, and
+unambiguous
+your users won't ask for an exit button.
+But what about apps like Music, Navigation, and Banking -- whose background behavior
+demand stronger user messages?
+For them we need an explicit exit button, but fortunately that's exactly what the "back"
+button does on Android.
+When a user presses "Back"
+the Activity calls finish() -- explicitly destroying the Activity and freeing its
+resources, making it a functional equivalent to the exit() button in days of
+yore.
+For most apps, it makes little difference if the user is exiting explicitly or
+switching to another app
+but in some cases this additional signal can be useful.
+Apps like a movie or music players don't need this signal as they already show their
+users semantic controls to determine ongoing behavior.
+A music player, for example, should keep rocking out until you pause playback.
+Turn-by-turn navigation though, has no simple cues.
+In this rare example it can be useful to interpret a back button press as an
+explicit request to "end all route guidance".
+Some apps -- such as instant messaging, banking, or remote terminal sessions
+may need a way to terminate the current session.
+whether it be for security or resources
+usage reasons
+Rather than using the semantically ambiguous "exit" menu item,
+it's better practice to include a menu item that describes exactly what will
+happen
+such as "logout" / "signout" or similar descriptive actions.
+For users who want to take the proverbial shotgun to the head of zombie background
+apps
+they can force stop a process from the apps setting
+as well as swiping to remove apps from the application switcher on newer Android
+platform releases.
+I'm nearly done, but I can already hear the fevered tapping of fingers on keyboards
+as some of you prepare your own retaliatory rants, railing against the
+arrogance
+at the presumption of knowing
+what uses want better than themselves.
+I know, from having been told, that yes
+many app developers will still receive requests to add an exit button to their apps
+generally so users can unambiguously prevent the app from consuming any further
+resources.
+I understand the perspective, but expecting that the developer of an app
+which doesn't properly manage its resources
+to manage them correctly simply by adding an "exit" menu item
+introduces a certain level of cognitive
+dissonance.
+If a developer can't manage their resources effectively without an exit button
+at reason do you have to believe they will handle their resources more
+effectively
+just because they include one?
+If your users are still asking for an exit button, it's generally because they
+believe your app is consuming resources when it shouldn't be.
+Adding an exit button may give them a temporary feeling of hope
+but it will quickly be extinguished in the swamp of tears and recrimination when the
+ambiguity of their new exit option becomes apparent.
+What should happen to Services when a user hits exit? What about Intent
+Receivers? Widgets? Should you stop listening for GCM messages?
+Different users will have difference expectations and satisfying some will
+frustrate others.
+The best solution is to obviate their perceived need for an exit button
+ by following these simple steps.
+Start by freeing resources, stopping services, disabling sensor listeners and
+turning off location requests, and otherwise disabling anything that consumes resources.
+all within the onPause handler of your Activities. 
+Take this a step further by avoiding singletons and custom Application
+objects within your application whenever possible.
+If your resources are tied to your Activity
+they'll be freed if the user hits the back button
+rather than having to wait until the application process is terminated.
+Another culprit for resource consumption is an app that sets alarms
+to wake the device and poll for updates on a regular basis.
+You can improve your apps battery-drain profile by making these alarms inexact
+and allowing the user to specify the frequency of background updates.
+But every time you ping your server when there was nothing to update you're not only
+draining the battery from the device being on, you're also draining battery
+by turning on the cell radio for no good reason.
+Google Cloud Messaging lets you eliminate polling so you
+only ping your server when you you have information
+worth downloading
+If your app does require
+a way of "signing out" or "logging off" create an explicit
+semantically meaningful, way of doing so rather than relying on an ambiguous
+legacy "exit" command.
+Music apps are the most common example of an app that should continue running at a high
+priority
+even when there is no activity visible.
+However, when no music is playing, the app is no different to any other
+background app.
+When it is playing, make sure it's easy to stop.
+Rich notifications and widgets should provide easy shortcuts to stop playback
+at which point you should free resources in the same way as typical apps
+within their onPause handlers.
+Finally, the Android OS provides a number of cues of significant system
+events -- including low battery and low memory.
+Listen for these intents and modify the resource use profile
+of your app accordingly. 
+Users only ask you to include an exit button if they blame your app for consuming memory
+draining the battery, or otherwise deteriorating their overall experience.
+Rather than implementing a menu item that won't solve their underlying problem
+spend your time making your app more efficient.
+My name is Reto Meier
+and this was Table Flip.

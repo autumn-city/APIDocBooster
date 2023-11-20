@@ -1,0 +1,808 @@
+in today's video you're gonna learn how
+to code a deep Q learning agent from
+scratch in the PI towards framework you
+don't need any prior exposure to deep
+learning you don't need any prior
+exposure to reinforcement learning you
+just have to follow along let's get
+started so first a couple announcements
+first of all this is a repeat of an
+earlier video the earlier iteration of
+this project I'm not quite happy with I
+in particular I did a silly move of
+storing actions as a one-hot encoding
+and then turning them back into integer
+representation which really makes no
+sense and just cause for some confusion
+and the code is written in a way that's
+really not up to my modern standards so
+I'm redoing it and then cleaner much
+more concise and much more probably I
+guess you could say a more better way
+second if you'd like to learn the why
+behind all of this check out my course
+deep you learning from paper to code on
+sale right now on you to me for $9.99
+what better way to pass the time while
+you are sheltering in place all that
+said let's go ahead and get started we
+begin with our imports you're going to
+need the base torch packaged as tea
+torch a tenon to handle our layers in
+this case since the Lunar Lander
+environment is just a simple eight
+vector eight element vector observation
+we're only going to use linear layers
+we're not going to be needing any
+convolutional layers and we'll need an
+end functional for the value activation
+function for our deep neural network
+and of course opt-in for our optimizer
+and we need numpy to do various and
+numpy type things so we're gonna use a
+reduced kind of a reduced solution from
+my course and my course I break
+everything into highly modular chunks
+everything is kind of like a bunch of
+Legos you place together that you can
+mix and match between different projects
+along with the command-line interface
+very clean solution here we're just kind
+of kind of stick stuff into two main
+classes and kind of mix up some
+functionality because it's just youtube
+video but it's gonna do more or less the
+same thing and our two classes are gonna
+be the class for the DQ network and the
+other class will be the class for the
+agent region the reason behind this is
+that an agent is not a deep to network
+rather an agent has a deep to network
+agent also has a memory a way of
+choosing actions as well as learning
+from its experience whereas a DBQ
+network is precisely that is just a
+neural network that takes a set of
+states as input and outputs the agents
+estimate of action values for each given
+state in the input and if you are
+unfamiliar with PI torch the convention
+is that every class that extends the
+functionality of the base neural network
+layers derives from an image this gives
+you access to a number of goodies in
+particular the parameters to perform the
+optimization as well as the
+backpropagation function so we don't
+have to write backpropagation ourselves
+this will take a learning rate input
+dims fc-1 dims fc2 dims and n actions as
+input and you want to call the super
+constructor right away this basically
+calls the unless I'm mistaken calls a
+constructor for the base class can we
+save all the appropriate variables in
+our class now this is a little bit
+overkill you could just pass these as
+inputs to the various functions but you
+know if we want to extend the
+functionality later we're gonna have to
+add this stuff in later so you may as
+well have it now and we arrived at our
+first layer of our deep neural network
+and then I'll take star self dot input
+dims as input a little output self dot
+FC one dims and the star itself input
+dims idiom if you're unfamiliar with it
+is a way of unpacking a list in this
+case so we're gonna pass in a list of
+the eight basically of course mind to
+eight elements of the observation vector
+it's a way of making a little bit more
+extensible so that if you want to extend
+this to say a convolutional neural
+network that will facilitate that or
+rather more specifically if you want to
+extend it to an environment that has a
+two-dimensional matrix as input and so
+the second linear layer will take fc-1
+dims as input and output FC two dims and
+FC three is the output of our deep
+neural network I'll take out c2 dibbs's
+input and output what number of actions
+we can go ahead and call itself dot n
+actions so the reason is that a DBQ
+network is an estimate of the value of
+each action given some set of states so
+if I do the agent performs what action
+what is the expected feature reward
+given it is in that state all of its
+policy
+we also have an optimizer in this case
+we use Adam we're gonna pass in the
+learning rate and we have a loss
+function that's mean squared error loss
+because q-learning is basically kind of
+like a linear regression where you're
+gonna try to minimize the distance or
+rather you're gonna fit a line to the
+Delta between the target value and the
+output of your deep neural network oh
+and something I didn't state before is
+that this is a simple representation of
+a DBQ
+learning agent and this isn't the full
+representation that we cover in the
+course where we have both a replay
+Network and a target network we're just
+gonna use the replay Network for this
+we're not gonna use the target network
+because it turns out in this case the
+target network isn't really required
+however a replay memory is almost
+certainly always required which you
+learn in the course and I have a free
+preview here on the channel where you
+can see the results of running a DQ
+Network without a replay memory just
+using regular temporal difference
+learning and surprise surprise it's
+highly unstable it kind of learns for a
+few moves and then forgets everything it
+learned and I cover all of this in the
+course as well as a little bit in that
+video on the free preview we also need a
+device and this takes advantage of a GPU
+should you have one and if you do not it
+simply defaults to the CPU Teta cuda is
+available and then you want to send your
+entire network to the device and this is
+part of the reason why we derive from
+the base pennant module class as I said
+earlier we don't have to handle back
+propagation but we do have to handle
+forward propagation it's not yet
+implicit in the framework how to handle
+for propagation because you need you
+know to define your say activation
+functions
+so we want to say sell thought fc-1
+state so we want to pass the state into
+the first you know let's blow up the
+text a little bit for you guys so we
+want to pass the states into the first
+fully connected layer and then activate
+it with a value function and then we
+want to pass that output from that layer
+into the second fully connected layer
+and yet again activated with a value
+function and finally we want to pass
+that output to the third fully connected
+layer but we don't want to activate it
+and then we want to return that value
+and we don't want to activate it because
+we want to get the agents raw estimate
+we don't want to use say a Rho u
+function because the estimate of the
+present the present value the future
+rewards could very well be negative so
+we don't want to well you it could very
+well be greater than one so we don't
+like a sigmoid or a tan hyperbolic
+something like that so we don't want to
+activate it we just want to get the raw
+number out and that is in for a DBQ
+Network class the main functionality
+lives in the agent class and that
+doesn't derive from anything so we have
+the pass in a hyper parameter gamma that
+determines the weighting of future
+rewards the epsilon which is the
+solution to the epsilon the excuse me
+the explore exploit dilemma you know how
+often does the agent spend exploring its
+environment versus taking the best known
+action and that has to be some finite
+value because you never know if you have
+a complete model of your environment you
+know how can you ever be sure that what
+you think is the best action actually is
+answer is you can't so you got to keep
+exploring and then it's determined by a
+parameter called epsilon learning rate
+to pass into our deep neural network
+input dims a batch size because we're
+gonna be learning from a batch of
+memories number of actions and max
+memory size as I said earlier we're
+going to be using a memory leave
+something like a hundred thousand
+and at salon end will default to 0.01
+and an epsilon decrement of 5 by 10 to
+the minus 4 so this is the parameter
+that tells us by what to decrement
+epsilon with each time step you can do a
+multiplicative dependence you can do 1
+over square roots you can do any type of
+decrement you want I'm just gonna use
+linor linear we're gonna subtract off a
+constant factor with each time step all
+the way down to the minimum it doesn't
+really matter it's one of the least
+important hyper parameters the main
+thing is that you give it some time of
+acting randomly and then decay it over
+time to a minimum value and leave it at
+a minimum which is nonzero some finite
+value so of course we want to save all
+these variables and we also have what's
+called an action space I in range in n
+range that won't work and actions and
+this is just a list comprehension that
+tells us the integer representation of
+the available actions and the reason is
+because we're gonna use this later in
+the epsilon greedy action selection just
+makes it easy to select an action at
+random as you will see in a moment so
+we'll say max mem size is our memory
+size say our batch size we need a memory
+counter and the point of that is to keep
+track of the position of the first
+available memory for storing the agent's
+memory and we also need the it can I
+scroll down a bit let's do that we also
+need the evaluation Network so we'll say
+self dot Q eval equals deep Q Network
+and we'll pass in the learning rate
+a number of actions we need the input
+dims we need fc-1 dims we're gonna
+default this a 256 c2 dims 256 just add
+that over a bit and you can play around
+with this it's not super critical I mean
+it to some extent is but it will
+function for a wide range of neurons in
+the fully connected layers in addition
+to the deep neural network you also need
+some sort of mechanism for storing
+memory now many people will use
+something called a deck or a DQ which is
+a basically a list in Python a linked
+list so it's dynamic memory structure
+and you pop things off one end and
+insert them in the other I don't like
+doing that because then you're gonna
+store basically a collection of arrays
+anyway and then you have to dereference
+it so you have to say you have to know
+which position of the of the DQ
+corresponds to which array so I just
+like saving them as named arrays anyway
+because it's much cleaner and more more
+easy to read so what I mean specifically
+is state memory equals NP zeroes seldom
+MSI's might start input dims and we're
+gonna use NP float32 as our data type
+the data type here is quite important 2
+pi torches rather particular about data
+types it enforces some degree of type
+checking which is a good thing it can be
+a little bit annoying at first but once
+you're aware of it it really saves your
+bacon later on because you lose some
+stuff when you go from one level of
+precision to another so make sure that
+things are nice and consistent it's
+quite handy
+and we also have a memory to keep track
+of the new states the agent encounters
+so what the agent wants to know for the
+temporal difference update rule is what
+is the value the current state the value
+of the next state the reward it received
+in the action it took and to get that
+you have to pass in a memory of the
+states that resulted from its actions
+because remember deep q-learning if
+you're not aware is a model free
+bootstrapped
+off policy learning method what that
+means is we don't need to know anything
+about the dynamics of the environment
+how the game works we don't need to know
+anything about that we're gonna figure
+it out by playing the game
+that means model free bootstrapped means
+that you are going to construct
+estimates of action value functions
+meaning the value of each action given
+you're in some state based on earlier
+estimates you're using one estimate to
+update another in other words you're
+pulling yourself up by the bootstraps
+off policy means that you have a policy
+that used to generate actions which is
+Epsilon greedy meaning that uses hyper
+parameter that we defined a peer epsilon
+to determine the proportion of the time
+that you spend taking random versus
+greedy actions and you're going to use
+that policy to generate data for
+updating the purely greedy policy
+meaning the agents estimate of the
+maximum value function action by your
+function sorry so it is off policy in
+that sense so a lot of buzzwords there
+more that is covered in the course but
+that is the gist of it so we also need
+an action memory and that is an array of
+numbers eros self that Memphis eyes and
+we use compete in 32 just a set of
+integers because our this is a discrete
+environment deep learning it doesn't
+really work for discrete environment so
+you can do
+sorry discrete action spaces so you can
+do some tricks to kind of get around
+that but you know they don't work as
+well
+we need a reward memory and that is
+shape mm size and D type of MP float32
+and so these will be floating-point
+numbers because they can be fractional
+numbers they can be decimal point
+numbers we also need a terminal memory
+and the point of this is sorry
+the point of this is that the value of
+the terminal state is always zero so the
+reason behind that is simply put if you
+encounter the terminal state the game is
+done right and so there are no feature
+actions until you reset the episode but
+when you reset the episode you're in the
+initial state at the terminal state so
+the future value of the terminal State
+is identically zero and so we need some
+way of capturing that when we tell the
+agent to update its estimate of the Q
+value the action value function Q and
+that is facilitated through the terminal
+memory and we're gonna be passing in the
+done flags from our environment and it
+is therefore type and P dot bool and
+that allows us to use it as a mask for
+setting the values of the next States to
+zero later on which you'll see in the
+learning function that is it for our
+constructor next we need an interface
+function to store one of those
+transitions in the agents memory so
+that'll take a state action reward new
+state and done flag as input iocation
+call this terminal or so time is done
+but the first thing we wanna know is
+what is the position of the first
+unoccupied memory so index cells mm
+counter modulus men sighs now using the
+modulus here has the property that this
+will wrap around so once we go from
+memory zero up to 99999 that 100,000
+memory we go to store will go all the
+way back in position 0 so we rewrite the
+agents earliest memories with new
+memories
+and that's because the memory is finite
+if you're using a deck or a TQ then
+you're just going to be popping stuff
+off the end once you get beyond the
+limitation the size of the agent's
+memory so now that we know where to
+store it let's go ahead and store it in
+action memory now this is part of the
+reason I am redoing it but first you've
+got to increment the memory counter by 1
+to let yourself know that you've filled
+up a memory and this is part of the
+reason I am redoing this so this action
+memory here
+originally I had gone from a one hot
+encoding where you take an integer and
+represent it as an array of zeros with a
+1 corresponding to the position of the
+integer so you have 4 actions you have
+an array of 4 elements is 0 1 2 & 3 and
+if the agent took action for the 100
+coding representation that is 0 0 0 1 in
+an array if it's action 1 it'll be 0 1 0
+0 so on and so forth
+and then I went from that point hot
+encoding back to the integer encoding in
+the learn function and you know this was
+done way back in October of 2018 and I
+can't really remember the reason for
+doing that suffice it to say it's dumb
+and led to some issues with people's
+understanding you know and so I no
+longer want to use that way of doing
+things and in fact I've moved on beyond
+that so we're not going to do that
+anymore just keep that in mind so the
+next thing we need to do is a function
+for choosing actions so the agent has to
+have some function to choose an action
+and that is based on the current state
+of the environment sorry we'll call the
+call it observation and you'll see why
+in a second so the observation of the
+current state of our environment and the
+first we want to do
+take a random number and save is less
+than Epsilon
+sorry greater than epsilon Epsilon
+then if it's better than epsilon we want
+to take the best known action so what we
+have to do is take our observation turn
+it into a PI torch tensor and send it to
+our device because everything the entire
+network lives on our device so we have
+to send the variables we want to perform
+computations on to our device and we
+need this bracket around the observation
+because of the way the deep neural
+network is set up and so then we pass
+that state through our DQ network
+through the for function and then we
+want to get the arc max to tell us the
+integer that corresponds to the maximal
+action for that set or a state and yet
+to dereference it with not item because
+it returns a tensor and we're gonna be
+passing this back to our environment
+which only takes integers or numpy
+arrays as input now if it is not greater
+than epsilon meaning of it's less than
+or equal to then we want to take a
+random action
+and we'll just do a random choice from
+the agents in action space and
+regardless of how you select the action
+you want to return it
+one moment the kitty cat is scratching
+at the door let me let her in say hello
+kitty Brown okay so now that we have a
+mechanism for choosing actions we can't
+think about how the agent is going to
+learn from its experiences so sorry I
+can't you got to go she's in the way so
+we do that through a function called
+learn and that does not take any inputs
+and right away we're faced with a bit of
+a dilemma and the dilemma is if we you
+know we have this memory and it's filled
+up with a bunch of zeros which we can't
+really learn anything from zero so it's
+kind of stupid to trim' so how do we
+deal with that well there's a couple
+ways one way is you can let the agent
+play a bunch of games randomly you know
+until fills up the whole entirety of its
+memory and then you can go ahead and
+start learning that's one possibility
+you know we're not actually selecting
+actions intelligently you're just doing
+it at random that's one possibility and
+another one is to simply not do that but
+to start learning as soon as you filled
+up the batch size of memory and so we
+can facilitate that that's what I'm
+going to choose to do by saying if our
+memory counter is less than the batch
+size just return so we're gonna call the
+learn function every iteration of our
+game loop and you know if we have not
+felt up or at least the batch size of
+remember you just go ahead and return
+don't bother learning no point in it so
+the first thing we want to do in the
+event that we are going to try to learn
+is 0 the gradient on our optimizer and
+this is a big particular two pi torch
+you don't have to do this in say Karros
+so the next thing we need to do is to
+calculate a the position of the maximum
+memory because we want to select a
+subset of our memories but we but as I
+said we only want to select up to the
+last filled memory and so we want to
+take the minimum of either amendment
+counter or the mem sighs sighs is that
+what I called it me double check self
+thought man sighs yep so it's the
+minimum of um M counter or the mem sighs
+I say bat she goes MP random choice
+maximum self DUP batch sighs new place
+equals false now we want the replace
+equals false because we don't want to
+keep selecting the same memories more
+than once now this isn't a problem if
+you've stored 50,000 memories or a
+hundred thousand memories but it is a
+problem if you stored you know 32
+memories or 64 whatever you know bat
+size or something small multiple thereof
+so you want to make sure that once you
+select a memory you take it out of the
+pool of available memories to select
+again and then we need just something
+for bookkeeping basically my batch index
+and this was also a point of confusion
+on the github for with my previous video
+you most certainly need this batch index
+and you most certainly need the action
+indices to perform the proper array
+slicing if you don't use them you don't
+get the right thing and I made a video
+detailing that in earlier on maybe a
+month ago something like that but yeah
+you need this 100 percent certain on
+that so I'm when I upload this code to
+github don't give me you know issues on
+this because this is the way you do it
+so State bench equals T dot tensor self
+dot state memory
+dot 2q eval dot device so what we're
+doing here is we're converting the numpy
+array subset of our agents memory into a
+PI torch tensor and we also have to do
+the same thing for the new states new
+state memory is sub batch to sell q eval
+device we need the same thing for the
+reward bench will say reward batch give
+al dot device and we all see the same
+thing for a terminal batch and we do
+need an action batch but that doesn't
+need to be a tensor it can be an umpire
+array
+so that is yourself done action memory
+is sub batch alright so now we have to
+perform the feed forwards through our
+deep neural network to get the relevant
+parameters for our loss function so as I
+said we want to be moving the agents
+estimate for the value of the current
+state towards the maximal value for the
+next state so in other words we want to
+tilt it towards selecting maximal
+actions we do that by saying q eval
+equals self dot q eval forward state
+bench but we have to do the
+dereferencing we had to do the array
+slicing a batch in next action batch and
+the reason is that we want to get the
+values of the actions we actually took
+those are the only ones were really
+interested in you can't really update
+the values of actions you didn't take
+because you didn't sample those anyway
+so we want the values for the actions we
+actually took in each set of our memory
+batch
+and we want the agency's estimate of the
+next States as well forward new state
+bench and we don't need to do any
+dereferencing there we're going to
+handle that momentarily we're going to
+get the max actions and if you were
+doing a target network this is where you
+would use it you would use here as I
+said that is for more advanced stuff
+we're not going to bother with that
+right now
+the next thing we want to do is say the
+the values of the terminal states are
+identically 0 and then we want to
+calculate our target values this is
+where we want to update our estimates
+towards and that's the reward bench plus
+self dot gamma that's our discount
+factor times the max over Q next along
+the it's dim sorry not access along the
+action dimension and the zeroth element
+because the max function returns the
+value as well as the index so it's
+returns a to point on the zeroth element
+which is the value so this is the
+maximum value of the next state and that
+is the purely greedy action and that is
+what we want for updating our loss
+function so when lost then it's just the
+Q even loss Q target tune eval dot to
+self that cute eval device and you want
+the back propagated and step your
+optimizer eval optimizer step and that
+is it for the nuts and bolts of the
+learning the next thing we have to
+handle is the epsilon decrement so each
+time we learn we're going to decrease
+epsilon by one so we'll say self dot
+epsilon by one unit of Epsilon decrement
+the decrement that is self dot epsilon
+minus
+epsilon decrement if greater than EPS
+in otherwise set it equal to epsilon
+function and this is the simplest
+possible implementation of deep curating
+you can really do and it is only you
+know about a hundred lines of code you
+know less than that if you count just
+significant lines of code but this is
+pretty much it folks so we are done with
+the agent and now we have to worry about
+fixing our syntax errors it's on this
+line here for insert I and range there
+we go and so let's go ahead and clear
+all of that so now we're ready to handle
+the main file so licious vim and main
+torch dqn lunar lander 2020 because this
+is the new version and we start with our
+imports what do you gem
+now let's I can increase one more so we
+need Jim we will also need our agent
+from simple DQ and torch 2020 and the
+port agent excuse me from utils import
+plot learning and this is certainly
+gonna get me in trouble because of my
+incessant renaming of this function
+we'll see what happens it'll be
+different on the github in fact I'm
+almost certain in this directory that
+has the wrong name plot learning curve
+I'll do that just keep in mind if you're
+doing you get pull its plot learning and
+I'll I'll have it correct in the github
+but if you're following along you may
+have a slight difference there so our
+main loop is pretty straightforward
+the first thing I want to do is make our
+environment chip make lunar lander v2 we
+need our agent and with the gamma of a
+0.99 epsilon that starts out at 1.0 so
+the agent takes fully random actions at
+the beginning a batch size of 64 number
+of actions is for EPS and equals 0.01
+and put bim's equals 8 and the learning
+rate of 0.003 we also need a couple
+lists to keep track of our agents scores
+as well as the history of epsilon so
+that we can plot the scores over time
+versus the decay in epsilon over time
+and we'll play for 500 games so the top
+of each game we want to reset our score
+our done flag and our environment and we
+want to play each game and the first
+thing we want to do is choose an action
+based on the current state of the
+environment then we want to take that
+action get the new observation reward
+done flag and debug info from the
+environment you want to increment the
+score for the episode by reward we want
+to store that transition observation
+action reward and done store all of
+those go ahead and call our learn
+function and very important set the
+current state to the new state i forgot
+this and it took me forever to find it I
+was debugging the deep neural network I
+was scratching my head you really need
+that line otherwise it does not really
+work at the end of each episode you want
+to append the score and the Epsilon
+at the end of the episode so long this
+average score equals NP not mean scores
+last hundred game decisions this is just
+to get an idea of is our children is our
+agent learning so we're going to take
+the average with the previous 100 games
+and then we're gonna just print some
+simple information to the terminal so we
+know that it's running the score the
+average score and the epsilon at the end
+of all we're going to want to go ahead
+and plot our learning curve and this is
+just the x-axis a file name our x-axis
+the scores the epsilon history and file
+name and if you're new to the channel
+just do a clone of my github repo it may
+be called it may be called plot learning
+there I've switched from camel case to
+underscore case which causes some
+confusion just keep that in mind so
+let's do a right quit and let's check
+out the utility I know it is plot
+learning here okay
+scores X I see so this to the this
+version is for blue buddy this is for
+policy gradients algorithms and I know
+that because there is no epsilon so this
+one here plot learning curve is for the
+epsilon and I also have a bunch of other
+stuff for
+you know pre-processing frames and stuff
+from the course alright so let's go
+ahead and try to run that main torch dqn
+Lander 2020 see how many typos I made
+lunare oh that is a problem doing air
+that is an easy one to fix
+easy easy typo and that's incredible
+there was only one typo so I'm gonna go
+ahead and let that run for 500 games and
+then we're gonna come back and check out
+the results and we are back now I didn't
+time this I kind of wandered off to play
+with my kid for a little bit but you can
+see that the performance is a little
+erratic here now I believe the reason
+behind this is twofold first and
+foremost I think the learning rate of
+0:03 is a little bit too high so I would
+recommend that when you play this for
+yourself you go ahead and lower that as
+well and the second reason is that we do
+not have a target network so it does
+learn so let's check out the learning
+plot here you you can see that the
+agents performance overall increases
+over time and around like 250 to 300
+games or so it reaches an average score
+of about 200 which is considered solved
+so it does solve the environment but
+then due to the fact the learning rate
+is a little bit high the performance
+starts to degrade over time meaning that
+the agent is kind of wandering off from
+that local minima where it has achieved
+relatively good performance other thing
+of note is the oscillations in the
+performance this is due to the lack of a
+target Network so a target Network tends
+to help with model stability over time
+but in this case it doesn't seem to be a
+huge super big deal so that is the
+agents performance and a nutshell - some
+tweaking zero zero threes a little bit
+too high when you go and run it for
+yourself use zero zero one or something
+a little bit lower and you'll get better
+performance so everything else
+conceptually is the same you don't have
+to tweak anything other than learning
+it's maybe some model parameters such as
+the number of neurons and the hidden
+layers but that's up to you that is how
+you do deep Q learning from scratch in
+the simplest possible case that is a DBQ
+learning agent with just a replay memory
+no target network and this can be
+employed in a wide range of very simple
+one-dimensional environments meaning you
+don't input a matrix you just input a a
+single vector and so I hope this has
+been helpful
+any questions comments leave them down
+below I'll try to get them to them I
+have been getting inundated with
+questions and comments at least so my
+ability to answer is compromised but I
+will do my best
+nonetheless if you made it this far
+please consider subscribing and don't
+forget my new course to you learning
+from paper to code where you learn the
+how and the why of all this stuff as
+well as how to turn deep reinforcement
+learning papers into code is currently
+on sale for the remainder of the munch
+mo remainder of the month of March hit
+that subscribe button and I'll see you
+in the next video

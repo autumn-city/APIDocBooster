@@ -1,0 +1,501 @@
+[Music]
+this is a three
+it's sloppily written and rendered at an
+extremely low resolution of 28 by 28
+pixels but your brain has no trouble
+recognizing it as a three and I want you
+to take a moment to appreciate how crazy
+it is that brains can do this so
+effortlessly I mean this this and this
+are also recognizable as threes
+even though the specific values of each
+pixel is very different from one image
+to the next the particular
+light-sensitive cells in your eye that
+are firing when you see this three are
+very different from the ones firing when
+you see this three but something in that
+crazy smart visual cortex of yours
+resolves these as representing the same
+idea while at the same time recognizing
+other images as their own distinct ideas
+but if I told you hey sit down and write
+for me a program that takes in a grid of
+28 by 28 pixels like this and outputs a
+single number between 0 and 10 telling
+you what it thinks the digit is well the
+task goes from comically trivial to
+dauntingly difficult unless you've been
+living under a rock I think I hardly
+need to motivate the relevance and
+importance of machine learning and
+neural networks to the present into the
+future but what I want to do here is
+show you what a neural network actually
+is assuming no background and to help
+visualize what it's doing not as a
+buzzword but as a piece of math my hope
+is just that you come away feeling like
+this structure itself is motivated and
+to feel like you know what it means when
+you read or you hear about a neural
+network quote-unquote learning this
+video is just going to be devoted to the
+structure component of that and the
+following one is going to tackle
+learning what we're going to do is put
+together a neural network that can learn
+to recognize handwritten digits
+this is a somewhat classic example for
+introducing the topic and I'm happy to
+stick with the status quo here because
+at the end of the two videos I want to
+point you to a couple good resources
+where you can learn more and where you
+can download the code that does this and
+play with it on your own computer there
+are many many variants of neural
+networks and in recent years there's
+been sort of a boom in research towards
+these variants but in these two
+introductory videos you and I are just
+going to look at the simplest
+plain-vanilla form with no added frills
+this is kind of a necessary prerequisite
+for understanding any of the more
+powerful modern variants and trust me it
+still has plenty of complexity for us to
+wrap our minds around but even in this
+simplest form it can learn to recognize
+handwritten digits which is a pretty
+cool thing for a computer to be able to
+do and at the same time you'll see how
+it does fall short of a couple hopes
+that we might have for it as the name
+suggests neural networks are inspired by
+the brain but let's break that down what
+are the neurons and in what sense are
+they linked together right now when I
+say neuron all I want you to think about
+is a thing that holds a number
+specifically a number between 0 & 1 it's
+really not more than that for example
+the network starts with a bunch of
+neurons corresponding to each of the 28
+times 28 pixels of the input image which
+is 784 neurons in total each one of
+these holds a number that represents the
+grayscale value of the corresponding
+pixel ranging from 0 for black pixels up
+to 1 for white pixels this number inside
+the neuron is called its activation and
+the image you might have in mind here is
+that each neuron is lit up when its
+activation is a high number
+so all of these 784 neurons make up the
+first layer of our network
+now jumping over to the last layer this
+has ten neurons each representing one of
+the digits the activation in these
+neurons again some number that's between
+zero and one represents how much the
+system thinks that a given image
+corresponds with a given digit there's
+also a couple layers in between called
+the hidden layers which for the time
+being should just be a giant question
+mark for how on earth this process of
+recognizing digits is going to be
+handled in this network I chose two
+hidden layers each one with 16 neurons
+and admittedly that's kind of an
+arbitrary choice to be honest I chose
+two layers based on how I want to
+motivate the structure in just a moment
+and 16 well that was just a nice number
+to fit on the screen
+in practice there is a lot of room for
+experiment with a specific structure
+here the way the network operates
+activations in one layer determine the
+activations of the next layer and of
+course the heart of the network as an
+information processing mechanism comes
+down to exactly how those activations
+from one layer bring about activations
+in the next layer it's meant to be
+loosely analogous to how in biological
+networks of neurons some groups of
+neurons firing cause certain others to
+fire now the network I'm showing here
+has already been trained to recognize
+digits and let me show you what I mean
+by that it means if you feed in an image
+lighting up all 784 neurons of the input
+layer according to the brightness of
+each pixel in the image that pattern of
+activations causes some very specific
+pattern in the next layer which causes
+some pattern in the one after it which
+finally gives some pattern in the output
+layer and the brightest neuron of that
+output layer is the network's choice so
+to speak for what digit this image
+represents and before jumping into the
+math for how one layer influences the
+next or how training works let's just
+talk about why it's even reasonable to
+expect a layered structure like this to
+behave intelligently what are we
+expecting here what is the best hope for
+what those middle layers might be doing
+well when you were I recognize digits we
+piece together various components a nine
+has a loop up top and a line on the
+right
+an8 also has a loop up top but it's
+paired with another loop down low a for
+basically breaks down into three
+specific lines and things like that now
+in a perfect world we might hope that
+each neuron in the second-to-last layer
+corresponds with one of these sub
+components that anytime you feed in an
+image with say a loop up top like a nine
+or an eight there's some specific neuron
+whose activation is going to be close to
+one and I don't mean this specific loop
+of pixels the hope would be that any
+generally loopy pattern towards the top
+sets off this neuron that way going from
+the third layer to the last one just
+requires learning which combination of
+sub components corresponds to which
+digits of course that just kicks the
+problem down the road because how would
+you recognize these sub components or
+even learn what the right sub components
+should be and I still haven't even
+talked about how one layer influences
+the next but run with me on this one for
+a moment recognizing a loop can also
+break down into subproblems one
+reasonable way to do this would be to
+first recognize the various little edges
+that make it up similarly a long line
+like the kind you might see in the
+digits 1 or 4 or 7 well that's really
+just a long edge or maybe you think of
+it as a certain pattern of several
+smaller edges so maybe our hope is that
+each neuron in the second layer of the
+network corresponds with the various
+relevant little edges
+maybe when an image like this one comes
+in it lights up all of the neurons
+associated with around eight to ten
+specific little edges which in turn
+lights up the neurons associated with
+the upper loop and a long vertical line
+and those light up the neuron associated
+with a nine whether or not this is what
+our final network actually does is
+another question one that I'll come back
+to once we see how to train the network
+but this is a hope that we might have a
+sort of goal with the layered structure
+like this moreover you can imagine how
+being able to detect edges and patterns
+like this would be really useful for
+other image recognition tasks and even
+beyond image recognition there are all
+sorts of intelligent things you might
+want to do that break down into layers
+of abstraction parsing speech for exam
+involves taking raw audio and picking
+out distinct sounds which combine to
+make certain syllables which combine to
+form words which combine to make up
+phrases and more abstract thoughts etc
+but getting back to how any of this
+actually works picture yourself right
+now designing how exactly the
+activations in one layer might determine
+the activations in the next the goal is
+to have some mechanism that could
+conceivably combine pixels into edges or
+edges into patterns or patterns into
+digits and to zoom in on one very
+specific example let's say the hope is
+for one particular neuron in the second
+layer to pick up on whether or not the
+image has an edge in this region here
+the question at hand is what parameters
+should the network have what dials and
+knobs should you be able to tweak so
+that it's expressive enough to
+potentially capture this pattern or any
+other pixel pattern or the pattern that
+several edges can make a loop and other
+such things well what we'll do is assign
+a weight to each one of the connections
+between our neuron and the neurons from
+the first layer these weights are just
+numbers then take all those activations
+from the first layer and compute their
+weighted sum according to these weights
+I find it helpful to think of these
+weights as being organized into a little
+grid of their own and I'm going to use
+green pixels to indicate positive
+weights and red pixels to indicate
+negative weights where the brightness of
+that pixel is some loose depiction of
+the weights value now if we made the
+weights associated with almost all of
+the pixels zero except for some positive
+weights in this region that we care
+about then taking the weighted sum of
+all the pixel values really just amounts
+to adding up the values of the pixel
+just in the region that we care about
+and if you really want it to pick up on
+whether there's an edge here what you
+might do is have some negative weights
+associated with the surrounding pixels
+then the sum is largest when those
+middle pixels are bright but the
+surrounding pixels are darker
+when you compute a weighted sum like
+this you might come out with any number
+but for this network what we want is for
+activations to be some value between 0 &
+1 so a common thing to do is to pump
+this weighted sum into some function
+that squishes the real number line into
+the range between 0 & 1 and a common
+function that does this is called the
+sigmoid function also known as a
+logistic curve basically very negative
+inputs end up close to zero very
+positive inputs end up close to 1 and it
+just steadily increases around the input
+0 so the activation of the neuron here
+is basically a measure of how positive
+the relevant weighted sum is but maybe
+it's not that you want the neuron to
+light up when the weighted sum is bigger
+than 0 maybe you only want it to be
+active when the sum is bigger than say
+10 that is you want some bias for it to
+be inactive what we'll do then is just
+add in some other number like negative
+10 to this weighted sum before plugging
+it through the sigmoid squish a'f
+ocation function that additional number
+is called the bias so the weights tell
+you what pixel pattern this neuron in
+the second layer is picking up on and
+the bias tells you how high the weighted
+sum needs to be before the neuron starts
+getting meaningfully active and that is
+just one neuron every other neuron in
+this layer is going to be connected to
+all 784 pixels neurons from the first
+layer and each one of those 784
+connections has its own weight
+associated with it also each one has
+some bias some other number that you add
+on to the weighted sum before squishing
+it with the sigmoid and that's a lot to
+think about with this hidden layer of 16
+neurons that's a total of 780 4 times 16
+weights along with 16 biases and all of
+that is just the connections from the
+first layer to the second the
+connections between the other layers
+also have a bunch of weights and biases
+associated with them all said and done
+this network has almost exactly 13,000
+total weights and biases 13,000 knobs
+and died
+that can be tweaked and turned to make
+this network behave in different ways so
+when we talk about learning what that's
+referring to is getting the computer to
+find a valid setting for all of these
+many many numbers so that it'll actually
+solve the problem at hand
+one thought experiment that is at once
+fun and kind of horrifying is to imagine
+sitting down and setting all of these
+weights and biases by hand purposefully
+tweaking the numbers so that the second
+layer picks up on edges the third layer
+picks up on patterns etc I personally
+find this satisfying rather than just
+reading the network as a total black box
+because when the network doesn't perform
+the way you anticipate if you've built
+up a little bit of a relationship with
+what those weights and biases actually
+mean you have a starting place for
+experimenting with how to change the
+structure to improve or when the network
+does work but not for the reasons you
+might expect digging into what the
+weights and biases are doing is a good
+way to challenge your assumptions and
+really expose the full space of possible
+solutions by the way the actual function
+here is a little cumbersome to write
+down don't you think so
+let me show you a more notationally
+compact way that these connections are
+represented this is how you'd see it if
+you choose to read up more about neural
+networks organize all of the activations
+from one layer into a column as a vector
+then organize all of the weights as a
+matrix where each row of that matrix
+corresponds to the connections between
+one layer and a particular neuron in the
+next layer what that means is that
+taking the weighted sum of the
+activations in the first layer according
+to these weights corresponds to one of
+the terms in the matrix vector product
+of everything we have on the left here
+by the way so much of machine learning
+just comes down to having a good grasp
+of linear algebra so for any of you who
+want a nice visual understanding for
+matrices and what matrix vector
+multiplication means take a look at the
+series I did on linear algebra
+especially chapter three back to our
+expression instead of talking about
+adding the bias to each one of these
+values independently we represent it by
+organizing all those biases into a
+vector and adding the entire vector to
+the previous matrix vector product then
+as a final step I'll rap a sigmoid
+around the outside here and what that's
+supposed to represent is that you're
+going to apply the sigmoid function to
+each specific component of the resulting
+vector inside so once you write down
+this weight matrix and these vectors as
+their own symbols you can communicate
+the full transition of activations from
+one layer to the next in an extremely
+tight and neat little expression and
+this makes the relevant code both a lot
+simpler and a lot faster since many
+libraries optimize the heck out of
+matrix multiplication remember how
+earlier I said these neurons are simply
+things that hold numbers well of course
+the specific numbers that they hold
+depends on the image you feed in so it's
+actually more accurate to think of each
+neuron as a function one that takes in
+the outputs of all the neurons in the
+previous layer and spits out a number
+between zero and one really the entire
+network is just a function one that
+takes in 784 numbers as an input and
+spits out ten numbers as an output it's
+an absurdly complicated function one
+that involves thirteen thousand
+parameters in the forms of these weights
+and biases that pick up on certain
+patterns and which involves iterating
+many matrix vector products and the
+sigmoid squish evocation function but
+it's just a function nonetheless and in
+a way it's kind of reassuring that it
+looks complicated I mean if it were any
+simpler what hope would we have that it
+could take on the challenge of
+recognizing digits
+and how does it take on that challenge
+how does this network learn the
+appropriate weights and biases just by
+looking at data oh that's what I'll show
+in the next video and I'll also dig a
+little more into what this particular
+network we're seeing is really doing now
+is the point I suppose I should say
+subscribe to stay notified about win
+that video or any new videos come out
+but realistically most of you don't
+actually receive notifications from
+YouTube do you maybe more honestly I
+should say subscribe so that the neural
+networks that underlie YouTube's
+recommendation algorithm are primed to
+believe that you want to see content
+from this channel get recommended to you
+anyway stay posted for more thank you
+very much to everyone supporting these
+videos on patreon I've been a little
+flow to progress in the probability
+series this summer but I'm jumping back
+into it after this project so patrons
+you can look out for updates there to
+close things off here I have with me
+Lygia Lee who did her PhD work on the
+theoretical side of deep learning and
+who currently works at a venture capital
+firm called amplify partners who kindly
+provided some of the funding for this
+video
+so Leisha one thing I think we should
+quickly bring up is this sigmoid
+function as I understand it early
+networks used this to squish the
+relevant weighted sum into that interval
+between zero and one
+you know kind of motivated by this
+biological analogy of neurons either
+being inactive or active exactly but
+relatively few modern networks actually
+use sigmoid anymore that's kind of old
+school right yeah or rather well you
+seems to be much easier to train and
+relu really stands for rectified linear
+unit yes it's this kind of function
+where you're just taking a max of 0 and
+a where a is given by what you were
+explaining in the video and what this
+was sort of motivated from I think was a
+partially by a biological analogy with
+how neurons would either be activated or
+not and so if it passes a certain
+threshold it would be the identity
+function but if it did not then it would
+just not be activated so B 0 so it's
+kind of a simplification using sigmoids
+didn't help training or it was very
+difficult to train it's at some point
+and people just tried r lu and it
+happened to work very well for these
+incredibly deep neural net
+works all right Thank You Alicia for
+background amplify partners in
+early-stage VC invests in technical
+founders building the next generation of
+companies focused on the applications of
+AI if you or someone that you know has
+ever thought about starting a company
+someday or if you're working on an
+early-stage one right now the amplifi
+folks would love to hear from you they
+even set up a specific email for this
+video three blue one brown at amplify
+partners comm so feel free to reach out
+to them through that
+[Music]
+you

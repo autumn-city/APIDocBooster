@@ -1,0 +1,1582 @@
+welcome to a crash course in proximal
+policy optimization
+before we begin a quick shameless plug
+my udemy courses on deep reinforcement
+learning specifically after critic
+methods and deep q learning are on sale
+right now
+learn how to turn papers into code link
+in the description below
+so proximal policy optimization or ppo
+for short
+was created for a pretty simple reason
+and that is that
+in actor critic methods often times we
+see that the performance can fall off a
+cliff
+the agent will be doing really well for
+a little while and suddenly an update to
+the neural network
+will cause the agent to simply lose its
+its understanding of how to play the
+game and so performance
+tanks and never really recovers now this
+happens
+because actor critic methods are
+incredibly sensitive to perturbations
+the reason being that small changes in
+the
+underlying parameters to our deep neural
+network the weights for instance
+can cause large jumps in policy space
+and so you can go from a region of
+policy space where performance is good
+to a region of policy space where
+performance is bad just by a small tweak
+to the underlying parameters of your
+deep neural network
+ppo addresses this by limiting the
+updates to the policy network
+it has a number of mechanisms for doing
+this but the basic idea is that we're
+going to base the update at each step
+on the ratio of the new policy to the
+old
+and we're going to constrain that ratio
+to be within a specific range to make
+sure we're not taking really huge steps
+in parameter space for our deep neural
+network
+of course we also have to account for
+the goodness of state in other words the
+advantage
+how valuable each state is and the
+reason being naturally that we want the
+agent to select
+states that are highly profitable to it
+over time so it wants to find the best
+possible states
+now taking into account the advantage
+can cause
+the the loss function to grow a little
+bit too large
+and so we're going to be introducing a
+way of dealing with that by clipping the
+loss function and taking the lower bound
+with the minimum
+function something else we're going to
+be doing that's different than what you
+may be used to
+is that instead of keeping track of
+something like say a million transitions
+and then sampling a subset of those at
+random
+we're going to be keeping a very small
+fixed length trajectory of memories
+and we're going to be doing multiple
+network updates per data sample
+using minibatch stochastic gradient
+descent
+it's worth noting that you can also use
+multiple parallel actors
+on the cpu something like what you would
+do in a3c
+but we're not going to deal with that in
+this particular tutorial i'm just going
+to show you how to do
+the gpu implementation
+so let's talk about the mini batch
+gradient
+scent for a second so we're going to
+keep track of a list of memory indices
+from say 0 to 19 and that's for the case
+of taking a look at 20 transitions
+and let's say we want to take a batch of
+size 5
+and so those batches could start at
+position 0
+5 10 or 15. those are the only possible
+positions where to start such that you
+get all the memories
+you don't get any overlap and uh that it
+all works out evenly
+so what we're going to do is we're going
+to shuffle our memories and then take
+batch size chunks so we'll start at
+position zero go from zero all the way
+up to four
+that is one batch and then position five
+up to
+nine is the next batch and so on and so
+forth
+it's relatively straightforward when you
+see it in code but it's kind of
+difficult to explain as you're coding it
+so
+just know that we're taking back size
+chunks of shuffled memories for a mini
+batch of stochastic gradient ascent
+other things we need to know is that
+we're going to be using two distinct
+networks for our actor and our critic
+instead of having a single network with
+shared inputs and multiple outputs
+now you certainly can use a shared input
+with multiple outputs
+but it complicates the loss function a
+little bit and i found that performance
+is generally adequate with two distinct
+networks
+for simple environments so the critic
+will evaluate
+the states that the agent encounters and
+it gets the name
+critic because it literally criticizes
+the decisions that the actor makes
+based on which states it ends up in so
+it says hey this particular state was
+valuable we did good
+or this state is stupid we did bad do
+better next time
+now this is in contrast to state and
+action pairs for something like say
+deep q learning but it's in line with
+what other hector critic methods use
+and of course the actor decides what to
+do based on its current state
+so our network is going to output
+probabilities using a
+soft max activation and we'll use that
+for
+a categorical distribution and pi torch
+so we'll have
+in the case of the cart pull we'll have
+a couple actions and some probabilities
+selecting each action and then we will
+use
+the probabilities determined by our deep
+neural network to feed into a
+distribution that we can sample
+and use for the calculation of the log
+probabilities more on that momentarily
+it's also worth noting that exploration
+is going to be taken care of for us
+due to the fact that we're using a
+distribution so it's probabilistic
+and it's set up so that each element has
+some finite probability so
+even if the probability of one action
+goes arbitrarily close to one
+the probability of selecting the other
+action
+stays finite so that at least some of
+the time it's going to get some
+exploration
+this is in contrast to something like
+say epsilon greedy action selection and
+deep q learning
+where you select off uh off optimal
+actions about 10
+of the time as i said earlier our memory
+is going to be fixed to a length of
+capital t
+in this case we'll use 20 different
+steps we're going to keep track of the
+states the agencies
+the actions it takes rewards it receives
+the terminal flags
+the values of those states according to
+the critic network and the log of the
+probability of selecting
+those actions that'll become important
+later in our update rule
+as i said we're going to shuffle those
+memories and sample a batch size of five
+and we're going to perform four epochs
+of updates on each batch
+now these parameters are chosen
+specifically for this particular
+environment
+and that's one of my criticisms of ppo
+is that there are a number of parameters
+to play with hyper parameters
+the memory length is one hyper parameter
+the
+batch size and number of epochs as well
+as learning rate
+and another parameter we're going to see
+later all play
+roles of hyper parameters in our model
+and so there is a lot to tune here
+but these parameters work really well
+for the
+card pool environment so you won't have
+to do any tweaking for
+that other thing to note
+is that this memory length capital t
+should be much
+less than the length of the episode so
+in the case of the cart pull the maximum
+episode length is 200 steps
+and so 20 steps is significantly less
+than that so i think it qualifies
+you wouldn't want to use something that
+encompassed more than one episode for
+instance
+that would probably break the algorithm
+and result in poorer performance
+relative to using a capital t much less
+than the episode length
+so all this is relatively simple but
+what isn't so simple
+is the update rule for our actor so
+here's where all the math comes in
+so we have this quantity loss cpi this
+stands for conservative policy iteration
+and is given by the expectation value
+which is just an average
+of the product of the ratio of the
+policy
+under the current parameters to the
+policy under the old parameters
+multiplied by this a hat
+sub t more on that in a second and they
+just
+they and they just abbreviate that ratio
+as r sub t now if you're not familiar
+with deep reinforcement learning or
+reinforcement learning in general
+the policy is a probability distribution
+that is what our actor is attempting to
+model
+is a probability distribution the policy
+and this policy is a mapping between
+states
+and actions and probabilities so given
+your in state
+s sub t and you took action a sub t what
+was the probability of selecting that
+action
+according to the distribution and so in
+the denominator we have theta old
+that is the probability of selecting
+action a sub t
+given state sub t under the old
+parameters of your deep neural network
+so we're going to play 20 steps and then
+the agent is going to perform a learning
+update
+and it's going to do mini batch
+stochastic gradient ascent
+and so after computing that first batch
+the parameters of the deep neural
+network change right that's how
+the batches work you compute the loss
+with each batch and update your
+parameters and so
+right after you've calculated that first
+batch of memories the loss for that and
+updated your deep neural network
+uh the theta changes and so the policy
+pi is going to change as well
+so we have to keep track of the
+parameters uh excuse me of the
+the probabilities of of selecting each
+action
+at each time step in our memory and then
+on a learning function
+we're going to pass those states through
+our actor network get the probabilities
+the probability distribution and find
+out what the probability of selecting
+action a sub t
+is sampled from our memory according to
+the current values
+of the deep neural network it'll be a
+little bit more clear in code
+just know that we have to keep track of
+log problems as we go along and we're
+going to be recalculating them in the
+learning loop
+one thing we also see is that it takes
+into account the advantage
+which is that a hat sub t so the
+advantage is just a measure of the
+goodness of each state
+we'll get to the calculation of that in
+a few minutes uh
+but one thing to note is that this ratio
+uh pi sub theta over pi sub theta old
+can have an arbitrary value right
+because you could have let's say
+pi theta being 0.99 pi theta old
+0.01 and so that's a pretty large number
+and in particular if you multiply it by
+an advantage that is like say 10 20 or
+whatever
+then that can also still be a large
+number and so we have to deal with that
+right because the whole
+point of this is that we want to
+constrain the updates to our deep neural
+network to be some relatively
+small amount and so the way you deal
+with that
+is by adding an additional hyper
+parameter epsilon
+that you use to clip that ratio so what
+we're going to do is we're going to clip
+that ratio within the range 1 minus
+epsilon to plus
+1 plus epsilon so let's say from 0.8 to
+1.2
+so that ratio is going to be constrained
+to be close to one and you're going to
+multiply that by the advantage
+and so that'll give you some number and
+then you want to
+take the minimum of that clipped number
+the clipped ratio multiplied by the
+advantage and the unclipped ratio
+multiplied by the advantage take the
+minimum
+and that is what we will use for the
+loss for our actor network
+so this serves as a pessimistic lower
+bound to the loss
+and they don't go into any real depth in
+the paper on their reasoning for this
+uh but to my mind and this could be
+wrong you know i am an idiot sometimes
+but my understanding is
+smaller loss smaller gradient smaller
+update that's the whole point of it
+so let's talk about this advantage now
+so
+this advantage has to be calculated at
+each time step and it's given by this
+equation
+now don't freak out this is relatively
+straightforward
+once again it tells us the benefit of
+the new state over the old
+well how do we know that we know that
+because it's proportional
+to or equal to the sum of the
+delta sub t where the delta sub t is
+just the reward at a time step
+plus the difference in the estimated
+value of the new state and the current
+state so it tells you what is the
+difference in the value between
+the next bet the next state we encounter
+and the current state
+and of course you have the gamma in
+front of the v which is the output of
+the critic network
+because we always discount the values of
+the
+next states because we don't know the
+full dynamics of the environment
+and so the that reward is uncertain
+there's always some uncertainty around
+state transitions and then in the top
+equation you just sum that
+where you're going to be summing over
+gamma multiplied by lambda
+so this quantity gamma is again the
+normal gamma 0.99 that we typically use
+but this parameter lambda
+is a type of smoothing parameter helps
+to reduce variance
+and we're going to use a value of 0.95
+and for implementation we're just going
+to use a couple of nested for loops so
+you're going to start out at time t
+equals 0 and then sum from that step all
+the way up to
+capital t minus one so if we have 20
+states you're going to go from zero to
+uh capital t minus one
+zero to eighteen and you have to do that
+because you have the v
+of s sub t plus one you don't want to
+try to evaluate something beyond
+the number of actual states that you
+have that won't work out right
+and so it's going to be relatively
+straightforward once you see it in
+action
+and we're going to be keeping track of
+that gamma times lambda
+which is a multiplicative constant that
+increases its power by one
+with each uh iteration of the inner loop
+all that'll be made clear in the code
+but fortunately the critic loss is a
+little bit more
+straightforward so we need something
+called the return
+so the return is just equal to the
+sum of the advantage and the critic
+value based on the memory
+so whatever the agent estimated the
+value of a particular state to be
+at the time that it took it is what
+we're going to be using for the
+critic value in our return
+and then the loss of the critic is just
+going to be the mean squared error
+uh between the return and the critic
+value based on the current values
+of the deep neural network so once again
+we're going to be passing the states
+through the critic network to get
+its estimated values and we're going to
+be also using the values
+from the memory as well so relatively
+straightforward even easier when you see
+it in code
+so we have two different losses and we
+have to sum them and
+so that'll be the sum of the clipped
+actor and critic so
+a couple things to note here is
+that one we're actually doing gradient
+ascent and so
+the coefficient of c1 for the loss of
+our
+um critic is going to be positive
+and the loss of
+our actor is going to be negative
+because we are doing gradient
+ascent and not gradient descent we have
+to multiply by negative one
+other thing to note is that we have this
+other parameter here
+c2 this coefficient multiplied by s s is
+an entropy
+term and that only comes into play when
+you have a deep
+neural network with shared lower layers
+and actor and critic outputs
+at the top so we don't have to worry
+about that in our particular
+implementation in this tutorial
+because we're doing two separate
+networks for the actor and the critic
+and i'm going to use a coefficient of
+0.5
+for the loss for the critic
+as i said we're not going to be
+implementing the entropy term
+because we're doing two distinct
+networks
+we can also use this for continuous
+actions there you would use a different
+output for your
+actor network and indeed that's what the
+paper
+really is geared for as for continuous
+action
+spaces but we're going to be doing the
+very simple discrete case
+other thing we won't implement is the
+multi-core cpu implementation because
+that introduces
+even more complexity we're just going to
+be using the gpu
+so what do we need for this project
+we're going to need a class for the
+replay buffer
+and we're just going to use lists for
+this normally i like to use
+numpy arrays but in this case lists turn
+out to be a simpler implementation so
+that's what we're going to go with
+we're also going to need a class for our
+actor network and a class for
+the critic network we'll need a class
+for agent that's going to tie everything
+together
+that'll have actor and critics that
+invoke actor and critic constructors as
+well as a memory
+for storing the appropriate data
+it also functions for choosing actions
+storing memories
+saving models and learning from its
+experiences
+and in a separate file we're going to
+have a main loop to train and evaluate
+the performance
+of our agent before we get into the
+coding section i want to do a quick
+shout out to william woodall
+he hangs out in our discord channel
+which is also linked in the description
+below if you want to come hang out
+with some really really smart people who
+talk about
+artificial intelligence ranging from all
+sorts of different things every single
+day check the link in the description
+for the discord so william came to me
+and said hey phil i found
+an implementation of ppo that i find to
+be in line
+with your general philosophy of software
+minimalism
+and he showed it to me and i looked at
+it and it helped clarify
+quite a few questions i had after
+reading the paper now the software you
+see
+here is pretty much my own code but it
+was inspired by william woodall's code
+so shout out to him for helping me out
+on this because the paper really isn't
+all that clear to me even after reading
+it a few times
+other thing i want to say and i'll talk
+a little bit more about this in the
+coding section
+is that when i normally define deep
+neural networks
+actors and critics in particular i will
+use the convention of saying
+self.layer name equals nn.linear
+self.layer name next you know equals
+nn.linear
+and then i'll write the feedforward
+function where you use the
+um member variables the self.layer1 as
+something you can call as an object to
+call
+and then calling activation functions
+within that
+now what i found is that doesn't really
+work very well in fact i have to use
+nn.sequential to create the models for
+this and that's one of the biggest
+takeaways i had from
+william woodall's code is that by using
+the nn.sequential you really get this
+thing to work
+and for whatever reason i cannot get as
+good of performance using my
+conventional
+typical way of writing these networks
+now that
+i can't think of any reason why that
+should be the case but it is something
+i've observed i tested it
+just altering that one chunk of code how
+i define the models
+and running it several times to take
+into account run to run variation and it
+seems to be repeatable for me so maybe
+i don't know maybe it's a configuration
+issue on my system maybe it's something
+i'm doing wrong elsewhere i don't know i
+don't think so
+all of that out of the way let's go
+ahead and get into the coding portion
+all right so let's go ahead and jump
+right into it with our imports
+they're going to be pretty light we'll
+need os to handle file joining
+operations
+numpy for numpy type stuff and all of
+the
+torch packages we'll need
+and then for our sequential model we
+will need
+optim and we will also need our
+categorical distribution
+we'll start with our ppo memory class
+and this will be pretty simple for the
+most part
+the only input for our constructor is a
+batch size
+and we will just implement the memory
+with lists so we'll keep track of the
+states encountered the
+log probs i'll just call it probs for
+brevity
+the values that our critic calculates
+the actions we actually took rewards
+received
+and the terminal flags
+so next we need our function to generate
+our batches
+so our strategy is going to be the
+following we're going to have a list of
+integers that correspond to
+the indices of our memories and then
+we're going to have
+batch size chunks of those memories so
+indices from zero to say four and then
+five to ten
+so on and so forth or whatever our batch
+size is
+we're gonna shuffle up those indices and
+take those batch size chunks of those
+shuffled indices
+so the first thing we need to know are
+the number of states
+we are going to want to get our batch
+start list
+or array i suppose that will go from
+zero
+to and states and batch size steps
+batch size
+it would help if i could type our
+indices
+and that is just the number of states in
+our trajectory
+um we're going to want to shuffle that
+so that we handle the
+stochastic part of the mini batch
+stochastic gradient ascent
+and then we can go ahead and take our
+batches using a list comprehension so
+it's going to be those indices
+from i to i plus self.batch
+size for i and frame for i in
+batch start so it's going to take all of
+the possible starting points of the
+batches either
+0 5 10 etc and go for
+in the indices from that all the way up
+to i plus
+batch size so we're going to get the
+whole batch from our indices
+then we're going to want to return an
+array for each of those
+and this gets a little bit messy
+i have to be very careful not to mess up
+the order because of course the
+order in which you return the memories
+definitely matters later on
+we'll need rewards
+and then we're also going to want to
+return the batches and
+the reason why will become apparent
+later it's because we're returning the
+entire array here
+and we're going to want to iterate over
+the batches
+so now we need a function to store a
+memory and that'll take a state
+action probability value
+reward and done as input
+and all we're going to do is append each
+of those elements to the respective list
+that is reward singular
+and then finally we need a function to
+clear the memory at the end of every
+trajectory
+and i forgot the self argument here
+and mini rant here i really don't like
+some aspects of python
+it took me much longer than i would care
+to admit to get this to run
+not because the algorithm i implemented
+was incorrect
+but because i had a mismatch so here i
+had i believe action
+and up here it was actions or perhaps
+vice versa in my original implementation
+so
+it didn't flag as an error because it's
+not really an error
+particularly where python is concerned
+and uh
+so it was quite a nuisance pretty pretty
+painful to track that down
+of course if we're a more strongly typed
+language then that wouldn't be an issue
+but
+i digress so now let's handle our
+actor network and that will derive
+from the base nn.module class
+our initializer is going to be pretty
+straightforward
+for actor we will need the number of
+actions the input dimms
+learning rate alpha number of
+fully connected dimms for the first and
+second fully connected layers
+and a checkpoint directory
+and we're also going to need to call our
+superconstructor
+and then create our checkpoint file
+checkpoint directory and actor
+torch ppo now
+i do it this way because i'll often do
+development in a single root directory
+and i don't want to get models mixed up
+if you have a different way
+a more organized way of writing software
+then you could perhaps skip this
+path join operation and just use a file
+by itself but let's move on to the
+actual
+deep neural network
+we're going to want a linear layer
+it takes star input dim so we're going
+to unpack the input dimm so we have to
+pass in a list
+and it's going to output fc1 dimm's
+a rayo activation function another
+linear layer
+that takes fc1 dims as input and outputs
+fc two dimms that gets a value
+activation as well
+another linear layer that takes fc2
+dimms as inputs and outputs a number of
+actions and then we're going to use a
+soft max
+activation along the -1
+dimension so that's the whole of our
+actor network the softmax takes care of
+the fact that we're dealing with
+probabilities and they have to sum to 1.
+so our optimizer is going to be an atom
+optimizer
+what are we going to optimize the
+parameters with learning rate
+of alpha of course we need to handle the
+device
+which would be our gpu if possible
+and then we want to send the entire
+network to the device
+next we have our feed forward function
+and that'll take a single state or batch
+of states as input so we want to pass
+that state through our neat deep neural
+network and get the distribution
+out
+and then use that to define a
+categorical distribution
+which we are going to return so what
+this is doing is it is calculating a
+series of probabilities that we're going
+to use
+to draw from a distribution to get our
+actual action
+and then we can use that to get the log
+probabilities for the calculation of the
+ratio
+of the two probabilities in our update
+for our learning function
+then we have a couple of bookkeeping
+functions save checkpoint
+now we're going to want to say
+torch.save
+state dictionary for our network and
+we're going to save that into a
+checkpoint
+file then we need a load checkpoint
+and that is self.load state dictionary
+what are we going to load a checkpoint
+file
+and that's really it for the actor
+network it's pretty straightforward
+the critic network is also
+straightforward
+and that also derives from nn.module
+here we don't need the number of actions
+because the output of the critic is
+single valued
+it just outputs the value of a
+particular state so it doesn't care how
+many actions there are
+in the action space but it does need a
+learning rate alpha
+it does need some dimensions
+2 56
+and a checkpoint directory
+and then we need to call the
+superconstructor
+and same deal the checkpoint file
+the check point directory and
+critic torch so that way we can
+differentiate between the actor and
+critic
+model files
+and we will again use the sequential
+model and so
+uh in the shout out i was talking about
+william woodhall's implementation
+as well as something else i observed so
+what i meant
+by the alternate method of doing a model
+was if you say self.fc1
+and in linear
+you know if you do it that way have fc1
+fc2 the separate layers defined
+without the sequential model it actually
+does
+significantly worse than if you do it
+with the sequential model and i don't
+know why
+i don't have a certainly there's no
+theoretical reason they should do it it
+must
+be something under the hood with the way
+in which pi torch is implementing things
+and uh it's no disrespect to the
+creators of pi torch
+but this is one of my you know one of my
+biggest gripes with using these
+third-party
+libraries is you never know how they're
+implemented so something doesn't operate
+the way you expect
+you can certainly go look it up it's
+open source but
+that is much easier said than done right
+you have to be familiar with
+not the entire code base but a really
+significant portion of it to be able to
+make sense of a single file or a single
+way of doing things
+so it really makes things opaque it's an
+abstraction on top of an abstraction
+and so i don't know it's part of the
+good
+uh part of the it's the bad that comes
+with the good for having you know a
+robust
+library like pie torch but i do it this
+way
+because it seems to work the best
+and as an aside i also can't get it to
+work very well
+in uh tensorflow 2 and i suspect the
+the reasons are related because the
+performance of the tensorflow 2 is on
+par with
+the type of performance i get from doing
+it
+the other way where you just define
+individual layers instead of a
+sequential model so
+pretty interesting stuff maybe one day
+i'll get super motivated
+and decide to go ahead and figure it out
+but
+i wouldn't hold my breath on that so
+this is going to be a very similar
+model linear layers with
+radioactivations in between
+the main difference is that our output
+layer
+is going to be a linear layer with no
+activation
+and a single value output
+now of course it handles the batch size
+automatically so if you pass in a batch
+you're gonna get a batch
+of outputs as well
+again we need our optimizer with
+learning rate of alpha
+as an aside about the optimizer
+i'm going to use the same learning rate
+for both the actor and the critic
+and it's entirely feasible and possible
+and perhaps even advisable to use
+separate learning rates for both the
+actor and the critic
+at least in something like deep
+deterministic policy gradients you get
+away with a much larger
+you know by a factor of three or so
+learning rate for your critic than you
+do the actor
+reason being as we outlined the lecture
+the actor is much more sensitive to
+changes in the underlying
+parameters of its deep neural network
+now ostensibly or theoretically the
+the ppo method should account for that
+and
+allow you to use a similar learning rate
+because the
+actor should be less sensitive than in
+the case of ddpg but i haven't tested it
+so
+one thing you can do in your spare time
+is play around with differing learning
+rates
+for both the actor and the critic
+our forward feed forward function is
+pretty straightforward you want to pass
+a state through
+your critic network
+and return that value
+and we're going to need saving and
+loading checkpoints
+i am just going to yank and paste those
+because the functions
+are otherwise identical and so that is
+it for
+our two networks now we come to the
+heart of the problem which is the agent
+class
+do i have an extra yes i do and
+this of course does not derive from
+anything this is our base agent class
+we need number of actions a default
+value for gamma which is the discount
+factor in the calculation of our
+advantages
+typically we use something like 0.99
+a learning rate of zero zero three by
+ten
+minus four uh i get this from the paper
+so
+um if you read the paper they do give
+you the hyper parameters and a little
+bit of detail around the networks they
+used
+but it's not a very well written paper
+it's rather
+obtuse so i'm not a huge fan of it
+but we do have some good default values
+from it so policy clip
+so in my cheat sheet here i have a value
+of 0.1 as a default
+although in the paper these 0.2 perhaps
+i was experimenting
+i will have to be careful with that
+a batch size of 64 a default and a 2048
+so that is the horizon
+the number of steps before we perform an
+update and the default for the number of
+epochs now these parameters
+come from
+these parameters come from the values
+for
+um continuous environments so the actual
+numbers we're going to be using are
+going to be
+significantly smaller as i said we'll
+use an n of 20 uh three epochs
+a batch size of five instead of 64.
+and i'm going to go ahead and set that
+policy clip to 0.2
+now that i'm looking at it we need a gae
+lambda that is the lambda parameter but
+of course you can't use lambda because
+that is a reserved word for python
+what else do we need um
+yeah i think i'm missing something in my
+other file here
+that's okay i'll fix it on the fly so
+then we go ahead and save
+our parameters
+a number of epochs
+and our ga lambda
+we need our actor network
+input dims and learning rate
+takes input dimms and alpha
+bbo memory
+batch size input one second
+all right hopefully that is not as loud
+now
+the toddler is playing with his
+grandparents always a hoot
+so now we need a function that handles
+the
+interface between the agent and its
+memory
+um
+and it's just going to be very simple
+self memory store
+memory
+it's just an interface function then we
+need a function to
+save our models
+[Music]
+print saving models
+that is just going to be an interface
+function between the agent
+and the save checkpoint functions for
+the underlying
+deep neural networks
+and very similar for the load models
+function
+now we have a visitor all right that is
+it for
+our bookkeeping functions next we need
+something to handle
+choosing an action that'll take
+an observation of the current state of
+the environment as input
+and we want to convert that
+numpy array to a torch
+tensor and we're going to add a batch
+dimension because the deep neural
+network
+expects a batch dimension
+and we'll be sure to specify that it is
+float
+and then we're going to go ahead and
+pass that through our neural networks so
+dist equals self.actor state that'll
+give us our distribution for
+choosing an action we need the value of
+that particular state and then to get
+our action
+we just sample our distribution
+and then what we want to do is go ahead
+and squeeze to get rid of those batch
+dimensions and this might be something i
+added
+for tensorflow too i'm not i don't
+remember if torch requires it
+but it doesn't hurt anything
+so for the problems we want to go ahead
+and return the
+log probability of the action we
+actually took
+dot item so that item will give you an
+integer
+and likewise
+for the action we want to squeeze it and
+get the action
+the item out
+and similarly for the value
+and then just return all three so this
+will make our main function look a
+little bit different than we're used to
+because we're going to be accepting
+three values from our choose action
+function instead of one
+but that's necessary for keeping track
+of the probabilities
+and values as well next we come to
+the meat of the problem so to speak our
+learning function
+so we want to iterate over the number of
+epochs so we're gonna have in this case
+three epochs
+at the top of every epoch we want to get
+our arrays
+the old probabilities
+the values the reward
+the dones and the batches
+let's do that
+and then i'm just going to
+use a different notation here and
+go ahead and start calculating our
+advantages so
+our advantage is just going to be a
+numpy array of zeros
+lan reward
+type mp float 32
+and we're going to say for t and range
+so for each time step
+lend a reward array minus 1 because we
+don't want to
+overwrite the or go beyond the bounds of
+our array our discount factor is going
+to be 1
+the advantage of these time steps starts
+out as 0
+so we're k in range so we're going to
+start out at t and go from t
+to the same reward array minus 1
+and say a sub t plus equals discount so
+that
+gae times lambda factor which starts out
+as one
+times we need parentheses reward array
+sub k plus cell dot gamma times values k
+plus one times
+um
+[Music]
+one minus int done array
+okay minus values
+sub k
+and then we say discount times equals
+self.gamma
+times ge lambda
+and at the end of every calculation
+at the end of every k steps advantage
+sub t
+equals that a sub t and at the end we're
+going to turn advantage
+to a tensor
+in particular a cuda tensor and this is
+just a
+strict implementation of the equation
+from the paper so this
+uh right here in parentheses is the
+delta sub t so it's a reward
+plus uh gamma times v sub t plus one
+minus v sub t or you know we swap the k
+and t
+here um and you need the one minus dones
+uh on the values as a multiplicative
+factor of the values of a t
+sub t plus one because the value of the
+terminal state is identically zero
+that's just a convention
+in reinforcement learning it predates
+the deep neural network stub is just how
+we handle it it's assumed that's why
+they don't put it in
+the calculation it is assumed it's just
+a matter of convention
+and then that discount is the gae the
+lambda multiplied by the gamma
+that takes care of the multiplicative
+factor
+so it is the the gamma lambda to the
+uh t minus 1 power
+or is it t minus k minus 1 something
+like that power
+multiplied by the delta and then you're
+summing it all up
+so now we have our advantage um i'm
+going to convert the
+values to a tensor as well
+and i fully admit here that going from
+val's array to you know what in fact
+let's
+do this now let's leave it the way it is
+uh may not be the most uh effective or
+excuse me the most
+uh efficient way of doing it but
+sometimes i just get stuff to work and
+then don't go back and clean it up
+if you want to clean it up please do so
+i always
+invite that and it looks like i'm
+missing
+something here because it is
+not automatically indenting so i'm
+probably missing
+a parenthesis somewhere and it is right
+here i believe if i am not
+mistaken yeah there it goes all right so
+then states
+is just going to be a tensor state array
+sub batch d type
+t dot float to cell.actor.device
+and we're kind of violating the pep 8
+style guides there
+style guide by going beyond 80
+characters
+but i think we'll be all right old
+probabilities gets converted to a tensor
+and i don't need an explicit d type
+there i don't think
+dot device
+dot 2 salt.actor device that works
+and then actions
+okay and then um so we have
+the states we encountered the old
+probabilities according to our old actor
+parameters the actions we actually took
+the next parameter we need so we have
+the bottom of that numerator
+pi theta old we need pi theta nu
+so we have to take the states that we
+encountered and pass them through the
+actor network
+and get a new distribution to calculate
+that new those new probabilities
+and we'll also need the value of the
+the new values of the states according
+to the updated values of the critic
+network
+so you may as well get those now and we
+can squeeze those
+and then we can calculate our new
+probabilities
+and take the prob ratio
+so here i'm going to exponentiate the
+log problems to get the probabilities
+and take the ratio
+you could also do this
+those two are equivalent by the
+properties of exponent exponents
+exponentials excuse me and then we're
+going to calculate our weighted
+probabilities and sorry our probability
+ratio
+um no yeah the weighted probabilities i
+think i have two lines that do the same
+thing in there
+that's funny and that's going to be the
+advantage
+uh batch times the probability
+ratio then we need the weighted clipped
+probabilities
+and that is going to be the clamp of the
+prob ratio between
+one minus self.policy clip
+and one plus self.policy clip
+multiplied by advantage
+sub batch now our actor loss
+is going to be the
+negative minimum of the
+weighted probes or the awaited clipped
+props
+dot mean and our returns
+for our critic loss are going to be the
+advantage
+plus the values for that
+particular batch and so our critic loss
+then is going to be the returns
+minus critic value
+squared
+and the mean value our total loss
+enter loss plus
+0.5 times critical loss
+remember we're doing gradient ascent and
+there's a negative sign
+in front of the actor um
+so we're not doing descent that's
+another thing that's kind of
+sub optimal about the way the paper is
+written uh you can get kind of confused
+about negative signs if you're not
+paying very careful attention
+next we have to zero our gradients
+i think you can probably hear that my
+son is
+giving a concert downstairs he's playing
+the drums by whacking on his toy box
+with some drumsticks
+so we're going to back propagate our
+total loss
+and then step our optimizers
+and finally uh
+at the end of every epoch i think that's
+the right indentation we want to clear
+our memory so at the end of all
+oops at the end of all the epochs we
+want to clear our memory
+let me just make sure i'm not doing that
+eg puck no i am not okay that is good
+so now let's do a right quit and i have
+an indentation error
+here i see
+oh that came in when i did the yank and
+paste
+all right so that is it
+for our
+[Music]
+agent file let's go ahead and
+take a look at main so
+we start with our imports we'll need a
+gym we'll need
+numpy to keep track of the running
+average of our scores
+from ppo torch we'll need our
+agent
+and if you're new here i have a utility
+file that i use
+a map lib pi plot function to
+plot the running average of the previous
+hundred games
+for the learning curve it's pretty
+trivial you can just do a plot of the
+running average
+um just do a git clone if you want to
+use my exact version
+i don't go over it in every video
+because it's kind of redundant but
+i'll leave a link in the description to
+the github so
+um go ahead and do a clone of that so
+you have that file or just write your
+own
+so we're going to use the very basic
+card poll
+v0 reason being we don't need to spend a
+whole lot of time
+on a very computationally complex
+environment to realize we made a mistake
+so it's very easy to see if something
+got
+screwed up with the carpool environment
+this certainly will work on more
+advanced environments
+but it does require a little bit of
+fine tuning so we'll just start with the
+cart pull and then you can play around
+with other environments
+at your leisure so we'll use
+the parameters i dictated
+in the lecture i think i changed the
+number of epochs to four
+learning rate of three
+we can get the number of actions
+directly from our environment
+very handy
+pass in all the other relevant
+parameters
+and get the number of input dimensions
+from
+our environment
+and we're only going to play 300 games
+as i'm looking at this i do realize
+that uh and the parameters i did the
+last time i ran i did do a policy clip
+of 0.1
+the 0.2 comes from the paper and i'm
+pretty sure it works both ways so we
+will find out if we need to we can go
+back and change the policy clip
+uh not a big deal so plot slash
+cart pull dot png
+we need to keep track of our
+best score this minimum score for the
+environment
+an empty list for our score history
+and um
+number of learn times we call the learn
+function
+you can make this a member variable of
+your agent if you want
+and an average score
+starting out of zero we don't actually
+need that but whatever
+so we'll say at the top of every episode
+to reset our environment set the
+terminal flag to false
+and accumulate a score to zero while
+we're not done
+we need to choose an action
+based on the current state of the
+environment
+um get the new state
+reward done and debug info back from the
+environment
+increment our score by the reward
+and store that transition in the agent's
+memory
+reward and done and if n
+uh i do need an extra variable here
+we'll say in steps equals zero and
+that's the number of steps we take and
+we need that
+because we have to know how often or
+when it's time
+to perform the
+learning function so
+every time we take an action the number
+of steps goes up by one
+so then steps modulus n equals zero
+then agent.learn
+enters plus equals one
+and then no matter what happens we wanna
+set the current state
+to the new state of the environment and
+the end of every episode
+append our score and calculate
+our mean
+that's the previous 100 games
+if that average score is better than the
+best known score
+then set that
+best score to the current average and
+save your models
+and we also want some debug information
+is so i
+score
+of course that should be an average
+score
+the i like to print out
+this isn't necessary but the number of
+steps that have transpired in total
+and the number of times the agent has
+called
+the learning function
+this gives you an idea this is i did
+this because when i compare with the
+results of the paper
+it wasn't clear to me if they were
+talking about the number of times they
+called the learning function or the
+actual absolute number of
+uh time steps in the environment so i
+print out both
+this time steps and learning steps are
+totally optional
+you don't have to print it out it's not
+something that is required
+so i just do it for my own clarification
+we need an x-axis for our plot
+lens score history
+and plot learning oh certainly
+let's do this we don't want to do it
+every single game we want to do it at
+the end of all games
+all right now moment of truth
+let's see how many typos i made
+so it's telling me and it got an
+unexpected argument
+input dimms that's interesting
+what do i call it i don't have it there
+and the reason is
+my computer had a hard lock up and i had
+to do a reboot
+and it mutilated my cheat sheet for this
+so
+there's bound to be some errors in here
+ah i didn't do my make directories so
+temp
+ppo and plots
+let's try it again
+named duns array is not defined it's
+probably done array
+that is in line 161.
+so it is duns array yeah
+we'll just change it there i guess
+old prop array is not defined that's
+probably the same thing
+uh where am i yeah old
+prob array
+and i'll do the opposite here i'll make
+it singular just for
+just for the sake of not being
+consistent
+index eight is out of bounds okay
+so then something has gone extremely
+wonky with
+the generation of the batches um
+okay let's take a look at that oh wait
+let's read this a little bit more
+carefully it says index eight is out of
+bounds for axis zero with size zero
+so our action array oh you know what
+let's take a look at our memory so it's
+action array so here we have
+self.actions
+uh we return the self actions
+self dot ah there we go that's why
+so
+actions that append action
+all right now let's try it
+name advantage is not defined that is a
+typo that is in line
+183
+a advantage
+that i yeah let's try that
+let's try once more
+has no memory underscore clear memory
+it's memory
+dot clear memory 197.
+all right so now it is running
+so i'll let that go for a few minutes
+and we will see how it does
+all right so it has been running for a
+little bit
+just a few minutes now it runs
+relatively quickly and what i'm seeing
+is that we do get some oscillations in
+performance you see it'll hit 200
+for you know several games in a row and
+then it'll drop down into the mid 100s
+even
+you know 66 something relatively low
+like that
+and there's a little chunk here where it
+dips below 100 points so
+it's not a silver bullet but it looks to
+be recovering so we'll give it
+another 80 runs and see how it does
+okay so it has finished up and you can
+see that it finished strong with a long
+run
+of about 50 games 45 games of
+a score of 200 so i
+commented when i was writing the agent
+that i was looking at my cheat sheet and
+had a
+policy clip value of 0.1 it could be
+that i had settled on that value based
+on some experimentation
+and then changed it back just to be more
+consistent with the paper for this
+particular
+video so that's something i would play
+with uh
+other thing to consider is that there is
+significant run to run variation that is
+a facet of pretty much every algorithm
+in
+deep reinforcement learning it just has
+to do with the way the neural networks
+are initialized
+as well as how the number random number
+generators initialize the environment
+so um when you see papers you'll
+typically report
+average values for say five or ten or
+whatever number of games and then a band
+to show the
+range of variance for render run
+variation uh but this is clear evidence
+of learning you know it achieves a score
+of 200 and under 300 games
+uh so i call this good to me this is
+fully functional
+now there are a number of things you can
+do to improve on this you can get it to
+work with continuous environments you
+can bolt on
+uh some stuff for doing um atari
+games where you would need to add in
+convolutional neural networks
+uh as your input layers and then flatten
+them out
+to pass them to a linear layer for
+the actor and the critic and you can see
+my earlier video on
+an ai learns to be pong for q learning
+there i go over all of the a lot of the
+stuff you need to do
+to modify the open aigm atari
+environment
+uh to do a frame repeating that's
+something they do in q-learning
+that's an exercise to the reader um
+actually i don't know
+thinking back to the paper i don't
+recall if they actually do any frame
+repeating or not in this particular
+algorithm pbo uh but it's just something
+to look at anyway
+uh so there's a number of things you can
+do to improve upon it
+i haven't added this module to my course
+yet i'm still working on it i really
+want to
+take some time to give more thought to
+the paper because the paper isn't very
+well written
+and i'll probably have to do a lecture
+like what i did for
+this youtube video in the course because
+the paper isn't very easy to implement
+just by reading it
+so i hope that was helpful that is ppo
+in just a few hundred lines
+uh full implementation in pi torch
+solving the carpool environment then you
+can easily modify this to do
+other environments as you wish if you've
+made it this far please consider
+subscribing hit the bell icon leave a
+like
+a comment down below and i'll see you in
+the next video

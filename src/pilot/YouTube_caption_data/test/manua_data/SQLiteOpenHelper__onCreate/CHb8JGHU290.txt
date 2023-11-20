@@ -1,0 +1,186 @@
+Now that's a contract.
+At this point, we define
+the names of the columns we want,
+but we still don't have a database.
+To actually make a database, we're gong
+to extend Android's SQLiteOpenHelper.
+SQLiteOpenHelper contains cool
+stuff to create the database and
+help us handle database versioning.
+As we make changes to our
+database in the future,
+tt will help us modify our tables.
+For many apps,
+being able to upgrade to a new
+version without data loss is critical.
+For Sunshine, we just want to make
+sure that upgrades in that involve
+schema changes happen smoothly.
+Let's take a look at SQLiteOpenHelper
+more closely in action.
+We're going to be working in the
+WeatherDBHelper class that you've been
+given which extends SQLiteOpenHelper.
+It contains code to create and
+initialize the weather database.
+Let's examine it.
+At the beginning of the DbHelper, you
+can see that we've defined constants for
+DATABASE_VERSION and DATABASE_NAME.
+The DATABASE_VERSION typically starts
+at version 1 and must be manually
+incremented each time we release an
+updated APK with a new database schema.
+The DATABASE_NAME is the name of the
+actual database file in the file system,
+which will be weather.db in our case.
+Note that we're using version 2 since
+this revision of the course uses
+an updated database version.
+These values get passed
+into the constructor
+to initialize the database helper.
+Next we have the onCreate method.
+This is where the SQL we've
+been talking about and
+our new contract class
+are used together.
+The first time the database is used,
+SQLiteOpenHelper's onCreate
+will be called.
+We need to write the correct
+SQL statement string so
+that we can create
+the table sunshine needs.
+We then have the system execute
+this SQL by calling db dot execSQL.
+Note how we're using all of the weather
+entry constants to write our
+SQL statements.
+Also note that we use lots of not
+null constraints on this table.
+These constraints help prevent us from
+inserting records without columns being
+filled out into the database,
+and that helps to prevent bugs.
+Here is the implementation of the
+FOREIGN KEY constraint from the not yet
+created location entry table.
+This means that we cannot insert
+a weather entry into the database until
+a location entry for
+the weather location has been inserted.
+And we cannot delete locations
+while there exist weather
+entries that point to them.
+That being said,
+it's going to be a while before we
+have UI that can demonstrate that
+our database code is working.
+Fortunately, there's a way we can
+have Android run any code we want,
+even if there's no UI yet ready.
+Android has a built in testing framework
+that allows us to create a test APK that
+executes a JUnit test that call
+into classes in our main APK.
+If you aren't already
+familiar with JUnit,
+it is a testing framework that allows
+you to write automated test suites.
+You can run your automated tests easily.
+You can find your tests in this
+section of the Android Studio project.
+Just right-click on the test package and
+select Run.
+Once the test pass or
+fail, you'll see the output down
+here at the bottom of the screen.
+I'm not going to display the emulator
+on our screen because it won't actually
+show that we're doing anything.
+The tests we're running don't
+have any user interface.
+But you can see here in the test runner,
+we're instantiating tests.
+An empty window and
+a green result means the test succeeded.
+Let's look at the TestPractice class.
+You can see it sits in the data
+package of our test project and
+extends AndroidTestCase.
+When you extend AndroidTestaCase,
+you can implement the setUp method
+which will be run before each test.
+You can also implement tearDown
+which we run after each test.
+Similar to JUnit test, you simply add
+new methods in the class with the prefix
+test such as
+testThatDemonstratesAssertions.
+And those will automatically
+be run by the test processor.
+Some other things to note.
+The FullTestSuite class contains
+code to include all of the Java
+test classes in its package into
+a suite of tests the JUnit will run.
+This allows us to easily
+add additional tests,
+by just adding additional Java
+class files to our test directory.
+You'll likely have a class like
+this in each test project you make.
+They aren't typically project specific.
+So you can literally
+just copy this file.
+Each test should have at least
+one check which uses an assert
+to see if the program
+applies the correct output.
+An assert is just that,
+it's a declaration that
+the outcome after part of a test
+is run matches our expectations.
+If the assert does not match,
+the test will fail.
+Let's look at our
+testThatDemonstratesAssertions in
+TestPractice.java.
+AssertEquals asserts that the expected
+value equals the actual value.
+If they are not equal than
+an assertion failed error is
+thrown with the given string message.
+Other useful methods
+include assertEquals,
+assertFalse, assertNull, or
+we can just call fail if a certain code
+path should never have been reached.
+Feel free to write your own test
+cases to play with assertions.
+Let's see what happens
+when we make a test fail.
+As you can see our results are now red,
+and
+we can see exactly where in
+the test are application failed.
+Let's uncomment out the testCreateDb
+function inside of the TestDb class.
+You might have to import a few
+classes to get this to compile.
+Let's also uncomment out
+the createNorthPoleLocationValues and
+the insertNorthPoleLocationValues
+functions from within TestUtilities.
+This is the last chance to fix
+up your location contract if
+things don't compile.
+So let's run our new
+test with our TestDb.
+As you can see, we get a pretty good
+error message back, that our database
+was created without both the location
+entry and weather entry tables.
+Don't worry.
+We can fix it.

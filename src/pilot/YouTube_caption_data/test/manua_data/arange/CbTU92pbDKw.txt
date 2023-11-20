@@ -1,0 +1,552 @@
+Hey everyone my name is Greg Hogg and welcome to 
+my channel today we'll be forecasting Microsoft  
+stock using LSTM neural networks this is a 
+very important project to put on your resume  
+so i'd really highly recommend watching the video 
+in its entirety i made it as clear and concise as  
+i possibly could so i really think you're going to 
+find this useful enjoy the video i'll see you in  
+there. We first want to grab the dataset which 
+we can get from this Yahoo Finance link here  
+which will bring us to Microsoft Corporation 
+stock page we can scroll down and change the  
+time period from one year to max to get all of 
+the information and then click apply we want to  
+download which will bring a csv to your computer 
+we need to bring that csv into our environment  
+so in google collab we go here and then upload 
+the file we can simply rename it by deleting  
+those extra characters and pressing enter so we 
+will do import pandas as pd and make df equal to  
+dot read csv passing the file name of msft.csv 
+close that and then outputting df 9082 rows  
+of stock information it goes all the way from 
+the beginning 1986 all the way till now today  
+which is 2022 march 23rd if you're following 
+along you might see a different date here  
+closer to your today notice that we don't trade 
+stocks every single day there's a gap here 19  
+and 20 don't exist and many other pieces in 
+the middle don't exist as well that is okay  
+looking at the different columns of the data 
+set we have the date and on that date what the  
+stock opened at the highest value for that day 
+the lowest value for that day what it closed at  
+the adjusted closing value and then the volume 
+of stocks traded that day we're going to keep  
+things simple by just using the closing value 
+so we'll have the date and what that value was  
+at the end of that date we're going to discard the 
+other columns we can do that by doing df is equal  
+to df and just the name of those two columns 
+which is date and then close we'll set that  
+and then outputting df we should see only those 
+two different columns we currently have a problem  
+with our date column as it's actually not a date 
+it's just a string that has the year then the  
+month then the day we can see this if we type df 
+sub date we should see name of date except it's  
+a d type of object we want that to be a date we 
+usually use this thing called date time so we will  
+import date time and then make a function so we 
+will define a function called string to date time  
+which is going to take a string s which will be 
+any of these strings here any string that looks  
+like this we're going to pass that to the function 
+in s and it's going to return the associated date  
+time for that string so in this function we'll 
+create a variable called split and set that  
+equal to the s dot split the hyphen which is the 
+separator for each of these so a split is going to  
+be the list of the year and then the month and 
+then the day we can extract those three pieces  
+year month and day equal to the split of zero 
+split of one and split of two these objects are  
+actually strings right now we want to make them 
+integers so we'll just wrap each of them in int
+so we can just return the datetime.datetime 
+and then pass the year equal to our year  
+the month equal to our month and the day equal 
+to our day we'll now test out our function  
+by creating an object called date time underscore 
+object equal to the string to date time so calling  
+our function and we'll pass the first day in 
+our data set which happens to be 1986-03-19
+if we output this date time object we should see 
+that it outputs datetime.datetime of 1986 319 and  
+this is for the time but we don't need any of that 
+now what we need to do is apply this function to  
+everything in our date column because we have in 
+df this whole date column we want to make all of  
+these date strings actual date objects so we'll 
+set df subdate equal to itself so df subdate dot  
+apply so we're applying a function to that column 
+just the one that we made above we can pass string  
+to date time into this function note that we're 
+not calling the function here we're passing the  
+function itself to the supply function now if we 
+were to output our data frame column again df sub  
+date should now show us the following it looks 
+like this is an error but this is just a warning  
+this is okay it looks like our column is the same 
+as it was before but actually the d type is now  
+date time 64. this is just what pandas converts 
+it to this is actually what we want our data frame  
+is almost ready we just have one more step if you 
+look at df you can see that it's index this column  
+right here is actually integers we want to replace 
+that column and make that date column the index we  
+can do that very easily by setting df.index equal 
+to the df.pop which means we take away the column  
+and return it so df.pop passing the date and then 
+outputting df we'll see that it did exactly what  
+we desired make that date column the index and 
+then we just have the closing value as a column  
+now that we did that we can quickly plot our data 
+using matplotlib if we do import matpotlib.pyplot  
+as plt we can do a plt.plot of the df.index and 
+the df sub close what we can see is from 1986  
+all the way up until 2022 the stock goes 
+absolutely crazy after it hits about 2016 or so  
+and then there's a little bit of a drop at the end 
+now because we're using the lstm model we need to  
+convert this into a supervised learning problem 
+we're going to do this by making a new function  
+we'll call it define df to windowed df it's going 
+to take the data frame which will just pass df  
+it'll take a first date string and a last date 
+string and then a positive integer we'll set  
+it equal to 3 by default this function is 
+also going to need numpy so we're going to  
+import numpy as np now it turns out that 
+this code is extremely difficult to write  
+so i'm going to just go in here and paste in 
+the code if you need to know what that code is  
+make sure you go to the video description and 
+check out the tutorial and look at it there  
+i also pasted in how to create this object called 
+window df which is calling this function with  
+certain parameters i'll explain that very shortly 
+i just need to show you the result of window df  
+window df is now a data frame where we have a 
+target date column a target minus 3 minus 2 minus  
+1 and then the target these are all the stock 
+closing values from before so this target date  
+corresponds to that value here if we look above 
+at 3 18 it should be 0.099 so 0 3 18 let's take it  
+one more time for me to remember oh 3 18 is 0.099 
+why don't we have this row that row and that row  
+well that is all about what this windowed function 
+is so this window data frame is converting a date  
+into getting its three previous values and then 
+what it actually was so if we go back again 0.097  
+if we look at what .097 is that is three 
+days before this is the target date  
+this is three days before if we were to look at 
+target minus two this would be target minus two  
+for that date and this is target minus 1 and this 
+is the target we have that for every single date  
+that it allows for so of course we couldn't have 
+dates previous than this because we didn't have a  
+whole three values before it this was the first 
+date that we could start with hence we actually  
+called that as the starting date there as the 
+last date that's the last one we wanted which is  
+right here the three previous and then its target 
+value right there the reason i started calling  
+it target is to think about this column as the 
+output because that's what our machine learning  
+model needs we have what led up to it so three 
+days before two days before one day before what  
+is our corresponding output because this is the 
+input that's fed into the model and this is the  
+corresponding output it's just like a regression 
+problem or any other supervised learning problem  
+you have an input and then you have an output you 
+have another input you have another output this  
+is just the whole data frame which displays the 
+inputs the outputs and the corresponding date for  
+that output so that was really how we converted 
+this problem to a supervised learning problem  
+we set up its output date with that output and 
+its corresponding input for that row now we just  
+need to convert this into numpy arrays so that we 
+can feed it directly into a tensorflow model so  
+to do that we're going to create a function we're 
+going to call it windowed df so it takes a window  
+df like above and converts it to date x y okay so 
+this is actually three things we're going to get a  
+list of dates we're going to get an input matrix 
+x actually it's going to be a three-dimensional  
+tensor we'll see shortly and y is going to be the 
+output vector so x is going to be this matrix here  
+except it's actually going to be three-dimensional 
+y is going to be this output vector here and dates  
+we want to keep those so dates is going to be 
+this column here this function is just going to  
+take one parameter called window data frame first 
+is going to do df as numpy it's going to convert  
+the whole data frame into a numpy array we do that 
+with windowed data frame dot 2 underscore numpy  
+bracket bracket to get the dates it's very easy 
+we just set dates equal to df underscore as numpy  
+and then we need to get all of the rows so we put 
+a colon and then we put 0 to say just the first  
+column because it's this column right here getting 
+the input matrix is a little bit more confusing so  
+we're going to call it first middle matrix not our 
+final input matrix middle matrix is equal to df  
+underscore as numpy and again we want all the rows 
+so we'll put a colon but we only want to start at  
+the first column because we don't want that date 
+column and then we want to go up until but not  
+include the last one so 1 until negative 1 says 
+all of these rows here that's what the colon does  
+and then 1 to negative 1 says just this piece of 
+information in the middle so all of this piece now  
+unfortunately what you'll find if you go through 
+like that is that it's actually the wrong shape  
+for the lstm we need x is equal to middle matrix 
+but then we need to do a reshape so we'll do a  
+reshape where the first dimension is the length 
+of dates so this is the number of observations  
+that's pretty common for any tensorflow model but 
+now we need the second piece of this shape to be  
+middle matrix dot shape sub 1. that's just 
+however many columns we had and it would be  
+the same as that n our window value i'm just 
+making it this because we have access to that  
+the last piece just has to be a 1 here because we 
+are technically only using one variable we have  
+three different values of that variable and how 
+it changes over time but we're still only doing  
+what we call univariate forecasting because we're 
+just looking at how the closing value changes over  
+time if instead we had used some of those values 
+at the very beginning like the open the high the  
+volume and those variables well then we'd have 
+to put a different number down here we'd have to  
+put two or three or four as this number we're 
+just doing one because we're doing univariate  
+forecasting now luckily from here this function 
+is very easy we can just get our output vector  
+y is equal to df as numpy where again we want 
+all of the rows but we only want the last column  
+that we can just do return three things dates x 
+and y there's just a minor difficulty if you go  
+on later you'll see that has an error that we 
+can fix with dot as type float 32 actually np  
+dot float32 if we change those for x and you 
+also do that for y y dot as type numpy.float32  
+you'll fix a weird error you'll find later now 
+to call this function we again want those three  
+things we'll get dates x and y and set that equal 
+to windowed df to date x y just our function there  
+and we'll pass in our window df from before these 
+three things should be numpy arrays so we will get  
+dates.shape x dot shape and y dot shape and see 
+that we have 9079 of each of these three things  
+our input matrix and then three by one because 
+we're looking three steps in the past but for only  
+one type of variable now we're going to split the 
+data into train validation and testing partitions  
+the training will train the model the validation 
+will help train the model and then the testing  
+is what we're going to use to really evaluate the 
+performance of the model we need two integers to  
+help with the split we'll get q80 first that's 
+going to be the integer of the length of dates  
+times 0.8 then we'll get q90 which is equal 
+to the int of the length of dates times 0.9  
+so we'll make the training partition the first 
+80 percent so we'll get dates train x train and  
+y train each of those are going to be each of 
+their pieces so this will be dates but then  
+only up until q80 to make it the first 80 percent 
+we'll do the same thing with x so x up until q80  
+and then y up until q80 because it's a little bit 
+slow i'm just going to paste in these two lines  
+to get vowel and test which we can get val dates 
+val x file and y about by going dates q 80 to q 90  
+then x q a to q 90 and y q to q82 q90 that's 
+all that information between the 80 and 90  
+pieces then we just get the testing information by 
+saying q90 onward to get that last 10 so you can  
+see it's ordered the first training piece is up 
+until the first eighty percent the validation is  
+the eighty to ninety percent ten percent and then 
+the test is that final ten percent from the ninety  
+onward we can visualize and color this very well 
+with matplotlib so we'll do plt.plot then we're  
+going to get dates train and then y train we'll do 
+the same so plt.plot for val so dates underscore  
+val and y val finally the same for test plt.plot 
+dates test and y test and we'll just add in a  
+legend so that you can see which is which although 
+it should be pretty obvious plt.legend train then  
+validation then test if you plot that you're going 
+to see that train is all this information here  
+marked by the blue then validation is this piece 
+and then test is this piece here it's time to  
+create and train our model we can do a few imports 
+from tensorflow from tensorflow.comstep models  
+get sequential we're going to build a sequential 
+model from tensorflow.curious.optimizers  
+we'll get atom that's the optimizer we're going to 
+use and then from tensorflow.kira's import layers  
+we'll make a model that is sequential and built up 
+of many layers so we'll define our model and we're  
+going to call it model is equal to a sequential 
+and then we'll pass that a list of layers so the  
+first one is just the input layers dot input 
+and we need to specify the shape of the input  
+remember we don't need to specify the batch number 
+or how many examples three by one again it's three  
+because we're doing three days in the past and 
+that's one because we need only one feature only  
+univariate forecasting now that we've specified 
+the input layer we're ready to do an lstm layer so  
+we will do layers dot lstm and capitals and this 
+number is relatively arbitrary but we will choose  
+64 which is a relatively big but not super big 
+number of neurons for the lstm all that you really  
+need to know about this number is the bigger 
+the number the more complicated the model is  
+the more prone it is to overfitting and the more 
+heavy duty it is considered we will add instead  
+of an lstm a dense layer layers.dense will choose 
+32 for a similar reason as above you're also very  
+welcome to stack dense layers and so we'll just 
+actually paste that in again and have another  
+32. we're not going to mess with the activation 
+functions for the lstm but for the dents it's  
+usually a good idea to set activation equal to 
+relu so we will do that for both of those dense  
+layers now we must specify the output of our model 
+and since we are only forecasting one variable  
+we're just trying to predict say the next value 
+we only want this to be a layers dot dense of one  
+where we don't change the activation function as 
+by default it's linear which is desired we can now  
+close this up and specify that the model is going 
+to be compiled to compile the model we must set  
+the loss function and the loss function we want 
+to minimize is the mean squared error so we will  
+just write the string of mse for mean squared 
+error we also need to specify the optimizer  
+so we will set the optimizer equal to the atom 
+optimizer where we specify that the learning rate  
+is equal to for this example it turns out that 
+0.001 is going to work out pretty well if you're  
+doing a different problem the learning rate is 
+something you definitely want to play around with  
+as well as these values here we also want to 
+specify a new metric is going to be metrics equals  
+we need to put it in a list it's the mean absolute 
+error this number tells us on average how much  
+we're off by rather than the squared distance we'd 
+rather look at this although we need to minimize  
+the mse as this is not differentiable we're now 
+ready to fit the model so we can do model dot  
+fit we pass our inputs of x train and y train 
+and then we specify that the validation data  
+is equal to the tuple of x val and y val 
+we're going to let this run for 100 epochs  
+which means 100 runs through the data set i'm 
+going to press enter and we can see what happens
+as we can see at this point it looks 
+like it's not really changed very much  
+so we can actually cancel this and it is going 
+to save whatever progress it's done so far now  
+to briefly analyze this we mostly care about 
+the validation mean absolute error going down  
+we can see it's at 14 at the beginning then it 
+goes to 11 10 9 and then it hovers around 8 9  
+10 and that's when i was ready to stop it 
+because it wasn't really changing all that much  
+it's much easier to visualize what's going on 
+instead with graphs so before worrying about the  
+code i'm just going to show you the pretty picture 
+we can make for it predicting on the training set  
+so the orange is the actual observed observations 
+it's what really happened from 1986 to 2016. the  
+blue is what we predicted so each time it got the 
+three previous and it tried to predict the next  
+one that's also what it was trained on to make 
+that run we simply get the training predictions  
+with model.predict on x train and then we have to 
+do a flatten then we can do a plot of dates train  
+and the train predictions and dates train and 
+y train that's that blue and the orange curve  
+and then we just create the legend since i 
+explained that code for the train i feel no real  
+need to explain it much for the validation as this 
+is literally the same thing but replacing the word  
+train with val so for the validation we get this 
+graph or it follows it until you know about 2017  
+and then it just really flattens off which is 
+the same time when it actually starts to pick  
+up so the observations what really happened is it 
+went up like this but the predictions it actually  
+just started to zone off and it couldn't follow 
+it anymore if we were to look at the test this  
+is again just replacing that word train with test 
+this picture is even worse it doesn't follow it at  
+all it actually thinks it's going down a little 
+bit whereas it's going up a lot and then it goes  
+down i'm now going to put all three of those 
+pictures on the same graph again the code is  
+not hard it's just annoying where we first plot 
+the training predictions and the observations  
+the validation predictions and the observations 
+same for the test and then we create the legend  
+we see that this picture again for the training 
+it follows it very closely and for the red piece  
+is what actually happened in validation the green 
+is what it thought happened not good at all the  
+brown is what really happened and the purple is 
+what it thought for the test really really bad  
+at that point it turns out that these lstm models 
+are very bad at what we call extrapolating and so  
+if it was trained on data only in this range here 
+only up until like the 50 value it's not going to  
+be good at predicting stuff this high even though 
+it is given say his input these three values here  
+and has no idea what to do with them because it's 
+not going to extrapolate well extrapolate means  
+basically learn data outside its range a line 
+extrapolates well because if we drew a line here  
+we could just continue drawing that line up like 
+that but if the lstm is only trained on this data  
+here it will have no idea what to do when the 
+values are increasing and are this big another  
+way to think about it is that all this information 
+here it might actually not be that helpful because  
+over here the values are way up like this and the 
+pattern starts changing a lot so maybe we don't  
+want to train it on all of this maybe we just 
+want to train it on say this information here  
+and then validate over here so we'll do just that 
+we're going to pick some day over here to start  
+training at we do need to know that this date is 
+actually in the data set and for that we'll go to  
+our data set over here and select the time period 
+of one year and if we apply that we just need to  
+scroll back all the way to the bottom and see that 
+one date that we know exists is march 25th 2021  
+we will use that as our starting value instead so 
+that means we need to change our windowed function  
+above or not actually change the windowed 
+function itself but just change how we're  
+calling it we need to change this value here to 
+be the year is going to be 2021 03 is fine and  
+then 2 5 is a date we know exists as you can see 
+here i had this in a comment for me to remember  
+so now the first date will be 2021 0325 and these 
+are its corresponding information the end date  
+is exactly the same and we only have 252 rows 
+this time way less information we should have no  
+problem just re-running the cells we already did 
+so we're going to do that which gets dates x and y  
+note that they're smaller this time we'll again 
+split the data set and make sure that we plot  
+it properly so our starting date up until about 
+the middle over here is train then validation  
+then test and note that we've already seen values 
+in this range so it should be okay to predict  
+values in the same range over here since we only 
+change the number of things the model is seeing  
+the model is actually fine as is we can run 
+that again and it's going to run a lot faster  
+now we'll see again that our mean absolute error 
+goes down pretty low and for the validation a lot  
+better than it was before we can recreate 
+all of our graphs so to plot the training  
+we can see here the train it doesn't follow it 
+quite as well as before but that's totally okay  
+if we see here for the validation it got so 
+much better now look at how zoomed in this is  
+these values are extremely close to each other and 
+if we were to do it for the test as well the tests  
+are also extremely close to each other if we were 
+to plot them all on the same graph again we would  
+see here zoomed out that they're all very close to 
+each other the predicted first the observation is  
+very very close no matter whether it's the train 
+the validation or the test now the video could be  
+done here but i want to show you how you could try 
+and predict long term because all of these values  
+any of these predictions we're assuming we had the 
+actual three days before and that data was real  
+then we used those three days before to make the 
+prediction and then the next day we would have the  
+actual three and then we'd use that predict the 
+next day well what we're actually going to do  
+is train here and then pretend that's all the 
+data that we have and let the model recursively  
+predict the future and see what it has to say so 
+to make that function we're first going to do from  
+copy import deep copy we'll make a list and start 
+to build this up called recursive predictions  
+is equal to an empty list and then we'll get 
+recursive dates these are the dates on which  
+we're predicting for this is already known and 
+this is equal to np dot concatenate the dates val  
+and the test val this is because the dates we're 
+predicting are here onward so we're training on  
+all of this in fact we've already trained on 
+all of that and then the recursive predictions  
+are going to be for these following dates so 
+now we can loop through those dates for target  
+date in the recursive dates we'll get our most 
+recent input so the last we'll call it window i'm  
+just copying it so we don't change anything deep 
+copy of x train sub negative one because the last  
+window that we actually had access to was the very 
+last three over here that is stored in x trains of  
+negative one and we need to start predicting for 
+the future so we need to get our next prediction  
+so the prediction for the next day that will be 
+equal to model.predict unfortunately we actually  
+have to make it the numpy.array of the list of the 
+last window but really it's just the last window  
+don't worry too much about that piece that and 
+then flatten it like before then what we can do  
+is recursive predictions dot append so add that 
+to our list with next prediction then we need to  
+update this last window because we just made a 
+prediction for the next day well now we need to  
+move on to the previous two informations that 
+were actually seen and then the next predicted  
+value because we need to start using the values 
+that we're predicting that's why it's called  
+recursive predicting so we'll actually set last 
+window sub negative one equal to next prediction  
+sorry i have an error here this should actually 
+be dates test and then if we run that i'm now  
+going to paste in again some annoying code but 
+it'll look very familiar it's exactly the same  
+as that big graph as before except i added in 
+the recursive dates and the recursive predictions  
+and that put that in the legend as well if i were 
+to plot this you will see something very funny  
+this piece right here is the recursive predictions 
+the model has absolutely no idea on how to predict  
+in the future it just thinks it'll be what it was 
+before and actually that's a reasonable prediction  
+predicting stocks is incredibly difficult there is 
+of course the trend we can analyze we saw before  
+that the graph really started to go up and that 
+would indicate to you that it's a good stock to  
+buy but that doesn't mean i can guarantee that 
+and i don't want to be liable for you predicting  
+any sort of stocks with any sort of model and by 
+no means is the model we made useless it's just  
+on the micro scale of per day should i sell or 
+buy of course in general people generally think  
+of stocks for the long term what should i do to 
+make money in the long term but on a micro scale  
+it's important to know as well so i hope you 
+enjoyed that video if it brought you value please  
+drop a like and consider subscribing it really 
+really helps and i'll see you next time guys

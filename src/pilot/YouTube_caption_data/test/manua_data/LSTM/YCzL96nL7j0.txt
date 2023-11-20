@@ -1,0 +1,187 @@
+Long short-term
+memories. I've got them both and so does this network. Hooray! StatQuest!
+Hello, i'm Josh Starmer and welcome to StatQuest. Today we're going to talk about
+a Long Short-Term Memory, LSTM, and it's going to be clearly explained! Lightning, yeah!
+Gonna deploy your models in just a few days not months. Yeah! This StatQuest is also
+brought to you by the letters A, B and C. A always. B be. C curious. Always be curious.
+Note: This StatQuest assumes you are already familiar with recurrent neural networks
+and the vanishing exploding gradient problem. If not, check out the Quest. Also note:
+Although Long Short-Term Memory totally awesome. It is also a stepping stone to learning
+about Transformers which we will talk about in future StatQuests. In other words,
+today we're taking the second step in our Quest. Now, in the StatQuest on basic,
+vanilla recurrent neural networks we saw how we can use a feedback loop to unroll
+a network that works well with different amounts of sequential data. However, we
+also saw that when we plug in the numbers, when the weight on the feedback loop is
+greater than one, and in this example the weight is 2, then when we do the math we
+end up multiplying the input by the weight, which in this case is 2, raised to the
+number of times we unrolled the network. And thus if we had 50 sequential data points,
+like 50 days of stock market data, which isn't really that much, then we would raise 2 by 50. And 2 to the 50th power is a huge
+number. And this  huge number would cause the gradient, which we need for gradient
+descent, to explode. Kaboom! Alternatively, we saw that if the weight on the feedback
+loop was less than 1, and now we have it set to 0.5, then we'll end up multiplying
+the input value by 0.5 raised to the 50th power. And 0.5 raised to the 50th power
+is a number super close to zero. And this number super close to 0 would cause the
+gradient, which we need for gradient descent to vanish. Poof!
+In summary, basic vanilla recurrent neural networks are hard to train because the gradients can explode. Kaboom!
+Or vanish. Poof!
+The good news is that it doesn't take much to extend the basic vanilla recurrent neural
+network so that we can avoid this problem. So today we're to talk about Long Short-Term
+Memory,  LSTM, which is a type of recurrent neural network that is designed to avoid
+the exploding / vanishing gradient problem.
+Hooray!
+The main idea behind how Long Short-Term Memory works is that instead of using the
+same feedback loop connection for events that happened long ago and events that just
+happened yesterday to make a prediction about tomorrow, Long Short-Term Memory uses
+two separate paths to make predictions about tomorrow. One path is for long-term
+memories, and one is for short-term memories.
+Bam! Now that we understand the main idea behind Long Short-Term Memory, that it uses
+different paths for long and short-term memories, let's talk about the details.
+The bad news is that compared to a basic vanilla recurrent neural network, which unrolls
+from a relatively simple unit, Long Short-Term Memory is based on a much more complicated unit.
+Holy smokes, this looks really complicated!
+Don't worry Squatch, we will go through this one step at a time so that you can easily understand each part.
+Bam!
+Note: Unlike the network's we've used before in this series, Long Short-Term Memory uses sigmoid activation functions and tan-h
+activation functions. So let's quickly talk about sigmoid and tan-h activation functions.
+In a nutshell, the sigmoid activation function takes any x-axis coordinate and turns it into a y-axis
+coordinate between 0 and 1. For example, when we plug in this x-axis coordinate, 10, into the equation for the sigmoid activation function, we get 0.99995 as the y-axis
+coordinate. And if we plug in this x-axis coordinate, -5, then we get 0.01 as the y-axis coordinate.
+In contrast, the tan-h, or hyperbolic tangent activation function takes any x-axis coordinate and turns it into a y-axis
+coordinate between -1 and 1. For example, if we plug this x-axis coordinate, 2, into the equation for the tan-h activation function, we get 0.96 as the y-axis
+coordinate. And if we plug in this x-axis coordinate, -5, we get -1 as the y-axis
+coordinate. So, now that we know that the sigmoid activation function turns any input into a number between 0 and 1 and the tan-h
+activation function turns any input into a number between -1 and 1, let's talk about
+how the Long Short-Term Memory unit works.
+First, this green line that runs all the way across the top of the unit is called
+the cell state and represents the long-term memory. Although the long-term memory
+can be modified by this multiplication and then later by this addition, you'll  notice
+that there are no weights and biases that can modify it directly. This lack of weights
+allows the long-term memories to flow through a series of unrolled units without
+causing the gradient to explode or vanish. Now, this pink line, called the hidden
+state, represents the short-term memories. And as we can see, the short-term memories
+are directly connected to weights that can modify them. To understand how the long
+and short-term memories interact and result in predictions, let's run some numbers
+through this unit. First, for the sake of making the math interesting, let's just
+assume that the previous long-term memory is 2, and the previous short-term memory
+is 1,  and let's set the input value to 1. Now that we have plugged in some numbers,
+let's do the math to see what happens in the first stage of a Long Short-Term Memory
+Unit. We'll start with the short-term memory, 1, times its weight, 2.7. Then we multiply
+the input, 1, by its weight, 1.63. And then we add those two terms together. And, lastly, we add this bias, 1.62, to get 5.95, an x-axis
+coordinate for the sigmoid activation function. Now we plug the x-axis coordinate into the equation for the sigmoid activation and function and we get the y-axis
+coordinate 0.997. Lastly, we multiply the long-term memory, 2, by the y-axis coordinate,
+0.997, and the result is 1.99. So this first stage of the Long Short-Term Memory
+unit reduced the long-term memory by a little bit.
+In  contrast, if the input to the LSTM was a relatively large negative number, like -10,
+then, after calculating the x-axis coordinate, the output from the sigmoid activation
+function will be 0. And that means the long-term memory would be completely forgotten
+because anything multiplied by 0 is 0. Thus, because the  sigmoid activation function
+turns any input into a number between 0 and 1, the  output determines what percentage
+of the long-term memory is remembered. To summarize, the first stage in a Long Short-Term
+Memory unit determines what percentage of the long-term memory is remembered.
+Bam!
+Oh no, it's the dreaded terminology alert. Even though  this part of the Long Short-Term
+Memory unit determines what percentage of the long-term memory will be remembered, it is usually called the Forget Gate.
+Small bam.
+Now that we know with the first part of the LSTM unit does, it determines what percentage
+of the long-term memory will be remembered, let's go back to when the input was 1
+and talk about what the second stage does. In a nutshell, the block on the right
+combines the short-term memory and the input to create a potential long-term memory.
+And the block on the left determines what percentage of that potential memory to add
+to the long-term memory. So let's plug the numbers in and do the math to see how
+a potential memory is created and how much of it is added to the the long-term memory.
+Starting with the block furthest to the right, we multiply the short term memory
+and the input by their respective weights. Then we add those values together and add a bias term to get 2.03, the input value for the tan-h
+activation function. Now we plug 2.03 into the equation for the tan-h activation function and we get the y-axis coordinate,
+0.97.
+Remember the tan-h activation function turns any input into a number between -1 and 1.
+And in this case, when the input to the LSTM is 1, then after calculating the x-axis coordinate, the tan-h
+activation function gives us an output close to 1. In contrast, if the input to the LSTM was -10, then after calculating the x-axis coordinate, the output from the tan-h activation function would be -1.
+Going back to when the input to the LSTM was 1, we have a potential memory, 0.97,
+based on the short-term memory and the input. Now the LSTM has to decide how much
+of this potential memory to save. And this is done using the exact same method we
+used earlier when we determined what percentage of the long-term memory to remember. In other words, after multiplying
+the short-term memory and the input  by weights and adding those products together and adding a bias, we get 4.27, the x-axis
+input value for the sigmoid activation function. Now we plug the x-axis coordinate into the equation for the sigmoid activation function and we get the y-axis
+coordinate 1.0. And that means the entire potential long-term memory is retained,
+because multiplying it by 1 doesn't change it. Note:
+If the original input value was -10, then the percentage of the potential memory to
+remember would be 0, so we would not add anything to the long-term memory. Now, going
+back to when the original input value was 1, we add 0.97 to the existing long-term
+memory and we get a new long-term memory, 2.96. Double bam! Oh no, it's the dreaded
+terminology alert! Even though this part of the Long Short-Term Memory unit determines
+how we should update the long-term memory, it's usually called the input gate. Tiny bam.
+Now that we have a new long-term memory, we're ready to talk about the final stage
+in the LSTM. This final stage updates the short-term memory. We start with the new long-term memory and use it as input to the tan-h
+activation function. After plugging 2.96 into the tan-h activation function, we get 0.99.
+0.99 represents a potential short-term memory. Now, the LSTM has to decide how much
+of this potential short-term memory to pass on. And this is done using the exact
+same method we used two times earlier: When we determined, what percentage of the
+original long-term memory to remember and when we determined what percentage of the
+potential long-term memory to remember. In all three cases, we use a sigmoid activation
+function to determine what percent the LSTM remembers. In this case when we do the
+math, we get 0.99. And we create the new short-term memory by multiplying 0.99 by
+0.99 to get 0.98. This new short-term memory, 0.98, is also the output from this
+entire LSTM unit. Oh no, it's the dreaded  terminology alert again.
+Because the new short-term memory is the output from this entire  LSTM unit, this stage is called the  Output gate.
+And at long last, the common terminology seems reasonable to me. Triple bam! Now that
+we understand how all three stages in a single LSTM unit work, let's see them in
+action with real data. Here we have stock prices for two companies Company A and Company B.
+On the  y-axis we have the stock value and on the x-axis we have the day the value was recorded. Note:
+If we overlap the data from the two companies, we see that the only differences occur
+on day 1 and on day 5. On day 1, Company A is at 0 and Company B is at 1. And on
+day five, Company A returns to 0 and Company B returns to 1. On  all of the other
+days, days 2, 3 and 4, both companies have the exact same values. Given this sequential
+data, we want the LSTM to remember what happened on day 1 so it can correctly predict
+what will happen on day 5. In other words, we're going to sequentially run the data
+from days 1 through 4 through an unrolled LSTM and see if it can correctly predict
+the values for day 5 for both companies. So let's go back to the LSTM and initialize
+the long and short-term memories to 0. Now, because this single LSTM unit is taking
+up the whole screen, let's shrink it down to this smaller simplified diagram. Now,
+if we want to sequentially run Company A's values from days 1 through 4 through this LSTM,
+then we'll start by plugging the value for day 1, which is 0, into the  Input.
+Now, just like before we do the math.
+Boop be doop boop boop boop boop boop.
+And after doing the math, we see that the new or updated long-term memory is -0.20
+and the new updated short-term memory is -0.13. So we plug in -0.2 for the updated
+long-term memory and -0.1, rounded, for the updated short-term memory. Now we unroll
+the LSTM using the updated memories and plug the  from day 2, 0.5, into the input.
+Then the LSTM does its math using the exact same weights and biases as before, and
+we end up with these updated long and short-term memories.
+Note: If you can't remember the StatQuest on recurrent neural networks very well,
+the reason the LSTM reuses the exact same weights and biases is so that it can handle
+data sequences of different lengths. Small bam.
+Anyway, we unroll the LSTM again and plug in the value for day 3. Then the LSTM does
+the math again using the exact same weights and biases and gives us these updated
+memories. Then we unroll the LSTM one last time and plug in the value for day 4.
+And the LSTM does the math again using the exact same weights and biases and gives
+us the final memories. And the final short-term memory, 0.0, is the output from the
+unrolled LSTM. And that means the  Output from the LSTM correctly predicts Company A's value for day 5.
+Bam!
+Now that we have shown that the LSTM can correctly predict the value on day 5 for
+Company A, let's show how the same LSTM, with the same weights and biases can correctly
+predict the value on day 5 for Company B.
+Note:  Remember, on days 1 through 4, the only difference between the companies occurs
+on day 1, and that means the LSTM has to remember what happened on day 1 in order
+to correctly predict the different output values on day 5. So let's start by initializing
+the long and short-term memories to 0. Now, let's plug in the value for day one from Company B,
+1.
+And the LSTM does the math, just like before using the exact same weights and biases.
+Beep boop.
+After doing the math, we see that the updated long-term memory is 0.5 and the updated
+short-term memory is 0.28. So we plug in 0.5 for the updated long-term memory and
+0.3, rounded, for the updated short-term memory. Now we unroll the LSTM and do the math with the remaining input values.
+And the final short-term memory, 1.0, is the output from the unrolled LSTM. And that
+means the output from the LSTM correctly predicts Company B's value for day 5. Double
+bam! In summary, using separate paths for long-term memories and short-term memories,
+Long Short-Term Memory networks avoid the exploding/vanishing gradient problem, and
+that means we can unroll them more times to accommodate longer sequences of input
+data than a vanilla recurrent neural network.
+At first, i was scared of how complicated the LSTM was, but now I understand. Triple Bam!
+Now it's time for  some Shameless Self-Promotion. If you want to review statistics
+and machine learning offline, check out the StatQuest PDF study guides and my book
+the StatQuest Illustrated Guide to Machine Learning at statquest.org. There's something
+for everyone! Hooray! We've made it to the end of another exciting StatQuest. If
+you liked this StatQuest and want to see more, please subscribe. And if you want
+to support StatQuest, consider contributing to my Patreon campaign becoming a channel
+member, buying one or two of my original songs or a t-shirt or a hoodie or just donate,
+the links are in the description below. Alright, until next time Quest on!

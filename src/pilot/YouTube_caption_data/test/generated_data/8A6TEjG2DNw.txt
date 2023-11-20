@@ -1,0 +1,951 @@
+yes in this video I'm going to show you
+the basics of building a time series
+prediction model and I want to emphasize
+that this model is going to be using the
+coronavirus daily cases data and this
+video is not in any way trying to
+predict really how the outbreak or the
+pandemic is going to develop so please
+if you're looking for predictions on the
+number of cases or the number of deaths
+and anything else in regard to the
+corona virus please go and watch another
+video this video is just a
+machine-learning tutorial using Python
+deep warning and time series data and
+we're going to happen to use the corona
+virus data for our model the corona
+virus is somewhat of an outbreak right
+now and as you can see currently at the
+time of this recording according to the
+world meters
+info let me enlarge this for you we have
+over 90 to 100 cases and we have over
+three 392 thousand cases and over 3,000
+deaths and you can have a look at the
+total cases in this webpage and the
+total deaths of course currently most of
+the cases are still based in China but
+you undoubtedly heard on the news that
+more and more countries are actually
+getting some spread you can see that
+South Korea Iran and Italy Japan Spain
+USA and a lot of other countries are
+detecting some cases of this virus and
+again well it's rather difficult to say
+the actual numbers what the actual
+numbers of the
+coronavirus cases are because most of
+the time this virus is can go unnoticed
+and most of the patients actually can
+have symptoms that are similar to the
+fool at least that we what we already
+that we know about this very new virus
+and another thing is that most likely
+most of the cases are not tested or not
+positive there are also problems with
+the sensitivity testing of the current
+methods that are used for discriminating
+between different patients and guys that
+are or girls that are actually
+contagious or not one of the most
+important thing that I believe is not
+very well at least covered is the how
+contagious is the wacom corona virus and
+you can see that there are some
+definitions of what the attack rate or
+the transmissibility of these viruses
+and this is called
+reproductive reproductive number which
+represents the average number of people
+of which to which a single infected
+person will transmit the virus so based
+on the aid three w-h-o estimation this
+is between 1.4 and 2.5 so roughly for
+every patient that has the corona virus
+or roughly one per one point four to two
+point five people will get infected so
+it's really important to to get and
+contain this virus big before it spreads
+along more and more parts of the world
+so given that information there is
+actually a repo on github that is
+provided by the John Hopkins whiting
+School of Engineering and these guys are
+actually uploading daily
+kisses from the coronavirus and this
+data is actually available on github
+they have visual dashboards and an
+article and in here you can see that we
+have the the data itself and we have the
+time series data and the daily reports
+and I'm going to use the dáil sorry I'm
+going to use the time series data for
+this tutorial and the purpose of this
+tutorial is going to be to model
+actually this graph over here and next
+I'm going to try to predict how many new
+cases will be found based on the data in
+here of course the model is not going to
+be accurate I don't expect to use this
+model to make any predictions I am just
+showing you how we can do some real
+world data and use it to make
+predictions about the future but I'm not
+in any way saying that this is the
+likely future that is going to happen
+regarding the corona virus outbreak or
+endemic however you wanna call it
+okay so let's me start by doing opening
+a new Google bot notebook checking the
+run time and we require a Python 3 to
+run time in here we don't need a
+hardware accelerator for this one
+because the everything will be training
+very fast because we really don't have a
+lot of data in here I'm going to copy
+and paste some pretty default or regular
+imports in here I'm going to remove this
+and some of the imports are mostly doing
+importing PI torch using some potting
+defaults and I'm going to register
+matplotlib converters because we have
+time series data that is that has date
+as index in our pandas dataframes
+so this will be much but much it will be
+much easier to plot the date
+index using PI port
+and I'm doing the seeding I'm sitting
+with 42 of course okay so the first
+thing that I'm going to do is to get the
+data and I'm going to use W get to get
+just the data from the report that I've
+shown you and the data should be now in
+here curious let me open this for you
+yep this is the CSV file let's read this
+into bundles and of course if you
+because this data is updated almost or
+every day or multiple times per day I've
+also included in the notebook of version
+of the CSV file that I'm using
+particularly for this tutorial so you
+might be able to so you'll be able to
+reproduce the exact tutorial using the
+data that I'm showing you right now so
+let's do some data exploration based on
+the data that we've seen the first thing
+that I'm going to do is of course to
+read the data into a panda's data frame
+okay and now all this file and then I'm
+going to check what are the contents so
+as you can see we have the a lot of
+columns actually and you might not have
+expected exactly this format of the data
+but we have the longitude the latitude
+and the country in which this is located
+and we have the cumulative actually the
+cumulative because as you can see every
+every number in here is only increasing
+so we will have to do something about
+this and we have the the country the
+region the state in which those cases
+are recorded and most of this is great
+but I'm not really interested in any of
+these columns so I'm going to do some
+basic model or I'm going to show you how
+you can do
+basic model that disregards the
+country-region the profit the province
+and the ones using the latitude so to do
+that I'm going to just drop the first
+four columns because we are not really
+interested in those and I'm going to use
+I walk to just do this so we have all of
+the data starting from the fifth column
+onward so this is great the next thing
+that I'm going to do is to check if we
+have some missing values in here and as
+you can see for all the dates we
+actually don't have any missing values
+so this is great and the next thing that
+I'm going to do is to sum of the rows in
+here so we have a single row and each
+column in this row will actually present
+a daily case of the number of new cases
+from the coronavirus okay so we have the
+sum and the next thing that I'm going to
+do is to convert these numbers into
+proper date times so I'm going to do
+that using PD dot to date time and the
+since this is the index of the pandas
+dataframe I'm going to convert actually
+the index in here but let me show you
+first what we have so far okay so you
+can see that we have we now have this
+song in occur over each row using the
+axis 0 in here okay so I'm going to
+check change the index
+and I'm going to pass in the index again
+if I check this we get now this is the
+daytime as you can see the formatting
+has changed in here so this is now much
+more standard okay so let me start by
+doing some data Explorer ah sorry we are
+already doing data exploration let me
+start by plotting the data and I recall
+that this is actually the cumulative
+daily cases okay so this chart should
+resemble this one very closely and you
+should be able to convince yourself that
+it's roughly the same chart as you can
+see so we have the data that is similar
+to that presented in a world meter and
+the next thing that I'm going to do is
+to basically remove this cumulative this
+accumulation of daily cases and I'm
+going to take each day and convert it
+into how much how many new cases are
+discovered on this particular day so I'm
+going to do some sort of reversal I am
+going to undo the cumulative step and to
+do that I'm going to basically take the
+difference between the current number
+and the previous number and for the
+first value I am going to just fill in
+the first value in the daily cases so
+the daily cases will be the daily cases
+the difference between each column or
+row I'm going to fill in just the first
+number because it's going to be zero
+order or none otherwise and I'm going to
+convert this into in 64 and if we get
+have a look at the daily cases right now
+you can see that no longer the numbers
+are cost
+the increasing course staying the same
+but we have really the daily numbers in
+here so this is great let me just do the
+same chart again and plops the result
+okay so this these are the daily cases
+in this huge spike in here is thanks to
+the to the new ways or how much new
+patients are actually being tested on
+this date in here so this spike is
+rather based on the amount of testing
+that I believe China made so it looks
+like that we had a huge spike and then
+things are getting back to to somewhat
+normal levels but again if you look
+closely at this part you can see that
+the virus is probably picking up again
+which is not that good so we have in
+total 41 days worth of data well this is
+not ideal because yeah we are doing some
+deep warning and we require a lot lots
+of data but still we will have to do
+something with what we have
+oh we have data for 41 days and the next
+thing that I'm going to do is to split
+this data into training and testing and
+I'm going to reserve fourteen days worth
+of data for us so we can use this to
+test our model and we are going to train
+on only 27 days worth of data so let's
+do this pre-processing step I'm going to
+just index use indexing and split the
+data the Train data will be the first 27
+days
+and I'm going to take the next 14 days
+for testing
+let's check the shape of this one and of
+this one okay so everything looks good
+in here the next thing that I'm going to
+do is to use a min/max scaler because
+most of the time where your training
+times are your training models based on
+time series data you well it's it
+becomes really much more faster to train
+those when the values are scaled between
+some numbers that are close to zero so
+maybe 0 to 1 or minus 1 to 1 and for
+this I'm going to use the scaler that is
+provided by psychic warning I'm going to
+create an instance of it and I'm going
+to fit it only on the training data and
+then apply it on the training data and
+the test data so in this way you're
+basically simulating what is happening
+in what might happen in the real world
+so always always always scale your data
+based only on the training data so let's
+start in the mix min max care and thus
+the feature range or scales between
+values between 0 and 1 so this is the
+default behavior which is great in our
+case and I need to add an added another
+dimension to the training data because
+otherwise the scarer
+just not work then I'm going to add
+another cone
+next I'm going to convert the training
+data by using the transform method on
+the scaler and I'm basically going to
+get the same to put in the same data in
+here let me just fix this
+alright and I'm going to do exactly the
+same thing for the test data okay so now
+that we have all of this I'm going to
+create the actual sequences that we are
+going to use for the time series data
+well if you know anything about arrows
+TMS they basically are sequence based
+models and they work by inputting a
+sequence of numbers or vectors and based
+on those vectors they can output just a
+single number which is something that we
+are going to do in here so it's
+basically a regression they can classify
+sequences so for example if you input a
+sequence of text or anything else you
+get basically an output that is one hot
+encoded vector or for text
+classification or sequence
+classification in that case in more
+general terms and you can also do some
+sort of sequence to sequence work for
+example you might do some multi-level
+class classification you can do maybe
+translation using those sequence models
+of course birds and other modern NLP
+models are probably much much better for
+these tasks but still OS teams provide
+those capabilities if you're interested
+in those so we need to convert this
+daily case of coronavirus infected
+patients to sequences so to do that I'm
+going to create a function called
+sliding windows
+and in here I'm going to pass in the
+data so this will be the route or the
+daily cases and I'm going to pass in a
+parameter which will characterize how
+long each sequence should be so the
+result of this is going to be an array
+of X's and Y's and those will be known
+by arrays and in here I'm going to
+create a wool which goes over each data
+point creates a sequence based on the
+sequence length in here and then gets
+exactly the next number of the data so
+this will be the number that we are
+going to predict so let me show you how
+you can index this from the X I'm going
+to take the data points from i to i plus
+c for the sequence length and for the Y
+I'm going to take exactly the next
+element from the data which is basically
+this number because this indexing is not
+inclusive I'm this exact expression in
+here is actually taking the next element
+from the sequence from the data okay so
+I'm going to append the result
+and this is pretty much the function
+that converts a 1 watt sequence into
+subsets or sub sequences based on the
+sequence length parameter alright and
+for our tutorial at least I'm going to
+create a sequence of length 5 so we will
+basically train our model with a
+sequences based on data from five days
+or daily cases from five days and I'm
+going to use the training data in
+testing data and I'm going to pass in
+those to the swining windows function
+and I'm going to do the same thing for
+the test data alright so let me show you
+what we have in here we have 21
+sequences
+and this is slightly smaller than the 27
+data that we had but this data is
+actually cut off based on the sequence
+length so when the sequence length is
+larger you get a lot lower sequence
+number based on just writing windows in
+here because of this parameter in here
+intuitively you should understand that
+you're iterating over much smaller
+subsets a subset of the data so the next
+thing is that we have a sequence length
+of 5 which is correct in here and we
+have just a single feature so if you
+have more features this number should
+have been higher and then through the
+white train we have exactly the same
+number of
+values and we have only one value in
+here as well so let's dig a bit deeper
+into the X train and let's take the
+first two elements yeah and this is the
+first sequence this is the second
+sequence enough if I take the numbers
+from here sorry let me do this yeah you
+can see that this number which is in the
+second sequence is actually the answer
+or the correct value for the first
+sequence and this number which is not
+seen in here is the correct answer for
+this sequence so roughly this is the
+shape or the the format of the training
+data and I know it can be really hard at
+first to understand the process at which
+this data is generated but you I think
+it's really helpful to see why and how
+this data is created so if I again show
+you the train data for the first let's
+say ten examples you can see exactly the
+same numbers and boom this is the answer
+to this one and the next one is the
+answer to this sequence so this is the
+format once again the next thing that we
+are going to do is to build a model that
+is trying to predict daily new cases and
+this model is going to be based on the
+ASTM primarily on the ASTM PI torch
+layer this model is going to be actually
+an ASTM which is not stateful so we will
+need to reset the hidden state that is
+used by the ASTM model so to do that I'm
+going to basically wrap all the let's
+say help stuff into a class that extends
+the end in module or torch in an module
+and I'm going to name this model
+coronavirus predictor of course so let's
+start by creating the class and
+extending from eminent module and for
+this class I'm going to create a
+constructor I'm going to implement the
+forward method that is somewhat required
+from PI torch and I'm going to implement
+a method called a reset hidden state so
+that our arrows team is actually
+stateless so let's start with the
+constructor it's going to be this one is
+going to take the number of input
+features or input dimensions we're going
+to take a parameter that is going to
+control the hidden dimensions the
+sequence length and the number of layers
+for the arrestee m because python is
+able to do the stacking or do a stacking
+of our HTML errors via just a single
+parameter which is great and the first
+thing that I'm going to do is called a
+super constructor I'm going to pass in
+the south and in it
+alright next I'm going to basically get
+all of the variables into properties
+all right so basically this module is
+going to contain only two layers the one
+the first one is going to be the average
+team layer which is basically can be
+stacked of multiple layers and then
+we're going to take the HTM output into
+a linear lab and in there I'm going to
+output just a single we will have just a
+single output which will basically be
+the prediction of our model so let's
+start with the HTM module and for this
+one I'm going to basically there is a
+lot of documentation in here but I'm
+going to specify the input size
+the hidden size the number of layers and
+drop out all right so the input size is
+going to be the input and we remove the
+documentation input dim for the hidden
+size we have the hidden team or
+dimension and for the number of layers
+we have the number of layers that are
+passed in from above let me clean this
+up for you and one other cool thing
+about this HTM is that you can basically
+pass in a drop out parameter in here so
+you don't need to do any post-processing
+adding any other drop out parameters
+after the HTM layer and we are going to
+use the drop out for a bit of
+regularization in our model so the next
+thing that I'm going to do is to create
+the linear layer that is going to be fun
+that is going to contain the output
+layer
+and this one is going to take in
+features or input features which are
+going to be the basically the number of
+the hidden dimension and the hidden
+dimension in the HTM is just the number
+of neurons that the ASTM layer contains
+and out features is going to be one so
+we are going to predict just a single
+number so great now that we have the
+layers that will go our modules that
+we're going to use in our model I'm
+going to define another method which
+we'll call reset hidden state and this
+one is going to basically reset the
+state of the average team so it is
+stateless and to do that I'm going to
+create a new property and initialize
+this property with a topple and this
+topple is going to contain just zeros
+but we have to make sure that the the
+the tensors in this table are going to
+be at the correct size so we are going
+to include the number of layers the
+sequence length in the end the number of
+hidden dimensions
+and I'm going to copy and paste exactly
+the same thing for the next value of the
+table so we have the constructor we have
+this method or somewhat strange method
+that I'm going to show you how we are
+going to use in a bit and finally I'm
+going to define the forward method and
+this one is going to basically take the
+input and the input in our case are
+going to be all of the sequences that we
+have so we don't need to do any strange
+processing steps in here and apply the
+the HTM to each individual sequence
+we're going to just take in all the
+inputs do some pre-processing we using
+the view or reshape somewhat the
+sequences and then we're going to pass
+out the result of the final time step of
+the HTM to our linear layer and then
+we're going to just take the final
+prediction and return that as the value
+that we want so to do that I'm going to
+get the HTM out and the hidden layer
+here and I'm going to just call the HTM
+and in here I'm going to do some air
+escaping using the view method of the
+tensors and I'm going to reshape this
+into the number of sequences that we
+have the sequence lens and then I'm
+going to just put the next dimension at
+the second dimension in the worst place
+and in the HTM I'm actually going to
+pass in the hidden layer okay so this
+should work actually I don't think that
+we need this in here okay so not really
+we have the HTML put I'm going to pass
+in the result to the linear layer and
+I'm going to do some calm reshaping
+again using the view method in here
+I'm going to take the airway scheme out
+for the view method and I'm going to
+reshape this into the sequence lens
+next I'm going to pass in the number of
+sequences that we have and passing the
+hidden dimension because this should be
+the actual input size of this linear
+layer if you recall from the the way
+that we've defined it at the top and
+again I am going to and after that I'm
+going to just take the last value from
+this because we have a time step or OST
+M which basically returns predictions
+for each time step and I'm really
+interested only in the worst prediction
+or the worst time step so that we are
+going to take this prediction and use it
+to compare it with the actual label or
+the predicted cases by the true data
+that we have and this should pretty much
+return the predicted value for Y and I'm
+going to just return this as a result of
+this forward method so this might look a
+bit scary but basically I spent around
+15 to 20 minutes to just get the proper
+the proper input shapes so it really
+pays off to check your shapes and
+hopefully you can do other cool stuff
+with shaping based on the experiments
+that you are going to undertake but
+don't be scared just reshape your
+tensors and things will probably work
+out in at the end or you can just copy
+and paste my code use the same sliding
+windows function and the input should
+probably work at roughly at the same
+using the same code and hopefully you
+should get the proper predictions for
+another from another dataset hopefully
+so let me execute this step itself all
+right
+we have the model the next thing that
+I'm going to do is to define a method
+which we are going to call train model
+and in this method we are going to
+basically do all the training for our
+model it's going to take a model the
+training data the training labels an
+optional test data and test labels which
+are going to be optional as well okay so
+the first thing that I'm going to do in
+here is to define hours function and I'm
+going to use a mean squared error which
+is very common function for regression
+tasks and the reduction method in here
+is going to be the sum so we will
+basically use a sum of all these squared
+errors and optimizer that I'm going to
+use is going to be Adam I'm going to
+pass in the parameters of the model and
+a warning crate of 0.01 okay
+so I'm going to define the number of
+epochs that we are going to train our
+model and while trial and error I've
+come up with the number of 60 then I'm
+going to create two arrays filled with
+zeros for the training and test history
+okay so basically the next thing that
+I'm going to do is to iterate over the
+data are three I'm going to iterate for
+the number of epochs I'm going to reset
+the hidden state so that to make sure
+that our iOS TM is stateless and we need
+an Ibis TM that is stateless because we
+don't actually need to do any this in
+this case we don't need to actually
+remember the state of the previous
+inputs that we've passed into the model
+at least in our case it seems like
+training a stateful model doesn't
+improve the accuracy of the results it
+this might not be the case in your
+particular problem but still I've done
+some experimenting and found out that
+well if you train a state full model
+it's much slower to do so and the
+accuracy is pretty much the same so I've
+went with only a stateless model and I'm
+going to show you how to do that how to
+train it in here so the first thing in
+here is that I'm going to do in here is
+that I'm going to reset the hidden state
+and I'm going to call the reset hidden
+state my top dot we'll defined next I'm
+going to get the predictions of our
+model on the training data and calculate
+the walls I'm going to convert the
+predicted values to a four tensor and
+I'm going to pass in the training rate
+the training levels to this next if we
+have test data I'm going to do an
+evaluation of that and else I'm going to
+just print out the results and I'm going
+to just copy and paste the code foolish
+because yeah it's
+a bit boring so I've already told you if
+you have the test data we don't want any
+gradient calculations in here I'm just
+calling the model calculating the test
+was appending it to the history and
+bringing out the test was our one with
+the training course otherwise I'm just
+printing the training course and doing
+this every 10 epochs so the next thing
+that I'm doing is the next thing that
+I'm going to do is to add to the
+training history the current was and
+next we have the three pretty standard
+steps we are going to zero optimizers
+gradients we are going to invoke the
+backward propagation of the walls or the
+errors that our model is currently
+making and then we are going to step
+with the optimizer finally I'm going to
+return the model in a vowel mode so that
+the final model doesn't evoke itself
+using a drop out so the drop out will
+basically be zero I'm going to return
+the training history and the test
+history okay and it should be actually
+so next I'm going to use this
+dysfunction but first I'm going to
+create an instance of our model I'm
+going to pass in the one ask number of
+input dimensions because because we have
+only one feature I'm going to pass in
+the sequence length which is going to be
+the sequence length and let me check
+actually
+I'll kill let me do this
+yep this should do it
+okay the sequence length and then I'm
+doing the number of layers which is
+going to be two for our case let me just
+do this yeah I have to execute the cell
+of course okay so we have the model and
+then I'm going to invoke our function
+train model which is going to return the
+model the train history the test history
+I'm gonna pass in the Model X train
+white train X test white test and in
+basically run it okay we're seeing that
+the model has started to Train the next
+thing that I'm going to show you is
+basically how you can use the history to
+make some plots for the training and
+test Wars I'm going to put a label on
+this training was then I'm going to do
+the same thing for the test data I'm
+going to limit the white between 0 and 5
+and I'm going to show you the legend all
+right you can see that our model is
+pretty much has pretty much converge
+only after let's say 10 epochs but we
+are training for a bit longer so the
+next thing that we are going to do is to
+start and evaluate the model with our
+the with our testing data so now that we
+have the model we can
+to predict the daily cases for the
+following days and basically we've just
+stored some taste test data so we can
+evaluate the results ourselves so the
+model is only predicting only as the
+cases for a single day ahead and we can
+overcome this by using the predictions
+for the next day appended to the testing
+sequence and then use the predicted
+value in the sequence and force the
+model to use the predicted values for
+the next day so we're basically
+appending the predictions to the
+sequence and predicting for the
+following days of course as the base
+getting further from the data the
+original data your model should be
+considered less and less correct or
+better or predicting a relatively good
+values but let's evaluate actually what
+is happening I'm going to start with
+requiring that no Gradius are calculated
+in the following block and I'm going to
+create the first test sequence and this
+is going to be the first sequence in the
+test data and I'm going to create a list
+for the predictions and I'm going to
+iterate over each value in the test set
+sorry I'm going to iterate the number of
+times we have the elements of the test
+set
+so I'm going to take a prediction and
+I'm going to take the flattened value
+because this one returns basically an
+array so I'm going to use torch dot
+water
+and I'm going to get the value itself
+using dot item and I'm going to obtain
+this to the predictions that we have
+next we need to create a new sequence
+using the predicted value that we have
+in here and I'm going to start by
+creating the current test sequence and
+flattening it so we don't have Andre
+average or to the array and then I'm
+going to append the predicted value to
+the current sequence and I'm going to
+append this as an another array and
+basically I'm going to take every value
+except the first one so we're taking we
+are taking the sequence according the
+new or below that we just put in all
+right and the new sequence is going to
+be basically this new sequence but I'm
+going to convert it into a format that
+is required by by our model so recall
+that actually we need through three
+dimensions and we have one sequence is
+going to be of the length of the
+sequence length and we have only one
+feature and I'm going to convert this to
+a SWAT
+dancer all right so now that we have
+this I can basically invert the cases
+using the scalar all so I'm basically
+going to take the test data and apply
+inverse transformation using the scalar
+that we've used to scale the data in the
+first place so I'm going to create a
+variable called two cases and I'm going
+to call the in
+transform here and I'm going to expand
+this dimension of the test data and
+recall that we have here
+Torche tensor and I'm going to add arrow
+and then after the inverse
+transformation is complete I am
+basically going to flatten the result
+all right and for the predicted cases
+I'm going to do basically the same thing
+but yeah but in here I'm going to yeah
+actually it's going to be exactly the
+same thing alright so now that we have
+the predicted case and the true cases
+I'm going to show you how you can put
+the results of all this on a single
+chart so to do that I'm going to start
+with 14 the history data or the training
+data to reviews and for the indexes I'm
+going to take the indexes all the way
+through the start of the test data and
+then I'm going to get another inverse
+transformation of the training data
+flatten the results let me form on this
+and finally I'm going to label this as
+historical dating case and I'm going to
+show the legend in here for this spot
+let me just put all this and you can
+clearly see that this is the training
+data to tow the refused for the cases so
+let's continue with the true cases and
+I'm going to just copy and paste this
+first the indexing next the data itself
+and finally the label so in here we are
+just going from the start of the testing
+data up until the test data and if I
+show you this right now
+you can see that this is the real cases
+in the testing data and finally I'm
+going to show you the predicted values
+which are going to contain exactly the
+same index but the data itself will be
+just from the predicted values basically
+went back and fixed hopefully an issue
+in our model so in here in the forward
+method of our coronavirus predictor I'm
+assigning the self hidden property to
+the result of the u.s. TM and after that
+I receive I get the result that is
+similar to the one in my real work or
+book so as you can see we have a
+prediction which is this orange line and
+we have the real cases which is this
+yellow wine and it's quite strange but
+at the end those values seems to
+converge but in the beginning you can
+see that clearly the model is very very
+wrong about the data so I wouldn't be
+really I wouldn't be trusting the
+results of this model very very much but
+yet again you can see that this time
+series is very let's say wild because in
+here we have this huge spike which is
+another two expected ideas but yeah this
+is this is the result of our model these
+are the predictions and next I'm going
+to show you how you can use basically
+all of this all the data to train the
+model and predict the future the future
+values based on the again all of the
+data
+[Applause]
+okay so I'm going to paste in the scaler
+that we've already used I'm going to get
+the scaler and fit it in all daily cases
+and then I'm going to transform old data
+and I'm going to call in the variable
+all the data all the data of course and
+let me show you the shape of this we
+have again 41 days with only a single
+feature next I'm going to call the
+sliding windows function and I'm going
+to convert this to tensors all right so
+next I'm going to create a model using
+the coronavirus predictor it will be
+exactly the same model actually and it's
+going to contain two layers again I'm
+going to take in the training history
+and we don't have test data for this and
+just start training all right so the
+next thing that I'm going to do is to
+predict using basically the same method
+that we've defined above so I'm going to
+just copy and paste it with this one but
+in here I'm going to define a constant
+which would which will
+that was for how many days do we want to
+predict in the future and here I'm going
+to call the X all data then I'm going to
+do this iteration based on the number of
+days that we want to predict and this
+pretty much should be it like this so
+next I'm going to do the predicted
+inversion that we've done previously
+okay
+so next I'm going to take the worst
+index of the daily data that we have and
+we have data up until 2nd of March of
+2020 this year and the next thing that
+I'm going to do is to create an index
+for these predicted cases because we
+need an index that is based on the date
+times and I'm going to call this
+predicted index and I'm going to use PD
+or pandals date range and I'm going to
+specified exactly as start this number
+over this date time I'm going to say
+that I want this data to be for today's
+to predict plus 1 periods and I don't
+want to include actually the first date
+because we want only new cases then I'm
+going to create a PG dot series with
+this one I'm going to pass in the
+predicted cases for the data and as an
+index I'm going to use the predicted
+index
+all right so now that we have all of
+this I'm going to just plot the
+predicted cases and this is the
+prediction of our model for the next 12
+days but keep in mind that this model is
+should be probably very inaccurate and
+the predictions for the following days
+are better based on the predictions from
+the previous day so I don't really think
+that these are the these numbers will be
+anywhere close to the real number that
+we're going to see but next let me just
+put the predictions into a perspective
+based on the current data that we have
+all right so these are the predictions
+for the next couple of days and you can
+see that the model is roughly thinking
+that we have three thousand five hundred
+fifty cases each and every day after
+some let's say five to six days so these
+are the predictions of our model of
+course I don't really believe those
+because we don't really have enough data
+the model I don't think really
+understands the transmission rate and
+everything else so this is pretty much
+how you can define your own time series
+model and use it to predict some time
+series data you can of course use
+multiple features you can do some
+bi-directional area streams and you can
+improve this model by probably getting
+into hyper parameter optimization maybe
+you can do some other better parameters
+for the dropout or the number of layers
+that you have so this is pretty much how
+you might want to improve this model or
+work on another model or another problem
+that you have thanks for watching guys
+please like share subscribe and if you
+have any questions please put them down
+in the comments thank you

@@ -1,0 +1,1503 @@
+[MUSIC PLAYING]
+BRAD MIRO: Hello, everyone.
+Thank you so much for
+coming to our talk.
+This is MLAI225,
+Machine Learning
+with TensorFlow and
+PyTorch on Apache Hadoop
+using Cloud Dataproc.
+So I'm Brad Miro.
+I'm a developer programs
+engineer on Google Cloud.
+GONZALO GASCA MEZA: Hi.
+I'm Gonzalo Gasca.
+I'm also developer
+programs engineering cloud.
+BRAD MIRO: So this
+is Thursday morning.
+You've probably seen this
+slide 100 times already.
+But we will be having Dory
+accompanying this talk.
+So if at any point during the
+talk you have any questions,
+feel free to just go
+into the Dory on the app,
+ask the questions.
+And then we'll be going
+through them at the end
+and getting you the information
+that you're looking for.
+So what we're going
+to discuss today--
+we will start by
+discussing machine learning
+on Apache Hadoop generally.
+We'll then discuss
+Cloud Dataproc,
+which is Google Cloud
+Platform's managed Apache Hadoop
+and Apache Spark service.
+We'll then discuss
+distributed machine learning,
+some strategies for doing
+that-- how you can actually
+solve this problem currently.
+And then we'll show you a
+demo of running TensorFlow
+and PyTorch on Cloud Dataproc.
+So let's just dive
+right into it.
+But before we do
+that, I just want
+to survey the room very briefly.
+Who here uses Apache
+Hadoop on a regular basis?
+Just a quick show of hands.
+Awesome.
+What about, who writes
+machine learning algorithms
+on a regular basis?
+Just another quick
+show of hands.
+A few more hands.
+And lastly, who uses
+TensorFlow and/or
+PyTorch on a regular basis?
+Awesome.
+Cool.
+So we'll just start with
+a bit of a survey of what
+the Hadoop and machine
+learning ecosystems look like.
+Starting on the left,
+in the Hadoop ecosystem,
+you have your Apache Hive,
+your Apache Pig, your Presto.
+Those are for, of course,
+querying Hadoop for your data.
+And then you have Apache
+Spark for running ETL jobs
+and loading your
+data into memory.
+And, of course, the
+rich ecosystem that
+comes with Apache
+Spark, specifically.
+On the right side,
+on the machine
+learning side of
+the diagram, you
+have your packages such as
+XGBoost and Scikit-learn.
+And then, of course, in
+the deep learning circle,
+deep learning being a
+subset of machine learning,
+we have TensorFlow,
+PyTorch, and Keras.
+If we look at the intersection
+of the two sides of the Venn
+diagram, you'll notice that
+we have Spark MLlib, which
+is very similar to Scikit-learn,
+for those of you who
+may be familiar with that,
+for running machine learning
+models on Hadoop.
+But noticeably, there's
+nothing in this section
+here for doing
+TensorFlow or PyTorch.
+So let's discuss
+how to get there.
+But why should you
+care, of course?
+So you may already have
+an Apache Hadoop cluster.
+And you may have pre-existing
+investments there.
+And instead of spinning
+up new infrastructure,
+you may just want to run
+your jobs there and see
+what some potential
+models may look like.
+You also may have existing
+workflows for loading data
+into and out of Hadoop.
+And of course, if you have
+all of your machine learning
+processing running
+on Apache Hadoop,
+you don't have to worry
+about the workflows changing.
+And then you're able to
+leverage them that way.
+And then, of course,
+being Apache Hadoop,
+you are in the world of
+distributed processing.
+So, of course, you can
+leverage that here, as well.
+So TensorFlow and PyTorch--
+we're just going to
+go over these briefly,
+what they are, as
+they're mentioned
+in the title, of course.
+And we're going to
+talk about them today.
+So TensorFlow being an
+open-source machine learning
+framework that is
+developed by Google,
+it has access to distributed
+machine learning.
+So it is built into
+the framework itself.
+And there's ways
+that you can do that.
+It has a very rich
+ecosystem of packages,
+such as TensorFlow
+Extended, for building
+end-to-end machine
+learning pipelines
+as well as TensorBoard, which
+is a nice UI for actually seeing
+your models as it's training.
+And you can set the metrics
+on there that you want to see,
+including accuracy or loss.
+TensorFlow also utilizes
+Keras as its high-level API.
+For those of you who
+have used Keras before,
+you know how user-friendly it
+is and how, in my opinion, fun
+it is to use.
+So, of course, that is
+built right into TensorFlow.
+And TensorFlow is also perfectly
+suited for both production
+and research.
+So for all of your needs,
+you can utilize TensorFlow.
+I just want to do
+a quick shout out
+that TensorFlow 2.0
+alpha was just released.
+So if you're interested in
+learning more about that,
+check out TensorFlow.org.
+And you can get started playing
+around with the 2.0 version.
+And then, of course, we're gong
+to talk about PyTorch, too.
+PyTorch is an open-source
+machine learning framework
+that was developed by Facebook.
+PyTorch also supports
+distributed machine
+learning natively.
+So you have access to run those
+distributed jobs using PyTorch.
+PyTorch has built-in
+model layers.
+So there's classes for
+things such as an RNN
+layer or a convolutional
+neural network layer.
+So you have access to those
+just right out of the box.
+And then, of course,
+PyTorch is also
+perfectly suited for
+production and/or research,
+depending on your needs.
+So now that we've
+discussed machine learning
+on Apache Hadoop, let's
+discuss Apache Hadoop
+as it pertains to
+Google Cloud Platform.
+And so our solution to a
+managed Apache Hadoop service
+is Cloud Dataproc.
+And so what is Cloud Dataproc?
+It contains managed clusters for
+Apache Hadoop and Apache Spark.
+Cloud Dataproc
+allows you to deploy
+clusters in 90 seconds or less
+on average for very quick up
+times.
+When you're using
+Cloud Dataproc,
+you only pay for the time
+that your queries are running,
+also known as compute time.
+It's perfectly suited
+to be configurable
+with open-source solutions.
+So, of course, we
+have Apache Hadoop.
+We have Apache Spark.
+We have Apache Pig,
+Apache Hive, as well as
+what we call optical
+components, which
+are some of your favorite
+open-source data science
+libraries that you can
+include with your cluster
+when you spin it up.
+So that includes things such
+as Anaconda, Jupyter, Zeppelin,
+Presto.
+And there's a whole
+long list of them
+that you can find
+on our website.
+And Cloud Dataproc has
+seamless integration
+with a lot of GCP services,
+including BigQuery and Google
+Cloud Storage Connector.
+Cloud Composer also has a
+Cloud Dataproc operator,
+which makes spinning your
+cluster up and down using Cloud
+Composer super easy to do.
+And then Cloud Dataproc also
+has the auto-scaling feature
+that is currently in beta.
+And autoscaling's a
+really nice feature.
+We're going to talk a
+little bit more about it
+later in the session.
+But the idea behind it is that
+as the pressure on your cluster
+increases or decreases,
+Cloud Dataproc can actually
+add or remove workers without
+you having to manually go
+in and add them yourself.
+You can do that, of
+course, but this feature
+allows you to not
+have to do that.
+And so we'll just
+discuss a little bit more
+about the architecture
+behind Dataproc.
+This will be fairly high
+level, but we'll just
+give you a little bit
+more of an insight.
+So starting on
+the left tier, you
+can see that we
+have your networking
+and your IEM layers like
+you would for any other GCP
+service in our stack.
+Next, you have the
+Cloud Dataproc API.
+And so this is really
+awesome for actually
+interfacing with your cluster.
+You have the ability to
+interact with the cluster also
+via the UI.
+But using the cloud
+console commands,
+you can interact
+with your cluster.
+You also have access
+to the jobs API,
+which allows you to preset what
+type of job you're submitting.
+So, for instance, if
+you're submitting,
+let's say, a PySpark
+job to Cloud Dataproc,
+you can set that when
+you submit the command.
+And then, this
+way, Cloud Dataproc
+will preconfigure the
+runtime environment for you.
+And then you also have access
+to your Hadoop and Spark
+operations via the Dataproc API.
+So you have access to all of
+those tools through the API.
+And then, of course,
+within the cluster itself--
+so you have your Cloud
+Dataproc open source image.
+And so, as I mentioned
+earlier, that
+can include your Apache
+Spark, your Apache Hadoop,
+Apache Hive, Apache Pig.
+And then there's the
+optional components
+that I was mentioning, as well.
+So here, we have Jupyter,
+Zeppelin, and Presto mentioned.
+But there's a whole list of
+them, as I mentioned earlier.
+You can do Anaconda.
+You can do RStudio.
+There's a whole bunch of them.
+And then, of course, being
+a Hadoop cluster, of course,
+you can write out to either
+HDFS or to Google Cloud Storage.
+So now that we've
+discussed machine learning
+on Apache Hadoop and
+Google Cloud Platform's
+solution to having an
+Apache Hadoop service,
+we're going to talk about
+distributed machine learning
+right now.
+But I think Gonzalo has
+something to say about it.
+GONZALO GASCA MEZA: Perfect.
+Thanks, Brad.
+So what is distributed
+machine learning?
+Quite important in
+the context of Hadoop.
+If you're a machine learning
+engineer, a data scientist,
+or you've been experimenting
+with deep learning models,
+you probably know
+when you are training
+large machine learning models,
+they take a very long time.
+So some of those may
+take a couple of hours.
+Some of those take days.
+And they are very large models
+that may take even weeks
+to complete training.
+So the first application for
+distributed machine learning
+is try to reduce
+this training time.
+Another application for
+distributed machine learning
+will be, try to run
+experiments in parallel.
+So, for example, if you are
+doing hyperparameter searching,
+you can run multiple
+modes simultaneously
+so you can save some time.
+So let's take a look at how
+this journey looks like.
+So normally, when you're
+still experimenting
+with your deep
+learning models, you
+can use your local computer or
+a virtual machine in the clouds.
+And you start with
+a multicore CPU.
+That might be OK for various
+small training models.
+But if you really want to
+take advantage and reduce
+the training time, you
+can use accelerators.
+An accelerator could be
+a TPU, a GPU, or an FPGA.
+For this talk, I'm only
+going to be referring
+to accelerators as GPUs.
+So what do you do?
+You install the drivers.
+You attach your device.
+And if you're using frameworks
+like TensorFlow or PyTorch,
+you need very little
+or no code modification
+to start training your models.
+If you can attach one GPU,
+why not to attach more GPUs?
+Again, you attach more GPUs.
+You start doing your training.
+And if you're using a
+framework like TensorFlow,
+there's something
+new in TensorFlow
+which is called
+distribution strategies.
+So with distribution strategies,
+the goal of the TensorFlow API
+is like, don't care too
+much about the underlying
+infrastructure.
+So you just define what is
+your underlying architecture.
+So for example, if you're
+running a single node,
+you might use define,
+oh, I have two GPUs.
+So you can continue adding
+GPUs into your single node.
+But at some point, you're
+going to hit some hardware
+limitations.
+And from an architectural
+perspective,
+instead of scaling up, you
+want to scale horizontally.
+So the next obvious
+step is going
+multi-node, multiple GPUs.
+Well, multiple nodes
+and multiple GPUs
+might help you reduce
+your training time.
+In reality, you need to
+consider other factors.
+For example, how is
+the communication
+between the devices
+and network overhead
+between those multiple nodes?
+So when we talk about
+distributed machine learning,
+there are two main
+paradigms that we always
+need to talk about.
+So the first paradigm is
+called data parallelism.
+So with data
+parallelism, you normally
+have your neural network or your
+model and you store it locally.
+And then you start
+training your model
+with different slices of data.
+So this could be
+synchronous or asynchronous.
+If it's asynchronous, which
+is like the traditional way
+of doing TensorFlow,
+you normally
+train your model
+different slices of data.
+And the workers might be
+doing the heavy lifting.
+For example, they will be
+computing all the gradients.
+And your parameter
+server or another server
+might be just doing the
+averaging of those gradients.
+That would be like
+the asynchronous, way.
+And there are new techniques,
+like new distribution
+strategies.
+For example, a
+mirroring strategy,
+which actually is
+called synchronous,
+where all the devices compute
+the gradients locally.
+And they communicate those
+directly or indirectly
+to others.
+They will be updating the
+model only when it's required.
+But sometimes, your
+model is quite large,
+that you actually cannot
+feed it into one device.
+So if you think of
+a neural network,
+you might need to split
+these different layers
+into multiple devices.
+So TensorFlow allows
+you to execute
+different parts of the
+graph in different devices.
+This is called
+model parallelism.
+So an example of
+these models would be
+wide and deep neural networks.
+And one example is the Google
+neural machine translation
+model.
+That's a very large model.
+So this slide is taken from
+the TensorFlow web page.
+This is a training model
+that the TensorFlow team did.
+So basically, what
+they did was, they
+collected four different
+models which are
+very popular for benchmarking--
+InceptionV3, VGG16,
+ResNet-50 and 152.
+And they trained them
+with different GPUs--
+one, two, four, and eight.
+So what they actually
+found is, the more
+GPUs that we are
+actually add, the faster
+we can process those images.
+So you can see there's
+a linear growth based
+on the number of
+GPUs that we add.
+And the faster we're actually
+able to process those images,
+the faster the training
+is actually happening.
+But what happens when
+you go from research
+or experimentation
+to production?
+There's more than training.
+So you normally have a pipeline.
+And I'm going to go through
+a very simplified, probably
+oversimplified machine
+learning pipeline.
+And you're going to start
+with data preparation.
+So think about feature
+engineering or your regular ETL
+process where you are
+collecting your data,
+you are selecting which
+features you need.
+And normally, in this
+case, you don't need a GPU.
+Probably, you are fine
+with a CPU cluster.
+If you think of the
+Apache ecosystem,
+you will be using Apache
+Spark on this one.
+Once you collect your data
+and it's ready to be trained,
+you have your
+trained data now, you
+move to a different stage,
+which is the training data.
+So we just agree that using
+accelerators is a good option.
+And you have access
+to those devices.
+In reality, if you work
+with different departments
+or you are running different
+experiments in your company,
+you probably need to be
+considerate about how
+you use these devices.
+When you allocate a GPU, when
+you allocate an accelerator,
+you need to make sure that--
+you need a resource manager.
+It's not like I'm just going
+to be configuring my TensorFlow
+web page, my TensorFlow
+work, and it's just
+going to be working.
+So once you move from training,
+you go to the serving phase
+where you can have
+both CPU and GPUs.
+So if you think of
+serving, you would
+use Kubernetes, maybe, some
+Docker containers running
+TensorFlow serving.
+And you will be fine,
+maybe, with CPU.
+But if you really
+want to increase
+the speed for your inference,
+you may want to add GPUs.
+A good example of a GPU that
+is designed only for inference
+would be the Tesla
+T4 from NVIDIA.
+So we agreed that when
+you use resources,
+you need a resource manager.
+And there's already applications
+that solve this problem.
+Think about YARN, think
+about Mesos or Kubernetes.
+But how do you
+configure, actually,
+TensorFlow to have
+access to these devices?
+In the classical way for
+configuring TensorFlow,
+you normally define
+your cluster.
+And you define the IP
+address to some ports,
+which are going to be
+running your TensorFlow code.
+You might define your workers,
+your parameter servers.
+Then you stop and you start
+your servers based on your job.
+But this is something data
+scientists don't really
+want to do, or this is very
+focused on dev operations.
+There's something
+called tf.config,
+which is an environmental
+variable that is designed
+to address this problem.
+So a lot of a resource
+managers, like Kubernetes,
+supports this
+environmental variable.
+So basically, you define
+a cluster specification
+which you're only
+going to be reading.
+And then from there, you
+can execute your code.
+So we're going to go through
+some of the list of products
+that actually already
+address this problem,
+meaning resource allocation
+and running distributed machine
+learning workflows.
+Who is familiar with
+some of these products
+like Kubeflow, AI Platform,
+Horovod, TensorFlow on Spark
+or Spark Deep Learning?
+Anybody has used any of this?
+Yeah.
+Cool.
+So one of the
+things that we care
+in the context of this talk is
+that it's supported on YARN.
+It runs on Hadoop.
+So the first
+product is Kubeflow.
+So it's based on the
+Kubernetes environment.
+So this might not
+be a good option.
+The second one is AI Platform.
+It's previously known as
+Cloud Machine Learning Engine.
+And we just changed the name.
+And this is great for
+model training, inference,
+and model versioning.
+But it is a hosted
+solution by Google.
+So you really don't care
+about infrastructure.
+So we just bring your
+model and we handle
+the infrastructure for you.
+The other one is Horovod.
+It's more like a library.
+So Horovod's a library by Uber.
+So Horovod, the problem
+that we're trying to solve
+is running distributed machine
+learning on top of TensorFlow
+to be able to speed
+up the training time.
+And it doesn't
+really run on Hadoop.
+It's more like a helper.
+And then we have two
+products, TensorFlow and Spark
+from Yahoo, which was one of
+the best of the first solutions
+trying to address this problem.
+So TensorFlow on Spark runs
+on two different layers--
+the Spark layer and
+then the TensorFlow--
+the TensorFlow layer, the Spark
+layer, and the YARN layer.
+From this, you rely on the Spark
+to do the resource allocation.
+And then you need to pass
+that request to YARN.
+So you need very little
+code modification.
+And it works great
+for some workflows.
+The other one is Spark Deep
+Learning from Databricks.
+So it follows the same paradigm.
+And it integrates very
+good with the ML flow
+ecosystem from Databricks.
+But one of the things that we
+actually care is GPU support.
+So when we think of
+GPU supporting Hadoop,
+if we are using--
+there's something that
+we need to mention.
+So Hadoop version
+3.1 is the version
+that, in reality,
+supports GPU allocation.
+This means when
+you are attaching
+a GPU to your devices,
+resource managing Hadoop,
+it's somewhere that you
+have a GPU connected.
+And before Hadoop 3.1,
+there's another workaround,
+which is using node labels.
+So basically, you tag your
+servers that have a GPU
+so when you run your
+jobs, you basically
+route that job to the service
+that have GPU already.
+But it's not native
+support for GPU.
+One of the problems
+with this is that when
+you're using TensorFlow
+in Spark or Spark
+Deep Learning is that
+you have a layer on top,
+which is the Spark.
+So Spark also requires to be
+able to be aware of the GPUs.
+And there's already some
+work in the Spark community.
+I think the Spark people know
+is going to be supporting this.
+But there's still a year
+open for this issue.
+So that's why it's
+important to, if we really
+want to take advantage of the
+GPU, have native YARN support.
+So then in comes TonY.
+What is TonY?
+TonY is a project which
+stands for TensorFlow on YARN,
+although it also
+supports PyTorch.
+So the main functionality
+for TonY is orchestrate,
+distribute TensorFlow
+or PyTorch jobs in YARN.
+But it also supports
+single jobs.
+So you can bring
+your single node job
+and execute it on Hadoop.
+It was developed by LinkedIn
+and it was open source back
+last summer.
+So what are the important
+things about TonY?
+So TonY is going to be
+supporting first-class jobs
+from running Hadoop.
+This means when you run a
+TensorFlow job or PyTorch job,
+it's going to be the same as
+you were running on Spark job.
+It just runs on the same level.
+If you're really
+invested in Hadoop
+and know your
+infrastructure but you
+want to start experimenting
+with deep learning,
+we want you to minify your
+infrastructure [INAUDIBLE]..
+So your data scientists and
+machine learning engineers
+can start using the products.
+So TonY allows you
+to have a client--
+and we're going to
+go more into details.
+You're going to have
+a client that you're
+going to be using to
+execute your jobs.
+And one of the
+features from Tony
+is that you can
+request resources
+in a very fine-grained manner.
+This means if you have a
+TensorFlow job or PyTorch,
+you can request how much memory,
+how many cores are you going
+to be using, and how many GPUs.
+And jobs require very
+little parameters.
+So normally, when you
+execute a Python script,
+you have a virtual environment
+with all your libraries.
+And you have your Python files.
+So what other thing we need?
+You need a configuration file.
+So as little as three options.
+You can actually execute a TonY
+job over other possibilities.
+And if you're running
+long training jobs,
+you want to make sure
+that those jobs actually
+complete successfully.
+So when you launch
+a TonY job, you
+need to be able to verify that
+all your workers are executing
+correctly.
+And if some of your
+containers actually fail,
+you need to be
+able to restart it.
+So let's take a look at
+the TonY architecture.
+The first thing, when you
+want to run a TensorFlow job
+or PyTorch job, that you
+need to bring is your code.
+So you bring your code.
+And the second
+thing is, you need
+to bring your
+virtual environment.
+So the virtual environment is
+going to be in a zip format
+or compressed.
+And finally, your configuration,
+which is the resources that you
+actually need.
+So this configuration
+is an XML file
+that you can define when you
+have CPU, how much memory you
+require for each of the workers
+and how many GPUs you need.
+So those three things are the
+first part of running a job.
+Then you need the TonY client.
+TonY client is a jar file
+that is compiled using Gravel.
+So TonY is built on Java.
+So when you launch
+TonY, when you're
+going to be launching a TonY
+job, you execute the job.
+And it's going to
+contact Hadoop YARN.
+And it's going to
+spin up a container.
+So this is the application
+master container.
+So application
+master container is
+going to see what you
+configure and negotiate
+the resources with YARN.
+So, for example, if you
+negotiate three workers,
+it's going to try to allocate
+resources for those three
+workers.
+That's the second
+element of TonY.
+Then you have your
+task executors.
+So task executors is
+actually your machine
+learning code that is executing.
+And those are based on the
+resources that you requested.
+So those are YARN containers.
+So task executors is going to
+be your machine learning code
+that is actually executing.
+So we have talked a lot
+about different topics.
+But do you think
+it's time for a demo?
+BRAD MIRO: I think it is.
+I think we should show our
+audience a little bit about how
+to run TensorFlow on
+Google Cloud Platform.
+So I know we were
+discussing before this talk
+that you had actually set
+up Cloud Dataproc cluster.
+And do you mind telling us
+how you may have done that?
+GONZALO GASCA MEZA: Sure.
+Creating a Dataproc
+cluster is very simple.
+So the first thing
+that you need to use
+is, you can use the gcloud
+command or you can use the UI.
+If you're going to use
+the gcloud command,
+you just need to
+define your cluster
+name and the number of workers.
+This will be your node
+managers in Hadoop.
+Then we can take advantage of
+a feature called initialization
+action, which are shell scripts
+that are going to be executed
+during cluster creation time.
+In this case, we have
+two, the TonY shell script
+and the GPU drivers.
+The TonY shell script,
+what it's going to do
+is, it's going to clone the
+code from the GitHub repo.
+And it's going to build
+the YARN file for TonY.
+In the official
+shell script, we also
+provide two samples,
+one with TensorFlow
+and one with PyTorch code,
+that you can actually use.
+In the second shell
+script what we
+do is, because we
+want to use GPUs,
+we need to install the drivers.
+And we need to set
+up a stack driver
+service that is going to be
+monitoring the GPU utilization.
+In this case, we're going
+to be using two GPUs.
+So for each of
+the workers, we're
+going to be attaching
+a Tesla V100 GPU.
+And because we want to
+run many, many jobs,
+we want to enable
+autoscaling policy.
+BRAD MIRO: Awesome.
+Well, thank you for
+telling us that.
+I think we should
+now run some jobs.
+So the floor is yours.
+Could we switch to
+the demo, please?
+Thank you.
+GONZALO GASCA MEZA: Perfect.
+So we created a
+cluster in advance.
+This has the workers.
+Let's go to the instances.
+You can see here, there's
+the master node and then
+the two workers with--
+each of these has a GPU.
+So let's run some jobs.
+I'm going to be running one
+TensorFlow job to start.
+BRAD MIRO: Wait.
+You're only going to run one?
+Hold on.
+We have autoscaling enabled.
+We can do more than one.
+GONZALO GASCA MEZA: Maybe two?
+BRAD MIRO: How about 10?
+GONZALO GASCA MEZA: OK.
+BRAD MIRO: And let's
+do a PyTorch job, also,
+for good measure.
+Cool.
+GONZALO GASCA MEZA: Perfect.
+So I create a script that
+is going to be launching
+those TensorFlow jobs.
+And let's take a
+look at this script.
+So I'm using the gcloud command
+to run the TensorFlow code.
+So in this case,
+we're submitting
+a Hadoop job in the cluster
+that we just created.
+The TonY client is
+just a jar file.
+So we define the jar file here.
+And because it's a jar file, we
+just need to define the class.
+One feature for TonY
+also not only allows
+you to run Python code, but
+you can also run notebooks
+like [INAUDIBLE] notebooks.
+Or you can even run
+Docker Containers.
+The only requirement is that
+your Hadoop infrastructure
+is ready for Docker.
+So in this case, we are
+actually running Python code.
+So when we were
+talking about how
+TonY is minimalistic in
+terms of executing code,
+one of the things that, as you
+can see, we tried to emulate
+is, if you're a data
+scientist, you normally
+run a Python command like this.
+You have a virtual environment.
+You're leaving the
+source directory.
+And then you run Python
+and your Python file.
+And because this is
+machine learning code,
+you should be able to
+pass some parameters.
+So this is exactly what,
+actually, TonY requires.
+So here, you pass the
+virtual environment.
+This is your [INAUDIBLE]
+virtual environment.
+You pass the Python executable.
+And then your script.
+In case you have more files, by
+defining the source directory,
+you should be able to get
+all those dependencies.
+BRAD MIRO: Gonzalo, what is
+that mnist_distributed.py job?
+What is that actually
+going to be doing?
+GONZALO GASCA MEZA:
+So in this case, what
+we're going to be
+doing is, we're
+going to run the Hello
+World for machine learning,
+but distributed, where we're
+going to be using the mnist
+data set.
+So it's a convolutional network
+for [INAUDIBLE] detection.
+BRAD MIRO: Cool.
+GONZALO GASCA MEZA: And finally,
+we have the configuration file.
+Let me go back here.
+Oops.
+So this is how your TonY
+configuration file looks like.
+In this case, we're going to
+be spinning up the workers.
+This is the
+requirements for memory.
+We're going to be using
+one parameter server.
+This is a requirement for our
+parameter server and one GPU.
+So let's take a look
+how this looks in YARN.
+BRAD MIRO: Wait a minute.
+I asked for a PyTorch job and
+I haven't seen any PyTorch job.
+So let's get some
+PyTorch in here.
+GONZALO GASCA MEZA: So in
+order to run this PyTorch job,
+we're going to be
+using the Dataproc API.
+So Dataproc allows you
+to submit Python code.
+It's very similar unless
+you do the gcloud command,
+but from the API directly.
+So what I'm doing is just
+importing the Dataproc API.
+I'm defining my project.
+So in this case, you can see
+my project ID, my region.
+And this is a TonY client.
+So it's a jar file.
+So we talk about how
+Dataproc, by default,
+has the GCS connector.
+So you can actually weed
+out any configuration,
+have access to
+your gcloud bucket.
+So this is like using the latest
+TonY version, which is 0.3.1.
+We define the class.
+This is just a helper function.
+And this is how it normally
+looks in the gcloud command
+that we just launched.
+But we're going to do
+it from the client.
+So you define your job
+controller, your arguments.
+You create your Hadoop job.
+And then you're going
+to define which cluster
+you're going to send this job.
+And now, we just send the job.
+Let's take a look at
+Dataproc for all these jobs.
+Let me go to the cluster
+so it's slightly easier.
+So here are our 10 jobs.
+And this is just the PyTorch
+job that we just created.
+And you can see that one
+job already completed.
+We can use the monitoring tab.
+And there's a lot
+of memory being
+used that is actually pending.
+Do you think autoscaling
+is going to work?
+BRAD MIRO: Absolutely.
+Can we just get the
+slide back, please?
+So let's just talk about
+autoscaling really quickly
+and how you can enable
+that on the cluster.
+So Gonzalo was showing
+you before how here, we
+have the autoscaling policy that
+we've called autoscale_tony.
+And what that actually
+looks like is,
+it's just a YAML file that
+gets uploaded to Google Cloud.
+Here, you can see that there's
+only two top-level components.
+We have the worker config
+and the basic algorithm.
+So we'll just discuss
+what those are.
+We'll start with
+the worker config.
+You'll see here that we
+have two parameters set.
+We have the min instances
+and the max instances,
+respectively, set to two and 10.
+What this means is
+that as autoscaling
+is adding and removing
+workers to the cluster,
+it will always make sure that
+the total number of workers
+is within these two
+numbers, inclusively.
+So this will never have
+less than two workers
+and never more than 10.
+And how does it actually
+figure out how many workers
+it should add?
+So it uses the basic
+algorithm for that.
+And here, we've set
+the time to check
+to be two minutes, as we've
+denoted by the cooldown period.
+So every two minutes, it will
+look at the available memory
+and the pending memory.
+And then it'll calculate how
+many workers it should add.
+And then, once it comes
+up with that number,
+it will then multiply it
+by either the scale up
+or the scale down
+factor, depending
+on how many workers it thinks
+it should add and remove.
+And so what this
+number does is, it
+gives you some more
+fine-grained control
+as to how quickly you
+may want the cluster
+to scale up or scale down.
+In this case, we've
+set these both
+to 1.0, which means
+that the cluster will
+attempt to have as near-perfect
+memory utilization as possible.
+But in the event that you
+don't care about that,
+and if there's a spike
+in your pending memory,
+you don't necessarily need to
+have a bunch of clusters added.
+You can scale this number down
+to, let's say, 0.5 or 0.1.
+Just completely dependent on
+whatever your use case is.
+So you have the option there.
+And then, last but not least, we
+have the graceful decommission
+timeout.
+And what this value does is, if
+your cluster determines that it
+should take down
+some of the workers,
+it will actually set, in this
+case, a 15-minute lag to it
+so that in case there's any
+jobs that are currently running,
+you wouldn't want the cluster
+to just take the workers down
+and have those jobs
+disappear on you.
+So just a small anecdote--
+Gonzalo and I were recently
+working on a project
+where we were using
+the autoscaling feature
+and we had that happen to
+us, where the jobs were just
+failing.
+And we never configured this.
+So it was just-- or I believe
+we had set this to 0 minutes.
+And then the jobs
+were just failing.
+So we added this, and of
+course, that perfectly
+solved our problem.
+So that's autoscaling.
+Let's see, maybe, do we
+have any more workers?
+We started with two.
+Hopefully there's more than two.
+GONZALO GASCA MEZA:
+Let's take a look.
+Can we go back to the demo?
+Perfect.
+So let me maximize this.
+So this is the YARN UI.
+You can see that the
+scaler was very busy.
+And some of the
+jobs still running.
+And other are still waiting
+to get the resources.
+BRAD MIRO: And I see
+that PyTorch job.
+Good.
+GONZALO GASCA MEZA: Yeah.
+This is when we were saying
+the application type.
+TonY is a native of YARN.
+So each of these jobs
+requests like 12 gigabytes
+of RAM, two workers,
+4 gigabytes each,
+plus the parameter server--
+2.
+Plus the application
+container, which is another 2.
+That's 12 total.
+So you can also monitor the
+utilization, here, in Dataproc.
+But looks like
+something is happening.
+Let's take a look.
+You can see here how the
+cluster has been scaling up,
+which is very good.
+BRAD MIRO: I see
+there's three workers.
+That's great.
+GONZALO GASCA MEZA: Yeah.
+And you can see
+here this, as well.
+BRAD MIRO: Perfect.
+GONZALO GASCA MEZA: But let's
+see how the jobs are doing.
+Good.
+So what I'm going to do is just
+make sure my jobs are actually
+completed correctly.
+So you can pick any of the
+jobs and see the configuration.
+And these are the
+exact parameters
+that we passed when
+we created the job.
+And we created one
+job identifier just
+for the sake of having an ID.
+And you can see here all
+of our task parameters.
+So we are training the
+model with 750 steps.
+So I'm going to be launching
+TensorBoard to see that.
+This is just a script that
+launches TensorBoard locally.
+But the data, as you guys
+saw in the training--
+let me go back here.
+The data actually lives in
+your gcloud storage bucket.
+And we didn't need to configure
+anything-- just out of the box.
+So let's see if
+TensorBoard is running.
+Oh, good.
+BRAD MIRO: Look at that.
+GONZALO GASCA MEZA: So this
+was trained for 750 steps.
+And as you can see,
+the more steps that
+are actually executing, the
+accuracy keeps increasing.
+And the cross-entropy laws,
+it's reducing, as well.
+This is a convolutional network.
+So you can see here all
+the graph and the nodes
+that are connected.
+BRAD MIRO: Looks like something
+cool to point out here
+is that using TonY
+on Apache Hadoop,
+you have access to the full
+suite of TensorBoard features,
+as Gonzalo was showing you.
+So I think that that's a
+really nice feature to have,
+TensorBoard being as useful
+as it is and as helpful
+as it is for
+training your models.
+And it looks like our jobs
+are doing pretty well.
+GONZALO GASCA MEZA: Yep.
+BRAD MIRO: Cool.
+So I think, in the interest
+of time, we'll just wrap up.
+But you'll see that we have
+five of them finishing.
+And if we were to give
+this more time, of course,
+these will continue to run.
+If we can just go back
+to the slides, please.
+Awesome.
+So we'll just close
+out and just quickly
+recap what we discussed
+today and what we showed you.
+So we started off by
+discussing machine learning
+on Apache Hadoop and
+what that looks like,
+what the current
+landscape for that is.
+We then discussed and
+introduced Cloud Dataproc to you
+as a Google Cloud Platform
+manage Apache Hadoop and Apache
+Spark service.
+We then discussed
+distributed machine learning
+and some of the options and
+strategies for doing that.
+And then, of course, we
+introduced TonY to you
+and showed you a demo of how
+you can get started using TonY.
+And we used Cloud Dataproc as
+our means to show you that.
+So if you're interested in
+learning more about this,
+here's the link for the
+actual TonY repo itself.
+It's github.com/linkedin/TonY,
+T-O-N-Y. Also,
+if you have any questions,
+feel free to add your questions
+to the Stack Overflow
+under the #tony tag.
+And we'll be happy
+to answer you.
+And then, for the code
+that we showed today,
+we're actually to be
+sharing that over Twitter
+in the next couple of days.
+So feel free to
+follow us on Twitter.
+Gonzalo @Gogasca, and
+myself @bradmiro, Brad Miro.
+And so thank you,
+everyone, for coming.
+Just a quick shout
+out to the-- we
+want to just thank
+the Cloud Dataproc
+team, the LinkedIn team,
+as well as the producers
+in the room, and also
+all of our friends,
+who were super helpful
+in helping us out
+with this presentation.
+[MUSIC PLAYING]

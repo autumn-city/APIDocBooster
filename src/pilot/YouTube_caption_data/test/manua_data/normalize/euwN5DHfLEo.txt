@@ -1,0 +1,320 @@
+Hey there and welcome to this video! Today I will 
+talk about the Embedding layer of PyTorch. I'm  
+going to explain what it does and show you some 
+common use cases and finally I will code up an  
+example that implements a character level language 
+model that can generate any text whatsoever.  
+As you can see I'm on the official documentation 
+of PyTorch and they describe the Embedding layer  
+in the following way: "Simple lookup table that 
+stores embeddings of a fixed dictionary and size".  
+What we can also see is that it 
+has two positional arguments.  
+One of them being the number of embeddings and 
+the second one being the embeddings dimension.  
+If I were to explain it in my own words 
+eEmbedding is just a two-dimensional array  
+wrapped in the module container with some 
+additional functionality. Most importantly the  
+rows represent different entities one wants 
+to embed. So what do I mean by an entity?  
+One very common example comes from the field of 
+Natural language processing. There, the entities  
+could represent all English words. Another 
+example is categorical variables when working with  
+tabular data. If we have a category of color the 
+different rows would represent different colors.  
+Note that there are also other non-deep learning 
+approaches that one can use to encode categorical  
+variables for example the one hot encoding. 
+To give you a real world example let me show  
+you the transformers codebase. Specifically, 
+I will look into the architecture of BERT.
+As you can see, BERT is actually 
+using multiple Embedding layers and  
+for example the first one the `word_embeddings` 
+encodes all tokens in the vocabulary.  
+Note that this embedding layer is the 
+very first block of the architecture and  
+during the forward pass one provides the 
+token indices and this layer will simply  
+output the corresponding embeddings. Let 
+me now show you an interactive example.
+First of all I instantiate the class without 
+any keyword arguments. The representation  
+shows us how we constructed the embedding, 
+however, it does not show us the underlying  
+2d array. To see it we need to access the 
+weight attribute. It is a torch.Parameter  
+and what is important is that the requires_grad 
+boolean is set to True which means that  
+this entire array is learnable. Let me now 
+prepare some inputs and run the forward pass.
+We see that the forward pass does nothing 
+else than just querying the rows of the  
+underlying weight array. Let us now try 
+to use the keyword argument padding_idx.
+The row with the index of five is equal to zeros.
+Here I just averaged all embeddings 
+and computed the gradient.  
+As you can see the gradient of the sixth row 
+corresponding to the index five is zeros.  
+That means that it will never get updated 
+during the training process and it will always  
+stay equal to zero. So if you're wondering 
+what the use case of this padding index is  
+I guess one can use it for out of vocabulary 
+tokens or unknown categories that are present in  
+the data set but you don't care about embedding 
+them. Finally, let me try to use the norm.
+The goal is to make sure that the 
+norm of the embeddings is not too  
+big or in other words that the embeddings 
+do not move too far away from the origin.  
+Here I selected the L2 norm and 
+I set the maximum equal to one.
+Here you are probably really surprised because 
+the normalization clearly did not take place.  
+I was surprised too when I saw this 
+behavior and it seems like one needs  
+to first run the forward pass for 
+the normalization to be applied.
+We see that the normalization was done.
+Also it was done in place for the weight 
+matrix, however, only for the rows we queried  
+during the forward pass. Anyway I would say 
+that the goal of setting the maximum norm is  
+regularization and scaling. I am now going 
+to implement a character-level language model  
+that uses the Embedding layer. This model 
+will be trained in an unsupervised way  
+and it will allow us to generate text. First 
+of all, let me describe how one can generate  
+the data set. Let's say we start with the 
+following string. We now need to decide on a  
+hyperparameter that is called the window_size 
+and let's say here I set it equal to three.
+All right and now this is how we proceed.
+So we always take three characters and 
+we try to predict the next character in  
+the line. Note that this can be seen as a 
+classification problem and that's exactly  
+the setup we are going to use. We will have a 
+separate embedding vector for each character.  
+These character embeddings will be fed to 
+an LSTM network and finally we will add a  
+classifier as the last block of the 
+network. Anyway, let's start coding!  
+Let us start by creating the 
+custom data set I just described.
+Let's go through the arguments. text can be any 
+string whatsoever and it will be used to create  
+our data set. window_size is something we just 
+discussed, however, let me also point out that  
+the bigger the window_size the bigger our input 
+tensor is going to be and the more context we will  
+actually be able to see. vocab_size will determine 
+how many characters will be in our vocabulary  
+and if we stumble upon a character that is 
+not in that vocabulary we will just mark it  
+with the "~" sign which for the purposes of this 
+video represents the out of the vocabulary token.  
+Internally, we will create this ch2ix 
+dictionary and it will map any character  
+to its position in the vocabulary. Tis 
+will be just the inverse of the above.
+Finally, this will be all the 
+characters that are in our vocabulary.
+First of all, we take our text and we 
+replace all new line characters with spaces.
+We want to use a defaultdict because if 
+we encounter a character that is not in  
+our vocabulary it will always 
+be mapped to the last element.
+All right this one is a little bit 
+messy and I apologize for it. However,  
+all we do is to take the input text and we find 
+the most common characters in it and we find  
+the vocab_size -1 the most common characters and 
+we just create this character to index mapping.
+And then we just insert our most common 
+characters into this defaultdict.
+And finally we add our special 
+out of vocabulary character to it.
+This dictionary is just an 
+inverse of the ch2ix dictionary.
+Finally, we define the vocabulary for 
+future convenience. The length of our  
+data set is nothing else than the length 
+of the original text minus the window size.
+The goal of the __getitem__ method is to construct 
+the features and the target corresponding to a  
+given index. To create the features we take all 
+the characters inside of our window and we convert  
+them to the corresponding indices. To create the 
+target we do the same thing., however, we only do  
+it for a single character that comes right after 
+our window. Let us now implement the network.
+All of the integers above are hyperparameters. 
+The vocab_size and the embedding_dim are  
+related to the Embedding together with the 
+max_norm. hidden_dim and number of layers  
+are related to the LSTM and finally the 
+dense_dim is related to the Linear layer.  
+We call the constructor of the parent.
+He instantiate our embedding layer and as 
+described before we will have a separate embedding  
+for each character. Also note that we are using 
+the padding_idx for out of vocabulary characters.
+We create an LSTM layer that will 
+act directly on the embeddings.
+Finally. we create two linear layers. 
+The first linear layer is going to  
+take the hidden state and map it into a new space  
+and the second linear layer is going to output 
+the logits over all characters in the vocabulary.
+Let us now define the forward pass.
+The x will represent the characters 
+in our window for each sample. h and  
+c will represent the hidden state of the LSTM, 
+however, they do not have to be provided. This  
+function will return logits that can be turned 
+into probability distributions with a softmax  
+and finally the updated hidden 
+states will be returned too.
+We take the indices of the 
+input characters and we run them  
+through the embedding layer and that is 
+going to give us the embedding vectors.
+Here we take the character embeddings 
+and we run them through an LSTM network.
+We average over all layers.  
+We use both of our linear layers and 
+at the end we end up with logits.
+This function takes in a loss callable, 
+a network and a dataloader and it goes  
+through all the batches in the data loader and 
+it computes the losses and then it averages them.  
+Let us now write the last utility 
+function that generates the text.
+We give this function the number 
+of characters, our trained network  
+and also the data set and it will 
+generate an arbitrarily long text.
+Here we enforce that the 
+initial text is not empty.
+We initialize our result with the initial 
+text and we set the network to evaluation  
+mode and finally we set the hidden 
+state of the LSTM network to None.
+If we want we can specify the random 
+state and get reproducible results.
+If this is the first iteration we take the 
+entire initial text and turn it into features.  
+However, if it's not the first iteration 
+we will just take the last character.
+We  
+run the forward pass, we get our logits and 
+the hidden states, we turn the logits into  
+the probabilities then we sample a new character 
+and finally we add the new character at the end  
+of the res string. Now we have everything we 
+need and we can write a small training script.
+We read some text from a text file and then 
+we define the hyperparameters of the model.  
+Let me just point out that I'm setting embedding 
+dimension equal to two and that is because  
+I want to visualize how these embeddings evolve 
+over epochs. If you wanted to build a model that  
+generates realistic text I would definitely 
+increase the embedding dimension and other  
+hyper parameters. However, for our purposes this 
+is great because it will allow us to visualize.
+We are going to use the cross 
+entropy loss because we are  
+dealing with a multi-class classification problem.
+We instantiate our dataset.
+We split our data set into the 
+training set and the validation set.
+We  
+create the train dataloader and the 
+validation dataloader. Each of them will  
+be sampling randomly from a disjoint subset 
+of the data set. We instantiate our network.
+We instantiate our optimizer.  
+Here we prepared a list that will be used to 
+store the character embeddings after each epoch.
+Here we implemented the 
+standard torch training loop.
+At the end of each epoch we will compute 
+the average training and validation loss.
+We will also generate some text using our 
+network and that will allow us to monitor  
+whether the model is getting better.
+We will create a pandas DataFrame 
+that holds the weight and also  
+some additional metadata and we just 
+append it to our embedding history.
+Finally, we create a big DataFrame that 
+concatenates all the per epoch ones and we  
+save it into a csv. Note that I'm not saving the 
+model weights because I don't necessarily care  
+about them. The main point of this tutorial 
+is to show you how the embeddings evolve  
+over the training. Let's see whether it works.  
+As you can see I downloaded the Dracula 
+book and we will use it as our training set.
+Note that I'm not running this on a GPU so 
+this will take some time and I will just  
+cut to the end for you. We trained 
+the model for a couple of epochs  
+and the training and the validation loss were 
+going down. When it comes to the generated text  
+it's by far not realistic, however, the model 
+is definitely better than a random character  
+generator and it does have a basic understanding 
+of the English characters. I created a small  
+visualization of the results in a jupyter 
+notebook. since we set the embedding dimension  
+equal to 2 we can visualize in a 2d plane what the 
+embeddings were after each epoch. Another approach  
+could be to use higher dimensional embeddings 
+and then do dimensionality reduction. However,  
+this 2d example is easier to explain. Anyway, 
+let me point out three important facts if  
+we focus on the origin we see the ~ sign as 
+we move across the epochs it does not move.
+Another important thing is that all 
+the embeddings lie within the circle  
+of radius 2 from the origin.That is 
+because we specified the maximum norm.  
+Lastly, we see that before training the 
+embeddings were just randomly initialized.  
+The most radical rearrangement 
+happened after the first epoch.  
+The numbers, for example, were already put 
+into the same cluster. Here as we continue  
+the training the characters that are somehow 
+similar started to group themselves together.
+If we look at the last epoch we see many 
+cases of two character groups containing the  
+lowercase and the uppercase version of the same 
+letter. For example the letter T, the letter Y,  
+the letter H, the letter P, the letter O and 
+so on. Clearly these embeddings are not perfect  
+and there are also a lot of letters that were 
+not grouped at all. Just to give you some  
+context though the transformer based language 
+models are using hundreds of dimensions for  
+their token embeddings Anyway, I find this 
+toy example really instructive. Finally,  
+let me remind you of the amazing fact that 
+we trained this model on a downstream task of  
+predicting the next character in a string and 
+the model learned these meaningful embeddings  
+completely on its own. Anyway, that's it for the 
+video. I hope you enjoyed it and that you learned  
+something new. If you have any suggestions or 
+comments I would be more than happy to read them  
+and I guess have a nice rest of 
+the day and see you next time!!!

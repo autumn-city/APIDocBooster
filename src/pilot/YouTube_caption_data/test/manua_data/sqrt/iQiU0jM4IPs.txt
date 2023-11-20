@@ -1,0 +1,286 @@
+One model may make a wrong prediction.
+But if you combine the predictions of several models into one
+you can make better predictions.
+This concept is called ensemble learning.
+Ensembles are methods that combine multiple models to create more powerful models.
+Ensemble methods have gained huge popularity during the last decade.
+There are two important ensemble models 
+which use decision trees: random forest and gradient boosted.
+In this video, I'm going to talk about random
+forests.
+First, I'm going to cover what random forest
+is
+Next, I'm going to mention some advantages and disadvantages of random forests.
+Finally, I'm going to show you how to implement a random forest with a real-world dataset.
+Let's dive into what random forest is.
+You can think of random forest as an ensemble of decision trees.
+The decision tree models tend to overfit the
+training data.
+You can overcome the overfitting problem using random forest.
+To implement random forest, we need to build many decision trees.
+A random forest consists of a collection of
+decision trees.
+Each tree in the random forest is slightly
+different from the others.
+These trees are selected from a different
+subset of features.
+Note that these features are randomly selected.
+When making the final prediction, the predictions of all trees 
+are combined and these predictions are averaged.
+Since we use many trees, we can reduce the
+amount of overfitting.
+Let's take a look at some advantages and disadvantages of random forest.
+First, I want to talk about some advantages.
+You can use random forest for both classification and regression tasks.
+Random forest often works well without heavy tuning of the hyperparameters.
+You don't need to scale the data.
+Random forest may provide better accuracy
+than decision tree 
+since it overcomes the overfitting problem.
+There are some disadvantages of random forests.
+Let's take a look at these disadvantages.
+Random forest cannot be perform well on very high dimensional, 
+and sparse data such as text data.
+Random forest is not simple to interpret since it uses deeper tree than decision trees.
+So we saw some advantages and disadvantages of random forest.
+Now let's go ahead and take a look at how
+to implement random forest with scikit learn.
+To show how to implement random forest, I'm going to use the Breast Cancer Wisconsin dataset.
+Before loading the dataset, let me import
+pandas.
+import pandas as pd
+Let's load the dataset.
+df = pd.read_csv( "breast_cancer_wisconsin.csv")
+Cool.
+Our dataset was loaded.
+You can find the link to this dataset in the
+description below.
+Let's take a look at the first five rows of
+the dataset.
+df.head()
+Here you go.
+This dataset consists of examples of malignant
+and benign tumor cells.
+The first column in the dataset shows the
+unique ID numbers 
+and the second column shows diagnoses,
+let's say M indicates malignant and B indicates
+benign.
+The rest of the columns are our features.
+Let's take a look at the shape of the dataset.
+df.shape
+You can see the number of the rows and the
+columns.
+Now, let's create the input and output variables.
+To do this, I'm going to use the loc method.
+First, let me create our target variable.
+y = df.loc[:,]
+I'm going to select the diagnoses column
+"diagnosis"
+let me convert this variable into a numpy
+array.
+To do this let me write values
+Beautiful.
+We created the target variable.
+Let's create our feature variable.
+To do this, I'm going to use the drop method.
+X = df.drop()
+Let me set the column names that I'm not going
+to use when building the model.
+let me set ["diagnosis","id"]
+lastly, let me  set unnecessary column
+"Unnamed: 32"
+To drop from columns, let me set
+axis=1
+To convert a numpy array, let me set values
+let me set values
+Cool.
+We have created our variables.
+Note that our target variable has two categories, M and B.
+Let's encode the target variable with label
+encoder.
+First, I'm going to import this class.
+from sklearn.preprocessing import LabelEncoder
+Now, I'm going to create an object from this
+class.
+le = LabelEncoder()
+Let's fit and transform our target variable.
+y = le.fit_transform(y)
+Awesome, we encoded target labels.
+Before building the model, let's split the
+dataset into training and test set.
+To do this, I'm going to use the train_test_split
+function.
+First, let me import this function.
+from sklearn.model_selection import train_test_split
+Let's split our dataset using this function.
+X_train, X_test, y_train, y_test =
+train_test_split()
+let me set the variables.
+X, y,
+To split in balanced, let me set
+stratify=y,
+for reproducible output, let me set,
+random_state=0
+Cool.
+To use random forest in Scikit-Learn, we need to import RandomForestClassifier 
+from the ensemble module.
+Let's import this class.
+from sklearn.ensemble import RandomForestClassifier
+Now, I'm going to create an object from this
+class.
+rf = RandomForestClassifier()
+First, I'm going to use default values
+Only I'm going to set the random state parameter.
+random_state = 0
+Cool.
+We created an object.
+Let's build our model.
+To do this, I'm going to use the fit method
+with training set.
+rf.fit(X_train, y_train)
+Awesome.
+Our model is ready.
+Let's evaluate our model using the training
+and test set.
+y_train_pred = rf.predict(X_train)
+y_test_pred = rf.predict(X_test)
+Cool.
+We predicted the training and the test values.
+Now, let's take a look at the performance
+of our model on datasets.
+To do this, I'm going to use the accuracy_score
+function.
+First, let me import this function.
+from sklearn.metrics import accuracy_score
+Now let's take a look at accuracy scores for
+the training and test set.
+rf_train = accuracy_score(y_train, y_train_pred)
+rf_test = accuracy_score(y_test, y_test_pred)
+Now, let's print these scores.
+print(f'Random forest train/test accuracies:
+{rf_train:}
+To see only the first three digits let me
+set,
+.3f rf_test:.3f
+Awesome, the scores were printed.
+As you can see, the score on the training
+set is 100%, 
+and the score on the test set is 95%.
+This means that the model has an overfitting
+problem.
+Note that this random forest model learned
+the training set so well.
+So, it simply memorized the outcome.
+But, the model cannot generalize.
+To overcome the overfitting problem, we control
+the complexity of the model.
+To do this, we need to tune the model using
+different parameters.
+To build a better model, I'm going to use
+the grid search technique.
+Let's import GridSearch.
+from sklearn.model_selection import GridSearchCV
+Now, I'm going to create an object from RandomForestClassifier.
+rf = RandomForestClassifier(random_state = 0)
+Okay.
+Now, let me create a parameters variable that contains the values of the parameters.
+parameters={}
+For the maximum of the tree I'm going to use the max_depth parameter
+'max_depth':[5,10,20]
+If you want, you can write more values.
+It is enough these values in our case.
+To build a random forest model, you need to
+decide on the number of trees.
+Now, I'm going to create the values for the
+n_estimators parameter.
+n_estimators specify the number of trees in
+the forest.
+For this parameter, I'm going to use for loop
+in list.
+'n_estimators': [i for i in range(10, 100,
+10)]
+Let's set values for the min_leaf_size parameter.
+This parameter uses to specify the minimum number of samples in a leaf node.
+For this parameter, I'm going to use for loop
+in list again.
+'min_samples_leaf': [i for i in range(1, 10)]
+Now, I'm going to determine the criterion
+parameter.
+Here, I'm going to set two parameters.
+'criterion' :['gini', 'entropy'],
+Lastly, I'm going to set how to select the
+features.
+a critical parameter in the random
+forest technique is max_features.
+You use this parameter when looking for the
+best split.
+Let me write three values.
+'max_features': ['auto', 'sqrt', 'log2']
+Awesome.
+We specified the values of the parameters.
+To find the best parameters, I'm going to
+create an object from GridSearch.
+clf = GridSearchCV()
+First, let me set the estimator.
+rf,
+Next, let me set the parameters variable.
+parameters,
+to use all processors, let me set
+n_jobs= -1
+Beautiful.
+Our model is ready to train.
+Next, I'm going to fit our model with the
+training set.
+clf.fit(X_train, y_train)
+to see the best parameters, I'm going
+to use the best_params_attribute.
+print(clf.best_params_)
+When we execute this cell, you can see the
+best parameters.
+You can see the values of the best parameters.
+Now, I'm going to predict the values of the
+training and test set.
+Note that we don't need to train our model
+again.
+Because after the best parameters are found,
+the model is trained with these parameters.
+So you can directly use the clf model for
+prediction.
+Let's predict the values with this model.
+Let me copy these codes 
+and paste them here.
+I'm going to only change the model name.
+here you go
+The accuracy scores were printed according
+to the best parameters.
+The performance of the model is better on
+both the training and test set.
+Notice that the score of our model on the
+training set 
+is close to the score on the test set.
+In addition, both accuracy scores are close
+to 1.
+Awesome.
+So, we have found the best parameters and
+predicted the values of 
+the training and the test set.
+In this video, I talked about random forest
+and 
+how to implement this technique with scikit learn.
+As a result, a random forest consists of multiple decision trees.
+This method averages the results of all the
+trees to output a model.
+So you can overcome the overfitting problem
+with this approach.
+You can perform both classification and regression
+tasks with this method.
+That's it.
+I hope you enjoy it.
+You can find the link to this notebook in
+the description below.
+Thanks for watching.
+Don't forget to subscribe to our channel,
+give a like and leave a comment.
+See you in the next video.
+Bye for now.

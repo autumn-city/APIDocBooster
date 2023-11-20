@@ -1,0 +1,1004 @@
+hey guys today we're going to build a
+neural network and use it to predict
+whether or not is going to rain tomorrow
+based on some real-world weather data
+let's begin by having a look at the data
+for it today the data set is actually
+hosted on K go in it's called Iranian
+Australia so the most important or the
+task that we are going to do is to
+predict whether or not is going to rain
+tomorrow as you can see the data is
+about 14 megabytes and I've already
+prepared the data and uploaded it to a
+Google Drive so it will it should be a
+bit easier to download it and have a
+look at it let's start by opening a
+Google co-op notebook and just for now
+I'm going to ignore this I'm going to
+check the run time that we are going to
+need a GPU for this lesson and I'm going
+to go to a new cell right at the bottom
+in here and start by just getting the
+data I'm going to copy and paste my
+Google Drive ID and I'm going to use G
+down to download the CSV file we have to
+wait for the GPO runtime to connect and
+after that you can see that the data is
+being loaded and we have a CSV file
+whether O's dot CSV on our machine and
+you can see it in here as well so the
+first thing that I'm going to do is to
+read the data into a data frame
+okay so this should do the trick but
+yeah I forgot to do my imports so let me
+copy and paste those and I'm not going
+to go over each and every one of those
+but yeah you can see that we are
+importing pandas numpy Seabourn and by
+torch in here so let's watch this and we
+are also setting some random seeds so
+next I'm going to what the data frame
+and after that I'm going to have a look
+at some of the a couple of rows of this
+data frame and as you can see this this
+data set has a water features or a lot
+of columns in here and we're also seeing
+that some of the values are actually
+missing so this will be a problem and we
+have mostly columns that contain just
+numbers but we have this for example
+this the vocation or the date and wind
+direction which seems to be either
+strings or some sort of dates and for
+the rain tomorrow we have no and maybe
+probably yes so you have to convert
+those two numbers as well and the rain
+today should be converted to a number as
+well if we're going to use it to predict
+whether or not is going to rain tomorrow
+so let me start by just looking at the
+shape of this data frame and we have a
+lot of data points and 24 comes we have
+roughly 140 k examples but after some
+pre-processing I'm going to have a look
+again at the shape of the data frame
+after with we're done with the
+processing itself
+we've already seen that
+of the data is missing and that this is
+a problem for our model another thing
+that we saw is that we have some strings
+incomes and neural networks can only
+work with numbers so we have to do
+something about this as well and the
+last thing is that our data frame
+contains 24 calls which is a bit too
+much for us to wrap our heads around
+building a simple model using this data
+frame so I'm going to begin by first
+checking how many missing values are
+there in each column I'm going to use SN
+a and sum the values for each column and
+as you can see rain tomorrow has a 0 0 n
+ace which is great but rain today has
+some the data invocation also don't have
+any zeros and most of the other columns
+contain some missing values so the next
+thing that I'm going to do is create a
+subset of the columns that we are going
+to use for prediction and basically
+those combs are selected via using
+correlation analysis using some
+statistical methods but for the sake of
+the simplicity I'm going to say just we
+are going to use those and I'm not going
+to explain how we come up to this if you
+are more interested in features
+elections maybe I'll do a video on that
+in a few in the future so let's say that
+we are going to use the rainfall comb we
+have humidity at 3 p.m. the pressure at
+9 a.m.
+whether or not it rained today
+and finally the value that were
+interested in rain tomorrow and our new
+data frame is going to be data frame
+that contains only those combs and if I
+have a look at the head of those we're
+going to see that we have just this
+subset of comms
+the next thing that I'm going to get rid
+of is those nose or in probably yes in
+here so I'm going to convert those two
+numbers and we are going to assign 0 to
+know in 1 2 years so to do that I'm
+going to replace the rain today
+come on and I'm going to replace the
+nose with 0 and a yes with once and I'm
+going to do this in place and I'm going
+to exactly the same thing for in
+tomorrow so yep I have a syntax error
+well this should hopefully be it if I
+have a look at the data frame now you
+can see that we have rain today 0 and
+rain tomorrow
+0 so some of the values in here as you
+can see our floats which is a bit
+strange let me just go in rerun this so
+to make sure that everything is running
+okay yeah range test you is a fault but
+yeah we will continue and handle if when
+or even if this is a problem so the next
+thing that I'm going to do is to
+basically drop every row that contains
+even a single column with a missing
+value so this is not the best way to
+handle the situation but
+for the purposes of this tutorial I'm
+going to just do that there are other
+more advanced ways to handle missing
+values and I'm going to link some of the
+resources that I've checked out and some
+of the tutorials that are for already
+written previously so you can maybe
+handle the situation better when you're
+doing some practical tasks so I'm going
+to just drop every num and I'm going to
+have a look at the final data frame and
+again I'm going to check the shape of
+this we've only washed around ten
+percent or even less from the data which
+is great and we have now only five combs
+that we are going to use and recall that
+we are going to use only the first four
+cones to predict whether or not is going
+to rain tomorrow so let's have a look at
+how many of the examples contain that
+it's really going to rain tomorrow and
+how many of those contain that it's not
+going to rain tomorrow which is really
+important for us and this is really
+pretty bad because we have a lot of
+examples in which it's not going to
+contain it's not going to rain tomorrow
+and only around 1/4 or even 1/5 of the
+examples contain rained model so let me
+just show you the percentages of those
+values and yeah almost 78 percent of the
+data contains examples for not raining
+tomorrow and this is a huge problem
+because you need to have enough data
+from each class and the first class is
+not going to rain and the second class
+is going to rain so
+you need roughly even amount of data for
+each class so your model actually
+understands the the features of each
+example or each class so you can
+actually predict better and this this
+problem is really really well well
+understood and it's very often that you
+can see this problem in when you're
+working in the real world there are
+again a lot of ways to handle this some
+of the over sampling and under some link
+tasks you can do I will also link
+reference to this in the tutorial so
+about some ways you can use some methods
+you can use to handle this situation but
+just for now I'm going to continue and
+skip the problem in whatsoever which is
+not a great solution again and you're
+going to see why our model is going to
+suffer from this class imbalance and
+another thing that you should note is
+that if you are just building a model
+that answers that it's not going to rain
+tomorrow
+every time based on this data set you're
+going to be right around 78% of the time
+so this is really bad think again and we
+need to build a model that is going to
+be at least this accurate to consider it
+that it's just even a bit useful okay so
+the next thing that I'm going to do is
+to create the features using the data
+frame I'm going to select a subset of
+the columns that we are going to use to
+predict whether or not is going to rain
+tomorrow and I'm going to extract the
+labels or the target variables the Y's
+which is going to be the information
+that it is going to rain tomorrow so to
+do that I'm going to take a subset of
+the cones
+rainfall humidity rain today and
+pressure at 9:00 a.m. and for the wise
+I'm going to subset only rain tomorrow
+let me execute this all right and the
+next thing that I'm going to do is to
+use the Train test split to create a
+training and a test data set we're going
+to use the training data set to teach
+our model the examples about how it's
+going to rain or not going to rain
+tomorrow and we're going to use the test
+data set to basically evaluate the
+performance of our final model and let
+me go to another wine in here treinta
+split comes from socket worm and it
+accepts the features the labels and the
+test size which is going to be in our
+case we're going to reserve 20% of the
+data for the test and I'm going to use
+the random state to make sure that this
+split is reproducible by you all right
+so if I check the shape of the training
+data the training features we have the
+four cones and we have roughly 100
+examples in here for training and if I
+have a look at the first couple of
+examples you can see that we have some
+data and these are the features at the
+features that we are going to use to
+predict we will train tomorrow okay so
+the next thing and final think about the
+data pre-processing step is going to be
+that we are going to convert all of
+those arrays numpy array is actually or
+maybe sorry those are actually pandas
+dataframes
+we're going to convert those to torch
+dancers and we need to do that because
+we're we're going to use PI torch and PI
+torch is working with PI torch dancers
+so let's start by converting the X train
+and we're going to convert it from numpy
+and I'm going to convert the data frame
+to numpy and I'm going to convert all of
+this to a fault tensor I'm going to do
+exactly the same thing about X test next
+I'm going to convert the white train and
+actually I'm going to remove an extra
+dimension that the Y train currently has
+because if I show you right now the
+shape of white rain is around 100 K and
+we have one extra dimension in here
+maybe this is because let me check this
+okay
+so this shouldn't be necessary our fix
+does affect this later in the tutorial
+but yeah let me just stick to this and
+I'm going to remove the extra dimension
+in here I'm going to do exactly the same
+thing torch from non PI I'm going to
+convert white rain to numpy and I'm
+going to convert this to a vault and
+exactly the same thing for white test
+so let me execute this and let's just
+check the shapes again because probably
+the most important thing that you must
+do while preparing corporal sinker data
+is checking that everything gives you in
+the correct shape so yeah we have exact
+the exact number of rows in the X train
+and why train as you can see and we have
+four features in here and only one
+feature the target variable which will
+be that it's going to whether or not
+it's going to rain tomorrow
+finally we are ready to build our first
+neural network so let me begin by
+writing the doubt and building the
+neural network with part PI torch is
+really simple you just have to extend or
+at least one way to do it is to extend a
+torch ññ module and define your model in
+there and our neural network is going to
+accept the features these four cones
+rainfall humidity rain today and
+pressure and it's going to output a
+single value that is the likelihood that
+it's going or how how much confidence
+does our neural net has that is going to
+rain tomorrow
+so let's begin by starting and writing
+this neural net king or coifs but first
+let me just say a couple of things about
+neural nets and why neural nets are so
+coo and so popular these days well it
+looks like neural nets are pretty much
+dominating or almost all tasks in
+machine learning statistical learning
+deep learning or whatever and when you
+talk about natural language processing
+core image computer vision you can see
+that almost all state of the art models
+are performing some neural network are
+using some neural networks and it's
+really cool to see that something that
+it's been mostly a theoretical thing in
+the 90s or the 80s is now just state of
+the art very practical and working
+models that can do almost any task and
+one of the most important qualities or
+features of neural nets is that they can
+actually they can actually estimate or
+approximate any function you can think
+of
+this is mathematically proven using the
+universal approximation theorem and the
+theory behind that is very convoluted
+but yeah you can see if you're more
+mathematically inclined and have a look
+at the paper that I'm going to link into
+the tutorial so let's start by building
+a neural network quit by touch so let's
+start by creating a class and I'm going
+to call it net from neural net of course
+and in here I'm going to again implement
+the torch or extent and then module from
+torch and in this class we're going to
+do two things we're going to define
+constructor and in this constructor I'm
+going to define a couple of layers
+neural nets are basically graphs but
+they are they in their nodes or vertices
+are actually aligned as layers and we
+have an input layer we have hidden
+layers and we have an output layer the
+input and output layers should be pretty
+self-explanatory but the hidden layers
+is where the magic happens there are
+every vertex in this type of graph is
+called neuron or a node and each neuron
+has its own numerical value and this
+value you can think of it as an op this
+value can take different numbers
+different yet different numbers and
+based on those numbers your neural
+network is going to predict whether or
+not it's going to rain based on the
+features that are passed in as an input
+so we're going to create a couple of
+layers we're going to basically stitch
+them together and create a graph and the
+output of this graph is going to be the
+confidence or the likelihood that our
+model thinks that it's going to rain
+tomorrow so let's begin by creating the
+constructor and only parameter the R
+that our constructor is going to take is
+going to be the number of features in
+our case this is four but let's build it
+a bit more generically I'm going to call
+the super constructor or the parent
+constructor in here and then I'm going
+to define three layers for our neural
+net and those layer are going to layers
+are going to be an N dot linear or fully
+connected layers and each of those
+layers contains in features the number
+of input features and output features so
+we're going to start our input layer or
+fc-1 as number of features and then I'm
+going to specify that this is a disk
+layer is going to have five output
+features then I'm going to specify
+another layer and in here I'm going to
+specify again five and three
+you must basically match this number
+with this number when you're building
+neural nets so let's go to the third
+layer and this will be the final order
+output layer in here and in here too
+much this value we will have to this
+value we have to put in three and the
+output is going to be just a single
+number the degree of belief that our
+model things is going to be raining
+tomorrow so this will be just 1 ok so
+the next method that I'm going to define
+is the one that is going to basically
+use all of those layers and this should
+be or it's cold it's a bit of a special
+method in pi torch and it's called
+forward and this method again will take
+just a single parameter which will be X
+and X is going to be the data or the
+inputs of our model so the thing that
+I'm going to do in here is basically for
+this X through each
+there and after each layer is cold I'm
+going to take the input of the previous
+layer sorry output from the previous
+layer and use that as an input to the
+next layer so we're going to see
+something a bit special in here as well
+so the first layer we are going to do
+something called F array loop and I'm
+going to explain what this is in a bit
+and I'm going to apply the first layer
+on X so we have some result after
+applying the first layer I'm going to
+copy and paste this apply the second
+layer and finally I'm going to return
+the result using torch dot Sigma with
+which I'm going to explain in a bit as
+well and the result is going to be the
+application of the third layer given the
+input from the previous layer okay so
+let me scoot this and this is your first
+neural net it's really simple and you
+might ask yourself well how did we
+choose those numbers and those numbers
+are actually going to be the hidden
+parameters or the knobs that our model
+uses to predict whether or not is going
+to rain tomorrow and the short answer to
+this is by trial and error and there are
+some approaches that are a bit just a
+bit smarter than trial and error but in
+general you when doing those things in
+practice you most likely not use you're
+most likely not going to build a neural
+network from scratch like the one I'm
+showing you here and you'll probably use
+some bigger model which already has some
+predefined architecture which might be
+very well optimized so you don't
+actually need to carry too much about
+how you can define this neural network
+architecture so let's start let's
+continue by creating an instance of our
+model and recall that our model expects
+the number of features and the number of
+feature is going to be
+shape of the order the column numbers
+from our extreme because this will be
+just the number of features and I'm
+going to call a function that that I've
+already defined which is an A and then
+this so let me go to the top of this and
+execute the cell next I'm going to show
+you yeah the neuron that dr. if just
+defined okay so let me just go ahead and
+show you the code for that and this and
+this is basically I just tiny rewrite on
+this Python library which is done by
+protocol to door Gil Gil probably and
+thanks man
+this guy did this neuron network
+visualizer for Kira's so I just went
+ahead deleted most of the code that is
+based on terra's applied some Python
+code and a bit of styling I've changed
+the course and whatnot and after that
+you get you can get this I think very
+good-looking graph or visualization of
+your neural net and in here you can see
+that we have the input layer which
+contains the four features that we're
+going to use we have the output layer
+which is going to be the number between
+0 & 1 the likelihood or the confidence
+that our model has about that it's going
+to rain tomorrow and we have the hidden
+layers we have two hidden layers and the
+first one as you might have expected
+contains five parameters and the next
+one contains only three so this
+correspond to these numbers and okay so
+the thing that we're going to do next is
+basically I'm going to tell you about
+those F dot array
+and towards sigmoid things see the thing
+about stacking multiple linear layers is
+that you will never get you will never
+work any function that is nonlinear but
+in the real world most of the
+correlations or the approximations or
+the function that that you want to work
+are probably not nonlinear you can yeah
+you can use linear stuff or linear
+approximations but those will be just
+approximations and the thing that is
+that was a bit harder to understand was
+how you can do neural nets and use them
+to learn nonlinear functions to do that
+most of the the community has gathered
+up and created those things called
+activation functions and activation
+functions basically break from the
+linearity so you can just go ahead and
+do some transformation using some
+activation function and get nonlinear
+result in return let me explain to you
+what is the for example the rayleigh
+function and i'm going to go here tinker
+up this code and yeah i'm using the rule
+in here and the real function is
+something actually very simple and it's
+probably the most used activation
+function in practice and as you can see
+the values of the when you put in a
+value that is greater than zero you get
+exactly the same value and if you put a
+value that it's zero on or less than
+this you have just zero so the formula
+for this let me show you is
+the maximum of the zero and the number
+that you're putting in so this is the
+sigmoid and for the sorry this was the
+relu and for the sigmoid which is again
+the the final thing the final function
+that we are applying in here and we're
+using this to create our binary
+classifier or to squish the numbers the
+outputs between 0 & 1 so this s-shaped
+function in here shows you the actually
+the shape of the sigmoid function and
+the mathematical or the the formula for
+this one is a bit more complex but
+nothing nothing too strange I hope so
+these are the activation functions that
+we are going to use in our model there
+are what and more actually activation
+functions more exotic ones but most of
+the time you have you heard of the
+sigmoid the relu the tonnage
+if you try to use your neural network to
+predict our weather weather it's going
+to rain or not tomorrow
+the result will be pretty random and
+your motto should be pretty dumbed
+out at this point so the next thing that
+we're going to do is actually show the
+models some training data and use it to
+teach to teach it and hopefully it
+should be a good predictor based on the
+data that it's seen the process itself
+is called training and it contains two
+main ingredients that we are going to
+have a look at right now so let me just
+go ahead and type in the training part
+the first thing that we need in here is
+something that tells us how good our
+model is currently doing so we are going
+to look for some parameters and again
+those parameters are these nodes in here
+and each node in here will contain some
+number and we are our task is actually
+to find some numbers for each and every
+one of those nodes and each number
+should hopefully contribute to doing
+some correct predictions so the most the
+most common way to for finding those
+parameters is to involve two components
+I was function and an optimizer the job
+of the worst function is to tell you how
+good you're currently doing and when
+this function gets to zero or close to
+zero this should tell you that your
+model is pretty much perfect based on
+the data that you have
+note that your models will probably
+never be 100% correct even if your loss
+function is zero and actually having a
+loss function of zero on the training or
+even the validation or the test data is
+probably a sign of overfitting something
+that we are not going
+talk about today but it's a real tough
+problem to handle in practice so the
+worst function that I am going to use
+today is BCA was any it's an
+abbreviation from binary cross-entropy
+was the binary cross-entropy was
+function measures the difference between
+two binary vectors which has some
+probability distribution so it basically
+tells you how much to probability
+distributions differ and again the close
+of this number is zero the more and more
+likely those probability distributions
+are and binary stands for that week it
+can only handle binary the two
+distributions as this is exactly our
+case we want to predict we have a binary
+classification or binary prediction is
+it going to rain tomorrow or not one
+important thing about the BCA was is
+that expects the inputs to be based on
+the outputs of the sigmoid function
+which we already have as in our model as
+the final thing that we did before
+returning the final value so let's
+define the cost function and some times
+you're going to see a was or criterion
+and this is the criteria that we are
+going to use for how good we are doing
+and pi torch has this BCA was so nothing
+special in here okay
+so after we have the cost function that
+we are going to try to get to zero we
+need the optimizer and the optimizers
+job is to find better and better and
+better parameters that drive this was
+function closer to zero there are a
+world award and tons and tons of
+different optimizers that are presented
+almost every month I believe and in of
+course in our high four
+somewhere in the neural network
+literature but some are better than
+others and some have proven to be very
+useful in practice and work quite well
+one that it's really probably the best
+starting point is the atom optimizer and
+atom optimizer is actually recommended
+by and Drakkar party in his blog post a
+recipe for training a neural net and the
+reasoning behind is that if you are
+using atom without the force it's really
+safe optimizer it doesn't blow up during
+training at least not that much and if
+you turn off the momentum and other
+stuff if you know what I'm talking about
+the optimizer is actually doing quite
+okay as an initial choice and when
+training your own aids yeah you have a
+lot of choices and you have to choose a
+wall of parameters and starting with
+something as simple as Adam is probably
+a good first step when doing a new
+problem so let's use the optimizer Adam
+and this is from torch opt-in package
+this optimizer accepts a lot of
+parameters actually but we are going to
+set in only the first one the first two
+actually the first and most important
+parameter the second on the the most
+important parameters in here are the
+params and this will be the parameters
+of our neural network the next probably
+SKU the most important parameter is the
+warning crate and I'm going to put in
+actually the default value but it's
+really good to see that we're going to
+use this and the warning right I guess
+you know why we need the model
+parameters because yeah we're going to
+optimize those but the warning rate you
+can think of this as some sort of a
+trade-off between the speed that we're
+going to use to find those parameters
+because the optimization is in iterative
+process so it's
+doing its thing in steps and the amount
+of steps that you might take will be
+might be something from between like
+let's say 100 or 1000 steps to million
+and probably billions of steps and if
+you specify a really small warning rate
+you might take just years in years in
+years in training before you get some
+good results for the parameters but on
+the other hand if you take a really
+small warning rate your model might
+never find good parameters your
+optimizer might never find good
+parameters for your model so there is of
+course more and more in-depth
+explanations of why this is the case and
+you can google for optimizers in
+gradient descent and of the warning
+great stuff how you can fight good
+warning great values or initial warning
+great values but in general again if
+somebody else did some model and did the
+brute-force steps to find good warning
+rates try to start with those or start
+with something as simple as the default
+values for your from your library
+because here the default values values
+are probably a bit reasonable I guess so
+the optimizer is now done
+another reason why neural nets have
+become so popular is that they can be
+trained using GPUs and training
+contributes speeds up the things by a
+lot I mean like a lot lot so when you
+are training a large models with
+probably millions or even billions of
+parameters please do the training on the
+GPU and unfortunately the GPUs not all
+GPUs were created equal when it comes to
+the warning you have to have some sort
+of NVIDIA GPU that is pretty recent for
+to get some good speed ups on your
+training and it will be best probably to
+have the latest and greatest generation
+of GPUs that you can effort or you can
+use something like Google co-op or maybe
+AWS or go out or whatever that contains
+GPUs that are free to use so we're using
+Google co-op and using a GPU instance in
+here just a note to have a look at what
+is the currently used GPU let me show
+you that you can use MVDs and I and this
+tells us that the current machine has a
+test 44 which is a really good GPU we
+are not going to need actually that much
+GPU power for this example but you I'm
+going to show you how you can convert
+the training data and basically use it
+on the GPU PI torch makes this extremely
+easy actually you just have to check if
+the current your machine has CUDA which
+is the engine or the software that does
+most of the calculations and then you
+have to basically transfer all of the
+data from your RAM to the
+GPU memory and you can do this extremely
+is using Python you just say the name of
+the variable - you call this method and
+you put this on the device and we're
+going to do this exactly the same thing
+for the test yep for the test and I'm
+going to do exactly the same thing for
+the Y's and now all this data is on the
+GPU next thing I'm going to do is check
+again the Nvidia which will report
+hopefully yeah some of the memory as you
+can see has already been taken by those
+tensors which are on the GPU right now
+and the next thing that I'm going to do
+is actually convert the model to the GPU
+as well and the worst function
+so all these computation will be done on
+the GPU
+and we're ready to teach our model to
+predict weather or is it going to rain
+tomorrow so let's start this section in
+here and the training group using PI
+torch is really simple thing to do I'm
+going to just say for epoch in range
+let's start with 10 epochs for now and
+I'm going to predict some value using
+the model convert the prediction or
+squeeze the prediction I remove the
+extra dimension in here and calculate
+the training was using the criterion and
+I'm going to passing the predicted
+values and the real values in here and
+I'm going to do a bit more steps after
+this but let me just pause this and show
+you or explain to you what is the epoch
+the number of epochs is going to be all
+the times that we are going to show the
+training examples to our model so
+basically we are showing our model the
+training data 10 times at least for now
+ok so we have the current predictions we
+have the current training course in here
+and I'm going to print out the train was
+and I'm going to take just the value
+from here and the next thing that I'm
+going to is called the optimizer and
+call this method 0 grad and let me show
+you the docs for this one clears the
+ratings of all optimized tensors so what
+this does is when you're using your
+optimizer it's basically doing an
+algorithm called
+gradient descent and gradient descent is
+finding trying to find better parameters
+for your neural net
+using derivatives or gray ingredients
+and when you're doing all of this
+operation those gradients accumulate but
+you don't want your gradients to
+accumulate when you're training neural
+nets so you have to zero them out or
+reset them the next thing that you're
+going to do is to backwards the worse so
+this is the step that actually makes our
+model learn from its mistakes so we
+define the forward method and there is a
+method that is called backward that is
+defined by Python and this backward
+method is used to propagate the error
+that is the errors that our model is
+currently currently making and hopefully
+help the model adjust those parameter
+values based on the errors that is
+current doing and the next thing that we
+are going to do is to ask the optimizer
+to do its optimization so this is pretty
+minimal training hope you can do and
+let's have a look at what it does for us
+and as you can see the worse is not
+decreasing in here so and as you can see
+the worse is actually decreasing in here
+and this is a very good thing indeed and
+I'm going to basically expand this now
+that we've seen a simple training group
+I'm going to paste in the training group
+that I'm using in the tutorial and as
+you can see this is a bit more complex
+I'm going to run to let it run and as
+you can see we're going from 78%
+accuracy to 80 3.6 percent accuracy in
+here so the this model is actually
+working and these are on the training
+and the test set and in here we are
+having additional two functions
+calculate accuracy we
+basically takes the the output of our
+model converts it to a zero or one based
+on a threshold of 0.5 so it's if it's
+were than 0.5 it goes to zero otherwise
+it goes to 1 and we are defining a
+simple method called round tensor
+because we want this to be a bit more
+prettier when printing it and for F not
+every 100 epochs I am just calculating
+the training accuracy the the test was
+and the test accuracy in here I'm just
+drinking those out but the rest of the
+the stuff is exactly the same
+now that you have a model that is
+performing somewhat okay we can save
+this model for later and this is premium
+is using PI torch we are going to define
+a constant model pot and it's going to
+be model dot pointer or PTH and we're
+going to call torch dot save I'm going
+to save the model and I'm going to use
+the model pot for that okay
+so this is a warning that is related to
+Jupiter app or Jupiter notebook so it
+shouldn't be something that you need to
+worry about and then I'm going to what
+the model just to make sure that
+everything is okay okay so this runs
+pretty well
+now that we have our model we need to do
+some evaluation and answer a quick
+question is our model actually any good
+and the evaluation in here we are going
+to do using two simple methods we're
+going to call the classification report
+from psyche to Warren and I'm going to
+show you how you can do basic heat map
+or confusion matrix for this
+classification task so let's start by
+defining the two classes that we have
+which is which are no rain and rain and
+then I'm going to take the predictions
+on the test data I'm going to convert
+those predictions to zero and one based
+on the threshold 0.5 and move those to
+the CPU and then I'm going to get the
+test data to be on the CPU as well I
+just to to show you something if you
+just take the predicted values from here
+and take the for example the first
+number you can see that this number
+which is close to zero if we take the
+next one you see that it's again close
+to zero if I take the fiftieth result
+and larger number so we are using those
+numbers and converting them to 0 and 1
+ok so I'm going to use the qualification
+report from socket 1 and I'm going to
+pass in the test data the predicted
+values and I'm going to show the crosses
+as target names and this classification
+report is very very good considering how
+much you don't you don't have to do a
+lot to get it and you can see that we
+have the two classes in here more rain
+and rain and we have precision recall f1
+score by each class and
+it's really apparent that our model is
+very good or at least it's good at
+predicting that it's not going to rain
+tomorrow
+based on the precision recall and the f1
+score you can pretty much say that this
+and again well we don't have a lot of
+data for the training examples and this
+shows pretty much pretty well in here
+and this is the reason why when you have
+imbalanced data sets you basically can't
+trust just the raw accuracy you need to
+evaluate a bit deeper or dig up dig a
+bit deeper because yeah obviously in
+this case if your model says that it's
+going to rain you can't really trust it
+okay so this is the first conclusion
+that we did and the next thing that I'm
+going to do is show you a basic
+confusion matrix I'm going to paste in a
+lot of call him here which makes the
+confusion matrix I look I look a bit
+better
+and yeah we have the predicted labels in
+here and the true labels in here so we
+have rain no rain mistakes in here and
+we have the no rain rain mistakes in
+here and again when we are we don't have
+rain you can see that our model is very
+good but when it's raining core model
+performs really bad it basically you can
+trust it alright so this is pretty much
+our evaluation for this you can do area
+under the curve or other sensitivity
+analysis or plotting plotting using some
+trash holding and whatnot and to get a
+better accuracy but in general the
+problem that we have in here is that we
+have a lot of examples for mountain
+raining days and just comparatively very
+low amounts of examples for rainy days
+in this final part I'm going to show you
+how you can wrap your model basically in
+a function and how you can probably
+deploy your model behind an API or
+something else and use it to make
+decisions with whether or not is going
+to rain tomorrow so let's call this part
+making predictions and in here I'm going
+to define a function which is called
+with rain and it's going to take in the
+rainfall the amount of rainfall the
+community basically the four features
+that we have get rain today and the
+pressure and I'm going to convert all of
+these to a tensor and I'm going to
+Storch dot s tensor I'm going to create
+an array from these then I'm going to
+convert all of these to a float and move
+it to the GPU then I'm going to get the
+prediction of our model and again
+threshold the values at 0.5 and return
+the item itself all right so we train if
+we have our aim for 10 I'm not sure
+about the quantity in here humility of
+10 and let's say it did rain today and
+the pressure was let's say - yep it will
+rain tomorrow
+based on this data or this is what our
+model things and we train if the
+rainfall is zero humidity is 1 rain
+today nope
+and the pressure is 100 ok what do you
+think our model thinks it's not going to
+rain
+but recall that we have very imbalanced
+data and based on this answer AMA I
+might be pretty sure that well I'm going
+to be pretty sure about this answer but
+this I'm not going to trust very much
+pretty much it you now know how you can
+build a neural network that can predict
+whether or not it's going to rain
+tomorrow and this neural network is
+actually pretty generic you can fill up
+a bit with the outputs or the cost
+function and make it work on different
+kinds of tasks maybe you can try to do
+some regression with it or multi-class
+classification or something like that I
+hope that you've enjoyed this video and
+I'm going to be really grateful if you
+subscribe to this channel like this
+video or maybe write the comments below
+in the section I'm going to link in the
+tutorial
+and github code in the Jupiter notebook
+along with it so you can reproduce the
+results thanks for watching bye guys

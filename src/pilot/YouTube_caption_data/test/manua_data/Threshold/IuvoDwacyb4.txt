@@ -1,0 +1,1261 @@
+- Hi, everyone.
+I'm excited to talk today about
+taking machine learning to production,
+with new additions to MLflow.
+So in today's, talk I'm going
+to go through a few items.
+First I'll talk about the state
+of production machine learning,
+and then I'll talk about three new sets
+of MLOps features in the MLflow project,
+to help with that, namely
+productionizing PyTorch,
+through a deep integration with MLflow.
+Tracking data, schemas and explanation,
+and finally new features
+in the model registry
+for continuous integration and deployment,
+and general availability
+of the model of registry on Databricks.
+And we'll end with a demo of this
+new CICD features on Databricks.
+So I think everyone at
+this conference knows
+machine learning is transforming
+all major industries.
+It's already deployed into hundreds
+of production use cases in each industry,
+and the number of use cases
+are just going over time.
+But at the same time,
+building machine learning
+applications is complex.
+It's a continuous iterative process,
+because the world that your application
+lives in keeps changing,
+and so you have to change
+the way that you model
+it, and update models,
+retrain them, retest them, and so on.
+It's highly dependent on data,
+so anything that might
+go along in your data,
+or that might change,
+might have subtle impacts
+on the model downstream,
+and you need to be able
+to monitor and fix all the changes
+that are happening in your data pipeline.
+And finally, machine learning applications
+involve many teams and systems
+that have to interact together.
+For example, data engineering teams,
+ML engineering, and
+application developers,
+and they all have to hand off models
+and data between them,
+in a consistent way,
+to get the applications to
+actually work in production.
+So because of the complexity of building
+these applications, there's
+actually a whole new class
+of software that organizations
+have begun building,
+to help manage them, which is called
+machine learning platforms.
+These are software platforms that
+manage the ML application life cycle,
+all the way from data to
+experimentation and production.
+And some examples of
+these are the ones used
+in very large tech companies, such as TFX,
+FBLearner and Michelangelo.
+But actually companies, in all industries,
+are designing internal ML platforms,
+to power their production
+machine learning applications.
+So at Databricks, we looked at this strand
+about three years ago, and we saw that
+this is a very useful
+abstraction to build,
+but at that time, each company was more
+or less building its
+own internal platform.
+So we ask and we get these benefits,
+with an open source platform,
+that companies can
+actually collaborate on,
+to make a really great
+ML platform together.
+And this is why we started the MLflow
+open source project, an open source
+machine learning platform that's designed
+to be easy to integrate
+with custom processes
+you have in your own company,
+and MLflow's grown quite a bit since then.
+So MLflow today has four components.
+It's got a tracking component,
+for experiment management and
+monitoring production metrics.
+It's got a projects component
+for reproducible runs.
+Models or way of packaging
+models and deploying them,
+in a wide range of systems,
+in a consistent way.
+And finally, the model registry,
+which is a collaborative,
+almost GitHub like environment
+for sharing, and reviewing,
+and naming your models,
+so that a team can work with them.
+And all these components
+are designed around general
+REST APIs that can be
+used in any language,
+and that are easy to integrate
+into any machine learning library.
+So you can bring them
+into whatever workflow
+you have for machine learning.
+So since we launched MLflow,
+the community has grown tremendously.
+We're really excited to
+see how many organizations
+have adopted MLflow, and how many have
+even contributed code to it.
+So today we have over two
+million PyPi downloads
+per month of the project,
+260 code contributors,
+and just on the Databricks cloud service,
+we see over one and a half million
+experiment runs per week,
+where people are training
+models using MLflow.
+And the use cases that companies have
+are also super exciting to see.
+So as just some examples
+of our customer use cases,
+first of all, Daimler, who spoke yesterday
+at the summit, is using MLflow to manage
+the life cycle of models
+that use various sensors
+to predict complex physical behaviors,
+in their production process.
+So as they're producing
+machine parts and so on,
+they actually have all these
+machine learning models
+that try to understand what's going on,
+and maybe predict if
+something is going to go on,
+and they're using MLflow
+to manage the development of those.
+ABN-AMRO is a bank
+that's been using MLflow
+for automated and consistent deployment
+of over 100 models, for
+all kinds of application,
+including fraud detection,
+marketing, and logistics.
+And finally, H&M, obviously
+leading a retail company,
+has used MLflow to let
+their data scientists
+spend most of their time
+on model development,
+as opposed to tuning and monitoring.
+So these are just examples
+of three different
+industries where companies have gotten
+significant benefits from using MLflow.
+So in the talk today, I want to discuss
+a few ways that we're
+pushing the MLflow project
+or even further, to make it even easier
+to do production machine learning.
+And these include
+integration with PyTorch,
+tracking more types of information
+about your ML development process,
+and letting you query it, and
+finally, the model registry.
+So let me start by talking about PyTorch.
+Last week at the PyTorch developer day,
+we actually announced a
+really exciting collaboration
+between the MLflow team at Databricks,
+and the PyTorch team at Facebook,
+where we've been building a number
+of tight integrations into PyTorch,
+to let users easily productionize
+their PyTorch applications.
+PyTorch, of course, is
+one of the most popular
+machine learning libraries today,
+also the leading one in research,
+and it makes sense to be able to take
+those research innovations
+that people are building,
+and quickly to be able to turn them
+into production applications.
+And in particular, we
+announced three integrations.
+There's auto logging for MLflow
+and the PyTorch Lightning API,
+to make it super easy
+to track experiments.
+There's TorchScript
+support in save models,
+which means that whenever
+you package a model
+and you deploy it into
+any of the supported
+deployment backends at MLflow,
+it'll actually execute
+faster using TorchScript.
+And finally, those model
+deployment to TorchServe,
+the serving system that
+the PyTorch team launched.
+And all of these also come with a set
+of detailed examples of using MLflow
+and PyTorch together, that
+we've been putting together.
+So just to give you a sense
+of how easy this is to use,
+this is some standard PyTorch code,
+that's training a model
+using PyTorch Lightning.
+I won't go into the details,
+but it's just kind of the
+standard code you might use.
+And if you want to start
+using this with MLflow,
+all you have to do is
+import the connector,
+and call one line of code,
+to turn on auto logging.
+And MLflow will now
+automatically track a lot
+of information that you get from PyTorch,
+through this integration that we built.
+So once you do that, you'll see
+you've get all these metrics
+in the MLflow user interface.
+You get training curves,
+and you also get the model
+itself check-pointed,
+and you got even a
+description of the model.
+So you can easily keep
+track of how your experiment
+is progressing over
+time, or take this model,
+and push it into the
+MLflow model registry,
+and start reviewing it and
+deploying it from there.
+And finally, once you
+have worked on your model
+and you'd like to deploy it,
+it's very easy to call
+the MLflow deployment API,
+and tell it to deploy one
+of your existing models
+to TorchServe, and it's going to execute
+in an optimized way, on that system.
+So this is really exciting to see.
+In fact, we're super excited
+to have Lin Qiao today
+give a keynote right after me about
+all the work that's been going on to bring
+PyTorch into production,
+including the MLflow integration.
+So I'll let her talk
+about this in more detail,
+and show some of the other things
+that her team is working on.
+So that's the first thing
+we wanted to present today.
+Really exciting collaboration,
+and we'll keep doing more
+work with the PyTorch team.
+The second thing I wanted to talk about
+is extending that MLflow
+tracking component,
+which has been widely successful,
+to track even more types of information
+about the ML process,
+which makes it a lot easier
+to operate these applications.
+So if you're not familiar with it,
+MLflow tracking is a is an API to log
+various information from
+your development process,
+and then to get these nice
+either visual user interfaces or API,
+score the API, so you can
+see how your job is doing,
+both at the experimentation phase,
+to compare experiments,
+but also in production,
+once it's running, to let you easily
+track how your application
+is doing over time.
+And in most libraries,
+there are these high level
+integrations, like these auto log APIs,
+where you just call that,
+and we automatically
+collect various kinds of
+information about them.
+You can, of course, also
+manually log information.
+And there are built in
+library integrations now,
+with many widely used
+machine learning libraries.
+So MLflow tracking has
+been very successful
+for tracking metrics and
+models, but we've also seen
+that it's very useful to extend
+this concept beyond that.
+And so today I'm going to talk about
+three recently launched
+pieces of functionality,
+to track more information
+about your process,
+and how they help.
+So these include data version tracking
+with Delta Lake, which you heard
+a lot about yesterday, and Apache Spark.
+Model schema tracking, for
+correctness of your application,
+and finally, something we just launched,
+interpretability with SHAP,
+an integration between MLflow and SHAP.
+So data versioning is
+obviously very important,
+as you're developing a
+machine learning application,
+because it's highly dependent on data,
+and it would be nice to be able to record
+exactly what data you used
+during the training process,
+and then also reproduce this
+exact same data in the future.
+Now, doing this with large scale data sets
+can be extremely challenging,
+but fortunately there is
+the Delta Lake project,
+which creates a transaction log
+for how your large scale
+data tables are changing,
+and also supports time travel back
+to a previous version of the data.
+So we've integrated this with MLflow,
+through this Spark auto-logging interface,
+that basically logs any Spark data source
+that your application is
+reading during training.
+And for Delta in particular,
+it also logs the version
+number that you use,
+so you can then go back and easily reload
+exactly that same version
+of your Delta Lake table,
+and do additional operations with it.
+So it's super easy to
+use, again, one API call,
+but now you've got
+reproducible data versioning
+for these petabyte scale data
+sets that exist in Delta Lake.
+And within the community,
+there's also work
+to integrate other data
+versioning systems,
+which will hopefully
+come out in the future.
+So that's one really nice tracking
+integration that recently came out.
+A second one that just
+launched a few months ago
+is tracking for model of schemas.
+So in your model, it's
+got some input fields
+and some output fields,
+and it turns out that
+these might often change.
+And a common source of
+problems in deployment
+is if someone is passing in the
+wrong fields into the model.
+So we've added the concept of schemas
+to MLflow models, and
+we have a very easy way
+to capture those and track them.
+And all the user interfaces in MLflow
+that let you compare two models
+will also compare the schemas now,
+so you can tell if something is changing
+and maybe don't deploy
+that model to production,
+until everyone is ready to pass
+in the new kind of data into it.
+And then the final thing
+that we just launched
+in MLflow 1.12 is integration
+with the SHAP library
+for interpretability.
+So you can now create one
+SHAP to create explanations
+of why your model is
+predicting various things,
+and log those and visualize
+them in the MLflow UI,
+and compare them across training lines,
+or as your model is running in production,
+to see why it's changing over time.
+So very easy, but very powerful.
+So overall, our users have found
+these kind of integrations quite valuable
+for improving their productivity
+and reliability with machine learning.
+And really the goal we're
+building towards here
+is to easily be able to log and query
+all aspects of your ML
+development process.
+So we're going to continue investing
+in this part of MLflow,
+to let you easily build
+and monitor these production apps.
+And then the third thing
+I want to talk about
+is the model registry components,
+some exciting new features around
+continuous integration and deployment,
+and GA on Databricks.
+So the model registry, if you haven't
+come across it before, is the central hub
+that lets you publish
+version and review models,
+a little bit like a GitHub type system,
+but for your machine learning models.
+Inside it, basically the way it works
+is you use the MLflow tracking
+API to record a model,
+and information about how you trained it.
+And then you can publish this model
+into the registry, and then the registry,
+you can define the model,
+add comments about it,
+describe it, then you can also push
+in multiple versions of a model,
+and pass them, tag them
+with these lifecycle stages,
+development staging production, and so on.
+And as your models are being published,
+you can have human reviewers,
+or automated tools plug into them,
+and listen to changes, and make reports
+about how they're doing.
+And finally, there's
+also a very simple API
+to load the latest production
+version of a model,
+or staging, or whatever you want,
+and use that in your application.
+So that's how you would do batch scoring
+and real-time serving, with the
+approved version of a model.
+So it's a very nice abstraction to have,
+if you want to keep track of
+what your models are doing,
+and collaborate on them
+with multiple people.
+So one thing we're
+announcing today is that
+the model registry is now
+generally available on Databricks.
+We think it's ready for prime time.
+We already have basically thousands
+of companies that have been using it.
+And the version on Databricks
+is also fully integrated
+for Databricks customers,
+with the user management
+and security features on there.
+So you can have fine-grained security
+around who can develop each model,
+who can approve changes, and so on.
+And we are also announcing
+a bunch of new features
+for the model registry,
+both in open source
+and on Databricks, which
+includes tag and search APIs,
+webhooks and comments,
+to make it even easier
+to integrate this into
+your development process.
+So tag and search APIs,
+these were launched
+in the open source project.
+They're a simple but powerful concept.
+With tags, you can add
+custom key value pairs
+on your models, either
+using the user interface,
+or through an API.
+And this is a really
+great way to implement
+kind of a checklist for
+how your model is doing.
+For example, you might
+have a manually added tag
+about the model passing GDPR review,
+so it's actually legally okay to use it.
+And you might also have
+an automated system
+that listens for a new model, test them,
+and adds a tag if they
+pass the performance test.
+So using this, you can implement custom
+reviewing workflows, based
+on your organization.
+And to compliment the
+tags, we also launched
+a search API that lets
+you easily search for,
+for example, new model versions.
+And you can use this in
+your CICD applications,
+to automatically run tests on them,
+and automate various actions,
+like deploying the new models and so on.
+So it's a nice abstraction
+for just working
+with your models at scale.
+The second thing we're
+announcing on Databricks,
+specifically, is we've added support
+for model registry events,
+as webhooks on your Databricks workspace.
+So you can now listen in
+a secure way to events,
+such as a new model
+version being registered,
+or someone adding a tag
+or a transition request,
+and you can hook this
+into custom CICD tools
+you might have, and get
+callbacks on these events
+in a secure manner, and make
+changes to the registry.
+So it makes it even easier
+to automate your work,
+versus pulling the API,
+because we have this webhooks
+functionality to send the events to you.
+And then the final integration,
+it's kind of small, but nice again,
+in the Databricks environment,
+is the comments feature that we have
+throughout the Databricks workspace
+can now be used to discuss
+changes on models as well,
+the same way you can discuss
+about changes on notebooks.
+So it's super easy to collaborate on them
+with users that are in that workspace.
+So we're really excited about what you can
+do with the model registry.
+We'll continue adding collaboration
+and reviewing features into it,
+and we're excited to announce it as GA.
+And to show you a little bit more
+about what it's gonna do,
+I'd like to invite Kasey,
+our senior product manager at Databricks,
+to give you a demo.
+- Thanks Matei.
+In this model, we're
+gonna look at two things.
+The first is how you can
+use the model registry
+to manage the end to end life cycle
+of getting your machine
+learning models deployed.
+And the second is how you can use
+the new model registry webhooks
+to automate a CICD workflow.
+Let's go see how it's done.
+The model we're going to deploy
+is gonna predict what price we would
+have paid for an Airbnb in Berlin,
+had the Data and AI
+Summit not gone virtual.
+I'm gonna come down here and click submit,
+and sure enough, you can
+see our predicted price.
+How did we do that?
+Here we are inside of Databricks,
+in the model registry.
+You can see I have one model registered,
+and if I click inside of it,
+something new you might
+notice is this serving tab.
+We now allow you to serve your models
+behind a rest API endpoint,
+so you can make live predictions.
+You can see here that
+version one of my model
+is in production and
+currently being served.
+If you logged your models
+with an input example,
+we help you build a request
+out of those input examples,
+and allow you to send a request
+to test your end point in the serving tab.
+The other cool thing to note
+here is that we give you
+two different end points
+that you could call.
+One that's specific to your model version,
+and the other that's a
+generic production endpoint,
+meaning whatever model is
+in the production stage
+will be served behind this end point.
+So now let's look at how
+we can upgrade version two
+to production, through an MLOps workflow,
+using the model registry.
+I'm now gonna switch over
+and become a data scientist,
+and log into Databricks
+as a data scientist.
+When I come in here, you can see that
+I just pushed version two
+to the model registry.
+When I come into version two,
+I'm gonna want to come up to the staging,
+and in the staging dropdown,
+I'm gonna want to transition
+my model to production.
+However, because I'm on
+the data science team,
+and not on the deployment team,
+I don't have permission to directly
+transition my model to production.
+Instead, I need to request to
+transition from my MLOps team.
+Once I submit this request,
+you'll see it pop up in the registry.
+There it is.
+And now I just need to
+go notify my MLOps team
+that I have a review that they need to do.
+Now we're gonna go back and
+log in as our MLOps team,
+and when they go to the model registry,
+and they go inside this model version,
+they're going to see that
+they have a pending request.
+One of the things that the MLOps team
+is gonna want to do is
+compare the new model version
+to the one in production,
+and see how they differ.
+So we're just gonna check both of these,
+and then click this compare button.
+Now we're gonna get a
+side-by-side diff view
+of how our two model versions differ.
+We can see slightly different
+parameters were used.
+We can see that our
+input and output schema
+seem to be the same, so
+those are compatible.
+And then we can see how
+our metrics have changed
+between the two model versions.
+So we can see, did the model
+improve, or did it not?
+Once I've done this manual inspection,
+I can go back to that model
+version and approve the request.
+Pretty soon, you'll see that our stage
+for this model version
+will switch to production,
+and now, if I go to the model serving tab,
+you should see that now
+version two is in production,
+and that end point is
+now serving this model.
+That means if we go back to our website
+and we click submit, we'll be getting
+a different price, because
+now a different model
+is being called, automatically.
+So that process seemed a bit manual.
+The data scientists had to log in,
+submit a transition request,
+reach out to the MLOps team.
+The MLOps team then had
+to go into the registry.
+They had to do a manual
+inspection on a diff view,
+to see if they had confidence
+to then deploy this model.
+This seems ripe for automation.
+This is where the new model registry
+webhooks come into play.
+The model registry
+webhooks, tags, and comments
+that we've added allow you to build
+your own MLOps workflow and automate it.
+Webhooks allow you to register callbacks,
+based on various model registry actions.
+For example, a new model was created,
+or a model transition stages.
+Tags let you write back
+information to your model version.
+For example, does the input schema match?
+And comments allow you to
+go a step further than tags,
+and give more details, or even better,
+allow you to communicate
+with your teammates
+on how you can improve the model,
+to make it fit for deployment.
+So let's see how we can build this.
+Before we jump into a live demo,
+demonstrating this
+automated CICD workflow,
+let's look at a diagram that
+walks us through the architecture here.
+What's gonna happen is
+our data science team
+is about to get new Airbnb data,
+and they're gonna want
+to retrain a new model.
+After they've retrained this model,
+they're going to push it
+to the model registry.
+When they push it to the model registry,
+it's gonna trigger our first webhook.
+This webhook is gonna
+call in Azure function,
+and that Azure function
+is gonna do many things.
+The first thing it's gonna
+do is run a bunch of tests.
+It's gonna check to see if
+the schemas are compatible,
+it's gonna run some unit tests, et cetera.
+The Azure function is
+then gonna write back
+the test results, as tags
+on our model version.
+If it failed, it's gonna leave even more
+specific comments, as a comment.
+And the last thing our Azure function's
+going to do is it's going to create
+a transition request, on
+behalf of our data scientist,
+so they don't have to log
+into the registry and do that.
+Now, when that transition
+request is created,
+it's going to trigger our second webhook.
+This webhook is going to
+send a Slack notification
+to our MLOps Slack channel,
+and it's gonna notify them
+that there's a new transition request
+that they need to review.
+There they're gonna send an MLOps engineer
+to the model registry
+page, where they're either
+going to approve or reject this request.
+If they approve it, it's
+gonna get moved to production,
+and as we saw earlier, automatically serve
+behind that production endpoint.
+So let's go see it in action.
+Here I am in my MLOps login,
+and I'm gonna go to this notebook.
+And the first thing we need to do
+is actually register these webhooks.
+So I'm gonna come in here,
+and these first two cells
+are just setting up some wrappers,
+so that the code later is easier to read.
+And now we're getting to the fun stuff.
+Here's how you register a webhook.
+You can see all you
+need is the model name,
+the events that you want to be triggered.
+So in our case with the Azure function,
+we want it to be whenever a
+new model version is created.
+And lastly, we need to
+know what the end point
+is of the external service
+you want your webhook to call.
+In this case, we want it
+to be my Azure function,
+and so that's the schema checker.
+So I'm gonna go ahead and run this.
+And you can see it's going
+to return my webhook,
+and a webhook has a unique
+ID, a bunch of other fields,
+and one that's most important right now
+is that its status is active.
+We're gonna go ahead and do the same thing
+for our Slack webhook.
+And again, the main thing to notice here
+is that we're triggering
+it on a different event,
+whenever a transition request is created.
+And now we're gonna go
+to our data science team,
+and run their notebook,
+that's gonna retrain
+that model with the new data.
+So when we run this notebook, again,
+what's gonna happen is
+we're going to trigger
+that first Azure function webhook.
+That's gonna run all those tests,
+then it's gonna create
+the transition request,
+which is going to trigger
+our second webhook,
+which is gonna create
+a Slack notification,
+alerting our MLOps team that
+they need to review a new request.
+We should be hearing the
+Slack sound any second now.
+(clicking)
+There it is.
+And sure enough, if we go to Slack,
+you will see we do have a new notification
+telling us that a user requested
+that we transition this version three
+from none to production,
+and we can go ahead and click on this URL.
+And now we're taken to our version three.
+You can see here that
+the transition request
+was automatically created
+for us by this bot,
+that we created, and that
+there's all these new tags.
+You can see that our metrics did improve.
+The new schema is
+compatible with the schema
+that's in production, and
+all of our tests passed.
+As an MLOps engineer,
+now I don't need to look
+at this visual diff
+view, because I know that
+my Azure function already ran
+all these tests for me
+and they all passed.
+So I can go ahead and click approve,
+and now this version three is
+gonna be moved to production.
+And now again, if we go
+back to that serving tab,
+we're gonna see that again,
+version three is now the one in production
+and is served behind that
+generic production endpoint.
+Which means that we can
+go back to the website
+and click submit again,
+and we're gonna get
+an entirely new price,
+because we're now pointed
+to a new model, the updated version.
+But what if something goes wrong?
+What if it's not all hunky-dory?
+Well, we can go back to our notebook,
+and we can have our data
+science team change something.
+So when our data science
+team runs this notebook,
+they're gonna actually end up dropping
+two columns from the data frame,
+which is gonna change our schema.
+So the same webhooks are gonna get called,
+the same tests are going to be run,
+but now some of them are gonna fail.
+There was our Slack notification.
+And so now we just directly
+go to the model registry,
+see this new model version four,
+and sure enough, we can see from our tags
+that our metrics didn't improve,
+our schema is not compatible
+with the one in production,
+and we had some tests fail.
+And this is where model registry comments
+can come in handy, because
+if we keep scrolling,
+we can see that we have some more specific
+or detailed information
+below, in the comments.
+We have a comment that's written out
+which columns are missing,
+which is helpful information,
+as well as how many tests have failed,
+and which ones have failed.
+And this is going to allow me,
+as an MLOps engineer,
+to start a discussion
+with my data scientists,
+and allow us to start a conversation
+and collaborate on how to get this model
+into production as quickly as possible.
+So we just saw how you
+can use model registry,
+Webhooks, tags, and comments to automate
+an entire CICD process for
+your machine learning models.
+Databricks has all the
+machine learning tools
+you need to build an
+end-to-end MLOps workflow
+inside Databricks, as well as provides
+the flexibility with these APIs,
+so that you can build out
+advanced CICD workflows,
+to enable your team to be
+as productive as possible.
+Back to you, Matei.
+- Wow, thanks Kasey.
+That was a great demo.
+So I hope this has gotten
+you excited to try MLflow.
+You can easily get started with it
+just on your laptop, from
+the official website.
+And if you want to try
+the version on Databricks
+that's also easy on our
+free community edition.
+And if you're at the summit later today,
+we also have a free tutorial,
+where you will be able
+to get hands-on experience with MLflow.
+So I'm excited to see
+what you can do with it.
+So that's our updates for MLflow today.
+As our next speaker, I'm really excited
+to introduce Lin Qiao,
+an engineering director
+at Facebook, who is
+responsible for PyTorch,
+and quite a bit of their
+other AI infrastructure,
+and she'll talk to you about bringing
+machine learning to production at scale,
+including the PyTorch
+integration with MLflow.
+- Hi everyone.
+I'm Lin.
+Welcome PyTorch at the Facebook AI.
+Today, I will talk
+about PyTorch admission,
+transitioning research to production,
+and the close partnership with
+MLflow to achieve their goal.
+Let me start with our journey so far.
+In 2016, we identify a gap
+in what researchers need
+and what's available.
+We saw the need for a more flexible
+and easy to use front end,
+for more complicated neural
+network architectures.
+A key principle for us
+was to inter operate
+with as much of the Python
+ecosystem as we can,
+and be a good citizen.
+As a result, PyTorch
+played well with NumPy
+and other Python staple.
+We built Torch, distributed in the A10,
+fast low-overhead engine,
+to help researchers
+innovate on both large and small models.
+Later on, many researchers
+became product owners.
+They asked for better production
+support and performance.
+We took this as a
+challenge to keep research
+flexibility, and yet enable production.
+In order to serve their needs,
+we made a huge pivot on
+by PyTorch to another.
+We merged PyTorch with Caffe2,
+and built TorchScript,
+to enable production.
+We kept expanding scope
+to cater to our users,
+by adding major features,
+including PyTorch mobile,
+and quantization.
+Everyone wanted options
+on hardware backend,
+so we work with many hardware vendors
+to increase hardware
+portfolios for PyTorch.
+During PyTorch production development,
+we discovered huge demand in having
+the building blocks of
+serving and deployment,
+model life cycle management,
+workflow management, on top of PyTorch.
+Such ecosystem needs to
+be modular, flexible,
+and has extension points
+to launch to either
+on premise settings or
+various cloud environments.
+Concretely, we would like to build
+a cloud agnostic, open source,
+and end-to-end machine
+learning model experimentation
+to production workflow.
+We believe this would lower
+the cost for many users,
+to productionize their models,
+but still maintaining a significant amount
+of customization and flexibility.
+We're working very close
+with Databricks MLflow
+to achieve this goal.
+Now let's step back.
+Ultimately, there are
+four guiding principles
+that we worked with.
+Our community, in the center,
+to empower us to build out PyTorch,
+for enabling cutting-edge research.
+PyTorch to be highly performant,
+with production grade quality.
+The PyTorch ecosystem, for
+a smooth user experience
+and high productivity.
+However, we're also
+serving a variety of users.
+Not everyone needs everything.
+They should only cognitively
+pay for what they use.
+Our ecosystem aims to provide
+a comprehensive coverage,
+modularity, and interoperability,
+to allow users to use what they only care.
+We recognize how small we are.
+We have always strived to
+play well with everyone
+in the Python ecosystem and beyond.
+We're not going to have
+all the innovations
+and ideas ourselves.
+PyTorch heavily benefited
+from co-development
+with many institutions, key partners,
+and individual contributors
+from our community.
+This principle's worked well so far.
+PyTorch team built a strong community.
+It has been well supported
+by the open source community,
+with more than 1600
+contributors, 34,000 users,
+in discussion forums, 45,000
+GitHub downstream projects.
+It is also strongly received
+by the research community,
+with a lot of citations
+from NeurIPS papers,
+and Arxiv papers.
+PyTorch in production
+grew strongly as well.
+It is widely adopted in industry,
+and also massive adopted
+at Facebook production,
+across Messenger, Facebook,
+Instagram, ARVR applications.
+Over 85% of models trade in PyTorch,
+over 1000 Python models are in production.
+I will talk about our current progress,
+and future direction of building
+PyTorch production ecosystem.
+First, PyTorch has been battle testing
+production setting at Facebook scale.
+Over the past a year and a half alone,
+the number of engineers using PyTorch
+to train new models has doubled.
+At the same time, each
+engineer increased the number
+of workflows in the model complexity.
+We saw eight times increase
+in amount of compute
+to train these models.
+In aggregation, we serve
+over 400 trillion predictions
+per day, to do things like
+identifying fake accounts,
+or personalizing the content that you see.
+We have enabled AI on more
+than one billion devices,
+serving Facebook's family of apps.
+To understand how we
+support all the growth,
+let's zoom in to the end-to-end workflow.
+This is a set of building blocks.
+It started with obtaining
+and preparing data,
+potentially fetching extra signals
+from feature storage systems.
+Then we turned it from
+data frames into tensors,
+ready to be consumed by the model.
+And then we need to construct
+a model from scratch,
+or pull the vast architectural components,
+or pre-train components.
+Then we need to analyze
+and understand the model
+and do attribution, and
+apply AutoML techniques,
+from simple hyper parameter optimization,
+to newer architectural search.
+For serving, we need to
+shrink and optimize the model,
+to deploy it into a data center,
+or on embedded devices,
+like mobile phones.
+Underpinning all the above,
+there is also pipeline authoring
+and AI artifact management.
+The vast years of experience
+can only be provided
+by co-engineering with
+other awesome projects.
+There are a ton of opportunities
+you can help building up.
+The scope here is very big.
+To begin with, we pick a
+few key challenges to solve.
+First, it's critical to
+get reproducible results
+from performance and
+accuracy point of view,
+and the monitoring and
+analyzing any regression.
+Without that, undiscovered fluctuation
+will cost production outage.
+Second, we want AI artifacts
+to be highly discoverable,
+and we want to strongly encourage
+collaboration to maximize leverage.
+Without that, we'll have a high degree
+of model proliferation, and
+a model management nightmare.
+We needed lineage tracking
+for infrastructure
+efficiency, by avoiding redundancy.
+It's critical for model governance
+and privacy enforcement as well.
+We also want to avoid the manual workflow
+for our experimentation, to
+optimization and deployment,
+and here we want a fully
+managed and automated workflow.
+And last but not least, we
+need efficient model serving
+across server and on-device stacks,
+especially with versioning across
+heterogeneous set of devices.
+At Facebook, we built an
+internal production ecosystem
+to tackle these problems.
+However, externally, we
+face very unique challenges,
+as in there's very diverse
+infrastructure options.
+That's where Databricks,
+Facebook and many other companies
+joined forced to tackle these challenges,
+and we're building out PyTorch
+open source production ecosystem.
+To get into a little bit more
+details what we're building.
+First, we use auto logging to enable
+machine learning model builders,
+to automatically log in track parameters
+and metrics, from PyTorch
+models, in MLflow.
+We use PyTorch lightning
+as the training loop
+at support for auto logging.
+Second, we add many PyTorch
+examples with MLflow projects.
+And third, TorchScript
+is what we recommend
+for production model serving.
+It's a subset of Python language,
+optimized for machine
+learning applications.
+Now, you can save and
+load TorchScripted models
+with MLflow model registry.
+TorchServe is a PyTorch
+model serving library,
+that accelerate deployment
+of PyTorch models at scale,
+with support for multi-model serving,
+model versioning, AB
+testing, model metrics.
+We built an MLflow TorchServe plugging
+to deploy PyTorch models in
+diverse serving environments.
+This is all super cool and exciting.
+For more information,
+Geeta from PyTorch team
+gave a deep dive of PyTorch
+in the MLflow integration yesterday.
+Check it out.
+We have detailed examples
+and documentation
+to get you started at MLflow in PyTorch.
+Please try it out and let
+us know what you think.
+Thank you for watching this talk,
+and look forward to
+working with all of you
+in building PyTorch MLflow
+production ecosystem.

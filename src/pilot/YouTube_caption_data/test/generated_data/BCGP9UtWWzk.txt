@@ -1,0 +1,169 @@
+hi everyone this is leslate team pie
+torch and today we're going to go over
+uh fine-tuning models within fstp so to
+get started we've got some code to show
+you as usual uh running nightly so this
+is July 21st just for reference
+um so main item to go over today is uh
+fine tuning with fstp so the current
+issue with fstp is due to the sharding
+it actually does not support one of the
+traditional approaches of fine tuning
+which is layer freezing so again that
+has to do with the sharding it's
+implemented that may be something that's
+available in the future so but for now
+you have two options uh one being whole
+model fine tuning of course and the
+second one that I would definitely
+recommend you check out especially for
+large language models is what's known as
+child tuning so of course you may say
+what is child tuning so it was developed
+in this paper from September 21 2021
+it's called raise the child in large
+language model towards effective and
+generalizable fine tuning this is a
+screenshot of the front page of it more
+importantly me if you look at this is
+just an excerpt of some of the results
+they very very consistently beat out
+vanilla fine tuning on a broad variety
+of tasks so that was what made it quite
+interesting I personally worked with it
+for the T5 model and had very good
+success with it so it's this tutorial
+there are two versions of the child
+tuning one is known as task free and the
+other one is called task dependent I
+compared both at least for the work that
+I was doing I had more success with the
+task free and that's what we're going to
+cover today
+specifically so to give you a quick
+summary of how it works during the
+backwards pass a certain you'll create a
+mask based on a Bernoulli distribution
+and that will mask out a subset of the
+parameters and only those will be
+updated the other thing that will happen
+is the ones that are updated their
+gradients will be magnified
+proportionally so the net effect is it
+provides a lot more robustness to the
+model training and better generalize
+ability so I wanted to just show you
+very quickly kind of how that works
+excuse me so what I've set up here is
+just to pretend we've got a little three
+by three gradients and the one hyper
+parameter that you'll work with is
+what's called The Reserve percentage and
+that's basically the amount of
+parameters in this case 30 of the
+parameters of the whole model that will
+be chosen to be updated and so this is
+one hyperparameter generally one-third
+is a very good starting point for
+reference so with this we've got our
+gradient or pretend gradient tensor here
+and at that point we'll create a
+duplicate and we're going to fill that
+with the reserve percentage which would
+look like this we'll get 0.33 we've got
+our Bernoulli sampler and we'll get to
+8. get that set up and then we'll sample
+from that and what we'll end up is this
+Boolean mask basically that would mask
+out the different gradients that are
+available so in this case only four of
+them will actually be updated and then
+we have the amplification effect
+Dimension and which is in this case 1
+over 0.3 so everything's going to be
+basically tripled and at that point you
+simply take the gradients and magnify
+the with the amplifier and you'll up
+with your new gradient mask
+and so that's basically how that works
+this is the actual code within the
+optimizer itself and what I've added to
+the tutorial here is the optimizer and
+e right
+here if we are running task screen mode
+then it's basically going to do exactly
+that mask out the subset amplify the
+gradients and then apply those so that's
+how that works
+so as I mentioned there's two different
+versions of child tuning this task free
+and test dependent just for reference in
+task dependent which you basically do is
+you will train one Epoch you will create
+a Fischer information Matrix and that
+will basically monitor what parameters
+being activated most strongly or during
+the initial Epoch and then it will use
+that to create the gradient Mass so
+that's really the difference is how you
+create that gradient mask
+so again in the paper they actually
+better results with the task dependent
+in terms of my real world work I
+actually had better luck with the task
+free and hence why I'm kind of mostly
+focusing here on task free so basic use
+case here would be to import the
+optimizer and again it's basically just
+atom W but with the child tuning aspect
+added to it I create a little baby model
+here you would take your fsdp Imports as
+usual you would initialize your model as
+usual and then from there set up your
+Optimizer which in this case instead of
+atom W would be child tuning atom W uh
+everything's the same you know model of
+meters learning rate you can weight K
+EPS Etc if you want to modify those but
+the main two additions to it is the
+reserve Factor as I mentioned or Reserve
+probability and of course the mode in
+this case task free so
+um it's a I've had very good success
+with it it does provide if you think
+about it intuitively a finer grained
+tuning if you imagine in terms of
+freezing layers it's a very hard
+checkpoint differential between one
+layer is completely Frozen the next
+layer is completely open this is both
+horizontally and vertically exposing a
+subset and allowing that to be updated
+for the fine tuning so the other thing
+to note is if you were to create a
+reserve percentage 1.0 at that point you
+have whole model fine tuning would be no
+difference in running atom W or proper I
+have had good luck with 30 35 is a good
+reference for hyper parameter on this
+but you can obviously compare on your
+specific task other thing of note is
+that you will if you say just run two
+epochs of whole model fine tuning two
+uploads of child tuning and compare
+that's not a great idea because what
+will happen is is almost certainly
+initially the child tuning will lag a
+bit behind uh just by virtue of only a
+subset of the weights being updated to
+begin with more importantly is where you
+end up and and can very consistently uh
+once you run a firmware appbox you'll
+see child tuning uh accelerate and take
+off from there and exceed your results
+with the normal whole model fine tuning
+so the optimizer is out there and of
+course this code is available for you to
+reference but as I said this will give
+you another option besides whole model
+fine tuning for fsdp hope that helps

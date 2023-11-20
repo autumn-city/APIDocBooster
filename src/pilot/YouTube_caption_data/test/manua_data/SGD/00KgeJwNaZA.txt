@@ -1,0 +1,316 @@
+ Okay, now in this video, let me explain how we train Adaline
+ using the concept of automatic differentiation and pytorch. So
+ I prepared a code notebook here, where I have three different
+ implementations of Adaline. First is the manual implementation
+ that we saw last week, then I have an implementation using
+ the grad function that I just explained in the previous video.
+ And then I show you an even more automatic way using the
+ backward function that pytorch automatically creates based on a
+ forward function. And that is also a topic I will then dive in
+ more in the next video. So here, I want to just show you how it
+ works. And then next video, I explain it a little bit more.
+ Alright, so starting again with watermark checking our versions
+ here, I can also make this a little bit bigger. So here again,
+ this is our Adaline model that we talked about extensively last
+ week, where we have multiple inputs, the weights, the net
+ input function, the activation function is just a identity
+ function, and then the threshold function for prediction.
+ Alright, let's import some libraries, we will be using the
+ grad function I explained in the previous video, and we will also
+ make use of the functional API. Again, the function API will be
+ a more discussion topic in more detail in the next video. So we
+ will be working with the iris data set again, because it's
+ simple. So we can then focus more on the code rather than on
+ the data set. So here we have no data set. And this is exactly
+ the same as we have done in the previous week week. So if you're
+ unsure how this works, this is exactly the same code as last
+ week. So you can go to the video from last week. So everything is
+ explained in that video last week. Alright, so also just to
+ recap, this is exactly the same code that we were using last
+ week. So here, this is our airline implementation, where we
+ first initialize the weights and the bias, we have our forward
+ function that computes the net inputs, and then the activation.
+ And then we have the backward function where we computed the
+ gradient by ourselves. So what I mean by that is we derived it in
+ the slides, we had a slide on how we derive that gradient. And
+ then here, this would be the equivalent code implementation
+ of that. Yeah, we have some training and evaluation wrappers
+ just to make things a bit more convenient to look at. So we
+ have a loss function, then we compute where we can plot the
+ loss function during training. So here in our training function,
+ again, like in last week, we have a cost list with where we
+ compute the cost, which is actually the loss over the epoch
+ or mini batch, actually. So let me see. So what we do is we
+ iterate over the epochs. So for each epoch, we shuffle the
+ data set. And then we create the mini batches. And for each mini
+ batch here, we perform the forward pass that is like
+ predicting the class labels. And then we compute the backward
+ pass. So here, this is computing the negative gradients, the
+ negative gradient of the loss with respect to the weights and
+ the bias. And then we update the weights. So we updated by
+ Yeah, we have the original weight, we updated by adding the
+ negative gradient multiplied with the learning rate. Why for
+ some reason commented that out? Yeah, I think it was just too
+ much output. And I wanted to keep this notebook short,
+ because there will be other codes. And it was too long.
+ Otherwise too detailed. We don't need that level of detail here.
+ Here, we are just printing the number of epochs and the loss
+ for each epoch. So let's define it. So note, this is not running
+ any code, because it's just setting up the functions here.
+ And then here, we are defining or initializing the model. So x
+ train size, this is the same, I could have used shape, this is
+ the same as shape. So it's the number of features. It's the
+ same as shape one, some more features. Then yeah, here's our
+ data sets. input, the number of epochs 20 learning rate point or
+ one, the random seed, so we can reproduce these results. So that
+ means if someone else like you runs this code, you should get
+ exactly the same results. And then the mini batch size, how
+ many mini batches we use in each iteration, not the random seed
+ here is only used for shuffling the data set, right? If I go up
+ again, this is being used when we shuffle the data set. So if
+ you change the random seed, you might get some different
+ results. Alright, so let's do this. So this is training and
+ this is super fast. So you can see the outputs are immediately
+ here. Usually for deep learning, it would take maybe depends
+ really, but it could take 10 minutes per epoch can take an
+ hour per epoch depends really on the data set. So let's take a
+ look at the loss. Okay, this is converging, it's not converted,
+ but doesn't really matter. Because here, the point is
+ really explaining the automatic gradient computation in the next
+ code. I want to why I'm showing you this is so that you can
+ compare the automatic way of pytorch of doing this with this
+ one, and you will see it's exactly the same result. So just
+ to show you that our conceptual thing thing that we did manually
+ last week is actually correct. And while other way around that
+ pytorch is actually correct. Alright, so here, that's the
+ predictions for computing the test and training accuracies.
+ Also, it's essentially the same concept as last week. So nothing
+ new here. Now, after we just recapped, yeah, the manual
+ implementation of the underlying that we talked about last week,
+ now let's do this semi automatically or semi manually
+ using this autograd API from pytorch. So there will be only
+ very subtle changes. So this one is exactly the same as before.
+ Now, the only difference is in the train method. So let me
+ scroll to the relevant part. So notice everything here is the
+ same. What has changed is now how we compute the gradients
+ here. So now we use this grad function to compute the
+ gradients of the loss with respect to the model weights.
+ And then we retain the graph. Remember from last video, this
+ is if we need again gradients, we need to retain it one more
+ time. So because we want to compute the bias here, too. And
+ then here, we don't care because in the next round, it will be
+ constructed from scratch the graph. So here, we don't need to
+ retain the graph. Why the minus one. So that is because we want
+ to have the negative gradient, because then we, we add the
+ negative gradient to the model weight. We could also just skip
+ this step. Of course, right, we can do it like this, and add a
+ minus here. Oops, same thing. But just to keep it consistent
+ with the implementation that we had before our manual
+ implementation, I wanted to make it as similar as possible.
+ Alright, so the only difference to before is now that how we
+ compute the gradients, notice that there is no backward
+ function. Now, if I scroll up again, show it to you again, in
+ the previous time, we had backward here to compute the
+ gradients where backward was our manual way of computing the
+ gradients. Now, we do it automatically. See, this is
+ actually because of this scrolling is why I commented on
+ the logging because otherwise, it would be a lot of stuff to
+ scroll here. All right, um, back to the thing here. So yeah,
+ here, here, this is the difference. Instead of using
+ backward with our manual gradients, we now use this grad
+ function. Except that everything should be the same. I made a
+ small modification here to the logging. Notice that I use with
+ torch no grad, because when we just do some logging here, we
+ don't do any model training here, we don't need to
+ construct the graph, it would be computationally wasteful to
+ build the graph, because otherwise, it will create the
+ graph in our forward method. So here, this one, because we have
+ set a request gradient to true, if this is set to true, every
+ time this is used, it will create this computation graph.
+ Okay, so here, the computation graph gets destroyed, because we
+ don't have retained graph to true. So every time we do the
+ for loop here, it makes a new graph. Here, we don't call grad,
+ right. So here, it would create a graph, but we don't need this
+ graph. And it would be just computationally wasteful. It's
+ just a good habit. If we don't need a graph, if we don't need
+ to compute gradients here for logging, then we can use this
+ with torch, no gradient context, and everything that is indented.
+ So everything that is below here does not construct a computation
+ graph, it's just to save computational resources. Here is
+ such a simple code, it doesn't matter. But it does matter for
+ deeper neural networks. All right, so defining it, then
+ again, same as before, we initialize the model, notice
+ that there's no other lines to instead of a line one, then
+ training the model. So we can see again, the loss goes down,
+ dot up, dot up, dot up. And let's take a look. plot should
+ look exactly like before. Let's compute the training accuracy
+ and test accuracy. Also, the same as before, you can actually
+ double check, these are exactly the same numbers as the ones
+ here. All right, so this is now doing things more conveniently,
+ right? So, because you can think of it, um, if I scroll up again,
+ you don't want to scroll that much. But I think it's useful
+ here in this case. So if this forward one would be a very long
+ complicated function using multiple layers and stuff like
+ that, you can already see how it's convenient to not implement
+ this backward method by hand by deriving that by hand, right? I
+ mean, it's a good exercise, still, but it is also very
+ it is also very error prone for deep neural networks. So it's
+ better to rely on these automatic functions. However,
+ there is an even more convenient way to do this that I want to
+ show you now. So this is usually how people most people use
+ pytorch. So you can actually use the so called linear layer
+ here. So this is as I explained last week, this is computing the
+ net input. I have now an additional step. So here I have
+ this zero. So what's going on here? So usually when we use
+ torch dot n dot linear, it's thinking we want to implement
+ some multi layer neural network, because that's what most people
+ do in deep learning. And then it will initialize the weights to
+ small random numbers. This would be also totally fine for our
+ edeline here. However, to make our edeline combination here
+ more comparable to the previous two codes I showed you before
+ where we use zero weights, I also want to use zero weights.
+ So I'm setting these weights to zero here. So just to show you
+ what I mean, let me just do this. Alright, let me just use
+ this. And then I should have of course, assigned it to something,
+ you can see that these should be small random values, see that.
+ And if I set them to zero, they will be oops, the problem you
+ have to detach it, it doesn't like it. If you have a variable
+ defined, and you want to modify it, like in place, leaf variable
+ means a leaf, it's like an endpoint. And it doesn't like it
+ if you modify it with an in place operation, because it's
+ also error prone, this is usually something you don't want
+ to do in a network. So it's kind of warning you. So you have to
+ detach it from the graph here. Oops, there we go. So now I set
+ it to zero. Also, notice I didn't, I didn't do this here
+ equal to, because there's a convention in pytorch, there are
+ these so called in place operations, these with an
+ underscore, they do an operation in place. So there's no return
+ value, actually, it just takes the existing vector and over
+ writes it. This is also done for computational efficiency,
+ because imagine you have a very large vector. And then you want
+ to override it with all zeros, you would have to memory briefly
+ create two vectors, you have the original one, then the zero
+ vector and the zero vector overrides the original one. So in
+ a brief moment in time, you would have two vectors in
+ memory, and it would take twice as much memory. So if you do
+ this with large matrices, it can in certain GPUs be a problem.
+ I mean, it's just wasteful. So in this case, these underscore
+ operations, modify something in place. But yeah, I'm getting
+ sidetracked here. Let's go back to what's going on here. So here
+ I'm now defining the forward path, pass, sorry, the weights
+ used in the forward pass using this linear wrapper. We talked
+ about this briefly last week. And then so I'm signing it to
+ self dot linear. And then I'm using it in the forward method
+ here. So here, computing the net inputs using self dot linear,
+ then I'm computing the activations, activations, that's
+ nothing an identity function. So I'm just overwriting it. And
+ then I'm returning it. Alright, so here, now I'm training it
+ again. Notice, the only things I define are this weight layer
+ here. And this forward method here, I'm not defining anything
+ else. In the train function, this is fundamentally very
+ similar to before. Except now, see, I'm computing the loss
+ here. So I'm computing loss function, I'm using here, the mse
+ loss, I could use my own loss. But like I mentioned, if there
+ is a function that is already implemented in pytorch, I
+ recommend using that one over your own implementation, because
+ it's usually more efficient. They use some tricks under the
+ hood, also c++ code to implement things more efficiently. So
+ here, we are using this mse loss. And then we are resetting
+ the gradients using zero grad, and calling backward. So
+ multiple steps that are new now that are happening here. So
+ calling forward to predict the outputs, the class label, so
+ compute outputs, then it's actually not the class name, it
+ is the net inputs, the because it's before the threshold
+ function, let me scroll up one more time. So we are we are
+ here, this this value here, we are computing this value.
+ Alright, we're computing this value y hat. Oh, this is the
+ previous one, sorry. Okay, here, for it. So we are computing
+ this y hat value, then we compute the prediction error,
+ using the mean square error here. Notice that I'm resetting
+ gradients from the previous iteration. So this will be
+ running multiple times. And there is how pytorch works,
+ there is a dot grad attribute that will be set for these
+ variables after each iteration. And we are resetting it,
+ otherwise, you would be accumulating the gradients. So
+ usually, it's not the case in deep learning, we usually
+ compute the gradients, update the weights, then do the next
+ round, compute the gradients updates the way update the
+ weights. But there are some applications where we want to,
+ for example, not update the weights after each epoch, for
+ example, we can do two forward passes and then update the
+ weights. So this would be possible, we could, for example,
+ skip zeroing the gradient. So we, we could technically, for
+ certain research experiments, accumulate the experiments. So
+ this is why pytorch has this implementation to allow certain
+ researchers to do some more flexible research, but it also
+ is a normal user forces us to remember to zero the gradients.
+ So here, the opt so we are also using, I should say an
+ optimizer, stochastic gradient descent, that is more automatically
+ than what we have done before. So prediction, computing the
+ loss zeroing the gradients from the previous round, calling
+ backward that computes our gradients, and then updating the
+ weights. So this is usually a typical pytorch workflow, that
+ is what people do, usually in practice, and what we do when we
+ do implement neural networks. In the previous round, we had it
+ manually. So we had computed forward, and then we had our
+ loss function. But then we computed here, the negative
+ gradients, and we did the stuff here, the update automatically,
+ this is what in our code information below is equal to
+ optimize step. So how does optimizer know that we want to
+ update the weight and the bias? Well, that is because we feed
+ it with the parameters I will show you. Here we are, we
+ provided TSC with model parameters. So there's also a
+ concept, if you use these functions like torch that linear,
+ these will be registered as model parameters in this module
+ here. So here, this will automatically contain the model
+ parameters, let me actually show it to you. So here we have,
+ where was it first grow up, we haven't actually defined it yet,
+ sorry. So let me execute this part first, and then I will show
+ you more details. All right, so I already ran this, so
+ everything should work and actually also, it's fine. So here
+ you can see, okay, maybe can't because it's a generator. So you
+ can see there are these two entries, one is actually the
+ weights, and one is the bias. So they are registered under the
+ parameters. So these are really the values that we have as
+ model, dot FC dot weights. What was it? How did we save it one
+ second, or linear, we call it linear, not FC. Okay. So you can
+ see, these are corresponding to this one. And this one is
+ corresponding to this one. So this is how the optimizer knows
+ what to update when we call step. I can maybe also show you
+ on model linear, weight, there should be a grad. So this is the
+ gradient, the gradient from training it. So from the
+ backward pass, and if we call backward, the next round, it
+ will add to this gradient, so it will grow. So this one should
+ actually make it zero. Let's execute this doesn't work. Oh,
+ it's, it's because it's defined outside this outside this
+ function here. That's a bit unfortunate. Um, yeah, it would
+ be tricky to show it to you here. Maybe I can can do it
+ differently. I can do it here before. After. All right, it's
+ actually none. Also, okay, no, it's something else. So I think
+ the first round, so you can see it first, it's this and then
+ after zero, this and then it's this and this, you can see how
+ it's computed, then zero to computer zero. If I don't do
+ this one, it will just grow larger and larger. You can see
+ that. Maybe not because it's positive or negative, but you
+ can see how large it becomes. That's actually not good. So
+ here, the model wouldn't learn anything useful, I guess. Let's
+ see. Yeah, you can see it's not learning anything useful. So
+ let's fix that. All right, let's fix this and run it properly.
+ All right. And you can see this is the same as before. When I
+ compute the test and training accuracy, look at these values,
+ values 92.86% and 93.33%. And this is exactly the same accuracy.
+ Let me scroll up to our manual implementation is exactly the
+ same number here. So you can see pytorch is performing exactly
+ the same thing we do manually. So our manual derivatives are
+ correct. And vice versa pytorch is also correct. So I will talk
+ about this more in the slides explaining this again. But I
+ think if this is still unclear, maybe focus on this part. So
+ this is really how we use pytorch like forward, compute
+ the loss, zero, the gradients backward update. And this is
+ essentially a pytorch in a nutshell. And we can use this
+ API for all types of models. So the only difference is really
+ here when we define the weight parameters and the forward pass.
+ So this is the only difference, the training loop is essentially
+ always the same. All right, then let me stop this video, and then
+ go back into the slides and explain to you a little bit more
+ about the pytorch API.

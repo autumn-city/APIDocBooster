@@ -1,0 +1,1871 @@
+so tear started this is a tutorial on
+basically approximate baby
+to recap nice in theory talk about
+variational currents take that from the
+basics of linear regression stuff
+already seen before probably all that's
+agenda is adversary networks and in the
+last section we're going to have a quick
+overview of some recent work kind of
+uniting the two schools of implicit and
+explicit genitive models being published
+in ITIL
+and presented tomorrow so we're beating
+them by a day on that research so just a
+quick recap
+Who am I I'm a CML research launcher
+systems we do high throughput latency
+trading software for sports betting
+markets mercenary interesting problem
+areas at the moment we're actually
+hiring for a Python developer explicitly
+but we happy to meet with people from a
+range of skill sets who interested in
+maybe finding out more about what we do
+I've got three guys as well with me down
+the front here so if you're interested
+talk more about that come find us
+afterwards okay so and as always with
+these presentations just to head off any
+questions about why pint or attentive
+flow opening with that and I've used
+both I used to be attentive oh when it
+was basically just Canseco and they both
+have pros and cons I mean if you write
+Python a lot I think part is way more
+similar to what you do is very easy to
+just switch in and out from numpy and
+apply torch pretty quickly downside it's
+pretty new it's very very bleeding edge
+at the moment basically half the
+functionality this talk uses is in
+version or point four it was introduced
+that landed two days ago so if you
+prepared an installed more than two days
+ago you have to upgrade so that's
+obviously downside it's very Alf at the
+moment but doing really great stuff okay
+just a point of notation we see some
+formal ease and stuff
+I think it's generally agreed upon
+standard but just to recap small case
+non bold means like a one day to make
+one dimensional data point bolded mean
+multi-dimensional that can include 1d
+because that's in initial space as well
+and capitalized norm is a matrix and
+understand it why is generally target
+and that be a weight okay so if you want
+to follow along and this is my github
+page with all the slides and the
+notebooks on it I'm not going to run any
+code here today just because these
+models take a while and I've already run
+them so we can see the output I'm not
+sure it's instructive just to watch on a
+train decrease so people feel free your
+own time to go through them so some
+prerequisites I kind of expect you've
+seen probability before and basic
+Bayesian terminology and some reason
+important more knowledge you know what
+regression is it's probably gonna be a
+heart and a half for you so organs do
+today I said recap some some key ideas
+kind of try and read a fairly consistent
+path through variation Ferentz just
+probably the screw natives V agent ganz
+I said there's a lot to cover when
+you're putting together talk about this
+it kind of you have to put a lot of
+stuff in there and how people did go in
+do a bit more or we have to concentrate
+on one thing and basically cover nothing
+for so it's probably gonna be stuff that
+it's gonna go of your heads but there's
+lots of resources the end of it
+besides as well so you can come back and
+see other people talk about them okay
+there's no perspective if you want okay
+so motivation this talk is about doing
+approximate Bayesian inference so the
+standard one that we probably all see
+and probably textbooks everywhere is a
+coin toss so if I toss a coin in 22
+times I get five heads and 15 tails what
+does that mean about the distribution of
+a coin game talk about a Bayesian
+framework I'd be saying I'm looking for
+a posterior distribution of the coins
+bias so like the probability that it's
+heads versus tails and this is a very
+obviously very standard problem Bayes
+theorem
+I'm sure you've also been in probability
+whatever most real-world problems are
+they followed the same idea but they
+nowhere near as simple and so we need to
+use approximations because the math
+spreads down very very quickly
+variational inference is a subset of
+approximating inference basically if it
+uses optimization to solve the problem
+it's generally called operational
+parents things like marketing Monte
+Carlo also fall into approximation for
+the state vocational France okay so what
+kind of problems is it useful for
+well I mean as it says on the tin
+anytime you're looking to apply probe
+licit reasoning and so that means if you
+want to get on certainty estimates for
+things i've classified in your own nets
+or you want a to predicted distribution
+so season examples in a minute about
+what that really means but if we use a
+naive approach that we train in our
+network I mean just throwing our date
+out of sample data we might get put I
+get a probability but it's not really
+predictive because we don't get a
+measure of how much that input point
+represents what we trained on and how
+similar those things are and also
+there's been a lot of success recently
+in using these methods to kind of shine
+a new light on things that we know that
+work in practice
+so things I drop out is probably one of
+the most famous ones that we can
+reinterpret in a variational inference
+type framework allows us to apply theory
+and probably reasoning to stuff that we
+know works incorrectly we discover
+empirically okay so the cornerstone and
+I hope you've all seen this before okay
+and I'm probably anymore this is again a
+textual description of Bayes theorem you
+have a like normally have parameters
+theta and vodka liters of function which
+gives you the probability of all of your
+outputs or your wives or whatever giving
+your Theatre's
+your prior is your prior belief so this
+can be anything from uniform up to some
+very specific belief the posterior is
+how I update my distribution of their
+parameters now that I've seen data
+and so these are the terms in peace
+there as I'm sure you've all seen before
+okay so we have to cover a little bit of
+information theory hopefully you've all
+seen this as well
+so a divergence measure is how we
+essentially measure difference it's
+probably the best time to put it between
+probability distributions so you can
+think of it at a high level is it like a
+distance metric but formally to be a
+distance metric it has to obey a sieve
+variations basically which are given
+here and we can react some of these so
+like symmetricity and doesn't lessen you
+to hold for divergence measure like our
+divergence is not symmetric but it still
+gives us a quantifiable way to measure
+between distributions so the KL
+divergence is probably the most popular
+one hopefully most of you seen this
+before it's not a metric so you can see
+it's the expectation of under this
+region of Q of the rod ratio of Q and P
+so if we if we tap mu Q and P there P
+will be the expectation term so there's
+obviously not in general the same if you
+speak you and key P and this different
+the non-terminal H of it induces
+different preferences when we learn so
+if we have a look at our first
+demonstration
+okay so at the top here we have we have
+the definition to tell their agents
+again and this is the reverse form so so
+I was talking about for now because we
+have ratio in in the vocal term if if we
+have depending which formation we have
+if the denominator is small that causes
+the whole term to blow up but whereas if
+in numerator is small then it causes the
+whole time to be small so depending
+which way you have the ratio induces
+different preferences basically so what
+I've done here is used sideline as a KL
+divergence functions I've just used that
+and defined a probability distribution
+which is a mixture of two gaussians very
+straightforward so if we were to imagine
+this was what we're trying to learn and
+what we're going to fit I stand at a
+normal distribution to this just a
+single one
+so if we say Q is our approximate
+solution we're trying to use and P would
+be the mixture so if we're trying to
+optimize ki using Q P we can see that
+this exhibits what we call the mode
+seeking behavior so it sees the best
+approximation as matching one of the
+modes of the two whereas if we use the
+reverse formulation we can see actually
+proposed masks are green so and this is
+because it's again because of the ratio
+it's penalized for hat for there being
+mass on the real distribution and no
+mass on the proximal distribution so
+which formulation you use actually
+matters quite a lot because it depends
+what you're looking to do because for
+example the first exclusion if you're
+looking to get really good samples from
+across the whole distribution this is
+terrible proximation because you didn't
+miss that like half the distribution but
+if you're kind of looking for more you
+know I want to understand the true
+variance and things like that this is a
+much better thing to do but equally
+neither any samples you draw from
+this I'm not going to be as
+representative of either mode so you
+have to think about these things when
+you're designing your system okay
+so with the preamble done we can move on
+to the meat of the talk I guess and so
+why the posterior one kind of saw
+example oh yeah but the reason we care
+about the posterior because it allows us
+to compute other good stuff really so if
+we want to achieve predictive
+distribution Asian sense then this is
+the formula so it's essentially the
+expectation of the 1/2 sample vodka hood
+with the posterior so this is useful for
+out-of-sample predictions and on set the
+estimates and also maybe you want to do
+local Bayesian high parameter section so
+you need what's called the model
+evidence and we can compute this using
+the posterior as well normally we assume
+the joint is tractable this is just
+multiplying two times together whereas
+the evidence is not because all the
+posterior is not because he invited on
+school terms we see in a minute so
+there's two main reasons why we would
+use these methods so why then why would
+you ever need to approximate well I'm
+simply computational requirements
+because if we look at pace theorem you
+can see that the denominator so Bayes
+theorem has an integral in it and this
+is fine for some distributions like we
+know certain class of distributions like
+to normals make a normal and everything
+like that and then we tend conjugacy but
+for any most real-world examples are
+probably not conjugate we just do that
+to make it easy and for any two
+distributions the chance I if I just
+made a joint distribution and try to
+integrate it I wouldn't have anything
+that was anything we knew as a
+distribution so if there's no that easy
+analytical answer you basically if you
+want to compute this directly you'd have
+to do numerical integration and this is
+really not scalable because use here
+because of dimensionality very very fast
+so just an example if these Sigma is the
+sigmoid distribution this is there is no
+closed form solution to this is is just
+a thing but we could compute numerically
+but there's no like
+I kind of say this is like a BT
+distribution this is just what is and
+say the only way to get to actually get
+an answer to that would be to do
+numerically and we've very quickly run
+out of computational resources that
+would be extortion expensive okay so
+just to kind of start on our part we're
+going to look at Bayesian linear
+regression
+so I hope most of you seen this before
+so if you have a privacy bution overall
+regression weights which is just a
+standard normal with a diagonal
+covariance matrix and a likelihood which
+is a linear function in the mean diagram
+covariance and we can derive because we
+know that this combination of models is
+conjugate we know that posterior is
+conjugate simplifies that algebra and I
+don't if you've never done this before
+it's reasonably worthwhile exercise you
+can see something like Bishop for the
+steps if you weren't interested but
+basically these two terms at the bottom
+here are the mean and variance of the
+posterior so I've got that just
+implemented quickly numpy so we can
+okay so this is just a recap again of
+the model that we've I just showed on
+the slide I've just used the basis
+function expansion so these are our X's
+here don't apply the Phi's and we know
+what our posterior looks like because
+we've got the answer already we've done
+the maths so it's nice and shape forward
+if we generate some data and we
+essentially are doing a basis function
+which is a third order polynomial down
+here so we're fitting a third order
+polynomial to this data and to basically
+all this code is Jeff implementing the
+former that we saw above is not to be
+interesting but what we do get is we get
+the mean and covariance of the posterior
+which we can use numpy der random to
+sample from so when we do that and we
+put the different regression curves
+basically we can see that this is a
+reasonably good posterior because when
+we sum from the C tribution most of them
+fit in the data quite well and what we
+see is that the variability start to
+increase as we go outside our data so
+especially on the left hand side and
+this is kind of well-known extrapolating
+pastelitos
+doesn't eat sensible things sometime so
+this is the kind of thing that posterior
+asks to see so we can use the predictive
+distribution now you can realize on the
+same metaphor of conjugacy so this will
+give us if we implement this again we
+can sample from this distribution which
+are predictive which I've done here
+again is very straight forward to just
+implementing the form where we saw above
+and what we get is a part of
+competencies for want of a better word
+about the location for any X so for any
+X this is like a heat map of what the
+probability is of Y being at that point
+so it's very high around the data which
+is good
+and Vario when it's not around the data
+but the interesting thing we see is if
+we zoom in a little bit we can see that
+as we move past our data our model gets
+less confident to predict any point so
+this is actually useful because if we're
+doing things where like we're adding an
+automatic aircraft and we want to be
+really confident that this isn't just
+like some overfitting artifact and this
+is actually what we've seen before so
+having a system where it starts telling
+us when all your pain this is what I
+think the input is but this is quite far
+from anything I've ever seen before and
+this is what you get use a Bayesian
+approach because even though it will
+still predict the mean will still be the
+same of this distribution we can see up
+here the probability is significant
+reduced some stuff gets signal that way
+maybe extrapolate and part into my data
+okay so that works nice and easily so
+it's all analytical all I was doing
+there which is implementing some mats in
+numpy the reason that works is because
+conjugacy so we know a normal that kid
+with a normal prior I mean it's still
+normal and so we get and everything's
+all nice but we may not actually want to
+use this in reality I mean normally the
+so the right pooping normal means the
+errors that we observe are normally
+distributed normally we justify this by
+saying oh well it's probably got some
+little small errors that will add up and
+then I can just say so central limit
+theorem and not worry about it ever
+again depending what you're doing that
+may be not true and you might actually
+have one single source of error that's
+clearly not normally distributed if you
+want to do that so you wanted to have
+like a road normal distribution of your
+error it would work you'd need because
+that's not an analytical solution
+anymore and for example the normal
+tribution you proposed to improvise
+symmetricity so that's maybe a strong
+assumption for some cases so for example
+house prices if you're trying to regress
+like true house to learn the true house
+price given the price set put on the
+market for I'd probably be a safe bet to
+assume that that's not symmetrical
+distribution people are almost certainly
+going to put houses for more expensive
+than they're worth a lot more than they
+are for less expensive than they're
+worth none wants to sell for less than
+the house is worth so if you actually
+cared about being precise about this
+model and the period can you make you
+won't be using a normal athlete would
+probably be the wrong way to go
+I mean also if we have things like our
+likelihood is not just a linear function
+of our prior and well use more
+complicated ways to determine the mean
+then also our context he disappears
+because it only works because it's a
+linear function so normally the first
+place we ever fee non-congregate
+distributions to do inference and we're
+learning about machine learning would be
+the class approximation so we're doing
+logistic regression and we'll do that in
+a Bayesian way it's know me that the
+first example is a historical an
+approach it's an analytical approach
+which we have imprinted here so the
+model which is debating the gist
+aggression sorry it's basically the same
+as we knew aggression except their
+livelihood is wrapped with a sigmoid
+function so because he's active
+classification our outputs are 0 or 1 so
+we can interpret this as being like a
+probability that Y is cost 1 for example
+so this is because of the sigmoids which
+is obviously nonlinear function then we
+no longer have a quantity this set of
+distributions so the posterior here is
+not conjugate it's not normal and so we
+have to rely on an approximation if you
+want to do this so the standard way
+would be to use a Taylor series
+expansion
+I won't depend too much time on this I
+promise but basically you do at a series
+expansion of any log function in general
+is given here and we say ok we're gonna
+take the Taylor series expansion around
+the map points so essentially the mode
+of the posterior because it's the mode
+it's a maximum point so it's effectively
+0 which allows me to get rid of the
+middle term in here so this this guy is
+0 so it's all this whole term drops out
+here and then we can essentially
+recognize all of this as being I don't
+know some number because it's a
+derivative at a certain point which
+we've just called that a and so this
+actually starts to go up now like the
+blog PDF of a Gaussian and so that's
+essentially what they do is they say I'm
+gonna take a Taylor series approximation
+of this posterior and using the second
+derivative at the at the map as the
+covariance matrix and in the map point
+as the mean so
+this is what I've got invented here
+hopefully you've all seen British
+efficient implements before it's quite
+straightforward so I just used their
+torch veneer layer here which is just a
+weight matrix times your inputs and then
+we have a loss function which are binary
+cross entropy standard classification
+negative world overheads and a prime
+mean and variance again which is just
+defined as sorry that's a zero one I
+hope with the precision multiplier I
+don't know if people familiar with the
+torch kind of paradigm but generally use
+forward to denote the forward parts of
+your network for one of Edwards and so
+this is just working out all right so
+this just works out the linear function
+because our last function takes budgets
+and then we can apply sigmoid to this
+function as well to get the proper
+radical output which is given here so
+the way we the way we do this
+analytically is we do map estimation so
+we put a prior on on the loss function
+and we solve that and then we just plug
+in the this analytical term here as the
+covariance so what we've done here so
+con- broke out here which is just the
+exponent of an or distribution so if we
+take a simple classification example
+from scikit-learn
+so two classes and four books we can
+pass this data into our just you
+progression and what she's Adam to
+optimize it we minimize our loss which
+is our likelihood and our prior and we
+get a single way to value out and from
+there we can just for example visualize
+a classification surface that we learned
+so it did a very good job mostly the
+base point classified it probably could
+do a little bit better because easy like
+main people
+and on the wrong side it's hard to tell
+sometimes because sighs but this has
+been inputted that prior as well because
+it favors much more simple zero mean
+weight functions and so if we now
+essentially just do that mass again a
+bit like we did in numpy and we work out
+what our second derivative is it's a
+nice analytical form it's not
+particularly pretty but we can work out
+quite straightforwardly and this is the
+mean here so this is just the weight
+I've learned from my widget state
+regression from the previous step and so
+we can do exactly the same thing now I
+can I can sample from this distribution
+which actually a torch multi variable
+Gaussian and we can see that we've
+sample all these different operational
+services and so again our posteriors
+looks reasonably sensible and we can do
+the same thing again that is the cast
+page in this plan so we can say okay so
+imagine I now want to classify the point
+100 point 5 so this is obviously I'm
+really far away from any of the data
+we've seen before and if we did a
+Bayesian prediction would get an 80%
+probability but because then this is
+because we're computing an average over
+all these decision surfaces so because
+they're different
+some of them will it will form one time
+some before any other but if we just
+used the map point so the most likely
+weights that we've determined will see
+it'll be super overconfident at Assen
+98.7% that this is on crosswalk which is
+probably as strong it's probably strong
+to be that confident on a point which is
+of an order of like 10 times further
+away than any point you've ever seen
+before so this is why we do things like
+Bayesian pretty distribution because we
+get slightly more well calibrated and
+predict probability outputs as opposed
+to just being taking a single output and
+deciding that's the one
+okay so that was great
+but it has some shortcomings we had to
+resort to actually doing the maths
+Taylor series expansion and it's not
+kind of clear how that would work if we
+wanted to use some other distribution
+there's an approximation if we wanted to
+use a mixture of three gaussians
+that's gonna get pretty messy the Taylor
+series doesn't look about anything like
+that so we're not sure how we'd proceed
+from there so what we can do is resort
+to a much more modern technique which is
+a lot more general so this is called the
+elbow eye it's also appears in the e/m
+algorithm if anyone's ever seen that
+before this is the same loss function
+for one of a better word in the EM
+algorithm derived it tends to be derived
+slightly differently in various
+literature but it always says purposes
+is the same thing so the first point is
+that you're looking to minimize so I
+want an approximation Q which minimizes
+the distance between the distances in
+the Carole divergence between my
+proximation and my true posterior here
+and so we can go through the algebra
+it's very straightforward just chopping
+up there so taking this is the
+definition of the KO divergence where
+you can chop that up using Bayes theorem
+do some rearranging and it drops out
+that we can say that the Doge likelihood
+of data Y is greater than this term here
+which we call the elbow so the idea
+being that because it's Cal divergence
+is so we can't compute this because we
+don't actually know the posterior but we
+know it is positive because it diverges
+negative never negatives right so we can
+just drop this term turn it into an
+inequality and we have a bound and so
+this is this helps us because we have an
+optimization problem now because instead
+of having to compute this term directly
+or something we can just maximize this
+term and we know that if we maximize it
+fully we're going to get inequality and
+our proximation will be exact so it
+allows us to transfer from probabilistic
+methods into optimization and we
+more tools to help us out there so we
+can do the exactly the same thing we
+just did with the Laplace approximation
+we can use the elbow instead as a loss
+function yep
+evidence of lower bound so it's a it's a
+strange name but okay so we can use the
+elbow as I lost function now so it's the
+same model as we saw before and so this
+is the form of the loss hunt this is the
+form of the elbow sort of chop it up so
+we have basically you can consider this
+to be like a simplification term or a
+regularization term so it penalizes
+difference between approximation
+approximation in our prior so it acts to
+damp down complexity and this is kind of
+even called pseudo accurate term so this
+is the term that is high when our
+reconstruction is good and when our
+proximation is good and so we have an
+interplay between simple models and
+complex models and hopefully this allows
+us to find a nice happy medium and so
+this is pretty much the same code as
+before except now we have also two
+parameters which are the mean and a
+variance or a variance so whereas before
+we essentially trained just our weights
+so we can see that as training a
+distribution with just the fixed
+covariance that we know now to run the
+full distribution we have to learn
+covariance as well so we have an extra
+parameter that we have to optimize for
+basically everything else exactly the
+same so we've got a forward is basically
+the same haven't usually near here just
+for simplicity so and in the loss
+function now is an implementation of the
+of the elbow so the expectation of the
+likelihood is just again it's across
+entropy and if for the Kerr divergence
+term we've got because I'm using the
+Gaussian to approximate this
+to be consistent and we have an
+analytical solution so I've just
+implemented that we could also dip Monte
+Carlo it doesn't make any difference you
+something would be easier for me this
+way and so if we see so this is how
+different problem but same idea now we
+have one side to you now if you want to
+learn a covariance matrix it has to be
+positive definite if it's a normal
+attrition so in order to do that we
+learn the Chesky decomposition of the
+covariance so if you've removed key it's
+basically the square root for matrices
+so if we learn that and then do a dot
+product of that with itself then we get
+definitely positive definite matrix
+so there's any site complexes that have
+to deal with but that's fine and so if
+we sent it our widgets regression and
+this is our turn to basically take our
+flattened vector of covariance
+parameters and turn it into matrix of
+lower triangular and then multivariate
+normal
+takes a scale a cesky scale and a
+variance so we can don't have to worry
+about multiplying together and we do the
+optimization over that again
+and we get the same sort outputs okay so
+this one's a little bit more confident I
+think just because it's easy a problem
+actually and so if we do the same again
+we can use our MDM which in our
+posterior distribution can sample from
+that and that give will give us a range
+of separating hyperplanes so as you can
+see it's not terrible but we are because
+of the nature of the approximation we've
+used it's not perfect so we have mass
+where there wouldn't be mass in the true
+posterior because they were just sick
+signal the posterior for the age of the
+profession is most acute than the normal
+distribution and if we wanted to be more
+accurate I mean I've done this for
+simplicity but it's actually very very
+straightforward if we wanted to make the
+posterior
+approximate by a mixture of two or three
+Chaldeans mixed together with the mesh
+coefficients as available parameters and
+that would be a lot more straightforward
+and would approximate posterior
+as well and the good thing is is that
+that's actually incredibly easy to do
+all I have to do is slightly change my
+code here which implements a
+multivariate normal into one that
+multiplies that implements a mixture of
+most variable normals and the rest will
+just work the same so that's really this
+method is that I can just chop and
+change my proximation as I want whereas
+in the previous one with the Laplace
+approximation if I was looking to now do
+this the same thing would be a nightmare
+trying to find some approximation from
+the Taylor series or something like that
+okay so the next step we can take is
+we've seen the past approximation using
+the elbow but actually there's nothing
+special there's nothing special about
+logistic regression or is is a linear
+function of the weights and the inputs
+we could easily make that a nonlinear
+function it's it's no big deal
+there's nothing we've done here which
+will which reviving linearity in the
+elbow and so we can use the elbow as a
+general loss function as the neural
+network so for regression normally a
+loss function or I look like inventory
+would be the log of a normal
+distribution or something like that this
+is quite straightforward it's the mean
+squared error information that we will
+probably use for doing regression with
+newer networks anyway and for
+classification
+it's the binary cross-entropy so both of
+these are quite shy for the only
+difference being that whereas previously
+this would be X dot W now it's some
+function of X in W which is a neural
+network basically but it doesn't have to
+be numeric to be anything to replace
+these functions whatever it will exist
+and we can just in just again for this
+example I'm just going to use a normal
+to do the approximation thing it's easy
+to to work with him to find a way around
+it doesn't have to be normal the same
+way we could have thought makes you
+normals or anything we wanted we can do
+that and here as well
+so the basic neural network looks almost
+exactly got your gist aggression except
+this is now just some arbitrary function
+instead of X dot W and so the code looks
+pretty much the same as well actually we
+have a little bit more because we have a
+lot more weights and there's a little
+bit more work to do but when we sample
+from the posterior we have to chop them
+up into the right size and things like
+that so it's all the matrix products
+work pretty little bit more work but
+that's not particularly complicated so
+here I've just got if we've got a
+forward function here I've got two
+layers with a tan in the middle
+hyperbolic tangent and in the middle so
+this is what just as an aside this one
+the reason I apply torch if you wanted
+to do something like this intensive
+though it probably a real headache for
+you and they're all sorts of weird
+tensor for a specific reshaping function
+do you have to use this is just a lumpy
+I just do a slice and pasta shape I
+wanted to begin so that's why I use a
+high-touch now and I've an intensive way
+so here basically is a this is the code
+that implements on your network all this
+other stuff was just pre-processing and
+shaping and so it's like you've already
+seen before we need a combination of
+inputs and weights plus do some them in
+the RT and again and then a sigmoid
+around the output big loss function this
+is exactly the same as what we saw for
+the which is depravation case so by
+Nicolas entropy saying and okay
+analytical care the same or exactly the
+same there and we so we now we can use
+this to to train for example this
+classification problem was facing with
+the last one again we have the same
+problems with multi cardinal balls we're
+learning plus definite matrices et
+cetera which we use the chess key again
+and if we go down so we can see exactly
+the same so our place is exactly the
+same but now because we using neural
+network our decisions there this can be
+nonlinear and we can do all the same
+stuff that we wanted to do
+we do it here so we can see that
+actually once we want to user start
+using the elbow to do things it's
+actually everything just kind of falls
+into place quite naturally with logistic
+regression basic neural networks
+whatever we'd have to care regression
+classification it all just works exactly
+the same it's just about identifying the
+correct property terms that were using
+it in the elbow so everything we've seen
+so far is what would call the
+approximation of a fixed model so this
+is I have some model that specifying I
+want to approximate it but we can't age
+one further and we can say what I want
+to learn the model as well so I'm not
+saying there's a normal prior now with a
+normal likelihood with a sigmoid around
+it I'm saying
+I learned that likelihood and we can do
+that as well so there's like absolutely
+no reason why we can't do that at all so
+this is the fixed model case essentially
+this is this is our model here so this
+would this would have been our normal
+likelihood this would've been our prior
+and this is our proximation so
+previously we were just learning Phi
+which were our parameters of our
+approximation but actually there's no
+reason why we can't parameterize this
+guy as well and do a maximization over
+both which is basically what we can do
+next
+so this is the cost function or the
+elbow form that we would use to learn
+both it's quite simple to apply torch
+all we have to do is define a few extra
+parameters and optimization to take care
+of the rest so
+so if you want to now going to attack
+what called variational auto-encoders so
+these operate race in a very similar way
+to auto-encoders and what could seem
+with conceptually the idea is that we
+use reconstructions of beta points in
+order to run a model that data points so
+we use a normal so first of all we
+appropriate we add an additional
+conditionality so we have a weight in
+variable Z which before we can think
+about a representation so this is like
+projecting our beta down onto a small
+condensed version condensed a
+representation which is not much to the
+vector it doesn't mean anything often
+like visually it's just a lot of numbers
+but it encodes information in a
+particular way to our network and making
+us work to do inference so we made
+previously all the approximations we did
+were conditioned
+workwear and conditional they were just
+approximations of the model but here we
+convicted conditional a data points to
+make it more like an autoencoder because
+for a normal encoder we put a point in
+we compress it and we decompress and we
+compare the outputs so we can do the
+same thing here so we have two
+distributions these are basically the
+encoder and decoder part so this is the
+encoder so given a Y so I take an input
+point I encode it I get a Zed and then I
+put that said into my decoder so given a
+Zed what's the probability of a Y and so
+that's like my decoder there and then I
+can do exactly the same idea and compare
+the two so what I put in and what I got
+back out and see how similar they are
+and because I'm winning the premises
+both of these that will work quite
+nicely and so what we use is a normal
+distribution as the output but the
+parameters are given by a neural network
+so each two in theory each data point
+and can have its own distribution so
+because the neural network will give
+different output for each data point and
+there those outputs are mean and
+variance of the distribution so even
+though they're normal and the fact that
+and we use the newer network to
+parameterize it give some more
+flexibility and I'll final like margin
+to species not normal
+I think they chose it just for the
+simplicity of the analytical kod again
+it most of the if you work with Vaz the
+the normal solution is actually that
+constraining often it's more about like
+the flexibility the elbow and a lot more
+kind of statistical things you have to
+look into because because the
+instructions in your networks to give
+you the parameter this gives you a lot
+of flexibility that you wouldn't kind of
+see if you just use a normal system okay
+so yeah so basically when we're training
+this whole system the weights of these
+neural networks F and G as I've called
+them are considered the parameters so
+this can be if you have a million system
+if you wanted to use in big neural
+network so again just to recap the white
+auto encoder basically because I take a
+data point X or a switch my notation
+here which should be bad at me you take
+a later point it goes in it gets encoded
+then come close into our P distribution
+which our decoder and comes out again as
+an X point and then they look they look
+like you term that we get in the elbow
+is I can't reconstruction to us from one
+of their word this is to visualize what
+happens I'll give you a minute
+okay so basically we can start here we
+have a data point X we encode it into
+our first distribution so this is this
+is in your network
+it gives outputs are a mean and variance
+which we then use the sample from so we
+sample is it this is a encoding of the
+data we we then pass that through our
+decoder network which gives us a
+Bernoulli parameter which we then sample
+from and that gives us our data point
+back again and so the Bernoulli
+parameters if we have like discrete
+outputs opening images or something like
+that because if it's grayscale be like
+basically 0 or 1 so this will be Avenue
+you switch rather normal they've already
+done continuously normal and then we can
+do the cross entropy between these two
+so this is our target and this is what
+we predicted and this flows into the
+elbow in the same ways before and then
+we have a the analyte of care their
+versions between our prior which is
+normally standard and the distribution
+here and so this is our last function
+here that we take the gradient respect
+to and minimize and then we learn the
+parameters of both this network and this
+network so we've got one of the simple
+instructive example so often you've seen
+the teacher people do run these things
+on faces or things like that and while
+it's good to see you like pretty
+pictures it's difficult to conceptualize
+about because we can't we inspect like
+150 dimensional rating representation we
+can't just say oh well that makes sense
+to me because it's just a numbers right
+and so a good example that I found was
+actually using a very small encoder to
+earn a distribution over essentially one
+fine codings so this is simple enough
+that we can actually visualize what
+happens in the network so this is our
+input data here so there's quite a our
+points doesn't matter cause it with the
+same basic big and they have ones in one
+position
+four dimensions so the VA implementation
+potentially has so an encoder network
+works basically the same as what you
+would expect from a normal variation for
+the normal orbit encoder story except
+the outputs a mean and the variance
+instead of just a single output and the
+decoder is like a Bernoulli here so it
+takes a Zed and returns zero ones
+there's a small technical point about
+because we use sampling in this process
+the small technical point about sampling
+with respect to the differentiable
+system so basically because if I just
+went to numpy and sampled the gradient I
+got four like the mean of that
+distribution would be wrong because the
+sampling operation is also dependent on
+the mean like I have a normal that's
+mean a zero and my sample from it and
+then I move the mean to like 150
+obviously my samples move too so we have
+to account for the double dependency on
+the parameters of the distribution here
+and so fu something called the repo
+parameterization trick and if you're
+interested you can go away and read
+about it here but will spew about it
+here and but basically we can sample
+from for example as any normal
+distribution by first sampling from a
+standard one and doing this we
+parameterize ation so the mean plus the
+standard deviation of what we're looking
+to sample from times on normal samples
+now gives us samples which to the right
+and distribution but also then we can
+differentiate this term by immunes and
+Sigma and everything will work properly
+okay so and again our loss function is
+basically the same so we've got our
+binary cross entropy here and a care
+divergence term and we do because we
+doing mini batch basically we have to
+normalize by the size of the patches
+otherwise we like over sample account
+divergence versus I like it
+so make on water too simple and then we
+have a small function which basically so
+did so the encoder Network returns mu
+and a Sigma and then we have a small
+function that basically and uses a
+reaper amortization trick to generate
+samples from that so that's up here
+which is the form where I wrote just up
+there so basically sample from a
+standard normal and in tons by the
+standard deviation and add there the
+mean and so when we so we can basically
+just chain this now it's a clash a
+forward so we have all the terms here
+just reconstruction and then our lasting
+our reconstruction our data and if we
+run that for a while we actually get and
+then we got the Z that we generate then
+we actually get a nice distribution so
+we can see that the rating encodings
+that occur and separated so this is each
+color represents like one class for
+nerve edward so one position where the
+one is and and so it's able to learn any
+so the distribution and can separate the
+different classes so we actually see
+that our encoding z' mean something here
+and actually had information to our
+system as well and so this is the same
+as if we wanted to now join him and
+faces the distributions are a bit more
+complicated parties begin here are
+networks but it's just for the same and
+the rating variables that we have would
+work in a very similar way so they would
+encode information about the face that
+we've just encoded so obviously we can
+visualize it in only very high
+dimensional but you can sort kind of see
+how this thing's works the good thing is
+probabilistic we we get like doggins
+distribution of the data kind of free so
+we've learned that as part of our newly
+network
+which is nice okay
+so does anyone have any questions just
+like at this point god yep dysgraphia
+yes and our latent representation is
+two-dimensional so inside the encoder
+yes so they're not weights they actually
+like the values of the encoded
+representation does that make sense
+so so for example like for this class
+this say this was the one where one is
+at the start it's representation will be
+two-dimensional and it might be like 1 1
+for example and that would tell us okay
+this is being coding over this class if
+that makes sense
+okay any other questions before we move
+on no cool oh god yeah
+so I can't see if you're the right
+speaker yes
+[Music]
+yes so I guess the the point is that
+you've you run a probability model as
+well
+so where's with a very small sorry we're
+just the general it's kind of know
+probably interpretation I can learn
+something but then if I actually want a
+joint distribution over phases for
+example I have no way to if I use it so
+like if I was like for example let's say
+I trained it on phases and then I wanted
+to take that train network and say okay
+now this out-of-sample face what I want
+to pass if I was to locate that this is
+a face for example I composite in a
+network and because I have a probably a
+probability system they probably tell me
+ok yes a really high probability that
+this is a face or where you go probably
+to this is a face so you kind of get
+like the whole system for free words
+with an autoencoder
+you just get the encoding it doesn't
+really give you anything else problem
+that if that makes sense
+ok cool all right we'll get ok ok so the
+next thing we can in fact it's gonna
+seem like a a bit of a step away from
+what we've done before but is relevant I
+promise and so generally I think we
+probably seem discriminators before so
+essentially just classifiers we just
+classify is it across X or Y it doesn't
+try to learn the generative distribution
+so we do these actually have a
+probability interpretation it's kind of
+you ever studied like Beijing decision
+theory you've probably done this and
+then I completely forgotten about it and
+this is gonna kind of be like a
+reawakening for you I guess so if we so
+this is what the output of a normal
+discriminator would be so their
+probability that 82 points across one
+for example and so he's basically them
+to do the inversion of this basically
+and if we make the very sorry mild
+assumption that our base point is our
+beta is evenly distributed between two
+classes we can essentially cancel the
+prize
+and so we get this turn down here and
+then if we do a little bit rearranging
+we can show that we can see that
+actually this is I can write this as a
+Sigma basically with some odd ratio in
+the same light so lit and this is
+actually the form we see in a neural
+network so if we were changing your
+network this is this here would be the
+function right so we'd have a sigmoid
+around some function of the inputs be
+complicated one bit it'd be some
+function and so we can kind of see that
+actually there's like an equivalence
+here in that I can if I train it
+discrimination which claims not to learn
+distributions actually it kind of does
+because as long as this term here is
+good then it's Gajic holds obviously if
+we don't train the discriminate it just
+work and we can't apply this logic but
+assuming we learn a good discriminator
+we can make this equivalence and say
+actually there's a reservation here
+between these terms so I actually kind
+of get by training the discriminator on
+base points so say I'm training to
+discriminate between handbags and shoes
+images of homos and shoes and what on
+the surface that seems like it's not
+pretty probably stick but actually it
+kind of is because we can see under the
+hood we were actually learning ratios of
+probability distributions here and these
+are distributions which we can't
+articulate I've no idea what the
+distribution of data points that are or
+images our shoes looks like and that's
+obviously can be very complicated
+but we obviously from the squivers we
+can see that we learn it and just to
+demonstrate this I've got a small
+demonstration
+so again we're going to use the standard
+famous normal distribution just because
+it's a lot easier and it's implemented
+in apply torch for us and so here I've
+got a really box and classification
+discriminator just a ton of layers some
+values in between and a cross entropy
+and a sigmoid on the output this is like
+nothing fancy at all just a
+discriminator and so we're going to do
+it again some very dimensional simple
+data points just because it again is
+easy to view at visualize and so we've
+got two classes are as I call them got a
+normal distribution here in the center
+in red and on top of this we've got a
+uniform distribution so the task we're
+gonna initially solve is can we
+discriminate between the right data
+points and the blue of its points which
+is what we train our discriminate to do
+so we use Adam and just I've got a
+little clapping function here so if you
+can see the progress is it evolves and
+this is the training so inputs go in
+discriminator gradient optimization step
+quite every so often and so we can see
+that we start off with a really bad
+decision surface obviously it's pretty
+much random and I hope you can see that
+yeah the data points are kind of like
+superimposed with a right alpha just so
+we can see what happens underneath and
+we see quite quickly it starts to earn a
+good decision surface cool so this is
+make sense I'd say it will trained a
+good classifier here it's pretty
+confident that all these data points
+here are from from class 1 and that
+everything else is not from across one
+so from Gaza zero they've gonna quit but
+if we use that logic that we found it
+before so if I just do that
+so we can see that there's the
+equivalents here between this term here
+and this term here so if we if we do a
+little bit of algebra we can multiply
+that out and it becomes that this ratio
+here is equal to the ratio of p y equals
+want to give an X divided by P y equals
+0 given X so if I all I've done here is
+essentially implement that so I've been
+lazy this here is the probability of a
+uniform distribution over knoweven by 11
+grid and so we've taken so this is
+essentially that for me I rearranged to
+make to change the subject and if we
+plot that then we see okay we get a
+distribution which is kind of circular
+like a normal and if we compare this now
+versus the true we can see that actually
+our proximation is not half bad as in
+the peak of our distributions about
+right and the shape looks fairly good
+zoom out a little bit so even though
+this method has said it's discriminative
+it doesn't learn a generative model
+actually we can see it does because it's
+relatively straightforward to back out
+an approximate probability distribution
+from the discriminator and so this is
+kind of actually important because
+methods like ganz for example use
+discriminators as their core and they're
+like trying to to use that as an
+adversarial mechanism to train their
+network but actually we can see that
+discriminators are learning probability
+distributions that's really important
+link to make because it allows us to
+take this thing that seems empirical and
+to push it into a probability space
+because we can we can now say also
+actually is learning a ratio those
+publications will proceed from there and
+there's a I haven't done it here there's
+a good paper called an adversarial
+variational base which basically takes a
+very small encoder and plugs in a
+discriminator using exactly the same
+logic it's quite straightforward I
+recommend that you look into it and so
+we can see that and there's also a
+series of talks by a guy called
+oh sorry bye Uncle Frank ooh he has a
+big series on this kind of using
+discriminators for implicit eternity
+models as well but just time I've had to
+skip that out okay okay so that's kind
+of a roundup they vary from foreign
+section however you can see where this
+is all going now we've covered
+discriminators we've gone to ganz now
+and we're gonna put it all together
+does anyone have any questions for you
+no cool and yeah so just take a step
+back and say what cans are they using an
+adversarial approach so I think when I
+first introduced they kind of made the
+analogy of you've got a counterfeiter
+and the police and the fact that they're
+police looking for the counterfeit it
+makes the counterfeit and make better
+money because if you makes bad money to
+police find it very quickly and that by
+iterating at that process for a long
+time you kind of get like a Nash
+equilibrium of where the counterfeit is
+so good the priest can't tell and
+because this and because they're kind of
+even level the priests and they long
+able to learn from the counterfeiter how
+to decant if that makes sense
+so again this is what I was talking
+about about how we can be curiously
+motivated for things and seeing things
+through like a variational lens for one
+of their word house just actually
+introspect these methods a bit more
+because that story's really cool but it
+doesn't really like apply method their
+problem does it so it's kind of a useful
+tool for nuts and so in to be for more
+the loss function for a gun is basically
+this is the loss function is the cross
+entropy basically minimize G and
+maximize DC you want the generator
+essentially to make the discriminator
+think or it's fake samples are real and
+you want discriminator to be able to
+tell between fake and real samples so
+the idea of this is basically I'd have a
+weight of data so faces there's a common
+one I put faces in and make my generator
+generate the fake faces and I put them
+through discriminations
+screaming would have to tell is this a
+real face always this one the generator
+made and so by iterating through that
+cycle cycle you hope that the generator
+gets so good it can fall the
+discriminator now and then you kind of
+learn a really cool distribution over
+I've had to generate faces okay so we've
+got again a really simple example again
+low dimensional because we can think
+about the way that I mentioned Z Z and
+so this is why I was talking about here
+in my previous section so we have two
+jr. networks here a generator and a
+discriminator so this guy essentially
+returns data in the same format as our
+input samples and the discriminator is
+standard community that we saw before
+returns probably th class 1 or class 0
+and so if we imagine we've got this kind
+of weird correlated lot of points so
+this is what we're trying to learn so we
+want to we're saying I want to learn a
+generator that can sample from this
+distribution for me and so what all we
+have to do is train our generator to
+schematic pair and to do that so because
+the original formulation relies on
+optimal discriminators so the basically
+discriminator is the the more signal the
+generator has to learn how to make
+itself better because it can learn what
+the discrimination was written for in
+its samples to basically discriminate
+between the two so having a strong
+strong discriminator generally a
+training so as you can see so what I've
+done here is for every step we take
+which n the generator sorry this
+committee at five times and we take
+generator once so that the discriminator
+kind of gets a bit more time to get good
+at its task and then that provides a lot
+more signal to the generator kind of can
+help stability but this is a whole
+massive topic that we have time to go
+into and so yes quite straightforward
+so essentially and the generator take
+two random noise as a way to make sure
+that it doesn't just collapse because if
+I put a tennis input in your network I
+get a misty output and so of course you
+could just like fool that whole system
+then by saying well just remember this
+one point and that's the fake point
+right so if you put in normal noise it
+forces the discriminator generator to be
+able to generate a range of samples
+which is all we want so we're not
+looking to generate generate any one
+single sample from this dais upon one
+two sample from it so this is said here
+is our random noise basically so we
+generate fake theta and then we run that
+through our discriminator and we take
+the loss with respect to that basically
+by a across entropy and the same for the
+for the discriminator up here so this is
+generators greater they both use the
+same loss function to the greatest of
+any different parameters that's anything
+and when we do that we see okay cool
+right it's all trained and now we
+generate some more random noise we pass
+that through our generator now so this
+is in theory free trained so by doing
+this we're sampling from what the
+generators earned and we can see
+actually the red points of the generator
+and the blue points are the inputs so
+actually this is pretty good we were
+lucky to go in to sample from there and
+we can see like if we just do you'll see
+boron plot we can see that these
+actually look reasonably good so this is
+the is the real data here so I'm putting
+my screen you can see me do that this is
+real data here this is generate a and
+I'd say actually later look
+like they're from very similar
+distributions their margins are very
+similar this one looks more like the
+original than the other one did so I
+would say that's probably success and so
+again this process is simple to show
+with data points like this but it's no
+different if we want to know images
+faces user faces are just vectors of
+data right so it's the same principle
+just a bit of higher dimensional bit
+more finicky to Train big in your
+networks but the idea is exactly the
+same okay but so I've talked a little
+bit around a very common issue that we
+see with Ganz if you read about Ganz for
+even like five minutes someone will talk
+about mode dropping in the basic
+overview basically imagine I'm training
+to generate items of clothing motor
+rocking would be when the system just
+learns the generate shoes for me so it
+may generate amazing shoes but it
+doesn't really an elephant wasn't reward
+looking for I wanted to generate the
+whole the whole range of crows I wanted
+shirts t-shirts etc and in theory this
+shouldn't happen so if we use the
+previous kind of logic that we applied
+and we see and we substitute the
+discriminator for the probabilistic
+alternative that we will show those
+equivalent Early's and base theorem we
+can see that we go sir which is a cow
+divergence basically kind of dissipation
+rate detergent sound divergence as well
+and and this is symmetric so it doesn't
+really matter if I am permitted P D and
+P G so P DS with about discriminator and
+VG's are generated so P D I'd miss cable
+this this should be real so this is our
+real data and this is I generated data
+so say people eat these it's symmetric
+so it shouldn't we shouldn't have like
+you know how we saw at the beginning we
+wear some formation of our loss function
+was most seeking and some formulation
+was mode covering if it's symmetric
+economy exhibit that because
+you can swap you could swap a problem
+and it should work the same so in theory
+this shouldn't happen and we shouldn't
+have moe dropping in ganz but we do we
+see empirically so in the short answer
+is that this logic only holds for bit
+beers you substituting and it holds for
+an optimal discriminator so that's
+probably not true right especially if
+we're like training on images of faces
+or something very complicated I mean
+it's a task in itself to do
+discriminative classification 100% on a
+real general data set so the idea that
+we can do it by training like one step
+at a time and that's always going to be
+optimal it's probably strong so that we
+can kind of see where that comes from
+there so this is basically what I just
+said in practice these assumptions that
+began formation we're eyes on no even
+close to being true
+sometimes it's criminally actually
+terrible for half violations and so is
+we have to a bit different ways so it's
+possible to derive a result that doesn't
+rely on to merit on the optimal
+discriminator this is a paper I said
+going to I see a bar tomorrow being
+presented tomorrow so we're beating them
+by one day so I recommend to check that
+out as well
+I've got your demonstration here
+okay so this is known to be a problem
+for a little while so there's a very
+good and easy to comprehend basically
+demonstration of this which we're going
+to see the end of the practical session
+of it and this is from paper called
+unrolled gender Sarah networks they
+proposed a solution with a nice good
+solution as an exercise to the reader
+but basically the the technique they
+used to demonstrate no dropping it so I
+produce that here so this is the exactly
+same codes before God generator
+discriminator
+and now instead of a single class of 80
+points one sample form we're going to
+take a diamond so this is why this looks
+a bit nasty I mean this is probably
+which we nothing compared to that the
+manifold of that human face is rest on
+all horses or things like that like so
+these are obviously incredibly
+complicated distribution so it should
+have no problem with earning this right
+and so this is just like essentially six
+or seven or eight normal distributions
+put in a diamond shape and if we trained
+on that we've got again your output to
+see how it evolves so as we can see
+starts off in the middle because this is
+basically a random noise here so it's
+just generating random noise as it
+before we train it as we train it quite
+quickly we see it just zooms in on one
+of your coasters and stays there and
+never remakes any attempts to do any
+better I mean I'm not sure what this is
+maybe it says some attempt to like leap
+across to to another one but as soon
+sites that are known I'm gonna not
+bother with that and we basically end up
+it's focusing on one crafter so the
+final form we can see we do some
+generate some samples again and pop
+those we see basically all we can do is
+sample from this one so we probably go
+this one quite well but if we care about
+learning a model which learns all of
+these I mean it's probably not quite as
+success as we can see from
+the rocks are quite different here right
+so just a small roundup of putting all
+together if you want to I mean using the
+kind of like you've got ideas that I
+didn't used here so like generators is
+discriminators there's probabilistic
+methods and things like that you can
+actually reformulate the Gann objective
+in a more probabilistic sense and you
+can get a kind of unification between
+Gans of EA's it's not particularly hard
+the paper they could have maybe done a
+little bit nicer job making it
+accessible the notation is quite quite
+dense and you have lots of
+discriminators versus other types of
+discriminators but i recommend that you
+go through it takes a bit of time it's
+genuinely worth it and I just going to
+do real not made much maths and point to
+them any result that we can see so this
+is the formation they use they a
+discriminator is a probably a probably
+distribution so it's probably that wise
+some of course given our data so they
+rephrase it like that and they dump all
+of our they threw all the data together
+so the data that are generated generates
+and the real data put into one data set
+and basically use this notation so
+conditional on Y which is the variable
+we were fake and if you do that I sense
+you have skipped out a lot of steps but
+you can kind of show that this is the
+expectation over some Joint Distribution
+of our data and our ables over the
+discriminator so this is the
+discriminate sit here again we run
+derive here but actually if you don't
+take a derivative of this with respect
+to the parameters about generator you
+actually get something that's basically
+this term yes like I'm a half constant
+basically which is a cow divergence
+between our generator the description of
+our generator and so this term is like
+our inverter discriminator so you can
+see this is being
+that term a big like we did in the
+discriminator netbook and this is the
+distribution in provided by a
+discriminator so this is kind of our end
+approximation and so while we and so in
+va es we had to explicitly in Gans here
+we've managed to back it out and it is
+typically using base theorem basically
+and the Jensens Chand divergence is a
+symmetric distribution so we can kind of
+ignore this term because it doesn't it
+doesn't we're looking at things that
+mode dropping it doesn't have any impact
+it's just kind of a constants k in
+factored form of a better word do they
+it doesn't favor one type of mode
+dropping versus no covering et cetera so
+if we just see they're like just could
+say if we ignore the the JFD term we
+have that for ganz we're kind of pseudo
+optimizing and a cow divergence of P
+even Q now because we learn both an
+approximation which is Q and a generator
+which is P we kind of have like we have
+both situations that we saw before as in
+one of them is gonna be mode covering
+and one of them is going to be mote
+seeking because depending which one
+we're taking a gradient with respect to
+one's gonna be and on the denominator I
+was going to quit on the numerator so if
+we look at the generator P which is they
+learned model of a better word we can
+see that Ganz optimized PDM Q so this
+causes mode seeking behavior so like we
+saw in the first notebook where we had a
+normally should be focusing on one of
+the two this is this is exactly the same
+so our generator is kind of encouraged
+to focus on a sit on a single mode of
+the data point that is where mode
+dropping comes from because essentially
+our generator is mode seeking so doesn't
+matter how good our proximation is if
+the thing we're próxima ting is mo
+taking our proximation is going to be
+mighty king
+whereas VA es if we remember from the
+elbow is the other way around because we
+wanted to minimize the caldera edges
+between our proximation and the true
+posterior so this is why we have so we
+have mass covering behavior there so our
+real distribution or
+and event true distribution has a moat
+covering behavior so this is kind of
+explained some of the things we see with
+the age because when we see the age in
+hitch are they never recompete with gans
+active you see human faces from the two
+gang always from pal perform and so this
+is because just like we had in the first
+notebook where we had that normally
+solution that cover it covered all the
+mass they kind of think we get right the
+relative proportions of how high these
+distributions went so we see this going
+on again with vs in that we kind of get
+a better space to sample from but we
+kind of don't really ever focus in on
+one part of that space world so our
+samples can it be a bit washed out and
+comparison something like ants but we
+get the other allergic so we don't get
+so much mo Tiki okay that was kind of
+pretty much my Whistlestop tour
+I guess just in summary I I hope you
+forward most of that and we can kind of
+see how it's like there's a nice clean
+path to go right the way from like
+basing linear aggression of conjugal
+models we can take that and by making
+further and further reacts Asians and
+approximating things we can go all the
+way through to non conjugate models
+version encoders and in Ganz end up kind
+of like really the state of the art of
+what's going on in defensive models of
+the moment and also there's always been
+like a bit of rivalry
+I should our V azor Ganz the one which
+one's the best D genitive model that we
+should be using actually we're kind of
+signed to see coming out in the
+literature now they're kind of not
+necessarily particularly different they
+started off from very different
+motivations but actually we start to
+unify them quite well and it's starting
+to become ever more merged and we see
+lots of papers coming out now for like
+that have again
+be a hybrid and use methods from both
+and actually just as a point for
+people's understanding learning if you
+want to learn about this stuff there's
+tons of people who put blog posts up
+about like I generate this picture of a
+horse it's really great to see you I
+fake the pictures of horses but if you
+actually want to like you just want to
+learn about how this stuff works you
+need stuff that you can sort of Zone in
+on and so there's no reason why these
+don't work for a reason poor
+toy problems and actually that's where
+you should start not just straight to
+the big time that's it any final
+questions from anyone
+yes yeah okay well I mean so it depends
+what we talk about so if we're talking
+about like Bayesian methods so for
+getting good tailored predictive
+propositions but in general that they
+for me they have application where you
+can't you have kind of an asymmetry so
+if I'm doing about NLP it kind of
+doesn't really matter there's no obvious
+worst case if I miss classify a text
+point right but I gave the example if I
+might landing an airplane it's probably
+better that I only ever try to land
+airplanes on things I'm a hundred
+percent confident our airfields so you
+kind of have the asymmetry there like
+there's very good of cost for not for
+basically not taking an action so if I'm
+not confident I'm not doing it cost me
+basically nothing but actually doing the
+wrong thing is really important so in
+general probably see methods like that
+any in any sort of frame of work so like
+for example finance it'd be another one
+right you like it's better to not not
+trade there needs to trade wrongly and
+so if you're in any kind of environment
+where I have this biggest asymmetry it's
+probably useful to have kind of these
+really these good predictive
+distributions for VA egg and
+specifically I think the industrial uses
+are kind of only just coming out I mean
+there's obvious benefits to having
+well-tailored generators I can sample
+from so one I think actually holds some
+sort of a promises things like weather
+for example like the sort of systems
+that go in mythological systems are very
+very complicated and actually if we
+could train models rather than having to
+work with a complete distribution that
+we specify if we were just trained to
+essentially simulate from this then that
+would probably be more useful because
+actually what we do anyway we simulate
+right we don't we never like solve the
+weather function and so I think
+industrial applications are kind of at
+the moment I think people that Twitter
+as well use
+Vaz and similar kind of methods to do
+things like image compression I think
+it's very much on these stage now but
+this stuff is like definitely on the app
+and everything starts out off with like
+simple toy examples and very quickly we
+kind of and pop so for me it's like a
+continuation of the stuff that we've
+been doing before but a lot more
+complicated okay yes yep yes and so
+tense fur has Edwards which is a
+probably programming age and they've
+also got integrated something to the
+Cork's name probably enshrine for a bit
+and for me like I think it depends what
+you're doing because you can you can
+kind of see tensorflow is like a
+compiled language so you kind of specify
+everything up front and as soon as
+anything doesn't work it just like blows
+up on you basically
+so maybe if you're doing something like
+like your Twitter and you're running
+something in production you may be
+warned that certainty of a kind of
+compiled framework so I know that like
+we just have a nice explosion when
+things don't work out whereas Python
+keys I see is much more like an R&D
+framework so if you were him to mess
+around you have to worry about oh if I
+just wiped my computational graph and
+like what's happened if I just like
+because I've run two cells in a notebook
+in the wrong war that I've attached it
+to some weird point on the graph and now
+I think it's exploded didn't I don't
+know why so like for me my kind of
+process is generally like I'll mess
+around in numpy for a bit and then I'll
+go cool this is like something I want to
+take forward and you'll kind of go all
+right well PI torch is basically import
+PI torch works out numpy 98% at the time
+so I don't think is it is any particular
+pros or cons I think it just depends on
+what you're doing
+if he's now indeed alpha-i favorite play
+torch but I know people who use tents
+paper on D it's pretty much personal
+preference I think okay any any other
+final questions okay okay just to finish
+off I won't spend any time on it there's
+a few references further reading good
+well posts onto these topics it's
+virtually a spider's web if you try and
+start digging into any one of these you
+will say goodbye to a weekend probably
+but these are really really good places
+to get some introductions and
+jumping-off points from for more stuff
+basically and the paper that I reference
+right at the end was this one here on
+unifying teacher into models I see that
+2018 and in my blog which has a few of
+this stuff here that I do when I'm bored
+so okay thank you
+[Applause]
+[Music]
+[Applause]

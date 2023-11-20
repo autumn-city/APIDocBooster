@@ -1,0 +1,496 @@
+Beyond face understanding, CNNs have been
+used for many other human understanding tasks;
+gesture recognition, emotion recognition,
+gait recognition, so on and so forth. But
+to give a flavor of different varieties of
+tasks, we will now look at two other tasks,
+human pose estimation and crowd counting,
+using deep learning and CNNs.
+The task of human pose estimation is the problem
+of localization of human joints, such as elbows,
+wrists, so on and so forth in both images
+and videos, where would such an task be used,
+it could be for sports analytics, it could
+be for the Microsoft Xbox that detects your
+pose and accordingly asks your avatar on the
+screen to play a particular tennis shot or
+a golf swing.
+Existing methods, especially deep learning
+based methods for human pose estimation, are
+broadly categorized into single person pipelines,
+where you are trying to get the pose of just
+a single person in the frame, or a multi person
+pipeline, where there could be multiple people
+in the frame. And you would like to know the
+pose of each of them.
+What you see here are illustrations of how
+a pose estimation model works. What we are
+ideally looking for is the positions of each
+of these joints that you see on any of these
+images. As you can see here, there are many
+challenges. Firstly, this seems different
+from the tasks that we have seen so far, different
+from image level classification, or detection
+or segmentation or face verification as another
+task. And we will see how this is done using
+CNNs in this lecture. Beyond that, you can
+also see that when occlusions come into play,
+especially self-occlusions where a part of
+the human body occludes another part, this
+task can get very challenging.
+Before we actually go ahead and discuss the
+methods, we will try to first ask the question,
+how would you know whether the model that
+you developed for human pose estimation is
+good or not? How do you evaluate it? There
+are well known metrics today. So some of the
+metrics are PCP, which stands for percentage
+of correct parts, which states that a limb
+is considered detected, if the distance between
+the detected joint and the true joint is less
+than half the limb's length.
+So you could have a long limb or a short limb
+depending on which part of the body you are
+trying to model. And if the distance between
+the predicted joint position and the correct
+joint position is less than half the length
+of that limb, we consider that to be a fairly
+correct prediction. This is known as PCP at
+0.5, if you considered quarter limb length,
+it would be PCP at 0.25.
+A related metric is known as percentage of
+detected joints PDJ, which states that the
+detected joint is correct, if the distance
+between the predicted and the detector joint
+is within a certain fraction of the torso
+diameter. So you could look at the torso diameter
+as a central scale for the person that you
+are modeling in that particular, when you
+are trying to predict the pose of that person.
+So, if you say PDJ at 0.2, you want to ensure
+that the distance between the predicted and
+the true joint is less than 0.2 times the
+torso diameter of the person under consideration.
+There has also been a different metric known
+as object key point similarity based mAP which
+you can say is an equivalent of IOU for human
+pose estimation, which is given by summation
+over i exponent of minus d i square by 2 s
+square k i square into an impulse function
+to check whether vi is greater than 0 or not.
+Let us try to explain each of these quantities,
+denominator is going to be over all possible
+i s, d i here is the Euclidean distance between
+a detected key point and the corresponding
+ground truth, which is the actual presence
+of the joint. So that us the d i that you
+see in the numerator here. V i is the visibility
+flag of the ground truth, as we said, there
+could be certain joints that are occluded
+by other joints, and trying to get a correct
+estimate of that joint would be an impossible
+task.
+So by ensuring that you have a visibility
+flag for each joint, you know that if a joint
+was not visible, any error on the joint can
+be weighted to a lower extent. So V i is a
+visibility flag of a ground truth, s is the
+object scale. So this distance between the
+detected point and ground truth has to be
+normalized by the scale of that particular
+object.
+So if that object is very large in the image,
+this distance could be relatively larger than
+for another human in the same image, where
+the object scale is small. Finally, k is a
+per key point user defined constant just to
+control fall off that you could consider as
+a hyper parameter. So as you can see here,
+we now have a metric that is an inverse exponent
+of the distance which means it gives an extent
+of how good the prediction is, but it factors
+in scale, as well as visibility of the joint
+to evaluate your final performance.
+With these metrics specified, let us now talk
+about methods for human pose estimation using
+deep neural network models. The precursor
+of all of such models was called DeepPose,
+which was proposed in 2014. This was perhaps
+the first work to kick off deep learning based
+human pose estimation. In this approach, an
+image was given to a model and the architecture
+at that time was of course, AlexNet inspired
+because in 2014, that was one of the most
+common models in practice, the only change
+from the original AlexNet architecture is
+in the output space.
+Now, you are not predicting a class label
+for the entire image, but you are going to
+predict a set of joint positions, 2D joint
+positions, X i Y i for each joint on your
+input image. So, your output is given by y,
+which is a set of y I s, where each y i contains
+x y coordinates for the corresponding joint.
+What would be the loss to use here? The loss
+would be a mean square error for the position
+of every joint or the L 2 norm for the position
+of every joint with respect to the ground
+truth of that joint.
+This method did not stop here, to further
+improve the performance, it also used what
+are known as cascaded regressors to improve
+the precision of the location of each joint.
+What did this mean? Once you identify a joint
+position in your initial stage, you crop out
+a region around the joint position and that
+region is scaled up to the input of the entire
+CNN.
+And this again predicts a refined value of
+the joint position inside that patch, which
+helps you fine tune your joint position over
+multiple stages. So these cropped images are
+fed into the network in next stages and this
+ensures that across the final image scales,
+you get precise Key Point locations as output.
+Another approach which took this in a different
+direction, which was also an iterative error
+feedback based approach, but approached this
+differently, was a method proposed in 2016
+where the entire prediction started with a
+mean pose skeleton, which is then updated
+iteratively over many steps. So you have an
+input image, and you have an average human
+pose skeleton here. And the job of the neural
+network is only to predict the deviation from
+the mean pose skeleton. So given an image
+concatenated with its output representation,
+the neural network now is trained to predict
+the correction that brings the mean pose closer
+to the ground truth.
+Let us see this in a bit more detail. In the
+first stage, x0 would be the image itself
+that is the image that is given here. And
+this image is given to the neural network,
+or the neural network predicts an epsilon
+t for each joint, which would be the deviation
+from the mean pose that is the epsilon t here.
+This epsilon t is added to y t, which was
+the pose in your previous step, and you get
+a new pose y t plus 1.
+And now this y t plus 1 is overlaid on the
+image and the patch around it is now used
+to again refine the error and the deviation
+to get a new epsilon t and this is now iterated
+over and over again to get a final estimate
+of the pose. Visually, here are a couple of
+illustrations. So you see here that on this
+image, the mean pose is overlaid on this image,
+you can see the mean pose is often a person
+standing upright.
+And in every step, the mean pose is adjusted
+towards getting the pose of this particular
+person. And you can see that after four steps,
+the predicted pose becomes close to the ground
+truth, which is shown in the last column.
+You see a couple of more examples here, where
+this can be challenging, you can see once
+again here, the standing pose, and over a
+few steps, you get the pose of the person
+squatting on a particular location.
+While regression based methods that we saw
+on the earlier slides try to predict the joint
+location, another family of methods for human
+pose estimation are detection based, where
+at single shot, try to get the regions of
+each of these joints as a heat map. Methods
+that have used this kind of an approach, one
+of which was proposed in 2015, try to also
+employ a course to find multi scale strategy
+to help refine these heat maps to get better
+joint localizations.
+Let us look at this approach here. So in this
+approach, an input image is given to a coarse
+heat map model, which gives you the heat map
+of joint locations, this could be a standard
+CNN backbone with minor modifications. And
+for each joint that you have predicted here
+around that could be located at the center
+of a particular heat map, you crop out a patch
+around it, and then have a fine heat map model,
+which improves the localization of the joint
+in that particular location.
+Let us now see this fine heat map model in
+a bit more detail. So for each joint location
+in the course heat map, which could be the
+center of a particular region of the heat
+map, you have a multi scale pyramid, if the
+original image was 64 cross 64, you have 128
+cross 128 and 256, cross 256 versions of it,
+you correspondingly crop out a 9 cross 9 and
+18 cross 18, and a 36 cross 36 region.
+And now each of these three regions go through
+separate convolutional pipelines. You can
+see here that the 9 cross 9 goes through this
+pipeline, the 18 cross 18 goes through two
+different pipelines with different convolutional
+filters, and the 36 cross 36 goes through
+different pipeline, different convolutional
+plus relu layers. And now all of these are
+upsampled to 36 cross 36, obviously the top
+one does not need upsampling.
+The remaining ones are up sampled to 36 cross
+36. All these feature maps are concatenated
+to make the final prediction, which is more
+precise for that particular joint. This refinement
+process helps the final performance.
+Another approach, as we mentioned, is another
+category of methods, as we mentioned, is when
+there are multiple people whose poses you
+would like to estimate. Here, there are broadly
+two kinds of pipelines, the methods are very
+similar to what we saw earlier, but two pipelines
+which are different, one of them is known
+as the top down pipeline. In this particular
+case, we like to detect all persons, the poses
+of all persons in the given image. So we first
+of all start by detecting all people in the
+given image.
+Then for each bounding box of the people detected,
+you run a single pose estimation approach
+that we just saw on the previous slides. You
+could help refine the pose estimates using
+some global context information if you like.
+So here is an illustration. You have an input
+image, two people detected using a human detector,
+using any other detection approach. Now you
+crop out these two people and run a single
+human pose estimator using a regression or
+a detection based approach. And you can get
+the skeleton, and similarly for the other
+person, and you then overlay both of these
+skeletons on the input image.
+On the other hand, you can also have a bottom
+up pipeline, where you reverse the process,
+where initially, you detect all the key points
+in the image, irrespective of whom it belongs
+to, so you just detect all the key points,
+so you could use a detection based approach,
+where you get a heat map for the full image.
+And the centers of all of these heat map regions
+could be different key points, you do not
+know which key point belongs to which person.
+Once these key points are detected, then you
+associate these key points to human instances
+using different methods. And for more details
+of these methods, you can see this survey
+called Deep Learning based 2D human pose estimation.
+Evidently, you can see that in this approach,
+inference is likely to be much faster, because
+you are processing all people's information
+at the same time, rather than run each people's
+bounding box through different pipelines.
+Another task that we mentioned that we will
+look at is the task of crowd counting. Crowd
+counting is an extremely important task for
+urban planning, public safety, security, governance,
+so on and so forth. However, this can be a
+very challenging task in practice.
+You could face several challenges such as
+occlusion, as you can see here, in a single
+patch in this image, there are so many different
+faces denoted by green dots, each of which
+are occluded heavily with respect to the other,
+you could have a very complex background,
+you could have scale variations, depending
+on what perspective the camera took the picture
+from, you could have a non-uniform distribution
+of people across the image, you could have
+perspective distortions, you could have rotation
+issues, you could have illumination variance
+variations, such as a show where you may want
+to count the number of people or you could
+be faced with weather changes. So all of these
+make this problem of crowd counting extremely
+hard.
+Existing methods in using CNNs for crowd counting
+can be categorized into three different kinds
+of methods, one that use a basic CNN architecture
+to achieve the purpose, as we will see soon,
+where you have an input, you have a simple
+CNN, and you get a density map as the output
+of the model itself.
+And the peaks in the heat map or the density
+map can give you an estimate of the count
+of the people that are in a given picture.
+Another approach is a multi-column approach,
+which hypothesizes that to be able to count
+crowds, when you have people in different
+scales, people faces in different scales,
+a big face, a small face, so on and so forth.
+You need to counter this with a multi column
+approach where each column looks at faces
+in a different scale.
+So you can see that here, you are given an
+input, you now convert it to a multi-scale
+pyramid kind of an approach, where in each
+of these individual pipelines you are trying
+to detect faces of a certain scale. A third
+approach is a single column approach again,
+but this approach tries to observe performance
+of multi column approaches, and simplify them
+to an extent to ensure that the network architecture
+is not too complex. Let us see each of these
+approaches in more detail.
+So the basic CNN approach looks at crowd counting
+problem as a regression problem, where given
+an image, you have to predict a number as
+the output. So here are some training data
+points where given a set of crowd positive
+examples, and the counts in each of these
+images. Similarly, negative examples of other
+scenes where the crowd count is 0, each of
+these training samples are fed through a CNN
+architecture and the output is a count of
+the people in that image, which can directly
+be solved through regression and say L2 loss
+or a smooth L1 loss.
+So you could here have an expanded set of
+negative samples because it is perhaps easier
+to get images without people whose ground
+truth counts as zeros, and this helps reduce
+interference and get better performance across
+the positive samples. However, you can make
+out that this is a crude approach, and it
+can be sensitive to density, distribution
+of crowd, scale of people, so on and so forth.
+That leads us to multi column based approaches,
+which try to address the fact that people's
+faces could be at different scales in an image.
+So, in such a multi column CNN, each individual
+pipeline looks at an input image at different
+scales. You can see here, a conv 9 cross 9
+filter, a conv 7 cross 7 filter and a conv
+5 cross 5 filter which looks at multiple scales
+in the input and this helps get a better performance
+towards the end, where after the last layers
+of each of these pipelines, the feature maps
+are merged and then you have a conv 1 cross
+1 layer to get a density map on the same resolution
+as input.
+So, here are a few illustrations, given test
+image and the corresponding ground truth,
+you can see the estimated heat map here whose
+peaks you can consider to be able to get an
+estimate of the count if required. In certain
+applications, a density map by itself may
+actually serve the purpose but if a count
+is required, one could infer the count using
+these heat maps.
+A further approach of a multi column CNN expanded
+on the approach on the previous slide, and
+introduced the concept of a switch classifier,
+this work was done in 2017, where each patch
+of an input image was given to a switch layer,
+which decided which of these resolutions was
+the right scale for this particular patch.
+So, the switch classifier, which you can see
+in the rightmost region here, took the patch
+of the image and then gave an output to see
+among these three scales which you had as
+individual columns in your CNN in the multi
+column CNN, it now says that for this particular
+patch R 3 is the right scale to detect faces
+in and now that patch is given to this CNN
+and the density map at that scale is used
+to get the final outcome. Why does this make
+sense?
+This comes from the fact that within a local
+region of an image, it is likely that scales
+of faces are going to be maintained within
+the same range, whereas in another patch of
+the image there could be a scale that is very
+different. So, this uses that locality of
+scale in crowds to switch the corresponding
+CNN pipeline for each region and thereby achieve
+a good performance towards the end. And at
+the end, it uses weighted averaging to fuse
+the features, which can be used globally.
+Single column CNNs are derived from multi
+column CNNs by making some observations from
+their performance, one of the first efforts
+here in 2018 observed that a single column
+in a multi column CNN for crowd counting retained
+about 70 percent of the accuracy on certain
+data sets. So, why make the architecture complex.
+So this single column CNN uses a standard
+set of convolutional layers initially, and
+then on passes feature maps from earlier layers
+to later layers, which are obtained after
+deconvolution.
+So you can see here that after conv 6, the
+feature map from the previous layer is concatenated
+and then you do deconvolution, which is the
+equivalent of up sampling here to get a higher
+resolution image, then a feature map from
+an earlier layer is added to this up sampled
+image to get a new feature map and these are
+passed through certain set of convolutions
+and finally, a 1 cross 1 convolution to get
+the final density map.
+In this particular case, deconvolution was
+used instead of up sampling or element wise
+summation. Also, this work used both density
+map based loss as well as a count based loss
+to train the neural network. So all these
+approaches assume that the ground truth density
+map is given as well as the headcount is given.
+And so you can use the loss corresponding
+to both of these to back propagate and train
+the rest of the neural network. So what loss
+do you use? An L 2 loss on the density map.
+And if it is a count, you can just use an
+L 1 loss on the count, which is the absolute
+value or the difference between your predicted
+count and the correct count.
+Another single column CNN, a more recent one
+in 2019 observed that low level features from
+multi column CNNs had very similar functions,
+very similar features in the crowd counting
+context. So what they propose is to retain
+the same pipeline for initial layers of the
+CNN. And when you go to the later layers,
+have a multi scale pyramid, which is known
+as a scale pyramid module, which combines
+features at different scales to get the final
+output of the density map.
+So in this particular case, the scale pyramid
+module was implemented using dilated convolution
+at different scales to be able to analyze
+faces at different scales. And this was placed
+between conv 4_3 and conv 5_1 of a VGG 16
+architecture. So you can see here a few examples,
+where given an image, the estimated count
+and the correct count. And you can see that
+in most of these cases, it is fairly close
+to a certain error tolerance to the ground
+truth estimate.
+So, the homework for this lecture is a very
+nice blog post on human pose estimation by
+Nanonets, as well as the survey on density
+estimation and crowd counting that was recently
+released in 2020. If you are interested, you
+can also read this survey on 2D human pose
+estimation.
+The exercise for this lecture, or a thought
+experiment for this lecture is CNNs, when
+used especially for human understanding, can
+suffer from biases in datasets. So depending
+on which race dominates the kind of people
+in a particular data set for human pose estimation
+or face recognition, the decisions could be
+biased by those statistics in a data set.
+Before we talk about addressing those biases,
+how do you first of all find if a model that
+you trained for a human based task is biased?
+Think about it.
+Here are some references to conclude.

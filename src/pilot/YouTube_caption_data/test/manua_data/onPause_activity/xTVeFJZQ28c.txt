@@ -1,0 +1,443 @@
+Hi, my name is
+Jeremy Walker from the Android team.
+And I'll walk you through identifying
+background location code in a project,
+seeing if it's really needed,
+and finally, reviewing
+several alternatives you can use.
+First, why would you want to do this?
+Well, Android 10 and 11 gives users
+better privacy controls
+for fine grain location permissions.
+One big change is the separation
+of foreground location access,
+also known as while-in-use access,
+from background location access,
+also known as all-the-time access.
+Most of the use cases can and should,
+according to our latest policies,
+only use foreground location access.
+For instance, sharing
+your current location with friends
+and turn-by-turn navigation
+are use cases that should only use
+foreground location access.
+You can read more in our preview link.
+And specifically, in Android 11--
+you can see this is our docs here.
+Android 10, as well,
+has some good information.
+But specifically back to Android 11,
+you actually can't request
+both permissions at the same time.
+So again, wherever possible,
+you should only rely on foreground access
+for your location data.
+OK, how do I identify
+background location usage?
+I'm going to use
+my background location sample from GitHub.
+Before we jump into this project,
+we should cover the steps to follow.
+They're simple.
+First, find any location APIs in your code
+to determine
+if they are used in the background.
+Our developer documentation
+calls this out pretty well.
+We actually have a guide here
+that walks you through this.
+What you're going to be doing
+is looking
+for the Fused Location Provider APIs--
+which is the recommended solution,
+by the way--
+Geofencing APIs, or even
+the LocationManager API,
+which is the platform API.
+Most developers won't need that API.
+Instead they'll use
+the Fused Location Provider.
+The next step is to determine
+if the code is executed in the background,
+which is dependent on the app's architecture.
+It's usually a combination
+of using location code
+while the app's UI isn't visible,
+along with one of the APIs,
+like the background service,
+JobIntent, WorkManager.
+There's a bunch of them.
+Or even pending intents
+if you're subscribing to updates.
+OK, now let's walk through the code.
+So I'm going to pretend
+like this is an app.
+This app, again,
+is from the GitHub samples.
+It's LocationUpdatesBackgroundKotlin,
+which is kind of a mouthful,
+but it shows best practices
+for getting location in the background.
+But I'm going to pretend like
+I'm looking for location code
+and I want to remove it really quickly.
+So the first thing, obviously,
+is, without even diving
+into the architecture,
+I can just do a double shift
+and search for--
+I'm using Fused Location Provider,
+so I'll just start searching for that.
+So I can see right away I have
+the fusedLocationClient,
+that's the main code for doing this.
+So you can see
+I can start looking through
+and start saying, "OK, well,
+looks like I'm subscribing
+to location updates here."
+There's a start and a stop.
+The most important one
+you're looking for is this stop, right?
+When does it stop?
+So in this case, I'm going
+to go look at the usage of this.
+I know I have--
+this class is my location manager,
+so it's being used somewhere.
+If I do Command-B-- that's Control-B
+in other OSes outside the Mac.
+But if I do a Control-B,
+it's going to show usages.
+I can see I'm using location repository.
+And again, if I just do the location,
+if I just look for this method
+and how it's used,
+I can see this is better.
+It's in a view model.
+I know it's being used with an activity
+or a fragment somewhere.
+So again, I can do
+the Command-B to find usage.
+It's being used twice in this fragment.
+OK, there's a UI code I was looking for.
+And if I just glance
+at this, I can see, OK,
+this is some sort of button state.
+It's being triggered.
+And it's either subscribing to--
+it's either starting location updates
+or it's stopping them.
+So the user is stopping them
+with a button.
+But if I look for this again here,
+I can see it's used somewhere else.
+Oh, and on pause.
+So that's pretty much
+what gives me the clue,
+like, is this in the foreground or not?
+You can see I actually called
+stop location updates on pause,
+so that would mean
+I'm only using it in the foreground,
+which is perfect.
+But if we look at this IF statement,
+you can see I'm saying, hey,
+if I have
+ACCESS_BACKGROUND_LOCATION permissions,
+I don't want to stop this.
+So in that case, then I'd say, OK,
+this is triggering in the background
+separate from all the permission stuff.
+So this is something I may want to change.
+OK, that's pretty obvious, like,
+you're just searching
+and finding your code and figuring it out.
+The next part is more about
+how your app uses location,
+specifically,
+is background location needed?
+You should evaluate
+whether background location access
+is critical
+to the core functionality of your app.
+As mentioned earlier,
+most use cases can be realized
+with only foreground location.
+We actually have a page that covers that.
+If you remember, this Access location in
+the background, which I covered earlier.
+There's a whole other part about
+evaluating whether you really need it.
+But if you don't need location access
+in the background,
+either migrate
+to foreground location access
+or remove it altogether.
+It will simplify your app and code
+in both cases.
+Just remember
+for Android 10 and above, and 11,
+you have to remove this permission
+from the manifest--
+ACCESS_BACKGROUND_LOCATION.
+So that would be right here.
+You want to make sure you remove that
+from Android 10, 11, above.
+That said, if background location
+is still critical,
+make sure you follow best practice
+and review our policies on location.
+OK, let's say you do want to migrate
+to foreground location access.
+That is, you've determined you don't need
+access location in the background.
+The first option is
+only retrieving location
+while your activity is viewable.
+And it's probably
+the most common approach.
+In this case, it would just mean
+you don't request any location data,
+like get last location
+when your app isn't visible.
+For this sample, what it would mean
+is in the fragment on the onPause,
+I would stop location updates.
+In other words, I'd remove this line
+so that I knew every time
+that the UI went out of view
+that it would stop listening
+to location updates.
+And if we click through
+to what that actually does,
+you can see it's just using
+the Fused Location Client
+and just removing location updates.
+OK, that's pretty straightforward.
+It can cover a lot of use cases.
+But there's another option
+for foreground location.
+Your app can also retrieve
+location via a foreground service
+without the background
+location permission.
+This is a little more difficult.
+Let's look at the Codelab
+to see how we design this.
+So if you search for Google Codelabs,
+this is the first thing that comes up.
+And if you put it in location,
+you want to choose the Receive
+location updates in Android with Kotlin.
+This Codelab actually walks you through
+understanding and writing
+the location code.
+It also touches on permissions,
+and it helps you
+support Android 10 and 11.
+I won't walk through that.
+I'm going to focus on the design, because
+because this Codelab
+actually only uses foreground location,
+which is pretty nice.
+So I have the app open here,
+but I want to show you
+the actual app first
+before we dive
+into understanding the design.
+So if I actually start navigating here,
+yeah, you'll see that
+we have the app open.
+If I hit Start Receiving Location Updates,
+I'll get While using the app.
+Pretty straightforward.
+I click on that and-- oh, sorry.
+Yeah, so I'm getting location updates now.
+And if I navigate away from that,
+you'll see I get a notification
+that comes up.
+And that gives us
+continual updates as they come in.
+And if I scroll down,
+you can see the location.
+I can watch the activity
+or I can hit Stop Receiving Updates.
+So you're probably like,
+"Yeah, that's just like a navigation app."
+And that's pretty much what it is.
+But again,
+it's only using foreground location,
+which is pretty nice.
+So we do have a service
+retrieving location in the app.
+And I'm going to talk
+through that in detail.
+But when the app is paused,
+the trick is transitioning that service
+to a foreground service
+and tying it to a notification.
+That way your app is still in use
+and you can continue
+to get location updates
+without background location access.
+Before I open this up,
+it's important to point out
+you shouldn't just replace all code
+retrieving location in the background
+with this approach.
+First, determine
+if you should really be retrieving
+location data in that instance.
+In most cases,
+you should be requesting location data
+in the foreground only if the user
+initiated an action requiring location,
+like navigating to another place.
+Again, review our policy documents
+for more details.
+How is this done?
+Well, in the complete module--
+this is the complete part of the app.
+This is in Codelab,
+so you're going to have a base module
+where you build everything out.
+But in the complete module
+where everything's done,
+you have three main classes.
+You have the main activity,
+which is going to be your UI stuff.
+You have a service.
+In this case,
+it's doing all the location stuff,
+and it's going to handle
+the heavy lifting for transitioning
+to a foreground service and back.
+And then, a utils class,
+which I won't cover,
+but it has some extension functions
+and provides some other stuff.
+But anyway,
+let's look at the main activity.
+I won't cover all the code again,
+but I'm going to cover
+the main parts for the design.
+The main thing here is that
+I have an instance of the service here.
+I do have a broadcast
+receiver you can see here.
+The reason I have that
+is, in the service,
+I was simplifying things,
+so whenever I get a location update,
+I just use a broadcast
+to send out the information.
+If you wanted to make this a little more--
+add a database and all that good stuff,
+you'd use LiveData
+and Room and all that stuff.
+But again, I was trying to simplify it,
+so that's why that broadcast receiver.
+I have a service connection.
+And this is-- so I can bind to the class--
+so you can see here.
+And on start, I'm binding to the class.
+And then on stop, I'm unbinding.
+And binding to the service just let--
+it lets me call methods
+in the service directly.
+So that's what I'm doing.
+I only have one click listener
+for one button,
+but you can see right here,
+it unsubscribes to location updates
+or subscribes to location updates.
+Pretty straightforward. That's really it.
+So the summary of the classes,
+it's binding to a service
+which handles all the location code.
+It knows nothing about it.
+And this lets us cleanly separate
+the location code
+from the activity in the UI.
+The other nice feature is when we want
+to support location updates
+in a foreground service,
+we can easily do that.
+How?
+Well, let's look at the foreground
+only location service to figure that out.
+So there's quite a bit code here.
+You have the location code,
+which I walked through in the Codelab.
+You can see in onCreate
+is actually where I initialize all that.
+There's a start command and other stuff.
+You can see I have
+the subscribe to location updates.
+That's where all the location code is
+to get it started.
+And then you have unsubscribe
+to location updates.
+The most important thing is,
+A, I give them a method to call
+to subscribe to location updates.
+But the cool thing is, because
+all this location code is separated,
+I know that when they unbind from me,
+that the activity is going away.
+It's no longer going to be visible.
+So if they're actively subscribed
+to location changes
+and I get this unbind request,
+then I know that I need to transition
+the service to a foreground service.
+So in that case, I create a notification.
+And then I basically transition it
+to a foreground service.
+And then if the activity comes back
+and re-binds to me, that's great.
+Then I basically stop it
+as a foreground service
+and remove the notification.
+Again, I do that with onBind as well.
+But that's kind of the magic.
+So there's a little more to it.
+Well, no,
+there really isn't any more to it.
+That's the basic thing.
+If you want to dig into the location code,
+then there is more to it.
+But what you're basically doing is
+you're using a service
+to retrieve the location
+for the activity via binding.
+And we promote that service
+to a foreground service
+for the notification
+when the activity is no longer visible.
+We still get location changes,
+even when the app isn't visible.
+It is with the notification,
+but you don't have an activity visible.
+And you don't need background permissions.
+One other final note.
+So in the manifest,
+you do have to say
+all your foreground service--
+if you have a foreground service,
+you have to say what type it is.
+In this case, location.
+So this is a requirement for 10 and above.
+So it's a common mistake
+that you want to avoid.
+So make sure you review your manifest
+for foreground services using location,
+and add that.
+Anyway, I hope you found
+this screencast useful.
+If you want to learn more about
+managing location in Android 10 and 11,
+please visit this training page.
+Thank you.

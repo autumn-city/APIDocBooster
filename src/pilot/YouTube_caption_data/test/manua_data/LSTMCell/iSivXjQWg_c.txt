@@ -1,0 +1,832 @@
+So this model was predicting the classification 
+of the tickets, and then we decided to build  
+a model that was also suggesting which 
+actions to take in response to this ticket  
+and then there was also another model that was 
+deciding which template answer to send back to the  
+user, depending on what they were telling us and 
+so instead of creating all these different models,  
+I found that, that was a really nice application 
+of multitask learning and so made it so that  
+you can specify multiple outputs of multiple 
+different data types and in the end, we had  
+basically one model that was capable of doing 
+all these tasks, using all these features and  
+that was basically the base of Ludwig and then I 
+started to add also images and all other things on  
+top that and more people started to use it.
+You're listening to Gradient Dissent,  
+a show about machine learning in the real 
+world and I'm your host, Lukas Biewald.
+ 
+Piero is a staff research scientist in the 
+Hazy Research Group at Stanford University.  
+He's a former founding member of 
+Uber AI, where he created Ludwig,  
+worked on applied projects and publish research 
+on NLP. I'm super excited to talk to him today.
+ 
+All right. So Piero, I'd love to talk to you about 
+your time at Uber and the things you worked on,  
+but I think the thing you're maybe better 
+known for and the main topic is probably  
+your project Ludwig. So maybe for some of the 
+people that might be listening or watching,  
+can you just describe Ludwig at a high level?
+Sure. So it's actually a tool that I built  
+when I was working at Uber, mostly for myself. I 
+wanted to try to minimize the amount of work that  
+it would take me to onboard a new machine learning 
+project and what it resulted in is a tool that  
+allows you to train and then deploy the deep 
+learning models without having to write code,  
+and it does so by allowing you to specify 
+a declarative configuration of your model,  
+and depending on the data types that you specify 
+for the inputs and the outputs to your model,  
+it assembles a different deep learning 
+model that solves that specific task  
+and then trains it for you 
+and then you can deploy it.
+ 
+So can we make this more concrete? So, what if 
+my inputs were bounding boxes, is that something  
+that Ludwig would understand if those images in 
+bounding boxes, it would then sort of choose a  
+model and learn, say predicting classes or 
+something like that, would that work?
+ 
+So it doesn't right now. There's 
+no specific bounding boxes.  
+It's something like a feature that 
+they're going to add in the near future  
+but what do you do in general is exactly that. 
+So you specify your inputs and your outputs  
+and you specify what are their type. So for 
+instance, if you want to do image classification,  
+then you can say your input is an image and 
+your output is a class or if you want to do  
+information extraction from text, then you can 
+have text as input and for instance, a sequence  
+as output where the sequence tells you what 
+information you want to extract from the text and  
+any combination of these inputs and outputs allow 
+you to create a different model basically.
+ 
+And is the idea that underneath the 
+hood, it picks the best state-of-the-art  
+algorithm for any particular kind of 
+input and output, is that right?
+ 
+So it works at three different levels, really. 
+The basic level, you don't specify anything, you  
+just specify your inputs and outputs and the types 
+and it uses some defaults that in most cases are  
+like pretty reasonable defaults, things that are 
+for those kinds of types of inputs and outputs,  
+state-of-the-art in the literature, but you 
+can also have... You have full control over  
+all the details of the models that are being used. 
+So for instance, if you're providing text, then  
+you can specify the new one to encode it using an 
+RNN, or you want to encode it using a transformer  
+or a CNN or a pre-train model like BERT.
+You can choose among these options  
+and you can also change all the different 
+parameters of these options. For instance,  
+for the RNN, you can say how many layers of RNN, 
+or if you want to use an LSTM cell or a GOU cell,  
+or the sides of the Eden state, all 
+the parameters, and you may want to  
+change for those models, you can change them 
+and additionally, one thing that we recently  
+introduced in version 0.3 is the capability to do 
+hyper parameter optimization so that you can say,  
+I want to use an RNN, but I don't know how many 
+layers do I want to use and then you can say,  
+I have this range between one and 
+10 and figure out which is the best  
+parameter configuration for this problem.
+And what does it do underneath the hood?  
+Does it have some kind of smart system for 
+finding the best set of hyper parameters?
+ 
+Yeah. So first of all, the models that it trains 
+are TensorFlow 2 models right now, but we're also  
+thinking about adding additional back-ends, 
+but that's what... So the output in the end  
+will be a TensorFlow 2 model that you can use for 
+whatever purpose you want and for the parameter  
+optimization, there's also for the parameter 
+optimization process itself, there's declarative  
+configuration you can give, and you can specify 
+if you want to optimize it using different  
+algorithms. At the moment, there's only three 
+supported, which is grid search, random search and  
+a Bayesian optimization algorithm called Pytorch. 
+In the near future we're going to add more.
+ 
+In particularly, we want to integrate with rating 
+it as many, many of those algorithms already ready  
+to be used and also you can specify whether you 
+want to execute the upper parameter optimization.  
+If you have a laptop, maybe you want to execute 
+it just on your machine or if you have a machine  
+with a GPU, you may want to exploit the GPU, or 
+if you have multiprocessing and multiple GPU's,  
+you can run the training in parallel and also if 
+you have access to a cluster, then you can run  
+on the cluster, a Kubernetes cluster with 
+multiple machines with multiple GPU's.
+ 
+Does Ludwig include data preparation or data 
+augmentation techniques? Is that something  
+you can do with it also, because I know that's 
+super important to many fields these days?
+ 
+Yeah. So for data pre-processing, there are a 
+bunch of things that Ludwig provides and a bunch  
+of things that it doesn't provide. In particular, 
+because that's not a hundred percent the main  
+focus, at least so far has not been a hundred 
+percent the focus of the library. So we  
+provide some function at some relatively basic 
+functionalities and if you have some specific  
+need for pre-processing, we would suggest to do 
+some pre-processing beforehand before providing  
+the data to Ludwig, but things that Ludwig does 
+automatically are for instance normalization of  
+features, some tokenization of different 
+sequences or text features for images.
+ 
+We do resizing cropping or like pretty standard 
+things, nothing crazy, but something that is  
+useful for having like a kind of end to end 
+kind of experience. In terms of augmentation,  
+currently, we don't have any augmentation 
+that you can do right out of the box,  
+but it's one of the things that we want 
+to add in version 0.4 of the package.
+ 
+I think one of the things that's striking 
+about your library is, I think some libraries  
+try to help people that do write code, do 
+machine learning without a deep knowledge of  
+machine learning but I think your library, if 
+I recall correctly, it says right in the top,  
+"We're trying to make it possible to do machine 
+learning without actually writing any code at  
+all." So that seems like a grander ambition. 
+Can you talk a little bit about what made you  
+come to that and maybe what design decisions 
+you make differently to try to enable that?
+ 
+Sure. So I think to a certain extent it's a 
+little bit aspirational too, right, because  
+there is still something that you have to 
+provide, in this case, is the declarative  
+definition of your model but I believe 
+that it's so much simpler to write this  
+configuration file than it is to write 
+code, than to some intents and purposes  
+it actually opens up the possibility for 
+more people to try out, to use these models.  
+So that was to a certain extent, the intent. 
+In terms of the design decisions, I think  
+that the main one that allows for this level of 
+obstruction is probably the choice that I made  
+to be, as you were saying before, opinionated 
+about the structure of the models and the fact  
+that there are some data types that I support 
+and some data types that I don't support.
+ 
+If your problem is within the realm of those 
+data types that I support, then I make it  
+really easy for you. If it's outside, then well, 
+either you can go and implement it yourself,  
+or you can extend Ludwig to actually incorporate 
+also additional data types that you care about  
+and those data types, the fact that you can 
+compose the data types, so the compositionality  
+aspect of it is what makes it general to cover 
+many different use cases and that's probably  
+the main, as they say, secret sauce, which is not 
+so secret because it's an open source project,  
+but it's probably part of where the 
+magic is. Let's put it this way.
+ 
+Can you describe how you would compose 
+a dataset? Can you give me a concrete  
+example of that? A data type, sorry.
+Yeah. So again, one example we've been through  
+some examples like text input, category output is 
+text classifier but the interesting thing is that,  
+so in some libraries, what you have is they 
+provide you with some templates, like for  
+instance, the 2D Core Create, I believe that 
+allows you to create models for Apple devices,  
+does something similar where you have a task 
+which is text certification, and then you to have  
+provide the text input and the class output and 
+then there's another task that is, again, gives  
+you some templates that you have to fit into.
+In Ludwig, it works the other way around. You  
+start from the data and you look at the data 
+that you have and for instance, if you want to  
+classify an article, maybe you don't have 
+only the texts. You also have information  
+about who's the author and you also have-
+... you don't have only the text. You also have  
+information about who's the author. you also have 
+information about the date when it was published.  
+Maybe there is a subtitle and there's a separation 
+between the title, the subtitle, and the body.  
+What you could do with Ludwig easily, you can 
+say, well, the title is a text input feature,  
+but also the subtitle is a separate in text input 
+feature, and the body is a separate input feature.  
+The author is a category because maybe I'm 
+working for a website and the website has  
+20 different authors, and information about the 
+author will allow me to figure out ... Because  
+maybe many authors maybe publish in a specific 
+topic and so that's additional signal that you  
+will have when you're trying to figure out 
+what class this news article belongs to.
+ 
+Also time, because maybe a certain 
+moment in time, there was a spike of  
+interest in a specific topic. Knowing that 
+an article was published in a specific date,  
+that helps you figuring out what type of article 
+this is. With Ludwig it's super easy to specify  
+all these different inputs from different 
+data types. It's just a list. You just say  
+the name of your feature and the type, and it's a 
+list of those things. That's all you have to do to  
+have a model that combines all these different 
+inputs into the same architecture, really.
+ 
+What do you do if the types of your data 
+are inconsistent? Can Ludwig handle that?
+ 
+What do you mean by inconsistent here?
+What if my input data had ... Missing values might  
+be the simplest case, right? But I'm thinking of 
+the cases that people come to me with and they  
+want to do some classifications, some crazy data 
+set. Maybe there's sometimes multiple authors,  
+I'm just thinking of all these ...
+Oh, I see what you mean.
+ 
+... edge cases. How do you deal with that?
+I see, I see. Well, let's say for cleaning  
+the missing values things, Ludwig does some of 
+it for you, but you can specify a default fill-in  
+value or you can specify to default to fill with 
+some statistics, like with the min with the max,  
+these kind of things, which are pretty straight 
+forward. Ludwig allows you to do all these things,  
+so that's good. But if the inconsistencies are 
+bigger, like for instance, in some cases there's  
+multiple authors, well, you either treat it as a 
+different data type altogether. For instance, set  
+is a data type in Ludwig. If 
+you have multiple authors,  
+you can treat it as a set rather than treating it 
+as a class, for instance, as like a category.
+ 
+Because I have multiple of those data types, 
+like for instance date is a data type,  
+the geolocation is a data type and so on and 
+so on, I think you will have relatively easy  
+time to find a data type that fits the type 
+of data that you have. Again, if not, Ludwig  
+is even easy to extend, to add a data type that 
+matches your specific use case if you want to.
+ 
+Do you have examples of people 
+that use Ludwig that really  
+couldn't write any code? Do you 
+know people that have tried that?
+ 
+Yeah. There is this really interesting example 
+that I've witnessed, I would say, of there are a  
+couple articles online from a person who was an 
+expert in CEO, search engine optimization, and  
+they wrote a couple articles on a CEO blog about 
+using Ludwig for doing some predictions that are  
+specifically useful for CEO purposes. I believe, 
+most of these people don't have a programming  
+background, they cannot code. It was really 
+nice to see people using it for that purpose.
+ 
+And another fun example that they have. I don't 
+know how much coding did this guy knew, but okay.  
+There was this application of Ludwig for, there's 
+a published article by the Max Planck Institute on  
+analysis of some biological images, I think it was 
+about worms or cells of worms, I don't remember  
+exactly. But the point was that the person 
+that was using it was a biologist, was not  
+a computer scientist. What he told me is that 
+he would not have been able to implement ... He  
+was using ResNets within Ludwig and would not 
+have been able to implement a ResNet by himself.  
+Ludwig enabled him to do this kind of research 
+that otherwise would not have been easy for him  
+to do. These are some examples of what you're 
+talking about that I'm pretty proud of.
+ 
+Yeah. You should be proud of that. That's really 
+impressive. Ludwig came out of though your use  
+cases, and obviously you're a very skilled coder. 
+What were you working on at the time at Uber  
+that inspired you to make Ludwig?
+Again, the whole point is that I'm lazy and I  
+don't want to do the same thing twice. Well, twice 
+is fine. Three times I basically try to automate  
+it for myself, for my own sake, right?
+Yeah.
+ 
+I was working on this project called COTA. 
+There's a couple articles online if you're  
+interested about it. It's a customer support 
+model that basically at the beginning was we  
+were treating the problem as a text classification 
+problem. We had the input tickets and we wanted to  
+predict what type of ticket this was, because 
+depending on the type they were routed to  
+different customer support representatives.
+And maybe just before you get too far into it,  
+could you like describe what's the scenario, 
+what's an example ticket and what would be  
+an example class? Something like that.
+Yeah. I was working at Uber, so one example  
+was the note, "My ride was canceled. I want my 
+money back," or something like that. The class,  
+there were about I think 2000 different classes 
+that the ticket could belong to, which could be  
+appeasement request or lost item or food not 
+delivered because there's also the Uber Eats side  
+of things. Right? There was a really wide range 
+of possible types of issues that could happen.  
+Again, at the beginning we were treating 
+it as a text classification problem,  
+but then the PM working on this problem came to 
+me and said, "You know, there is availability  
+for additional features here. Like for instance, 
+we can access some features from the user that is  
+sending this message, for instance, if they were 
+using the Driver app or the Rider app or the Uber  
+Eats app when they were sending this message."
+That was again, additional signal that we wanted  
+to integrate into the model. Well, I did it once 
+and that was fine. But then they came back to me  
+with additional features that were related for 
+instance, to the ride that they were taking.  
+I said, "Okay, so these features, some of 
+them are numbers. Some of them are binary  
+values. Some of them are categories. Let's make it 
+something generic so that if they come to me again  
+with more features to add, it would be really 
+easy for me to do that." That's the path they  
+covered for the inputs. Then the same up 
+into the outputs because we had ... This  
+model was predicting the classification of 
+the tickets, right? And then we decided to  
+build a model then was also suggesting which 
+actions to take in response to this ticket.
+ 
+Then there was also another model that was 
+deciding which template answer to send it back to  
+the user, depending on what they were telling us. 
+Instead of creating all these different models,  
+I found that that was a really nice application of 
+multitask learning, and so I made it so that you  
+can specify multiple outputs of multiple different 
+data types. In the end we had basically one model  
+that was capable of doing all these tasks, using 
+all these features. That was basically the base  
+of Ludwig. Then I started to add also images and 
+all other things on top of that and more people  
+started to use it within the organization. Then 
+later on, we decided finally to release it as open  
+source because we thought that also other people 
+outside Uber could find some value in using it.
+ 
+That's so cool. Do you anticipate more people 
+moving to this model of not worrying about the  
+underlying architecture of what's happening? 
+What should people then focus on if they're  
+using Ludwig? If you want to make your 
+model better, what is there left to do?
+ 
+I think there's two aspects there. I would say,  
+I believe, I may be wrong, but I believe that 
+there's much more people in the world that  
+doesn't know how to implement a deep learning 
+model than people that knows how to implement  
+deep learning model. Right? I would say I 
+believe that there's also value that Ludwig  
+can give to an expert in particular, because 
+it makes it easy to compare different models,  
+makes it very easy for you to have a baseline for 
+instance. That is definitely something that is  
+useful in many situations, right? But if you are a 
+super expert and you want to implement, if you're  
+a researcher and you're creating a new model, then 
+probably you want to implement it from scratch and  
+the full control over it. But I think there's the 
+rest of us, the rest of the people that don't know  
+how to implement a deep learning model and doesn't 
+have the time and the resources to study it.
+ 
+For those people, I think there's a lot of 
+value to be unlocked by using a tool like  
+Ludwig. In terms of then what do you do if 
+you're not writing your model? Well, there's  
+all sorts of other things, right? There's first 
+of all, you can figure out the upper parameters,  
+both by hand and also automatically. Also 
+there's also other things. Like you can try to,  
+for instance, figure out on which subsets of data 
+the model performance better or worse. Have some  
+sort of outer loop kind of explain ability and 
+then trying to make sure that your model is safe  
+and that it's not discriminating.
+All these sorts of things. It's usually the way  
+you actually approach these kinds of problems. 
+You need to add more data in a specific way  
+that tries to introduce and solve these 
+problems in the behavior of the model. Right?  
+I would say in general, this is like a piece 
+of a human centered kind of process. The human  
+has a lot of things to do in this process by 
+labeling data, adjusting the model, integrating  
+the model into a broader application. There's 
+a lot still to do for the human, I believe.
+ 
+Is it part of Ludwig's scope to guide the human 
+building the model into things that are likely  
+to help the model perform better?
+... in the model and to things that are  
+likely to help the model perform better. I'll give 
+you an example. I often help people who don't have  
+a lot of experience train models, and some of 
+the mistakes they make are kind of surprising to  
+people that are in the field, but make total sense 
+if you step back. I've noticed, in some cases,  
+people will have so many classes that they don't 
+have an example, literally even one example of  
+every class, and then they're surprised when 
+the model can't predict that class where they've  
+literally not provided an example of that. And I 
+can think of lots of different ways that people  
+can shoot themselves in the foot when they 
+don't have experience with this type of thing.  
+Is it part of Ludwig's scope to help 
+people avoid those bad situations?
+ 
+That's a really interesting question. I would say 
+the scope is changing over time, to be honest,  
+right? As I described at the beginning, the scope 
+was to build a text classifier, and then it became  
+a much more generic thing over time. So also with 
+regards to what you're asking, it's something that  
+we don't... So let's put it this way. Ludwig 
+nudges you in a direction, but it does show,  
+in particular, for model architecture choices 
+and model training and building, it has some  
+defaults that are kind of reasonable and helps you 
+figure out easily with different parameters what  
+to do. What it does not do right now is what you 
+described, the more higher level kind of problems.  
+Is the problem you're trying to solve a problem 
+that is solvable with a machine learning algorithm  
+to begin with, for instance, that's something 
+that is right now out of the scope of Ludwig. You  
+basically start with something that you believe 
+could be useful, a signal that kind of makes sense  
+and a distribution of classes, for 
+instance, that kind of makes sense.
+ 
+This is slightly switching gears, but this 
+has been a surprisingly interesting question  
+recently. What do you think about 
+Python as sort of a lingua franca of-
+ 
+What you're saying is very interesting because 
+there could be some even relatively easy checks  
+that one could do beforehand and return 
+to the user saying, "Oh, there are class  
+A, B and C that don't have examples. Maybe you 
+want to provide them if you want to have good  
+performance," or something like that that 
+could be easily added. So that's something  
+that I will take into consideration.
+... machine learning. Do you think that  
+Python is going to stay the dominant language 
+for people building models? Or maybe there'll  
+be something even more high level if your vision 
+is that people don't even need to write code to  
+build these models.
+Yeah. Okay, there are several  
+aspects of this question. I think also it depends 
+on who is the user. I believe that, for instance,  
+if you think about databases before SQL was 
+invented, well, people had to code their own  
+databases by hand. Well, not really SQL, 
+but maybe relational database in general,  
+introduction of those kinds of management systems. 
+People had to implement their databases by hand,  
+and they were using files and YARA keys as a 
+way... The file system was basically an early  
+example of a database, really. And then there 
+was this change into the paradigm of the way that  
+people interacted with data by using a language 
+like SQL that is more declarative, doesn't  
+require you to express how things should be 
+computed, but actually what you want to compute.  
+And I think that a similar shift could 
+happen also for machine learning. Although,  
+this is true for a set of users, which are the 
+final users, those ones that use the models  
+much less so for the people that 
+actually produce the models.
+ 
+For the people that produce the model, I 
+think... I actually love Python. I think  
+it's a great language, has really nice syntax, 
+is very simple to pick up, very simple to look at  
+someone else's code and improve it and change it. 
+So I think it's a great language, but I can also  
+imagine that we could be moving towards languages 
+that are probably a little bit more efficient.  
+The efficiency of using Python right now is 
+basically wrapping C stuff. Maybe there is a world  
+where we start to write models in Rust. Even in 
+Rust, it's a little bit too complicated probably.  
+But I believe that they... Or maybe 
+in Julia, I don't know. There could be  
+some candidates language to dethrone Python as 
+the lingua franca for machine learning. Although,  
+I don't see that happening in the 
+very near future, to be honest.
+ 
+How do you decide what default model you give 
+someone for a certain configuration, especially  
+when the research is changing so fast, and I 
+would say especially maybe in natural language  
+processing right now, which it sounds like is 
+where Ludwig started? Does it ever get contentious  
+to decide what default to put in? Because 
+I would think that a lot of no code users,  
+if they have no experience in machine learning, 
+they're probably going to stick to the default,  
+or at least even if they do a hyper parameter 
+search, you have to constrain it somehow to some  
+set of defaults. How do you think about that?
+This is a great point. Also, there are  
+many aspects, in my opinion, that they're 
+not... There are some researchers that are  
+actually talking about these aspects, but they're 
+not, let's say mainstream, in particular, in  
+research. And those aspects are... Performance 
+is one dimension that a potential user of a  
+system like this may care about, but there 
+are also other dimensions. There could be  
+speed of inference or cost of training 
+or length of training or carbon footprint  
+of your models and so on, right? So 
+it's really difficult to figure out  
+a default that accommodates all these aspects, 
+right? Basically, right now it's impossible.  
+What I usually tend to do is to 
+provide defaults that are on the,  
+let's say less computational expensive side.
+So, for instance, I will not have as a default  
+to use T5 as a model for encoding language just 
+because the amount of users that could actually  
+fine tune the T5 models of different model 
+will be relatively small and also the  
+degree of advantage that they would get over a 
+smaller model that may be not as big as to justify  
+the increase cost, in computational cost, right? 
+So I try to balance towards the inexpensive,  
+but leaving the option for the more 
+expensive. So that's one thing I do.
+ 
+And on the other hand... This is something that 
+I'm really interested in doing. I'm starting to  
+do some little research around it. One thing 
+that I want to do is I want to do a really  
+large scale comparative study. This is 
+actually a little bit more on what I do  
+at Stanford more than what I do specifically 
+for Ludwig, but I'm really curious in doing a  
+large comparative study among the different models 
+with different hyperparameter optimization values  
+on different tasks. And maybe one interesting 
+outcome of that could be something that looks  
+like a recommender system that tells you, "I have 
+these new data sets with this amount of data of  
+this data types. What model do you suggest 
+me to use given these constraints?" Because  
+I think that the constraints are important. You 
+may say, "I want only to see models that will take  
+less than 10 milliseconds to run inference on." 
+And so maybe they will rule out some of the  
+more expensive, but also more effective models, 
+right? So suggesting something that depends on the  
+constraints I think would be really useful.
+Well, now that we have a weights and biases  
+integration, we could give you the data 
+of all the users that chose to make their  
+projects open, and that might actually give you 
+kind of real-world evaluation of the different  
+things that work and don't work. It would 
+be super cool to see if that was useful.
+ 
+Absolutely. This is something that you might... 
+With your data you probably can already do,  
+right? We could think about ways to collaborate 
+on that, definitely. That sounds really fun.
+ 
+That'd be fun. Stepping back a little 
+bit, one thing that I wanted to ask you  
+is I noticed that you've been doing NLP 
+work for quite a long time. I think before  
+Uber you were at a startup bought by Uber. And 
+before that, I think you had your own startup  
+doing natural language processing, so you've 
+been doing it for over a decade. I'm kind of  
+curious the perspective of someone like you 
+on kind of the new stuff that we're seeing.  
+Do you feel like GPT-3 is a real step function 
+change in the quality of NLP and kind of changes  
+the possible applications, or was it sort 
+of inevitable? How do you look at the field,  
+and how do you feel the field has changed in 
+the time that you've been working in it?
+ 
+Yeah. It is true I've been working for at least 
+10 years right now, basically, in the field,  
+so I've seen quite a few waves. Tasks that were 
+interesting 10 years ago are still interesting  
+today, so there are many things that were unsolved 
+back then and still unsolved right now. We did  
+progress in terms of performance, but I would say 
+the general framework for the problems and how we  
+approach them hasn't changed a lot. We're using 
+neural networks before we were using SVMs, but  
+overall there was not a huge change, in 
+particular, in the way things work in industry,  
+really. But in particular, the capabilities 
+for if you shot... Actually, the capabilities  
+for interacting with the model itself through 
+language that is shown by something like GPT-3,  
+those changed kind of the paradigm of 
+interaction with those systems. And I think-
+ 
+... with those systems. I'm not sure of the 
+commercial usefulness and application of  
+something like that, but what I'm sure of is, 
+having a general system to which you could give  
+a really small amount of examples and then the 
+system picks on that and is able to perform the  
+same kind of task that you've shown it on unseen 
+data right off the bat, without needing specific  
+training for solving those tasks, that's a very 
+compelling thing and something that may bring the  
+industry in a different direction, I believe. 
+So, I see an interesting world in the future  
+when that shift happens. Although, I still have my 
+questions. We haven't settled on a final answer on  
+how much and in which scenarios this actually 
+works, to the point that we can actually use it.  
+But let's see about that. I'm curious 
+to see what the near future holds.
+ 
+Cool. Well, I can see we're running out of 
+time, and we always end on two questions  
+and I want to give you a little bit 
+of time to answer these questions.  
+The penultimate question that we ask 
+is, what is a topic in machine learning,  
+broadly, that you think doesn't get 
+as much attention as it deserves?
+ 
+So, I think now it's getting a little bit more 
+attention than it was before, so I may be a little  
+bit out of time giving this answer. But I believe 
+that something that I think it's very important  
+is systematic generalization. And again, there 
+have been work from Marco Baroni, Brenden Lake,  
+and also Josh Tenenbaum on this topic, but 
+has not being for a long time at the forefront  
+of research. But it's something that is super 
+interesting, and it's something that if solved  
+may unlock many applications also of machine 
+learning, where now we have a hard time applying  
+machine learning. For instance, in scenarios where 
+there's a lot of shift in distribution of data  
+over time, or in scenarios where we need to 
+train from less data. If we had a solution  
+for systematic generalization, we could 
+be able to apply machine learning models,  
+especially in these scenario. So I'm really 
+looking forward to more research on that topic.
+ 
+And could you define what 
+systematic generalization means?
+ 
+Yeah. I may be butchering it a little bit, 
+but at least the way I see it is, the fact  
+that you have a model that can figure out a way to 
+generalize beyond the training data obviously, but  
+generalize in a way that is systematic. So, that 
+learns that... I can give you a practical example  
+of all the specific instances of a specific 
+phenomenon, it behaves in the same way.  
+It realizes that, for instance, if you're talking 
+about text, that is invariant to the choice of  
+entities or is invariant to the choice of some 
+synonyms when it's returning its predictions.  
+And I think it's really important 
+because those models that exhibit  
+a behavior like that are 
+models that we can trust.
+ 
+Cool. Well, the final question is, and maybe you 
+could really rely on your experience at Uber here,  
+what's the hardest part about taking an ML project 
+from conceiving of the idea to getting it deployed  
+in production and doing something useful?
+Yeah, I think the answer to this is it changes a  
+lot, depending on the type of ML organization that 
+you're working in. Like if you're in a startup  
+you can do things differently, if you're in a big 
+organization it may be different. So I can speak,  
+in particular, for the big organization kind 
+of setting. I can say that, in particular for  
+researchers, one thing that is difficult is 
+then to put whatever you obtained in your  
+research into production. And there's at least 
+two sets of problems why that is difficult. One  
+is a practical one, an engineering one. Usually 
+the infrastructure for deployment is not the same  
+that you use for training your models, and 
+so there's a mismatch there that has to be  
+filled. And also, maybe your models are a little 
+bit slow for what are the needs for inference at  
+scale. And so there needs to be some compromises 
+there, and that's one of the problems.
+ 
+But the other problem, which in my opinion, it's 
+more important. Because it's not a technical one,  
+it's harder to solve, is a misalignment in the 
+goals, really, of what the model should be doing.  
+You may be optimizing your model with whatever 
+metric that you care about. Let's say, for sensory  
+loss, or maybe you have a ranking problem and 
+you're optimizing for the mean reciprocal rank,  
+or whatever other metric you're using 
+for both optimization and evaluation.  
+But in the end, in many real scenarios, those 
+metric are just proxies for what you actually  
+care about, and what you actually care about if 
+you are doing, for instance, a recommender system  
+is, you care about how many people 
+are clicking on the items that you are  
+suggesting. And maybe if there's a store, how 
+many people are actually buying something.
+ 
+You may have the model that has 20% better MRR 
+offline. You deploy it and people don't buy more,  
+that's not the model that is going to be deployed. 
+And so that's something that machine learning  
+people usually don't think a lot about, and 
+it's something that in my experience has been  
+the main friction... There has been 
+a friction point between developing  
+something offline and then getting something 
+deployed for real in front of the users.
+ 
+That makes sense. Well, thank so much, Piero. 
+It's a real pleasure to talk to you.
+ 
+Yeah, thank you for the really 
+interesting questions. It was really  
+fun to chat with you, too. Yeah, thank you.
+Thanks for listening to another episode of  
+Gradient Dissent. Doing these interviews are a 
+lot of fun and it's especially fun for me when  
+I can actually hear from the people that 
+are listening to these episodes. So if you  
+wouldn't mind leaving a comment and telling 
+me what you think or starting a conversation,  
+that would make me inspired to do 
+more of these episodes. And also,  
+if you wouldn't mind liking and 
+subscribing, I'd appreciate that a lot.

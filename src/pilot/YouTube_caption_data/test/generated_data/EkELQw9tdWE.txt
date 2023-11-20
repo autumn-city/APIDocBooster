@@ -1,0 +1,1230 @@
+howdy folks I'm Jeff let's talk about
+taking deep learning models from
+research to production so I am Jeff I
+work at Facebook where we developed PI
+torch really as a tool to solve our
+problems but we did it in the open and
+now we have this great open source
+project that I want to share with you
+and so it's a it's a big and a complex
+space to understand what all can you do
+with in deep learning and how do you get
+navigated so here's my idea of a map to
+how we can get started in this
+conversation I really want to be focused
+on your productivity is as a developer
+and I'm gonna presume that some of you
+have never used PI torch before and it
+possibly never used a deep learning
+framework or done machine learning
+before but I really want to dive into
+what are the tools and and and parts of
+an ecosystem that you can take advantage
+of to help you be productive and I
+really want to focus on some of the
+concerns that a mature software engineer
+with a relevant experience is gonna have
+and so here's my map to what we're gonna
+do I really the theme here is around
+that journey from research mode all the
+way out to production and I'll talk
+about what exactly I mean by that a
+little bit later all right so to begin
+under just give a brief introduction to
+why we at Facebook invest in AI I you
+can see it all over our products whether
+or not you recognize it as a is or not
+these are things like translation which
+help you connect with people who you
+don't share a language with some of our
+AR FX and spark AR our ability to build
+computer vision models for virtual
+reality and oculus products and in all
+sorts of other ways in which we we use
+different forms of AI technology and the
+example there from blood donations is a
+social good initiative that is powered
+by natural language understanding
+technology so to do that we need to
+invest in some technology that really
+can handle our scale so our AI platform
+runs over 400 trillion predictions a day
+and that number is is climbing rapidly
+which means that it's also deployed on
+over a billion phones around the world
+and so this is every time a neural
+network on your devices is using part of
+our technology to perform a prediction
+operation so what's the technology
+underneath that well that's pi torch
+so if you've not encountered PI torch
+before I want to be a little bit more
+specific about who we are and what our
+opinions are and and really the places
+we invest in building technology to make
+you productive I want to start with
+eager and graph-based execution so this
+has to deal with how you is the user
+write your code and so eager mode means
+Python as you would normally write it
+returning back a results just as soon as
+you invoke a function and I'll show you
+a little bit more about some of our
+investment in graph based execution on
+up as a project and and how that works
+for you and what that workflow looks
+like I historically we've we've we've
+had a lot of innovative techniques come
+out of work done in PI torch due to our
+ability to support dynamic neural
+networks by which I mean neural networks
+which contain control flow if statements
+that are defined by you in regular
+Python also one of the reasons where you
+might want to use the deep learning
+framework to implement your solution to
+a particular technology is that you need
+to operate over a distributed system you
+need a cluster of machines somewhere and
+so we have a very powerful distributed
+training library called CMD that can
+handle doing really awesome stuff across
+clusters of GPU enabled servers other
+things you might need out of a deep
+learning framework include hardware
+accelerated inference and so this means
+when you're performing a prediction in
+real-time to be depending on what you're
+trying to do you may really care about
+taking the best advantage of the CPU or
+GPU underlying your program and doing
+that really well involves a lot of open
+collaboration between organizations like
+Facebook Intel Nvidia and so forth and
+finally just to ground you in how we
+think about how we write software within
+the PI torch project we really prefer
+simplicity over complexity we want you
+to be able to do things in writing your
+code that you are what you were already
+naturally going to do so right Python is
+you would write Python look like numpy
+when you're doing something that you
+would otherwise be doing an umpire and
+be very modular and opt in okay so
+getting a little bit more concrete what
+are some of those pieces when we start
+to look at PI toward a developer level
+I'm going to go back if I can figure out
+how to go back there we go
+okay sorry there we go
+so this is just a little bit of a
+high-level map to some of the pieces you
+might use within the PI torch library
+most people start within PI torch
+because they're they're interested in
+solving some problem with deep learning
+and so that's where all of our neural
+network capabilities in the NM module
+are come into play I'm going to spend a
+lot of time today talking about our JIT
+it's called torch script and this is
+really one of our major investments in
+terms of our engineering focused in
+building a path from research to
+production there's a lot more built into
+PI torch whether it's within the core or
+within other libraries and in the
+ecosystem you can see some of them there
+and I'll talk a bit more about some of
+them later but it's really it's designed
+to be a very big toolbox to support a
+broad range of things I want to get some
+code up though just to give you a feel
+for what does PI torch code look like if
+you've not done deep learning before
+this is I'm gonna be fairly quick and
+just showing what are the basics of the
+code so first we need to define what is
+the neural network here using the NN
+module this gets us started right out of
+the gate we need to initiate our module
+we're defining a forward pass so that is
+the computation we want to do in our
+inference operation here you can see the
+use of some pre-built layers real low
+dropout sigmoid so forth showing
+different parts of how you work with
+data us more out-of-the-box
+functionality here you can see a data
+loader here which is an abstraction
+which allows you to manage various
+datasets and you can see a pre-built
+data set being brought in from their
+torch vision package which is built to
+serve computer vision use cases in this
+case M NIST and you can see an optimizer
+as well stochastic gradient descent all
+of those library standard functionality
+and then here's a training loop and so
+what we're going to do is we're going to
+iterate over each of our instances and
+then you can see the steps that we have
+to go out there so we're going to zero
+out our gradient we're going to apply
+the forward pass within our neural
+network we're going to apply our loss
+function call backwards on that
+and then move forward in our
+optimization and then you can see some
+checkpointing functionality there with
+torch not safe it's a really simple
+high-level example of kind of common
+neural network code not a lot of high
+torch specifics here I'll show a little
+bit more of a in-depth view of what the
+specifics of how you work with pi torch
+are in an example a little bit later but
+I want to frame that example within the
+context of the journey from research to
+production and so if you're not
+experienced within the field of machine
+learning parts of this workflow may not
+be something that you've seen in quite
+this variant before but if you do have
+experience in building and I'll projects
+and products you will recognize a lot of
+the commonalities to what I want to show
+here and so this is a very high-level
+view of how do we take something from
+from an idea all the way out to real use
+case so first that we would start off
+with some high-level plan right we're
+gonna determine our approach to a given
+problem we're trying to solve a deep
+learning our next and sometimes hardest
+problem is preparing the data this is
+this is where it's nice to have at least
+like pre-built data to get started if
+you're trying to establish a technique
+or a data loader to manage your existing
+data that you may have and then we can
+do the part that I run things about when
+they think about machine learning deep
+learning in general so that's build and
+train a model so that's that example
+code I showed just previously and that's
+an important step but this next step is
+one that people don't often talk about a
+lot and this is transferring a model out
+to production so just because we've
+trained a model all we have right now is
+is an object in memory may be an
+artifact on disk there's some additional
+step that means we need to take to be
+able to publish that out to get it out
+into the real world of production
+because we need to deploy this in some
+live mode and be able to scale it
+whatever that means for your application
+high level conceptual view comment of a
+lot of ML workflows and and what I want
+to call out is that four steps really
+really a very difficult one and that's
+very much been our experience inside
+Facebook AI we've seen a ton of pain in
+trying to build a tool train that it
+supports a productive workflow to go
+from beginning to end
+getting stuck at that transferring from
+model to production and so we want to do
+everything we can to remove that step by
+creating an end and tool chain that
+supports being able to author a model in
+the same framework that you can then
+deploy it out to production I want to be
+more concrete about what I mean by
+production and so we as a project think
+of production in a couple of these
+properties here one of them is hardware
+efficiency there's some very non-trivial
+aspects of getting truly
+state-of-the-art performance on CPUs
+GPUs domain-specific architectures like
+TP use and Asics scalability and so this
+is really being able to run across a
+whole cluster and being able to operate
+at extremely high throughput rates
+there's some really fun and hard
+engineering problems here as well
+platform constraints so we want to
+deploy neural networks to more than a
+billion phones we also want to deploy
+them to state-of-the-art servers and so
+there are different challenges there and
+if you and if your production spans both
+of those things neural networks running
+at massive scale on a server as well as
+running on tiny devices then you need a
+tool chain that supports those things
+finally reliability and this is gets
+into the scalability and reliability
+component here large scale machine
+learning is an extraordinarily compute
+intensive job and it involves
+potentially thousands of GPUs operating
+at the same time which has real-world
+cost in terms of energy and in terms of
+span for your organization and so these
+are the things we think about when
+building out our production tool chain
+so I want to talk about one piece of
+that production tool chain and that's
+torch script torch JIT and so what we
+want to do with torch script is to be
+able to power your transition from going
+from research to production we want you
+to be able to experiment and then
+extract out torch script from your
+Python program which can then be
+optimized and deployed in to production
+I'm going to show you a fairly detailed
+working code here but the the key point
+here is this is about extracting out
+that information from code you author
+yourself not adapting your programming
+model to fit ours
+so what this looks like is in what we
+call eager mode this is PI torches that
+has always been immediately returning
+out results as you would do in a normal
+Python program you can prototype you can
+train your modeling and run these
+experiments and then you have these two
+paths to make this transition out to
+script mode and so one way that I'm
+going to show you is to use the script
+annotation there you also have the
+ability to trace they have sort of
+different properties and you know the
+only way to work through it is just have
+a live code example so we'll do that
+next and we're going to do that on
+collab a quick call out to collab call a
+bizarre service provided by google cloud
+when the PI for each project have
+collaborated with that team to bring the
+best of Pi torch to Google cloud on on
+collab and so I'm going to show you that
+live in a in a browser window right now
+give me one second to mirror okay so let
+us maybe get a bit bigger that's that
+bigger sound good alright maybe good
+yeah bigger okay so this is collab if
+you've never seen it it's a hosted
+notebook collect service provided by a
+Google cloud it gives you free access to
+CPUs GPUs and TP use I just take connect
+I'm going to hang out the cloud it's
+gonna initialize and can see its
+allocated me a server and have the
+ability to choose the different
+properties there I'm gonna go ahead and
+run all of this code here live so you
+can see none of its been executed yet
+but I'm just gonna run it all to to
+speed our walk through of what this code
+is so one of the great parts of working
+with the Google team on this is this
+just has this incredible impact on your
+ability to get started you can import
+torch right away in an environment that
+supports it the box running the latest
+version of Pi torch and get started
+and so that succeeded so we just import
+torch and so let's get started learning
+about torch script in the path to
+production alright so here's a very
+simple example of a cell so that what
+we're using here is the nm module
+capabilities and we are defining a
+simple initialization function and we're
+going to define what is our forward pass
+in this case just a simple tanning
+and so you can see the result of that
+and this is the the basics of what we
+might do here and we're just showing our
+results it looks a lot like the code I
+showed you before I'm gonna eat irate on
+this a little bit and so this case what
+we're gonna show is in C we'll use this
+function here we're gonna use a linear
+construct a linear allows us to
+hierarchically compose our uh power our
+neural network and again we can do that
+in eager mode step-by-step we can just
+add in new new elements to our to our
+neural architecture ok now let's get
+really fun and this is kind of the heart
+of the thing here this new thing is a
+decision gate and so this is conditional
+logic and so we want to say if in some
+cases the sum of this operation is
+greater than 0 we want to do one thing
+otherwise when I do something else and
+this is where we get into your
+flexibility as a developer and your
+ability to have dynamic neural networks
+that do different things based on the
+input they see this is a really powerful
+capability and it's a foundational
+technique to a lot of the most exciting
+work going on in deep learning today so
+now can we use that within our linear
+structure well the answer is yes yes we
+can we're able to do it you can see the
+representation that that's produced here
+our linear contains this this new
+function here again fully an eager mode
+here and so there's just Python as as
+you would normally do it that was
+returned to you you were able to get
+that immediately and here's a little
+graphic calling out why that's important
+it's because we're not requiring a full
+program to be able to do useful things
+like define the backward function and
+perform automatic differentiation we're
+building that graph on the fly every
+time you in eager mode pass out a new
+operation of some sort and we can
+compute those gradients with whatever
+graph we have the technique here is is
+it goes by the name of tape-based
+auto-da-fé and which by which we mean
+we're we're not performing the same sort
+of symbolic representation that you
+would do in a graph mode only in fact
+we're just replaying each individual
+argument so that we can perform
+differentiation at any point this is
+what powers eager mode and this was
+makes eager mode work so powerfully in
+workflows so let's talk about why we
+would jump over into torch script mode
+so eager mode is great for being able to
+author models but we want to be able to
+get power get the power of our
+production tool change so we're ready to
+make that transition that's where we're
+at in our development workflow here we
+can see how we can trace a model here so
+this is this is the simplified one again
+this is just my cell it doesn't have any
+of that conditional logic in it it's a
+simple pass through this could be done
+in in a in a sort of eager mode or it
+could be done in graph mode and so what
+we've done here is you can see this call
+to torch it trace that's what allowed us
+to extract out what is the computation
+graph of this particular neural network
+by putting in a given input seeing what
+the neural network did and then
+recording that out as a graph using
+torch script that works great if in fact
+you have no dynamic control flow but
+what pi torch has always promised is
+that you do get access to that dynamic
+control flow mm-hmm oh sorry before we
+get to that topic I want to show you
+just briefly what did we extract so
+here's a trace cells graph you can see
+the actual internal representation this
+is a torch script I are here the
+intermediate representation it shows us
+what is our computation graph as the run
+time understands it it's not the most
+readable thing in the world in a
+presentation like this so I'll show you
+what it looks like if we map it back out
+to more pythonic code representation and
+so you can see here it's pretty simple
+here we can see what are the operations
+we call the 80mm optimizer you can see
+the 10h application pretty
+straightforward readable Python code if
+you want to understand what is what is
+torch script extracting for your program
+and it did all that without requiring
+you to do anything other than say trace
+it all right it's probably a good time
+to talk about like why would you want to
+extract out torch script briefly the
+things that we care about is that by
+extracting out that that graph we now
+have a language independent
+representation of what is the
+computation you want to prove
+and so we can do certain things with it
+like right optimization passes that can
+help your performance it also allows us
+to export out to deployment environments
+they don't have Python in them and so
+it's worth showing that when we do that
+our trace representation are our torch
+script extracted version does precisely
+the same thing on the same inputs as as
+your original program did we've
+extracted out a new program from that
+the computational graph but you can see
+here from ours when you call my cell
+you've invoked in eager mode when you
+call trace cell you're operating on the
+computation graph that we has been
+extracted exactly the same results so
+let's let's do the fun part and I've
+been I've been eager to get to this part
+and so let's let's actually deal with
+control flow so if we have control flow
+like this and we try to perform tracing
+pipe which will do its best but in fact
+we're we're in a more dynamic phone form
+so this is not going to work right it's
+not going to be what we really want so
+here we can say we've got that same
+control flow we've got our decision gate
+function but when we trace it
+we've only traced it on a single
+instance just just a one input and so
+the trace of that is the program without
+the control flow it has no ability to
+capture that in a pure trace because it
+only saw one instance that's not what
+you wanted and so your code is dropped
+out and that's why we provide you with
+yet more powerful tools than than simple
+tracing what are those more powerful
+tools that's the script method you can
+see here so here's what I've had to
+change to my code there we go
+just that so by doing that we can say
+that this is actually something that
+needs to be scripted that we're not
+going to use pure tracing that we
+actually want to use script mode here
+and so what that script mode does is it
+tells the torch script JIT compiler to
+extract out what is the what is this
+part of our computation graph don't just
+trace it but actually understand what it
+is map it to torch script and give me
+the the fuller representation of that
+computation graph and if you can see
+there we have new code extracted as a
+results there and so that's this if
+statement here you can
+if Bulli and so forth and down in this
+section here we have accurately mapped
+from our representation in plain Python
+out to a computation graph which can
+take advantage of all of those optimized
+static graph components which are built
+for production mode and as we can see it
+works just the same way whether it's
+been run an eager mode or extracted by a
+torch script so that is at a code level
+what that transition from research to
+production looks like using the power of
+torch script ok back up to some slides
+and continue our journey and ok all
+right
+and something that may not be obvious
+about seeing that at a code level is
+this is a really powerful breakthrough
+for folks who have had to live in this
+research and production divided for a
+long time which which matches my
+personal experience and the experience
+at face book AI that code that you just
+saw allows you to operate within a
+shared code base for a given domain on
+top of a common technology so that a
+research team and a production team can
+be using the exact same tools and have a
+path from research to production this is
+really important for us is at Facebook
+because we we often have really deep
+research things going on within Facebook
+air research our fundamental research
+function that needs to be connected up
+to the ways in which we deploy PI
+towards models to production at scale
+and take advantage of all those
+capabilities we have here's a concrete
+example of that this is the the PI
+Tech's library and so this was developed
+at Facebook really focused on natural
+language understanding and some of the
+specific problems of working with text
+it has we've done some great work in
+being able to use the technology coming
+out of research and putting into
+production with high text it has really
+we real-world production requirements so
+some of those are it needs to operate in
+real time a common use case of this
+library is that we're going to be
+performing recommendation predictions
+inside a messenger session inside
+Facebook messenger it needs to scale
+messenger operates and hundreds of
+languages that takes that many models it
+needs to operate around the world on
+billions of devices and so forth and so
+there's there's a lot of complexity to
+the end and picture of that I want to
+put that in an architecture diagram of
+sort of like the workflow of what that
+looks like
+so in research mode we need to be
+constantly finding new ideas developing
+running experience experiments and
+developing new techniques which require
+this great flexibility that flexibility
+is great and at some point we need to
+evaluate out those things maybe sweep
+through some parameters but then we
+probably have something we want to put
+to use on some level that allows us to
+so we're gonna export a PI torch model
+at that point we're just going to do
+this in eager mode we're going to stay
+in Python land we're going to deploy to
+a simple Python service which allows us
+to get a little bit of small scale
+action metrics this isn't a full
+production deployment this is for us to
+feel comfortable that things are in good
+shape when we do feel like we have found
+a successful new technique we can now
+make that step that allows us to deploy
+from research production again still
+using the exact same tool chain by just
+doing the same sorts of steps we just
+saw by exporting to torch script that
+allows us to to take those follow-on
+steps with that optimized model that
+Python torch script model sorry that PI
+torch torch script model is now exported
+in a Python free way so that can be used
+inside of our highly optimized massive
+scale C++ inference service that can
+serve billions of people and so folks
+who are working on both ends of this
+problem are within the exact same
+codebase and using the same tool chain
+I've shown you some fair bit of
+specifics around how we used hi torch at
+Facebook I want to show you just a
+glimpse into the larger PI torch
+community a couple production examples
+here the first one is from Genentech and
+Genentech is really working on a pretty
+important problem which is personalized
+cancer therapy the biology of cancer is
+such that you're each individual cancer
+is unique your body's response to it is
+going to be unique and there's a lot of
+deep data problems in there that they're
+attacking with AI and the the approach
+that they're working on is that they
+want to leverage your own immune system
+using AI built-in pi torch to fight
+cancer and so specifically they're doing
+things like identifying peptides which
+can be bound to to be exposed some part
+of the molecule that looks like the the
+specific cancer within your body out to
+your own immune system to teach your
+immune system how to fight against it a
+sort of personalized cancer vaccine and
+they've seen some great results
+moving on to to a very production
+oriented example I'm going to talk about
+Toyota and so within their research
+group Toyota Research Institute they've
+been able to have this really amazing
+journey from research production using
+PI torch so they're concerned with
+driver safety and the more than a
+million people died in traffic accidents
+every year the statistics are staggering
+and
+and Toyota is the largest car
+manufacturer in the world really wants
+to have an impact on this and so they're
+investing in technologies like
+autonomous driving cars but what we can
+deliver today potentially to two cars
+our driver assistive technology so
+predictive driver assistance that takes
+advantage of some of the capabilities
+that we would be building inside of an
+autonomous car inside a car that's
+driven by a human to prevent crashes so
+they've been able to collect real-world
+examples of crashes they've been able to
+map them up into a digital world and so
+what we're gonna see here is a crash
+being avoided by a car that accelerates
+out of the way from other drivers which
+are losing control of the car behind
+them this is a simulation they built
+from real-world data variable to model
+it into this simulated world using PI
+torch but in the world of cars when we
+ship to production we don't just mean
+simulated worlds we mean cars cars on
+the road and so that once were they
+validated this model they need to then
+actually get cars out on the road and
+power them and try to replicate the
+exact same examples see if the machine
+learning model is able to determine that
+the cars behind it are about to lose
+control and accelerate out of the way
+just using a new intelligence
+capabilities but nothing more than that
+the same capabilities built into the car
+today to accelerate and so a really
+interesting look at how we can put AI to
+use and driver safety okay I want to
+talk a little bit more about the broader
+ecosystem I'm going to talk about a few
+libraries they came out of Facebook that
+are focused on optimization problems and
+they're both focused on techniques
+derived from Bayesian optimization and
+so Bayesian optimization is this
+statistical technique I distinct from
+deep learning the the example problem
+going to talk about here is hyper
+parameter optimization and so inside
+building deep learning models there were
+all of these magic numbers like the
+learning rate and and various other
+hyper parameters the number of epochs
+and so forth that determine whether or
+not you're going to be successful in in
+training out a model that is performant
+and does the right thing they're kind of
+magic numbers they're established by
+heuristics previous experience looking
+at someone else's paper hoping for the
+best
+running too many jobs there
+better ways of doing this using Bayesian
+statistics and so we built how the tool
+chain to do that using PI torch all
+right so first layer is the Bo torch
+library so Bo torches really around pure
+Bayesian optimization it's built on PI
+torch and uses some of the probabilistic
+modeling capabilities exposed out by G
+PI torch a Gaussian process library also
+an open source but it's it's really a
+very unfair work highly modular way of
+exploring techniques that allow you to
+perform Bayesian optimization moving up
+the stack one of the ways in which we
+put that to use is our adaptive
+experimentation framework called ax and
+so ax tries to generalize some of those
+concepts of how can we use Bayesian
+optimization techniques to develop up
+domain agnostic abstractions around
+trying to optimize for particular goals
+deploy that all out and and really make
+that happen very autonomous Li here's an
+example of what this looks like this
+example is showing newsfeed ranking and
+so in this case there are all sorts of
+models that we want to deploy out to as
+well as other components of data that we
+call a configuration and so in sum all
+these pieces of data determine what is
+the basis for which item should be
+ranked within your newsfeed and we want
+to make changes to this all the time we
+want to continually make this better
+online simulation is the gold standard
+for getting good labels and feedback
+that our machine learning model is doing
+well unfortunately online
+experimentation is is a scarce resource
+we only have so many users so many users
+working in a given time and we don't
+want to expose them to untested models
+and so the way that ax plays a role in
+this is that we can build a multitask
+model which unifies real live testing
+data from users with a much much larger
+amount of offline simulation data that
+wasn't exposed on to real users and it
+gives us an ability to understand
+whether or not we're accurately
+statistically modeling the properties of
+the system and and choose which new
+model to deploy
+both of these libraries axe and bow
+torch are open-source we just release
+them about a month ago at f8 and I'd
+like to call it that they're they're
+part of a larger ecosystem which I'm
+going to show you a few more examples of
+that we have and so this ecosystem in
+particular this part of the ecosystem Bo
+torch PI text our translate platform
+built on unfair seek our horizon
+reinforcement learning platform these
+are all things that we built to solve
+our own problems of Facebook and we
+really want to make sure to give back to
+the wider community of developers to
+allow you to work with these things to
+use them to solve your own problems so I
+want to talk just specifically about
+some more of those developer resources
+that are that can help you get started
+in becoming someone who can take models
+from research to production and use them
+to solve real world problems from the
+perspective of PI towards wheat and n
+Facebook AI we really care about the
+whole stack of things and we want all of
+these to be existing and open source and
+that means everything from our Open
+Compute platform project where we're
+open sourcing our data center hardware
+designs all the way up to our compilers
+investments where we're collaborating
+and open-source and things like glow and
+TVM ty torch itself and then
+higher-level frameworks and as you get
+closer to to having more specific
+machine learning needs you probably care
+about things like pre train models and
+we publish a lot of those I'll show an
+example of that soon and then and then
+even datasets to allow you to develop
+new techniques yourself because this is
+part of the the larger PI torch
+ecosystem and so there's a specific part
+of PI torch org the ecosystem page I
+would encourage you to go directly to if
+you want to see what are some of the
+projects that you could get started with
+on some of the domain-specific libraries
+some of these are gonna be for things
+like and I'll P some of these are gonna
+be for things like vision robotics
+there's a there's a rich community
+people collaborating today in PI torch I
+want to do one more balance across
+screens and just to show you a good
+example of something I really like there
+okay an example of the some of the great
+things you'll find in the in the
+ecosystem here so here this is a this is
+papers with code and so this records
+computer science papers which develop
+new techniques and then links them up to
+actual implementations so that you can
+get started here you can see the link
+here we can go out to the PI torch hub
+for this paper PI torch hub is our
+collection of of implementations of
+models in PI torch and you can see not
+just the code of this thing we can see
+an explanation some of the resources and
+this is all directly loadable within
+your own within your own code and so
+here we can just again click the button
+launch it up on colab and we can see
+that we have the ability with a single
+line of code to bring in this specific
+model from the PI torch hub and people
+are adding out new models all the time
+this is an open collaboration it's not
+just models that coming out of Facebook
+it's all sorts of pi torch users sharing
+their work and helping others be
+productive
+I think you've heard me say a lot about
+developer productivity to call out here
+I've shown a few examples of some of
+those tooling today but there's a lot we
+work very closely with Amazon Microsoft
+and Google to make sure that your
+productivity as a developer who wants to
+have access to the best of the the tools
+the cloud can provide support PI torch
+out of the box
+things like import torch we're having it
+available inside a VM having it
+supported within vs code and things like
+that this is a fun example of something
+that just launched I want to say
+something like six weeks ago
+neighborhood of so this is a this is
+called an AI platform notebook it comes
+from Google cloud and this is a really
+exciting new tool chain that is a
+notebook like environment connected up
+to the most sophisticated production
+deployment technologies the Google cloud
+is developing and as with mykola of
+example you can just import torch and
+get running and they have examples built
+into it out-of-the-box
+continuing the love this is another
+collaboration we've done again with
+Google this time this is tensor board
+probably the the state of the art
+everyone's favorite visualization tool
+for working with training deep neural
+networks this is an embedding this view
+visualizing an embedding space but
+there's all sorts of things like
+learning rates and in various other ways
+to understand what is going on inside
+your deep learning program tensor board
+itself is open source and it supports PI
+torch out of the box and inside a colab
+as well part of being productive is
+knowing what you want to do in the first
+place and so we care a lot about
+developer education shout out that we've
+been overwhelmed by the by the enormous
+growth of the community last year we
+were their second fastest growing
+project in all of open source and so
+we've had to think a lot about how to
+bring new people up to speed and and
+also to point to leading lights in the
+community and ask them to to support
+them when they try to teach others and
+so here's some examples of two books
+written by folks who are just in the PI
+torch community they're not Facebook
+employees and they've their really great
+natural language processing with PI for
+deep learning with pi torch both of
+these books are great places to start in
+understanding how you can solve real
+world problems using the best of pi
+torch technology I think I mentioned
+this a little bit in the panel but we
+have some great courses as well
+Udacity has worked with us on a whole
+bunch of courses you can see them
+scrolling there all the different topics
+you can study in Udacity using pi torch
+and we care a lot about this and so how
+some of the more recent steps we've
+taken is we've collaborated with Andrew
+Trask of who is the developer of open
+mind and pi sift in the development of a
+privacy and AI course deployed on
+deployed on Udacity and we're also
+funding scholarships for for people to
+continue their studies on Udacity and
+learning more about deep learning and
+that sorry and to call out that a that
+privacy course is in fact the library
+implement in their PI sift is a PI torch
+library that contains a lot of powerful
+techniques for working in
+privacy-preserving ml techniques across
+the range of things known within
+computer science bouncing over to
+another great educational partner fast
+AI fast AI is an online AI school that
+has just extraordinary stats around the
+numbers of people they reach and their
+global reach in their ability to to
+reach people all over the world and
+teach them the absolute latest in
+artificial intelligence techniques
+they've just launched new courses again
+in PI torch and they've done some great
+development of having easy-to-use
+beginner libraries that help someone
+become productive as a learner and those
+courses and those libraries right now
+the latest ones around audio and vision
+major areas of deep learning activity so
+what does it mean if you walk away from
+this talk and want to get started I'd
+point you to the get started page on on
+PI torch some of the ways that you can
+get started are to just click the button
+on the docs and that will launch at you
+out to a live collab instance that has
+the code from the examples there you can
+also get started in the cloud on Azure
+on Amazon on Google cloud and you can
+also install locally just pip install
+start playing around with it
+top you don't need a massive GPU back
+server to start writing code that is but
+then once you do want to go ahead and
+move up to to that scale you know that
+you have that support there both of them
+the PI torch technology itself but also
+then the larger ecosystem of open source
+libraries and cloud partners that help
+you be productive in moving your models
+from research to production and so
+that's all I really want to have to say
+I just want to invite you if you are
+interested in this part of open AI
+collaboration I want you to join in the
+community we live out here an open
+source we want to we want to talk we
+want to learn more about what you're
+doing and understand what we can invest
+in and spend our time building to make
+you successful in taking your deep
+learning models from research to
+production thank you thank you Jeff for
+that great introduction to PI torch we
+have about ten minutes for Q&A any
+questions out there for Jeff hi Jeff
+great talk just wanted to ask you you
+kind of used deep learning and machine
+learning interchangeably do you see any
+distinction between those two and if so
+what is that sure and I think that's
+probably just me rushing through things
+a little bit and so for folks are
+unfamiliar with how you would normally
+break down the technology the
+terminology I would say deep learning
+could usually be classified as a subset
+of all available machine learning
+techniques and part of that fluidity
+there is we as pie charts as a
+technology embraces more problems than
+simply deep learning deep learning is
+one of the ones that we work on but we
+also do a lot of work within scientific
+computing that can sometimes use other
+techniques for example that talks there
+the discussion of ax and Bo torch those
+are those are non deep learning based
+techniques but they are built on PI
+torch and so we work at the intersection
+of both
+we have a question down here at Jeff
+Jeff high for someone who has a lot of
+experience in Python and has a lot of
+interest in machine learning but no
+experience with pi torch what would be
+the one definite source that you would
+say is you know the first that someone
+should look at kind of depends on how
+much time you have so some common
+answers are you can do the 60 minute
+blitz tutorial if you've got an hour
+that's just on the the PI torch Docs if
+you want to commit to a deeper learning
+process the Udacity and fast IO AI
+courses are great I also like the books
+as well for people who feel like they
+have enough grounding to be able to be
+productive in working through a book I
+think the depth of the examples and the
+ability to dig deep in in being able to
+some of the things you can do
+specifically in a book are nice as well
+but those would be my my three main
+starting points the tutorials the
+courses or the books just quick question
+on how this platform the PI touch it's
+compatible for something like age on the
+edge devices like Raspberry Pi or
+something is there like a lighter
+version of right so this is I think a
+moving target within the field of deep
+learning in in saying how can we take
+something that's huge and how can we
+make it small and work really well the
+story of what works today and that works
+well is is really focused around mobile
+for us specifically and so there are
+paths to to take a pipe where small
+light and export bionics which allows
+you access to various like onyx runtimes
+I didn't talk about it in this talk but
+onyx Isaiah an open source standard
+collaboration that we and Microsoft and
+others created around the open neural
+network exchange format and there's some
+tool chains for that and there a
+particular way as well as there are
+other ways to take PI torch models and
+run them on things like the the cafe to
+go mobile runtime but it's an important
+area without saying anything super
+specific obviously we care and we will
+keep doing more stuff this is I think a
+moving target for the whole field some
+other pieces of the pie torch stack
+worth calling out if you happen to be
+that specialized if you're working our
+FB GM and qnn
+pack which are quantization libraries
+quantization is a necessary technique in
+shrinking down a very large deep
+learning model and making it possible to
+run either efficiently on a server or
+efficiently on a mobile device and both
+of those are open source projects that
+we released last year to support the the
+larger PI torch ecosystem something that
+we saw earlier today on the tensor flow
+talk was that they had functionality in
+their new API for being able to take
+pre-trained published models and then
+use those as like input layers in in in
+your models that you make that are
+derived from that and I saw that you
+talked about about PI torch models that
+that you that Facebook provides and the
+other researchers provide like what's
+what's pi torch is support for things
+like you know if I wanted to use a
+pre-trained language classifier or image
+classifier and use that for some you
+know domain-specific a proprietary
+modeling on top of that yeah so I think
+that this is an area that I think is
+emerging that people really want
+something that helps with their
+productivity so I think in the old days
+where there used to be things like just
+sort of static model zoos and there was
+like people published up here are some
+things from these papers and they just
+kind of sat in a folder and know
+whatever did anything with them these
+days what we care about doing it within
+pipe torches is the PI torch hub so I
+found stubborn showed a little bit of
+that PI torch hub is is where we would
+like people to share their pre train
+models and any and do that sort of
+connection up - I - like where does the
+paper this is drive from how does
+someone use this and it's pretty easy to
+get started we've collaborated with a
+bunch of like you know even like small
+startups I've been able to put up their
+work and get it on the onto the hub and
+it really helps with the reuse of amalah
+because they're it's a single one-liner
+you just called you just call it in as a
+hub that load or something like that
+any other questions
+well great call great talk but I do have
+some like machine learning like projects
+like going on but like they're more like
+traditional like machine learning things
+like k-means SEO and all the kind of
+stuff and I don't know if I can get
+benefits if I'd like poured all this
+kind of stuff two-part torch or like
+it's turnkey care to this kind of stuff
+and can I get an account penny from
+important night
+Kimi's or like I see all the kinda stuff
+every question right so if I've got an
+existing implementation of something
+that uses a non neural network based
+technique is there any benefit to trying
+to work with PI torch I think it I think
+it depends some of the things that I
+would typically be looking at our do you
+have the ability to take advantage of
+sufficiently large data sets that you
+would like access to things like GPU
+acceleration so we do have a a portion
+of the community of users that I would
+generally group in scientific computing
+use do working on problems that are not
+deep learning and they take advantage of
+high torch as a GPU accelerated tensor
+library so numpy on GPUs if that sounds
+useful to you then then maybe we could
+we talk and find you know whether or not
+there is a way to put that to use for
+for your use case it tends to be a
+little bit domain-specific though all
+right anyone else I have a very short
+light-hearted question I wonder what
+happened to the old logo sure so you
+have the the old logo stickers so as of
+pi torch 1.0 when we which was announced
+at f8 of 2018 and then delivered at a
+pipe torch Def Con of 2018
+pi torch 100 now reflects the union of
+the pi torch technology the Onyx
+technology and the cafe to technology
+and so all of those are cafe to it
+briefly for anyone is unfamiliar with it
+is a deep learning framework developed
+at Facebook also an open source and
+deployed to a production inside Facebook
+we chose to unify those really to
+achieve that research to production
+story of being able to have all those
+broad capabilities when we did that we
+created the slightly more futuristic
+logo that you see now
+so I just wanted to ask the opposite
+question of the the talk that was I'm
+not tensorflow so why would someone use
+PI torch over tensorflow
+so I did have a slide where I try to be
+fairly specific about our philosophies
+as a project and so speaking you know a
+largely affirmative mode is I wanted to
+paint a picture for someone who wants to
+take something and then and if that
+sounds like the sort of journey that you
+want to do and the ways in which you
+want to do it there's a very specific
+approach at the code level which is what
+I try to make that as clear as possible
+around how little you need to adapt your
+programming model to match the
+capabilities we're trying to provide out
+to you so if you if you take a look at
+the tutorials you you open them up you
+start running things and that is the way
+in which you want to work we would love
+to collaborate with you on that we want
+to we want to support people who
+appreciate this sort of flexible and
+highly modular approach that allows you
+to opt into the pieces they do care
+about but I've got nothing bad to say
+about tensorflow at all they're a great
+guys as well I appreciated Brad's talk
+it was very uh it was very worthwhile we
+have time for one more question
+anyone all right let's get ready for
+bright one Thank You Brad
+[Applause]

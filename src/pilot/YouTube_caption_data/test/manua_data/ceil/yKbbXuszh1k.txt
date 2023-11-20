@@ -1,0 +1,2942 @@
+Welcome to our course on differentiable cameras
+and displays!
+I am Praneeth Chakravarthula and I am a researcher
+at Princeton University.
+In this first part of the course, I’m going
+to give an overview of wave propagation methods
+and computer-generated holography.
+Specifically, I will start off with a brief
+introduction to waves, propagation, and interference,
+and then discuss optimization strategies for
+2D and true 3D phase-only holograms.
+Finally, I will introduce you to the idea
+of hardware-in-the-loop phase retrieval to
+compensate for real-world errors in hardware
+displays.
+So, what is a wave?
+A wave is nothing but a disturbance that transfers
+energy from point to point in a medium.
+As you can see here, a stone when dropped into
+still water creates a disturbance that propagates
+through the water, creating a wave.
+When two such waves are superimposed, their
+amplitudes might add up or cancel each other
+depending on how the waves match up.
+This superposition is called interference.
+In this example here, you see two identical
+waves that are created with some spatial separation
+interfering with each other.
+Note that the separation will already cause
+a phase difference between the waves although
+their amplitudes are the same.
+Here, you see the objects being dropped into
+still water from different heights, and at
+different times.
+This will create two waves that have different
+amplitudes and phases interfering with each
+other.
+Waves and interference form the fundamental
+of a holographic display.
+Before delving deeper into holography, let
+us first look at how humans view a 3D scene.
+Multiple angular rays from a given scene reach
+the eye and get focused on the retina.
+A light field display, for example, emulates
+this light transport from the scene by generating
+angular rays closer to the eye, although in
+low resolution.
+Here I show a top-down view of the same scene.
+Note that the light field angular rays are
+nothing but a discretely sampled continuous
+wavefront.
+Therefore, you can think of the rays reaching
+the eye as one complex wavefront traveling
+from the scene.
+This wavefront is sampled at the eye and focused
+on the retina to form the image.
+In contrast to light field displays, a holographic
+display directly generates a complex continuous
+wavefront representing a 3D scene.
+So how exactly do holographic displays work?
+An incoming light wave is typically modulated
+by a phase pattern.
+This modulated wave propagates and creates
+an image on a holographic display.
+Computing the appropriate modulation phase
+pattern is the core challenge of computer-generated
+holography.
+And this phase pattern directly affects the
+quality of holographic images
+To compute such phase patterns or phase-only
+holograms, several heuristic methods were
+proposed in the past.
+Gerchberg-Saxton is one of the most popular
+methods.
+Here we propagate the waves back and forth
+between the hologram plane and the image plane
+and enforce necessary constraints until a
+good phase pattern is found.
+This works reasonably well but is extremely
+noisy.
+Another widely used method is the double phase
+amplitude coding method, where the waves are
+propagated to the hologram plane from
+the image plane, and the complex amplitude
+is encoded into two phase only pixels.
+While this works reasonably well, it is not
+very robust and we typically see some loss
+in resolution and sometimes contrast.
+These two methods, although widely used in
+holography, do not result in optimal phase
+modulating patterns.
+A logical thing to do is to directly optimize
+for phase patterns.
+Let us see how we can do it
+You start with an initial phase pattern, propagate
+the wave and reconstruct an image, compute
+the error between reconstruction and target,
+and backpropagate the errors into the phase.
+And you repeat this until convergence.
+Such optimization should be possible with
+gradient descent solvers if we can compute
+the gradients.
+Although it sounds simple, this approach isn’t
+straightforward and I’ll tell you why?
+So as you can see here, we started with a
+phase-only holographic field.
+We then propagate the field and take its intensity.
+We want this intensity to match the target
+image, so we simply construct an objective
+function that calculates the error between
+the reconstructed image and the target image.
+We can do a first-order gradient descent optimization,
+if we can compute gradients of the objective here.
+And of course, we can simply apply the chain rule
+to compute gradients.
+Here I want to introduce to you what is called
+a holomorphic function.
+Any complex function that is defined on a
+complex domain, and is complex differentiable
+is called a holomorphic function.
+And an important property to note is that
+the derivative of a holomorphic real-valued
+function is zero.
+This means the function always needs to be
+a constant.
+And if you notice our objective, our objective has complex arguments, but its value is a scalar number.
+That means our objective is real-valued, and
+hence the derivatives of any order are not
+defined.
+Without well-defined gradients, we cannot
+of course solve the optimization problem using
+gradient descent solvers.
+And this is the reason why most previous methods
+relied on heuristic schemes.
+And to overcome this, we look at two important
+properties of a gradient in the context of
+optimization.
+One, the gradient defines the direction of
+the maximal rate of change.
+Two, the gradient is zero at stationary points.
+We then use an approximate gradient definition
+that follows the above two properties and
+can be computed using complex Wirtinger calculus.
+With these Wirtinger gradients, you can simply
+use the standard off-the-shelf optimizers
+to directly optimize for a phase-only hologram.
+We published a paper at SIGGRAPH Asia in 2019
+on this method.
+And recently, these complex Wirtinger gradients
+have been integrated into popular machine
+learning libraries as TensorFlow and PyTorch, and so it is easy
+to implement such gradient descent optimization methods.
+Here I show holograms computed using the optimization
+with Wirtinger derivatives.
+As you can see, this phase optimization results
+in high quality holographic images.
+It eliminates severe noise and ringing present
+in the previous methods and results in high
+resolution.
+You can see the details such as the TV lines
+are clear in the optimized holograms compared
+to the others.
+And here I show color results.
+The Gerchberg-Saxton holograms are extremely
+noisy and the heuristically encoded holograms
+show a loss in resolution and contrast.
+The direct phase optimization method, on the other hand, produces
+the best reconstruction quality.
+Now that we have looked at 2D holograms, let
+us see how we compute a 3D hologram.
+A true 3D hologram projects a three-dimensional
+point cloud, where light is focused on every
+point using tiny diffractive lenses.
+Such lenses are all interfered with each other
+to produce a complex hologram containing both amplitude
+and phase.
+Finally, heuristics such as the double phase
+encoding are often used to convert this complex
+hologram into a phase-only hologram suitable
+for today’s SLM hardware.
+However, every step of the 3D hologram computation
+is inaccurate which leads to severe artifacts
+in the holographic projection.
+To begin with, the target phase of each point
+in a 3D scene point cloud is typically missing
+and therefore a handcrafted target phase is
+assigned to every object point.
+The wave interference simulation does not
+handle the occlusions at depth discontinuities,
+leading to artifacts.
+Finally, a phase-only hologram is computed
+from a complex hologram via suboptimal heuristic
+encoding methods.
+All these inaccuracies compound to produce
+3D holographic images with severe artifacts.
+Unfortunately, optimizing for true 3D phase-only
+holograms is challenging.
+Before I describe how we can overcome these
+problems,
+let us review some common 3D hologram computation
+methods.
+There are point-based methods where every
+point on the 3D model is treated as a point-source
+emitter, and the waves from these point sources
+are propagated to the SLM to compute the hologram.
+Layer-based approaches slice the 3D model
+into several planes and propagate waves from
+each plane to the SLM.
+But this does not support continuous focus.
+The most successful approaches so far have
+used light fields to encode depth and view-dependent
+effects. However, these methods have poor
+spatial and angular resolution due to their
+dependence on hogels for modeling the light
+field.
+One most important thing to notice here is
+that all of these methods compute the complex
+wave field at the SLM followed by some heuristic
+encoding like the double phase encoding method
+as high-quality optimization of true 3D holograms
+has not been possible so far.
+We propose a 3D hologram optimization
+method that lifts these limitations and enables
+phase-only optimization of 3D holograms for
+the first time.
+I will next review 3D scene representations
+suitable for true 3D holograms.
+Today, the most common 3D scene representation
+used in holography is an RGBD image.
+The yellow boundary here represents the depth
+data.
+Each visible point in the scene is assumed
+to be a spherical point light emitter and
+holograms are computed using point-based methods.
+Note that the rays around depth discontinuities
+are occluded.
+While such an RGBD image provides enough light
+transport information for visible scene points,
+it cannot provide parallax cues due to missing
+rays at the occlusion boundaries.
+These missing rays also cause inaccurate wavefronts
+between the foreground and background objects.
+Another popular 3D scene representation method
+is multiplane images, where a 3D scene is
+sliced into multiple depth-based image layers.
+This way of representing the scene provides
+huge computational advantages for generating
+a hologram, compared to point-based methods.
+Unfortunately, this also suffers from similar
+errors at occlusion boundaries.
+Moreover, to achieve perceptually correct
+focus cues, we require extremely dense sampling
+of the depth.
+In contrast to these scene representations,
+if we use a 4D light field,
+all depth cues and parallax information can
+be encoded in its different angular views.
+Note that a light field is nothing but a coarsely
+sampled wavefront.
+Therefore, propagating the underlying complex
+wavefront and sampling it generates a light
+field angular view.
+If we are able to recover the complex wavefront
+from the coarsely sampled light field wavefront,
+we will be able to represent a true 3D hologram
+with continuous focus and parallax cues.
+We formulate this wavefront inversion as an
+optimization problem, where a full complex
+wavefront is sampled and the reconstructed
+images are matched to a target light field.
+Unfortunately, since the optimization objective
+is a sum of penalty functions for every single
+light field view, the computation required
+for solving this problem scales directly with
+the number of light field views.
+So we reformulate the problem and invert the
+light field into a sampled approximate continuous
+wavefront.
+To this end, we invert the light field scene
+into a wavefront using a wavefront inversion
+operator and try to optimize for a continuous
+wavefront that can closely resemble the inverted
+wavefront.
+Finally, in order to compute a phase-only
+3D hologram, we further relax the constraints
+of the problem and solve it as a continuous
+volume optimization problem.
+Here we match the wavefronts inverted by
+the light field over an arbitrary continuous
+volume with the wavefronts modulated by a
+phase-only SLM.
+Note that the phase of a given wavefront manifests
+as the amplitude over a continuous volume.
+Therefore, matching the wave evolution over
+a continuous volume is equivalent to solving
+for a complex wavefront.
+Solving this optimization problem produces
+high-quality true 3D holograms with continuous
+focus and parallax cues that are encoded in
+a light field.
+And note that the optimized wavefront also synthesizes
+continuous views that are originally not present
+in the input light field.
+Here we show a timelapse of our 3D hologram
+optimization across a continuous volume.
+What you see here are arbitrarily chosen focal
+depths across the scene volume.
+Starting with a completely random phase, the
+optimizer finds a phase-only hologram in about
+500 iterations.
+The resulting optimized holograms eliminate
+perceptually apparent artifacts that are present
+in the previous state-of-the-art methods.
+You can see how our method also reduces the
+light leaking across the grass blades and
+ringing artifacts and produces high-fidelity
+reconstructions.
+In this far-focused image, the white branch
+in the background is in focus and the grass
+blades in the foreground are out of focus
+in hogel-free holograms.
+Whereas the previous state-of-the-art Tensor
+Holography produces inaccurate focus cues
+and extreme artifacts around the grass blades
+as well as the background trees.
+We display the optimized holograms on the
+hardware you see in the top right.
+Here we compare our method with state-of-the-art
+light field-based stereogram approaches.
+As compared to the phase added stereogram
+and overlap-add stereogram approaches,
+you can observe significantly reduced aberrations
+at both near and far focus for our optimized
+hogel-free holograms, and the details in the
+trees and leaves correctly demonstrate defocus
+blur when changing the focus point.
+And here is another scene.
+It can be clearly observed that our proposed
+technique reduces aberrations and produces
+correct defocus effects at the tree and cat-tails
+near the pond.
+Here I show the parallax cues of the holograms
+as captured on a hardware display prototype.
+To summarize,
+We discussed that existing holographic methods
+do not support parallax cues and only compute
+phase heuristically.
+On the right, you see a 3D hologram reconstruction
+by today’s state-of-the-art method.
+Missing parallax cues and heuristic phase-only
+computation result in incorrect focus cues
+and light leakage at occlusion boundaries
+and depth discontinuities.
+In our work that is shown on the left , we directly optimize for the
+3D hologram phase and get rid of the severe
+artifacts to produce high-fidelity true 3D
+holograms with accurate focus and parallax
+at depth discontinuities.
+While both the 2D and 3D hologram optimization
+approaches work the best in simulation, unfortunately,
+the quality of images on a real display is
+not at par with the simulations.
+Let us look at why this is the case.
+Basically, the problem is, that all these
+approaches implicitly also make simplifying
+assumptions of the display such as perfect
+collimation, continuous SLMs, and perfect
+lenses,
+which would produce a clean image on the display,
+similar to our simulated reconstructions.
+In other words, if the real holographic display
+was ideal, a hologram computed using the existing
+ideal wave propagation would result in similar
+superior quality images.
+However, a real display has several non-idealities
+such as Non uniform illumination, imperfect
+lenses with scratches, pixelated SLMs with
+non-linear phase modulation, aberrations in
+lenses and so on.
+And all of these deviations combined makes
+the images coming out of the hardware very
+noisy, resulting in poor image quality.
+As a result, when shown on a real display,
+these holograms show severe artifacts because
+of the underlying non-ideal real-world wave
+propagation, which is both unknown and severely
+deviates from the ideal wave propagation.
+Since the wave propagation model is unknown
+within a real holographic display, one way
+to compensate for the real-world aberrations
+is to optimize for images coming directly
+out of the display.
+For this, instead of simulating the reconstructions,
+we can directly use the images as captured
+by the camera in the optimization.
+This approach can eliminate many artifacts.
+But unfortunately, this is slow and impractical,
+especially for display applications.
+Moreover, having a high-resolution camera
+that sees the images exactly as seen by the
+eyes increases the bulk of near-eye displays
+undesirably.
+One way of overcoming this is to calibrate
+for all the real-world deviations and use
+this calibrated model to generate holograms.
+Although it doesn’t work as well as having
+an active camera-in-the-loop, it can suppress
+many real-world artifacts.
+But unfortunately, this method requires identifying
+and calibrating every individual source of
+error.
+It is challenging to calibrate for all the
+sources of error and this approach is fundamentally
+limited by the calibratable parameters.
+So to overcome all of these limitations, we propose
+to learn the entire real-world wave propagation
+in a holographic display using a deep neural
+network.
+Once the network is trained, we can simply
+replace the real hardware with differentiable
+learned hardware and use it for holographic
+phase retrieval.
+Here I compare images produced by different
+state-of-the-art hologram computation methods. Here I show double
+phase holograms, wirtinger holograms, and
+our method
+In this example, If you observe the background,
+you can notice how the black regions are truly
+black.
+Achieving good black levels and high contrast
+is one of the major challenges of a holographic
+display. And this learned hardware-in-the-loop
+method achieves unprecedented contrast and
+state-of-the-art image quality.
+This is another live captured video from our
+holographic display.
+Observe how the fine feathers on the peacock are clearly revealed and the improvement
+in overall contrast of the image.
+With this, I end the first part of the course.
+To review, we started with a brief introduction
+to waves, propagation, and interference, and
+discussed optimization strategies for 2D and
+true 3D phase-only holograms.
+Finally, we looked at learned hardware-in-the-loop
+phase retrieval to compensate for real-world
+errors in hardware displays.
+The next part of the course will go deeper
+into these ideas and show implementations
+of various phase retrieval methods.
+We have created a nice library in python for
+experimenting with various holographic methods
+that also includes Wirtinger gradient descent optimizations.
+And we hope you find it useful as well.
+Hello, and welcome to the tutorial on holotorch.
+The differentiatable coparent light transport software package written in PyTorch.
+So my name is Ollie Cossairt.
+I'm an associate professor at Northwestern university where I run the computational photography lab for the last decade or so.
+And I'm also a currently visiting researcher at meta reality labs where my student
+Florian Schiffers and I have built HoloTorch during our time working together.
+Now hollow torch was developed, not just by the two of us, but also by a number of other colleagues, including the
+researchers you see listed here from both both reality labs and the Princeton research group of professor Felix Heide all of
+our source code is open source and you can find it on the Git hub link here or by scanning the QR code on the bottom left.
+Now I've been working on holography research on and off for almost three decades and I'm very excited by this
+new wave of applying differential models to holographic display research that we will introduce in this tutorial.
+I actually first started working in holography almost three decades ago, as a
+teenager, assisting holographic artists and holography was originally an analog medium.
+The first holograms that were recorded were hard copies.
+They were recorded on film, just like old photographs.
+And it wasn't until relatively recently that the media transitioned to a digital
+format in particular dynamic, holographic display using spatial light modulators.
+There's only been around a few decades.
+The tools for performing efficient numerical optimization of these type of computer generated
+holographic displays is really just emerging, which is really what motivated us to build Holotorch.
+So in this tutorial, we're gonna step away from using differentiatable image, formation
+models, for image sensing, and restoration and focus instead on image synthesis.
+In particular, we're gonna focus on the specific problem of holographic display optimization using holo torch.
+And at its core, holotorch provides a very easy to customize optimization toolkit
+for holographic display systems research based on automatic differentiation.
+It allows you to implement a coherent optic simulation very quickly and efficiently without having to reinvent the wheel each time.
+Now, why would you wanna use holo torch instead of another open source holographic display code base?
+Well, firstly holo torch provides all the basic functionality for holographic display, simulation and optimization together in one unified package.
+It provides parameter specification modular forward model formation with a variety of optical components
+like lenses, spatial, light modulators, free space, propagation, and holographic optical elements.
+In addition, it streamlines the data set creation, optimization, and visualization.
+So we hope PolyWorks will pay the path towards a common code base for holographic image optimization and display calibration.
+We wanted to provide an easy entry point for new researchers to start exploring holography research and also provide all the necessary
+functionality for more advanced researchers to quickly prototype new ideas, using more complicated optical models or optimization
+procedures without having to re implement everything from scratch each time we've taken care of a lot of things for you under the hood.
+And we have a number of additional features we intend to add soon, like hardware control for cameras and
+spatial light modules for camera in the loop optimization and more advanced optical sources like sleds and led.
+As you'll see in this tutorial, holotorch is designed to be modular for fast prototyping of new and more complicated optical models.
+All of our models that we've admitted like ASM kernels and for you transform lenses are
+implemented in an abstract way, so you can reuse them and assemble new models quickly.
+This basic holotorch functionality is currently documented as a click through example in
+the Jupyter notebook that Florian Schiffers will explain in detail of the remainder of this.
+First Florian will walk you through how to simulate a double phase and coding hologram.
+Then move on to how to solve a phase retrieval problem for near eye display for near-eye and Fourier.
+Transform holography setups.
+Finally, Florian will discuss two recent algorithms called Etendue expansion and Neural etendue expansion.
+And now I'll pass the torch to Florian and he's gonna start with the basics of poly torch functionality.
+Hello, my name is Florian Schiffers, a PhD student at Northwestern University . My advisor is
+Olliver Cossairt and together, we have built holotorch during our time at Meta Reality Labs.
+I think holotorch can provide  a tool for really fast prototyping of  new complicated
+optical models without having like to re-implement everything from scratch.
+All of that is currently documented  in click through example, notebook that we provide
+here . So with that, I wanna start, and we are going to talk first about the basics of Holotorch.
+So you would start by importing holo torch, and then from holotorch, you can import units.
+It just use them like 10 millimeters, one nanometers.
+Then the first most important component of holotorch is the electric field model.
+So the intention there is that you're modeling an electric field, which  has a spatial extension.
+And inside of this field, we can have complex values . Electric fields are six dimensional objects.
+They have a batch dimension, a time dimension for time multiplexing, a pupil dimension, for example, which could be used for light fields.
+We also have a channel dimension for wave length.
+And for example, for partial coherence, holography or if you do RGB imaging.
+And then of course, the height and width in the dimensions.
+They are always the same and every tensor will be cast to a six dimensional
+object that is just for type safety and it makes things easier to implement.
+so you would import that and then for example, we gonna create here a small object.
+First we're gonna start by initializing the tensor, it would be tensor with, 1000 by a 1000.
+It's six dimensional and we going to make it complex.
+So we add like 0j, then we can set  the center of tensor to ones, and then we can put this data
+we just created into our electric field, give it wavelengths of 532 nanometers and pixel spacing.
+So you can see if the spacing here that we have a wavelength, this is gonna be useful because our optical models, when we implement and the
+fields know of the spacing and of the wavelengths, and they gonna like react dependent on like what kind of field they're gonna be passed into.
+We can visualize the objects as you can see here, see like this this white object, or you can notice that because
+spacing is an is a member variable of these objects that the lateral coordinate system here for visualization is adapted.
+So if we see that like in real units and not in pixel units, And this will adapt  anywhere in the optical path, so we always get like real units out.
+Sometimes plotting can take a lot of time.
+So we have this rescaling operator inside of electric fields, for example, if you want to rescale by a factor of 0.25.
+You can see that these spacing will automatically adapt instead of  eight micro
+micrometers, you have now 32 micrometers, because  the pixel gets four times larger.
+and you can see everything is  downsampled.
+And if we visualize this, now we can see that we have exactly the same image.
+It's just  downsampled, but the spacing remains the same.
+Next I wanna start with propagators so we'll discuss here the angular spectrum method propagator it's basically it's this convolution integral.
+So we are gonna discuss now how this can be used in holotorch.
+First, what you have to do is you would have to import the ASM propagator.
+You define a distance, you set  it here to 50 millimeters, and then you can put the electric field that we've just created through our forward method.
+So we can visualize this field and we can see here on the left, the input field, as we've defined
+it and the output field, you see a propagated field with the typical coherent ringing artifacts.
+You can also visualize the ASM kernels.
+These are methods which are implemented in the ASM propagator object.
+So like our different objects or different optical components that we've implemented in holotorch,
+they all have like specific member variables, which make it easier to depart, to visualize et cetera.
+So, if you can visualize this kernel here, you're gonna see here that it has like a
+uniform amplitude and you can see that the the face is typical form of an ASM propagator.
+We also take automatic, for example, account  of  large propagation distances.
+For example, if you choose  250 millimeters you can now see here that we would get aliasing around the
+larger frequencies because our spatial frequency grid cannot support these large frequencies anymore.
+And so we basically put them to zero.
+You can see here, for example, amplitude is no longer once, but like zeros actually, where this frequency can longer be supported.
+Next I would like to pull the simple four F system with hollow towards or four F system consists of like two lenses.
+The first is the two F system with like the identical identical for you for focal length.
+And then the second lens, which can be the same focal length could also be another.
+And then we have magnification given by the two focal lengths and in here is the Fouriertransform because the 2f systemis Fouriertransform.
+So, how do we implemented this in Holotorch?
+First we would import like the four transform lens.
+Then you can define the focal length  and we gonna choose here 50 and 100 hundred million meters.
+You're gonna define again, electrical field, just in this case, we're gonna make it smaller.
+You're gonna make it a  smaller image so we can visualize that again.
+We're gonna put the same wavelength and spacing, and then you visualize as we see now here that this is basically a smaller rectangle.
+Now we can pass this through our our lenses.
+So we just call lens one and we put the field input.
+It's gonna end, you're gonna end up with the Fourierplan and then we have the
+second lens and you're gonna put our Fourierplane image to the second lens.
+And it would be the filtered image in Fourierplane.
+We can look at the spacing at the various planes.
+So we're gonna look at like the input plane or the four plane and the four F plane, because like we
+propagate the spacing we had eight MI micrometers at the four F plane 3.25 microme, which is going to be
+defined by the focal length and, and the spacing at the four F plane 60 um it's because we have chosen here.
+The second focal length took be a hundred imeter versus twice the first focal length.
+So you can see here, the correct magnification factors.
+You can also then visualize the for F system.
+You can see here in Fourierplane that the you can see the Fouriertransform of the input image and then the Fouriertransform of the Fourierplane.
+And we see here, the because spacing has changed as well as the magnification.
+And now the real units you go from minus eight to eight millimeters instead of minus four, four millimeters.
+So there is something you don't have to take here in Holotorch cause this is done automatically for you.
+Instead of a building, something like that we can use our builtin for F system.
+So you just have to import it from optical components and you wanna define the aperture radius.
+In addition to the two focal lengths, we're gonna choose 0.25 millimeters here.
+And now we're going to introduce you to our first data set classes here.
+This is the single image data set, which does the reading and processing of the images for you.
+So we have here prepared an example image called tigers from div2k which is like a large image, obviously RGB color.
+And, but , we can define here the single image that  what the number of pixels and X and Y direction should be.
+And if it should be a grayscale image, so this will spit out a five dimensional tensor because it's not yet batched.
+That's how datasets in PyTorch work.
+And then we can access this data.
+It's gonna be five dimensional.
+We're gonna extend it here to 60, and then we pass it into electric field component.
+And again, we can visualize that.
+So we are going to see here now this tiger image.
+We will now pass this this target image through our forest system.
+So in our four system, we just redefine it here.
+We put a 0.15 millimeter, large aperture in here.
+we  can just pass  our field in and Before I gonna look at the output of that first, we wanna let's look at the aperture.
+So we look at the four F system has a member variable member object, which is like the aperture itself and the
+aperture again, because this is not, not  a Pytorch Tensor, but it is an object you have, again, visualization methods.
+For example, on the left we see the amplitude and on the right, we see the phase.
+Our aperture has like zero in phase and it's a very small aperture.
+So And there's nothing very special happening here right now.
+Again, we can verify that the spacing is correct.
+We still have a magnification factor of two, so the spacing is good and we can look at the output of our Four 4 system.
+And we see here that is tiger is like low pass filtered it's coherent.
+You can also see that this image is flipped because we have two, Fouriertransforms in
+consecutive order and in real four F system in a physical setup, we would also see this flip.
+The next example is using double phase amplitude encoding for phase-only holography.
+For those who don't know, double facing coding or DPAC is like a very standard method, which allows you to display complex fields on a phase only SLM.
+So first again, you're gonna use our single image data set to load the tiger image,
+but note here that we have like a different number of pixels in X and Y direction.
+This is gonna be important later when we look at the aperture.
+So here again, we see the tiger image in  larger resolution.
+And now we will use from our optical component model library we're going to import DPAC DPAC is basically a class that just importing for.
+Then we can call the generator method called compute DPAC phase.
+We're gonna input the electrical field has a zero phase currently.
+And then we are gonna say that the max phase of our SLM should be two times PI.
+So there's different SLM.
+So that's why it could be like different max phase, but they in typical, our SLM supports 2pi because it's the easiest to put.
+We then the computer electrical field, again, the phase moderation is gonna be a five dimensional output that is because by
+default an SLM doesn't support the pupil dimension, because that's internal something which for us happens after the SLM.
+And now we can see here, the SLM has exactly the same resolution as the input field.
+And then we can create this electric field, which is encoded with the double phase encoding method.
+If you wanna know about how double face encoding works you can feel free to go inside of the code and you can see the implementation of it there.
+You can look at the visualization of double phase encoding.
+So basically what happens is like each pixel or neighboring pixels, they're gonna be encoded with basically a pi minus pi offset.
+There's a little bit more complicated in the way we've implemented with the acos way.
+Basically see here, this target pattern is encoded and there's a checkerboard pattern that you can see.
+So again, we have a four F system, but in this time we are gonna have like this flag flip set to true.
+It means that you're gonna flip the Fouriertransform, so that we don't see something upside down.
+And then we can send this to our four F system and we can, for example, visualize the aperture.
+So the aperture here is going to be non square.
+That is because like we have a non square or rectangle field of you.
+And if you perform a Fouriertransform you're gonna have the different spacing in X, Y
+direction, and that needs to be taken care of and it's like, what holotorch is doing for you.
+So if you wanna look what's happening inside of this path, that  doesn't mean that they
+can like go inside of the actual optical, the optical path and like propagate you anywhere.
+What I mean by that is like, for example, you want to see what's happening to your electrical field right after the
+first Fouriertransform lens or after you apply the aperture, et cetera that's sometimes useful for like the debugging.
+For that to use the add_output_hook function, which is  implemented for every component.
+So you basically access the aperture lens from the four F system which is a member variable.
+And then there's this, this function add_output_hook.
+So we do that and then we just have to call the model again.
+And then the the electrical fields after thefourierplane  and after the aperture are saved here, what
+we going to do is we also got to first clear the outputs and delete the handles to this output hook.
+That is because we do not wanna  save  an output every time you call this method, these are just some cleanup methods.
+Like once we have done this we can now look at the outputs that we have saved here.
+So this is the object fourierplane and the fourierplane after apertures, these are electric field components.
+So we can look at the shape, nothing spectacular here, and we can visualize them.
+So in the left here, we see just a Fouriertransform of our DPAC encoded field.
+And you can see at the top, in the corners, we basically see the the replica of the, the higher order terms of the DPAC.
+So these were created by the checkerboard pattern.
+And then here on the right we can see the filter, which basically crops
+out  these higher order terms and leaves us only the desired electric field back.
+And finally I wanna talk about that, about this like different misrepresentation of the apertures.
+I already talked about that, like spacing and X and Y direction is  different because we had a  non square input field of fiew.
+You can see here, the, the units are actually correct.
+So you go from minus three to three millimeters on both directions.
+However, it still looks like an ellipses and if you don't want to see an ellipses because you are finding it confusing, if you
+debugging, you can just put in this adjust aspect = true flag here, and it will basically put them in the same coordinate system.
+So you see the, the disc, a aperture actually, as, as disc aperture.
+finally, we can look at the DPAC results can be put our field, our DPAC encoded field through  our four F system.
+And then we visualized that you can now see here on the right that is the output that was created here, field out.
+You can see that's the perfect image of our tiger.
+And under the left we can, see the DPAC field, which was downsampled so you can convince yourself
+that the input was actually something that way more complex than just like the right image.
+Like there was no magic going.
+So so far we haven't seen any more complicated algorithms was also actually there was no algorithms really involved so far, I would say.
+Next thing we wanna build a simple phase retrieving algorithm.
+So basically the problem is here that we have phase-only SLM, and then we have some new field propagation modeled by an ASM or
+angle spectrum method kernel, and we have a detector, which detects the intensity from the electric field by the square operation.
+So the problem here is that we have an initial, or we have no idea what the SLM should look like, basically a random field.
+And like the forward operator here would give out a random field too.
+And the idea is then we solve minimization problem typically Written down as an L two or MSE optimization
+problem, we use Gradient descent to optimize for the SLM pattern  so that it gives us a good image out.
+So we do this by first defining the full optical path.
+And in Holotorch, we normally define optical path from the very beginning.
+It means from the source to the  SLM to the propagator, to the detector.
+And each of those is an individual component.
+So we start by defining our source.
+And this has seems now a little bit more complicated, but it has a lot of reason because Holotorch is
+supposed to be used for both complicated algorithms, for example, for partial coherence, holography.
+And there you have to keep track of dimensions, spacing,  different wavelengths et cetera.
+So this is basically a toy example that should maybe like give you an idea how this
+could be used for  more complex algorithms so we start out with defining a source.
+We give it a height and a width spacing, and we're gonna use, three wavelengths for RGB.
+We can create a source and look at the output of the source.
+We can see here it is a six dimensional object and electric field, and has like three different channels for RGB and height and width is the same.
+Next would be that we initialize the SLM object to basically an SLM is like an abstract
+object, which when an in field incomes and outputs, a field and an interacts with this field.
+And this is as an SLM phase-only there's different implementation of SLM that we've implemented.
+But with this one, we b asically just  change the phase at each Pixel.
+They have to define height and the width, the number of channels, the feature size of this SLM you're gonna give it like a random initialization.
+This  means like the phase values of this SLM are initialized by random and the variants
+of  the,  phases they're gonna vary like small, the like variants of like  0.1 pi.
+So when you create this model, you can see here this spits out a five dimensional object.
+The first one stands for the batch.
+The second one stands for time third one for channel and then height and width.
+The SLMs by default omit  the pupil dimension.
+So the output of that is the tensor or the torch parameters is stored in the SLM is actually not an electric field.
+It's just like a five dimensional tensor.
+And again, you can visualize that because these are objects and we can see here, like to three different wave FLAS that are initialized at random.
+Next, We're gonna create the propagator.
+We're gonna use the same ASM propagator we've looked at before 50 millimeters.
+And then we're going to define a detector.
+Here we are gonna say it's a time multiplexed detector so that we have like RGB in
+sequential order and we can again give it like an the height and width dimensions.
+We could like do something different.
+So the detect is actually a more complicated object.
+It would integrate over all of the wavelengths for partial holography.
+If you do time multiplexing, or you have a bayer filter, or if you have like time multiplex, for example, which is used for binary, CGH.
+And also it can downsample, for example, you would choose like, source height over two.
+It would actually have  a binning operation or a bilinear operation if you want to upsample at end.
+So like all the things that you don't have to take there of when you do that.
+So then we have all of the components so we can   initialize or assemble the complete model.
+So like any holo torch model is actually a class.
+And we should look at this example here which we call Near-Field hologram.
+So this extends from this base setup class, which as like basic functionality, which I don't wanna talk about right now.
+But essentially we're gonna define the constructors.
+We're gonna give the few four components, then we're gonna call like the super
+method of which gonna cause like the constructor of the base setup method.
+And we're gonna put these four methods as member variables and then the only thing
+we just left is that we define the forward operator of our near field hologram.
+And this is very simple.
+So first we're gonna have the source, which creates the n basically for now a field of ones.
+So we can put this electric field through the SLM then through the propagator, through the detector and that's returning intensity.
+And then  the output of that forward is now an intensity field and no longer an electric field.
+So now we've defined the class.
+And the next thing is that we create the model.
+So we're gonna put these four things in that's an our hologram model.
+We can print, for example, the parameters you can see here there's the data tensor
+that's the tensor that says five dimensional object that I've talked about before.
+And then we also have a scale variable, and that's because for phase only optimization in Gradient descent, it's
+more robust if you put a scale into the optimization approach which makes the optimization a little bit more robust.
+This basically takes care of the intensities map well with the the target that we are optimizing for.
+You can look at the state deck.
+The state deck is  everything which is going to be moved onto the CUDA when you call CUDA so you've seen here I've
+called like the CUDA method and the whole model was no shifted on to cuda and there's like different components in there.
+But this is basically, this is important for  lightning when you do multi GPU support.
+But I just wanted to mention that, like, you can look at this and then you can debug if sometimes the code is not working.
+For example, if like a tenor is not moved from like CPU to the corresponding GPU.
+If we look at the forward method of our  model, we can visualize that.
+And of course, because like we have like randomization, we can like only take random output out.
+That is like where now the optimization approach actually comes into play play.
+The first thing is that we have to create a so called torch data module.
+Data modules are a specific instance, which is required for PyTorch lightning.
+They're similar to torch dataloader at in fact like there's torch data loaders as member variables inside of the holo data module.
+So we're gonna start with again, taking the single image data set with our tiger image.
+We're gonna take the input  and output, detector, which is rectangular.
+Now we say that the image is not grayscale.
+So you're gonna now see a tiger image which is colored.
+Note here, that we've called like this holo data module, which is a method
+that's Python, lightning method that we've implemented and all you have to pass.
+It is the data set.
+This can be, become a little bit more complicated, but like we don't have to worry about this now.
+So we see this color image and we can see for this data set when we call this data module that this image is for now on the CPU.
+But if you wanna like preload this on the GPU and you wanna might wanna do this because it's more
+efficient like everything is already on the GPU, so you don't have to transfer time between CPU and GPU.
+You can pre-load and this object onto the GPU.
+And now you can, if you call this batch, you can see here it's on the, on the Graphic card instead of like in, in RAM memory.
+This particular works also for like larger data sets.
+Of course, it's again, only a toy example.
+The next step is that we have to create lightning object.
+So  lightning modules is the way how you implement the optimization routines.
+So you don't, you don't have to implement creating percent by yourself, but
+it basically helps you a little bit to streamline  optimization approaches.
+And so we've implemented this SLM lightning that's essentially gradient descent or an ADAM optimizer.
+Which has like different functionalities, especially like for logging, like loading losses, et cetera.
+So we gonna create this lightning module and all you have to do is you have to input the setup.
+That was the hologram model that we created the data module, and then the learning rate for the SLM.
+So the next thing that's maybe a little bit special.
+That's a PyTorch lightning thing.
+That's it's such a trainer and the trainer basically takes care of like how exactly you wanna loop through the whole dataset.
+And has like stuff like a logger, a profiler.
+Like how many GPUs you want to use progress bar , summary, et cetera.
+The only thing we're gonna define  the maximum parks to be like 200.
+And then what we're gonna do is we're gonna call the fit method of this trainer.
+So we're gonna put in, like, what is the model they're gonna train with?
+It's the SM lightning that we've created here and then we wanna also give it the
+data module and we're gonna train the data module of our SM lightning module.
+So this will now run through about 200 iterations.
+It is fairly quick because it's implement only GPU.
+So this will be finished in about five seconds.
+And once this is done, we can look at the end loss.
+So we can see here, the MSE loss, which has decreased.
+And we can look at the PSNR, which is increasing.
+So basically we will have like a perfect reconstruction of our image, which we can verify by like holding it forward of our method.
+It's gonna give us the output and we see if you get a perfect tiger image here.
+And of course we can also look at  the three different patterns that were generated.
+You can see for each wavelength, we have a slightly different SLM pattern because the ASM kernels it depends on the wavelenghts.
+So you would expect that you would have not by first, like a different pattern, even if
+like, it would be gray scale, but also because like each channel in image looks different.
+So that is why you see three different images.
+In this session, we talk about how you can implement etendue expansion in holo torch, etendue expansion originally
+proposed by Grace Kuo from meta reality labs is a method that deals with the limited etendue of a digital hologram.
+Etendue is defined as the tradeoff between the eyebox and the field of view and is limited by the pixel pitch of this SLM.
+In Etendue expansion one puts a scattering element directly after the SLM and then the
+light coming out from the SLM is getting scattered like the field-of-view getting expanded.
+And essentially you get an expanded Etendue setup however, by introducing a random scattering element, you introduce randomness.
+It means the image that you're gonna display cannot be displayed without
+without any reconstruction method, you cannot just use double phase recording.
+You need an reconstruction algorithm to get the image.
+We do this by defining a forward model.
+The forward model is very simple.
+It's just the SLM.
+Pointwise multiplied with the hologram.
+The SLM has to go into an up sampling operator and then you compute the Fouriertransform of that  and then the intensity operator.
+This whole thing is put into a minimization problem.
+And note here is minimization problem that there is an incoherent filter.
+It means it works on the intensities and that's basically just like a low pass filter.
+So let's start building this.
+So first we're gonna implement or import the expansion setup that we implemented for you.
+And now, instead of creating our components, the way we've done it before, by like first creating
+the source and then the SLM and the detector we are gonna now define basically configuration lists.
+So we're gonna have like basic, we can think of it, like having large files, which define how your model should look like.
+And then from this configuration list we're gonna create the actual model.
+For that we have these parametal component classes.
+The first class are gonna be model arguments.
+So we're gonna say that, like we have 512 pixels and X and Y as dimension and a spacing of eight micrometers.
+We have an expansion factor of four.
+It means we are gonna up sample each pixel by factor four in each direction.
+So we're gonna go from 512 to 2000 by 2000 and a 532nm wavelength.
+And then we can define the source.
+The source is like this parameter source list.
+And we have like the height, the spacing wavelength etcetera, just to show you like how we can create a source from that.
+We have these factory methods that I've already imported and it just call a create source on like this, on the dictionary basically.
+And then you create a source and it, it returns the six dimensional electric field that we've already seen before.
+And we do it in this very much, the same for the SLM.
+So we define pixel pixel spacing and resolution.
+We say it's a phase-only SLM with the random initilization you create the SLM  so it works all perfectly.
+Then you have to expand.
+It's a new element.
+We first define the number of pixel of the expanders.
+So we're gonna have four times the number of pixels.
+So four times, cause it's expansion factor.
+and the spacing is gonna be four times smaller.
+They're gonna initialize the expanders of phase only hologram with random initilization
+and the random initilization is going so that it is initialized between zero and two PI.
+And yeah, so that's why we need to center wavelength so that we can make the correct initilization.
+Because, because this is actually a material and  depends on the dispersion coefficient, and in order to
+find the correct initilization we need to put in the correct wavelength for the corresponding material.
+Then we have a propagator to propagator as a, for it transform propagator.
+We can create that, of course, it works like we've seen it in the four F system and then we have to detector.
+And the thing that should be noted here is that we take in the number of pixel
+of the model as it was 512, it means like after we've been upsampling at the SLM.
+We now downsampling again.
+And this corresponds basically to the to this perception filter that I've
+mentioned earlier, The next thing is that we are gonna create our expansion setup.
+So we've imported it already.
+And now we, we pass in these parameter components, like the source SLM expander, propagator and detector.
+These are not yet created.
+They're going to be created in the constructor method of expansion setup.
+So  this, this useful for example, if you wanna do parameter sweeps so they can basically find your your config files
+and then you can like create these the, the actual components in the constructor method of the of the specific setup.
+And now we can basically look at the forward method.
+You're gonna see it's gonna be like all random, because like we've initialized everything with random.
+Next thing is that we are gonna have, again, a data set.
+We're gonna use the single image data set.
+And we're gonna create a data modules.
+So nothing new, exciting, happening here.
+We can reuse now the SLM lightning module.
+That's exactly the same as used for the face retrieval.
+And we can use that because you only have to optimize for the SLM.
+So it's still gradient descend.
+Nothing else changes.
+The training is gonna be the same except that we're just gonna optimize for a hundred epochs and then they can run this optimization.
+It's gonna be a hundred epochs gonna be, again fast cause it is one the GPU.
+And you can visualize the loss and we can see here this loss increases, but it saturates
+around here 22 DB, if you look at the forward model here and you can visualize that.
+And so we take here to look at the forward and created the intensity field with its output and look at the target to, and here is difference.
+And you can see that the expanded etendue is a little bit noisy and that is a property of simple etendue expansion.
+That like while we can optimize for something.
+, etendue expansion comes at a loss of contrast.
+So here we now show how we can implement neural etendue expansion in holtorch.
+The paper which was proposed by Bake et al.
+From the Princeton group and collaboration with Meta Reality labs.
+And the idea here is that instead of using a random diffuser you are optimizing for a so called neural  expander, given a large dataset of images.
+The cost function stays very much the same, but now we optimize for K different images.
+So we have to optimize for K different SLM patterns.
+And at the same time we optimize for one static hologram H.
+Let's see how we can implement this in holotorch.
+First we have to use the data set.
+We're gonna use div2k.
+We're gonna download the validation data, set a hundred images , so I've already done this for you..
+And now we have to define our HoloDataModule.
+And now is the first time that we're gonna have like more than one image.
+We're gonna use a batch size of five, gonna use 15 images in total.
+We're gonna use it because we're gonna have like a faster optimization, but we can use principally like a thousand or 2000 images.
+We now, when we can generate this data model, we can see, we have three batches of five images per batch each.
+We can preload this data module to our GPU.
+And then we can visualize that by calling the visualize fit method of the electric field component, intensity field component components.
+And we can look at the images of the different batches here.
+So there's like this number row number column so that you can look at more complicated figures, like more complicated visualization method.
+Next we have to initialize the structured light modulator.
+The SLM is now more complicated because we have to dynamically safe and load the phase patterns during optimization.
+Cause like if you have like a thousand or 2000 different phase patterns, you cannot store this in your GPU anymore.
+So if you have to like fetch this dynamically from RAM or from your disk, but that's all done under the hoodin the SLM class.
+and you can see this when you create this, that we have like three batches with five images per batch each.
+It matches the holo data module.
+Next we will assemble the expansion setup.
+So we put in our parameter list as we've done it before.
+And if you look at the parameters now we can see that we optimize for the SLM
+patterns, five images per batch, and we optimize for the thickness of our expander.
+Then you're gonna create the neural expander lightning object, which we've implemented for you.
+And the only thing that we have to change is we have to implement change the learning rate of the expander and the learning rate of the SLM.
+We also set the number of pre initialization steps.
+That means that we are going to overfit for the SLM patterns before we start optimizing for the hologram itself.
+Then you create a trainer object with a hundred epochs and then we  run the optimization.
+Now the optimization finished, we can see, we have first pre initialized with overfitting and then we have from neural
+optimization where we optimize for both the SLM patterns and the expander at the same time, you can visualize the loss.
+You can see here in the beginning, we have like the saturated loss of just etendue expansion
+and the moment we turn on neural etendue expansion the loss really starts to increase.
+We can look at the forward model and we can see indeed the images that we have now optimized for, they are noise free.
+In the interest of time I have just run, etendue expansion again with like the beach
+set and you can see here, the comparison between neural expansion and simple expansion.
+I've also zoomed into the imgage here.
+So we can see that in the crop version  we can indeed verify that neural expansion works much better than simple expansions.
+There is a little bit more in this Jupyter notebook.
+So feel free to look at that in particular, I talk about saving and loading of models, but If you
+like that, feel free to download holotorch and Ollie and I we're always available for questions.
+Thank you so much.
+So in this next part of the
+course, I will present what I
+call the differentiable camera.
+So cameras have really become
+ubiquitous interfaces between
+the real world and computers.
+We have cameras in our personal
+devices, in our smartphone cell phones.
+We use them for diagnostic
+purposes in health applications.
+They're essential for navigation and
+robots, and we use them in AR and VR
+applications, and in our self-driving
+cars, such as the camera that I'm
+looking at now here -- a camera that
+we would find behind the windshield
+of our favorite self-driving vehicle.
+Existing conventional camera systems
+have in common that they're relatively
+compartmentalized systems  -- with light
+coming, from a scene being focused by a
+set of refractive lenses on a flat sensor
+surface where that light gets digitized.
+And the digitized image that we read out
+from such a sensor then processed by an
+image processing pipeline, the ISP,  which
+can output after a set of fairly involved
+image processing operations, an image
+that we can display and show to a user.
+That's not the only
+thing we can do with it.
+We can also analyze that image
+and use modern neural networks to,
+for example, classify the image,
+content, find objects or predict
+depth from that particular image.
+Modern neural networks have been
+super successful in analyzing
+images by the fact that these
+are differentiatable algorithms.
+We learn the parameters of those
+algorithms by providing a training set
+of training images and output labels
+to learn the algorithm parameters.
+If you look at the other blocks of the
+camera pipeline, that's not the case,
+the ISP, the sensor, the lens, these are
+all blocks that are not differentiatable.
+This limits us today to supervise
+all of the edge cases that we
+have to handle in a camera system.
+Be that noise, be that low light
+scenarios,  occlusions, other imaging
+scenarios with our downstream your
+network, because that's the only block
+in the overall imaging chain that is
+actually differential and that we can
+supervise to handle these edge cases.
+Departing from that, I propose a set
+of approaches that allow us to make
+cameras differentiable and then try to
+aim towards learning the entire camera.
+So we replace the ISP, the optics and
+the sensors,  by differentiatable proxy
+functions that we can train together
+with a downstream neural network with
+first order stochastic gradient methods
+as if they were part of a giant neural
+network, and then optimize them also
+for a given downstream loss, be that
+an image output for display purposes
+or an IoU loss for an object detector.
+We can even do that for the
+illumination itself, and make that
+part of our camera that we optimize.
+Seung-Hwan will touch on this later
+in the course, and we'll give you some
+examples of that powerful approach to
+design cameras in an end to end fashion.
+All right, this was pretty abstract.
+So let's have a look at a few examples
+of how we can make blocks off the
+camera system, and then eventually the
+entire camera system, differentiable.
+The first block that I
+wanna look at is the ISP.
+So as mentioned before, ISPs contain
+many processing blocks with a large set
+of discrete and parameters,  discrete
+and continuous parameters that have
+been designed by imaging experts
+to process  raw image such that we
+get a nice visually pleasing output
+image that is presented on a display.
+Now these parameters and the algorithms
+itself to a large extent, get tuned
+by algorithm experts, according to the
+output of a set of metrics that you can
+measure from charts that you display
+to a camera, and by the input of golden
+eye experts which judge subjectively
+whether the resulting output image
+are good images, if they're visually
+and subjectively pleasing or not.
+This process of the iterative tuning
+can take in fact month a month for
+a given ISP in a  tedious process
+that involves visual inspection.
+One question that we wanted to
+investigate is whether we can come up
+with a differentiable approximations,
+so differentiable proxy functions, that
+approximates the behavior of the ISP.
+This takes it input a raw
+image  and outputs an image
+depending on a set of parameters.
+And if that proxy function is
+differential, then we can maybe
+use traditional first order
+stochastic gradient methods,
+similarly, to how we train modern
+neural networks to optimize their
+parameters for a given loss function.
+We do this in two particular stages.
+So we first learn a differentiable
+proxy function, and then we
+optimize the parameters for
+a given fixed proxy function.
+So let us have a look
+at that in more detail.
+I wanna start with  describing how
+we can learn a differential proxy.
+To train any proxy function,
+the first thing that we need to
+do is to acquire training data.
+And this is done by taking a black box
+ISP,  illustrated here with the black
+box,  and giving it an input set of raw
+images and sampling over the parameters
+of the ISP that provides us then a set
+of output images, illustrated here on
+the right side, that we can now use
+to train  an image-to-image network
+to produce from a set of the same raw
+images the same output images that we
+previously sampled from the hardware ISP.
+So again for a given input raw image I,
+and given parameters,  we learn a neural
+network to produce the corresponding ISP
+output that we got from hardware ISP.
+The particular neural network architecture
+that we use is a modification of
+the very popular UNet architecture,
+where we concatenated the parameter
+set, with a bunch of tweaks to,  the
+individual downsampling  layers on the
+encoding stage of the neural network.
+This image image network,  once
+it's learned, can be fixed
+and then we can optimize hyper
+parameters for a given task.
+All right.
+So how does that work?
+Let us have a look at the second stage.
+As mentioned, we fix the hyper parameters
+of our network which are be the model
+weights itself, and that does not include
+the input parameters of our ISP here.
+Those are in fact parameters
+that we can now optimize through
+stochastic gradient descent.
+We define the loss function on the
+output of the proxy that penalizes
+the distance of the output of
+the ISP to a specific target.
+Let's say we have a simulated
+output target for that we got
+a corresponding raw image.
+Now we can take our differentiable
+proxy module and by use of first- order
+stochastic grading descent to optimize
+parameters that make the output as
+similiar as possible to the specific
+target that we want to optimize for.
+And we have broad flexibility on
+the target that we can choose.
+Let's look at different
+target applications.
+The first application that I want to look
+at is optimizing an ISP for output on
+the display, so produce natural images
+that are pleasant to human viewers.
+The particular hardware ISP that we use
+is a ARM C 71 ISP, which is a state of
+the art automotive ISP which has over 30
+continuous and discrete parameters, which
+is very tricky to tune by human experts.
+And here's an example of the
+optimization procedure at work optimizing
+towards a simulated target here.
+And in real time, as we optimize and
+progress over the parameters we adequately
+fit the proxy output to a target.
+If we define a perceptual loss
+function on the output, we can now
+train  parameters to produce visually
+pleasing outputs to a human viewer.
+This allowed us, in fact,
+outperform manual expert tuning.
+So we show side by side comparison where
+the manual tune results show on the left
+side and the automatic differentiable
+proxy result  on the right side.
+And in fact, three months of expert
+tuning were not suffiecient to outperform
+our proxy tuning results, which in
+automated fashion, mind you sampling
+tens of thousands of times the particular
+current proxy function, and outperforming
+even quantitative traditional image
+quality metrics, measure, detail,
+accuracy, color, accuracy, , and Moire.
+So overall, this proxy optimization
+approach turned out to be a really
+effective strategy to tackle
+optimization of hardware ISPs.
+Now let's have a look at a
+different downstream task.
+For example, object detection
+in automotive use cases.
+Here, you see an optimization time lapse
+where the optimizer is finding parameters
+that maximize mean average precision and
+recall as plotted here on the right side.
+And you see here already in the images
+shown on the left side, that the resulting
+ISP parameters, strongly boost contrast
+around object discontinuities, which
+is something that intuitively we know
+for object detectors is beneficial.
+So overall here,  the intersection over
+union, measured after object detection
+of a faster RCNN object detector,
+combined with an optimized IPS produces
+the best results after optimizing
+with our proxy optimization approach.
+And here's an example where we do a side
+by side comparison with our optimized
+ISP plus object object detector compared
+with a state of the art system, which is
+Tesla's Model S autopilot system shown
+on the left side, which in fact also
+uses radar for the perception system.
+And you see that in such
+lowlight scenarios, especially
+at the periphery, we do well.
+And that is although, we, as researchers
+don't have access to very large
+datasets and annotation teams as
+available to the Tesla autopilot team.
+We are nevertheless able to get
+robust detections in a frame-by-frame
+approach without any tracking and
+additional post processing on top here.
+So it  hopefully illustrates how
+powerful it can be to optimize, other
+blocks, besides of the downstream
+neural network, for a particular
+downstream task, such here as in
+this case object, object detection.
+This motivated us to look at other
+blocks in the camera pipeline.
+Particularly, the next block that I
+want to look at is sensor control,
+sort of one step down from the ISP.
+How do we actually control exposure
+on the sensor and how do we do
+that in a differential fashion?
+Exposure control can be pretty tricky,
+especially if you look at  driving
+scenarios, such as the one shown
+here, where we're driving, through
+a tunnel and exiting a tunnel where
+we have a really high dynamic range
+that our sensor has to handle.
+It is not able to capture that
+entire dynamic range, from
+ultra lowlight scenarios inside
+the tunnel to bright sunlight.
+One cue that we can use as
+features is the histogram data.
+We can actually compute them as
+multiple resolutions over a grid
+that provides us some distribution
+of the image intensity measured over
+different  spatial regions of the sensor.
+You can assemble such
+multi-scale histograms and
+use them to predict exposures.
+If we combine,  a one-D CNN that is
+applied on these multi-scale histograms
+and a fully-connected layer,  this
+provides actually an efficient
+model to predict exposure settings--
+in sharp contrast to traditional
+heuristic designs, that use average
+based auto exposure predictions.
+Next, we can go one step further
+and also add semantic feature.
+So let's say we have a ResNet-based
+architecture for object detection
+that will produce detections.
+We can take features of that detector
+branch, combine them with the
+histogram branch and use that,  entire
+model to predict based both, on
+semantic features as well as global
+intensity information, giving us the
+exposure setting for the next frame.
+All right, so this seems like a first
+reasonable network architecture to
+predict exposures, using semantic
+features and global intensity features.
+But how do we actually train
+this  particular network?
+We can do a trick and use a
+second, separate HDR camera that
+allows us to simulate exposures:
+we take an input HDR frame and
+artificially mis-adjust the exposure.
+And if you have such a frame, then we
+can use that wrong exposure to predict
+an exposure  such that in the next
+frame or object detector is able to
+adequately detect a vehicle in the frame.
+So again, we use IoU-based downstream
+losses to train our detector of interest.
+And this makes a pretty
+big difference in practice.
+So here we see driving out of a tunnel
+with our learned auto-exposure on the left
+side and average-based state-of-the-art
+auto-exposure on the right side.
+You see that for such extreme
+illumination changes learning the
+auto exposurein a differentiatable
+fashion can be highly beneficial.
+As you see here on the left side,
+we're able to adjust very efficiently
+to such, radical changes in intensity
+and detect, for example, the traffic
+light on the right left side.
+Here, here's the same scene again, and
+you see how quickly the auto-exposure
+can adjust to these scenarios
+driven by a downstream IoU-loss.
+So now that we've looked at hardware ISPs
+and sensors rekindled as differentiable
+blocks, I  want to get one step
+further and look at how we can make
+compound optics at the very beginning
+of our imaging system differentiable.
+Modern compound optics are designed
+in a box by imaging experts, such as
+these fine gentlemen here, which use
+optical design software, such as Code
+V, to optimize the optics in isolation
+from the remaining imaging system.
+So here you see an optic being
+optimized for spot size alone.
+These compound optics design tools
+have the huge benefit that there is
+a very large set of default designs
+available, they are easy to use as
+they employ a lot of heuristic merit
+functions and black box optimizers.
+Nevertheless, as with the ISPs and the
+sensors from before, these systems are
+not differentiable and we cannot pass
+gradients through and optical system.
+So we cannot easily optimize a particular
+optical design for a downstream task.
+It turns out, we can actually make also
+this step differentiable by modeling
+the spatially varying point spread
+function that is illustrated here ,in
+an efficient and differentiable manner.
+The shape of the PSF, illustrated
+here, depends on the lens profile,
+which is defined by the lens radius,
+lens coefficients, the lens spacing
+between the individual lenses, and  the
+particular material of the lenses.
+We can use modern ray-tracing-based
+design software that have rich
+catalogs of optical systems
+to produce these output PSFs
+So for a lens parameter setting and a
+particular field, that is a particular
+position on the sensor, we can
+produce a PSF and a vignetting factor.
+Now we can try to model that particular
+PSF with a differentiable proxy, which
+takes as input again, the parameters
+and the particular position on the
+sensor, and then predict the PSF and
+that particular vignetting factor.
+And you can train this particular proxy
+function by penalizing the difference
+to a set of ground truth, simulated
+PSF and vignetting factors rendered
+from the optical design system.
+The particular network architecture
+that we use is an MLP that
+creates low dimensional features
+followed by a convolution decoder.
+This approach of modeling the
+forward model indirectly rather than
+an image-to-image approach turns
+out to be much more accurate and
+provides us good gradient signals for
+optimizing compound optical systems.
+All right, so we vary the parameters of
+the optical system to generate PSF data
+that we then use to train our proxy.
+After the design, we fixed it finally.
+So here's an example of the
+optimization process at work.
+The task loss that we use
+here minimizes the spot size.
+And we can see that can actually
+outperform Zemax at its own task, which
+is minimizing the spot size, and all of
+this is done using a proxy function with
+first-order stochastic gradient descent.
+Now, we can all not only minimize spot
+size but we can also implement domain
+specific optics for different tasks.
+Here I want to look at
+three different tasks.
+The first one is be natural image capture.
+So here we define a task function that
+places a perceptual loss on the output
+of the raw image that is captured
+by a simulated optical system plus
+sensor and then piped through an ISP.
+And what you see here, particularly look
+at field around eight degrees is that
+instead of a longer tail for a nominal
+design that comes straight from Zemax,
+we get a much more peaky design at the
+cost of a tiny-valued floor in the PSF.
+And this actually results in fewer
+abberrations in the periphery.
+So you can see visually that the
+resulting images when displayed are
+more pleasing to a human viewer.
+Now, for an entirely different task, which
+is be object detection, we can see that
+we get an entirely different behavior.
+If you minimize intersection over
+union as an output from an object
+object detector, this leads to a very
+uniform PSF, which is beneficial for
+the detector, which does not have to
+tailor its output to the spatial position
+on the sensor for given proposals.
+This also results in better
+performance in-the-wild where we
+reduce false negatives and false
+positives, when compared to the
+nominal optic on the left side.
+Finally,  an entirely different task is
+traffic light detection, where you see
+a PSF behavior which is sharper to the
+center of the visual field, because a
+lot of overhanging traffic lights are
+visible from far away at a long distances.
+So here, the optic is optimized
+towards these traffic lights at
+very long distances because in
+closer distances, they're easier to
+detect even with the larger blurs.
+And this also results in better
+performance for captured traffic lights.
+Here you see that, for example,
+the red traffic light is properly
+detected and traffic light state is
+also adequately detected when looking
+at the end-to-end optimized design.
+So hopefully, with all of that, I've
+convinced you that this is worthwhile
+to rethink the design process of camera
+systems in an end-to-end fashion.
+In this work, we make individual blocks of
+our camera system, be that the optics, the
+sensor, the ISP, and the downstream neural
+network, differentiable, and  train them
+in an end-to-end fashion jointly together.
+This can provide us with better
+performance for existing tasks,and
+we can also tailor cameras towards
+task-specific cameras that allow us to
+bring superhuman version capabilities
+to camera systems of tomorrow.
+Hello everybody.
+My name is Ethan Tseng.
+And in this portion of the course, I
+will be talking about neural nano optics
+for high quality thin lens imaging.
+This course covers our recent work
+on using meta surfaces to design
+tiny lenses, which could pave the
+way for smaller and lighter cameras.
+All of the information in this talk can
+also be found on our project website.
+All right, so let's
+begin with some context.
+Smartphone cameras are becoming
+more sophisticated and complex with
+each passing year resulting in bulky
+camera bumps on consumer devices.
+This is an excerpt from the
+Apple September event in 2018.
+And here you can see that even the latest,
+uh, smartphone at that time had quite
+complex, uh, optics inside of its camera.
+The optics consists of this series
+of glass lenses each of which is
+combined together, uh, provides,
+uh, enough optical bending power
+in order to produce crisp images.
+But this, uh, optical stack here ends
+up producing the nasty camera bump
+that makes, uh, smartphones become
+increase, become increasingly bulky.
+And it's not just Apple
+that has the camera bump.
+Today, most commodity smartphones
+exhibit a camera bump that houses the
+compound optics that are necessary
+for taking high quality pictures.
+Doesn't matter if you're using an Apple
+iPhone or Google Pixel, we're starting to
+see this camera bump appear across pretty
+much all commodity smartphones today.
+Going beyond smartphones, almost all
+applications that rely on cameras
+will also face the same problem.
+Bulky compound optics are used to
+capture and focus light in order to
+take pictures of the real world and
+navigating the trade off between image
+quality and physical form factor is
+a perpetual engineering challenge.
+In this work, we present meta
+surface optics as a replacement
+for bulky compound lenses.
+Meta surfaces are a material
+that can provide the same optical
+power as a compound optic, but
+with a much smaller form factor.
+Here, on the left, we show a real
+fabricated meta surface on a human
+finger just to provide a scale of
+the sizes of these meta surfaces.
+And on the right, I show a
+diagram of the meta surface.
+Here, uh, in the diagram, you can
+see that the meta surface consists
+of tiny nano antenna or nano pillars.
+And these nano pillars are what
+modulates, uh, the incoming light.
+Okay, so more on how this works.
+While a conventional optic relies on a
+series of glass lenses to bend and steer
+light, as shown on the left, a meta
+surface uses sub wavelength nano antenna
+to direct light with much finer control.
+A single meta surface provides
+much more possibilities for shaping
+light waves then curved glass.
+The modulated wavefront can then be
+interpreted and processed by software
+to produce high quality imaging results.
+In our work we jointly design meta
+surface optics and software processing
+using AI techniques, allowing us
+to produce neural nano optics.
+Although meta surfaces have been seen as
+a promising alternative to glass optics,
+perhaps for at least a decade, prior
+methods have not been able to demonstrate
+sufficient imaging performance.
+One technique called dispersion
+engineering, which we show on the left,
+is able to create images with high
+quality, but only with a small field
+of view and a small aperture size.
+Other methods, such as those employing
+heuristic designs, have been able
+to achieve larger field of views
+and larger aperture sizes, but they
+failed to achieve good image quality.
+So in the past, works that have
+been done in the meta surface
+literature are able to get some,
+but not all of the, uh, qualities
+needed for a good imaging device.
+You can get high image quality with
+dispersion engineering, but you don't
+want to sacrifice aperture size and
+limit your field of view if you really
+want to make a practical imaging system.
+In this work, we present neural
+nano optics, which significantly
+outperforms the previous state of
+the art as shown in this side by side
+comparison of imaging performance.
+Our method is the first meta optics
+imaging approach that achieves high
+quality, wide field of view, color
+imaging with a large aperture size.
+And I'd like to emphasize, that
+this, uh, video you see here is
+completely experimental capture.
+Basically what I mean is that we
+captured an image with our fabricated
+meta surfaces, and then we post
+processed the, uh, result in software.
+This is not a simulation.
+Okay, so now I'll go more into the
+design framework of neural nano optics.
+Neural nano optics consists of two
+primary components, the meta surface
+optic and the software correction,
+which we refer to here as deconvolution.
+Here, our meta surface simulator is
+parameterized by the meta surface
+parameters P sub meta and the aberration
+correction is parameterized by the
+deconvolution parameters P sub deconv.
+We will explain both parts of
+this pipeline, starting with
+the meta surface simulation.
+Our meta surface simulator operates
+by generating spatially varying point
+spread functions or PSF for short.
+And these PSFs encode the aberrations
+produced by the meta optic and just,
+uh, to provide some more information,
+uh, the point spread function is
+essentially the response of the optical
+system when you shine a, uh, flat
+white light wave onto the meta surface
+and these PSFs, uh, are used as a
+sort of measure to show what kind of
+aberrations that you would expect in
+the meta surface, uh, or optical design.
+Simulating the PSFs in order to
+quantify the meta surface performance
+is typically a time consuming process.
+However, in this work we propose
+a proxy simulator that speeds
+up this simulation process.
+Our proxy simulator works
+in a series of steps.
+First, we define a polynomial basis
+function that describes the phase
+response for a single wavelength.
+For example, the green wavelength.
+We then determine the corresponding
+nano post structure of the meta
+optic that will impart that specific
+phase response for that wavelength.
+And this mapping is performed by using
+a proxy function, which we call phase
+to structure, more on that later.
+Now, given this nano structure, we
+can then infer the phase response
+at the other wavelengths using
+rigorous coupled wave analysis.
+And this allows us to define a multi
+wavelength phase function, which we
+call structure to phase, again, more
+on that later, which we then diffract
+to determine the electric field.
+From the electric field we can
+then determine the spatial PSFs.
+Each step of this simulation pipeline is
+fully differentiable allowing for gradient
+flow back to the optimization parameters.
+Here, gradient flow is
+shown by the blue arrows.
+And in order to design, uh, this system
+in an end to end manner, it is essential
+that the gradients are able to flow all
+the way back to the design parameters
+from the spatially varying PSFs.
+This entire chain here is 3000 times
+faster than traditional, uh, full
+wave simulation, and this allows
+us to run our design process, uh,
+much faster than previous methods.
+Okay, so now I will go more
+in depth onto the individual
+components of the simulation.
+First, the phase to structure, uh,
+mapping determines the thickness of
+the nano antenna on the meta surface,
+which we refer to as the duty cycle.
+This equation that you see here,
+uh, relates the duty cycle D(r) to
+the phase of the meta surface at the
+nominal wavelength which we call phi(R).
+Specifically, given the phase phi at
+the nominal wavelength, this equation
+will determine the duty cycle of the
+meta surface that will impart that
+phase response for that wavelength.
+This function needs to be injective,
+so we set the design wavelength
+to be, uh, at the blue wavelength
+in order to avoid injectivity
+issues caused by phase wrapping.
+The coefficients b sub i are set
+specifically for this nominal wavelength.
+And this equation is implemented by
+the following example code, which
+can be found on our project website.
+Next, I will explain the mapping from
+duty cycle, or structure, back into phase.
+Now that we have a meta surface
+structure from the previous equation,
+we want to know what the phase
+response is at arbitrary wavelengths
+within the visible spectrum.
+The true phase response as a function
+of duty cycle is determined through
+rigorous coupled wave analysis or RCWA.
+This equation here approximates that true
+response and the coefficients c are set
+to maximize the accuracy of that fit.
+Again, this equation is implemented
+by some example code, which we
+show here, and all of this code can
+be found on our project website.
+Okay, uh, that covers the, uh, meta
+optic simulator, which is fast and
+differentiable, and with our meta optic
+simulator in hand, we are able to simulate
+what the sensor ought to measure in an
+efficient and differentiable manner.
+And what I mean to say is that, uh, if
+we were to have a certain meta surface
+design, then our differentiable proxy
+simulator could tell us what we expect
+our camera sensor to see, uh, if we
+were to fabricate that meta surface.
+Now we'll describe the second
+component of our nano camera
+design, the deconvolution algorithm.
+As you can see here, even if we have
+a good, uh, meta surface design, the
+measurement on the sensor might still
+be aberrated, or blurred out, and we
+need a deconvolution algorithm in order
+to correct for any residual mistakes.
+Okay, there's a wide variety of,
+uh, deconvolution methods out there.
+Classical deconvolution methods,
+such as Wiener deconvolution and
+optimization based methods, such
+as ADMM perform Fourier space
+inverse filtering by using the PSF.
+Employing knowledge of the imaging
+system through the PSF makes these
+methods highly generalizable.
+However, they can often accentuate
+sensor noise as shown here.
+Furthermore, these algorithms have
+limited design freedom because they
+don't employ very many free parameters.
+In contrast, recent works in deep
+learning have shown that neural
+networks can also perform deconvolution
+and that their rich design space can
+enable learning of a wide variety of
+features that facilitate reconstruction.
+However, their performance on
+unseen examples is oftentimes
+inconsistent and these methods
+cannot handle very large aberrations.
+In order to remedy this, we
+combine these two domains.
+We propose a feature based deconvolution
+method that employs a traditional inverse
+filter together with neural networks
+for feature extraction and refinement.
+This combination allows us to learn
+effective features that facilitate
+the inverse filter's deconvolution
+while still utilizing the knowledge of
+the PSF to promote generalizability.
+And here is some example code
+from our deconvolution algorithm.
+We apply a few convolution layers in
+order to extract features, which are
+then fed into the inverse filter, which
+in this case is a Wiener filter here.
+Again, the full code can
+be found on our website.
+Finally, putting everything together
+we get our end to end imaging pipeline.
+During the design stage, we employ
+stochastic gradient descent optimization
+in order to design the parameters.
+After optimization, these parameters are
+then fixed and we use the parameters P
+sub meta to fabricate the meta optic.
+And then we use the parameters P sub
+deconv when we operate our imager.
+Here, we show an optimization time lapse.
+As our optimization progresses,
+the meta optic imager converges
+upon a setting that minimizes image
+error across the field of view.
+Because of our efficient end to end image
+simulator, this entire training process
+can be completed within a single day.
+Here, I show an example of the
+fabricated meta surface on the left
+compared, uh, to a grain of rice.
+This is just to show you again, the
+scale of the size of the meta surface.
+On the right is a picture of
+the experimental setup that we
+use to demonstrate the imaging
+performance of the meta surface.
+Our experimental setup consists of a
+conventional CMOS sensor, a meta surface
+mount for holding the meta surface, a
+relay system used to magnify the, uh,
+image captured by the meta surface so
+that it can be seen by the CMOS sensor
+and an OLED display for displaying images.
+Here's a schematic of the same setup.
+The relay system here is used
+to magnify the image before
+it arrives to the CMOS sensor.
+The raw measurements captured from
+the camera are then fed into our
+computational reconstruction algorithm.
+This diagram can be found as part of the
+supplementary information in the paper.
+And here's a schematic of
+the PSF measurement setup.
+Because of manufacturing imperfections,
+the PSF of the fabricated meta surface
+deviates slightly from the PSF that
+we expect from our simulations.
+To compensate for this error, we acquired
+the real PSF of the fabricated meta
+surface and then we used that PSF to
+fine tune our deconvolution network.
+The PSF acquisition setup is very
+similar to our imaging setup.
+The meta surface and relay
+system are kept exactly the same.
+We only replaced the OLED screen
+with a collimated LED and pinhole.
+With the LED and pinhole, we can
+construct a laser point source for
+each wavelength, allowing us to
+measure the PSF for each wavelength.
+This diagram can also be found in the
+supplementary information of the paper.
+Our optimized meta optic design
+meets several design criteria that
+were not met by previous methods.
+Recall the dispersion engineering
+methods, uh, from before.
+Those methods were not able
+to achieve large apertures.
+However, our aperture in this work is
+the largest demonstrated so far for meta
+optics for imaging at 500 microns, which
+allows for increased light collection.
+We also achieve a large
+field of view at 40 degrees.
+And our optic also exhibits a low f
+number, which means that the optic
+can be placed extremely close to the
+camera sensor, and this is important
+if we want to build a small camera.
+Furthermore, we are able to, uh, capture,
+uh, images within the visible spectrum.
+No previous meta surface has demonstrated
+imaging with this combination of
+aperture, field of view, f number,
+and fractional bandwidth, relating,
+referring to the visible spectrum.
+And this is because previously
+achieving any one of these metrics
+came at the cost of some other metric.
+For example, one could achieve a low f
+number by sacrificing the aperture size.
+To formally quantify our design
+specs, we propose a new metric called
+the diffractive lens achromatic
+capacity, or DLAC for short.
+This metric is a product of Fresnel
+number and fractional bandwidth,
+and can only be maximized by
+satisfying all of the design specs.
+Because of the trade offs made
+by previous methods, almost none
+of them meet our design capacity.
+The only previous work that comes
+close to our design specs is the
+work of Shane Colburn from 2018.
+We will next show full color imaging
+captures that compare between the
+ones captured by Shane in 2018
+and the ones from our nano camera.
+Okay, so here's a side by side
+comparison between the two methods.
+Our nano camera on the right clearly
+demonstrates significant improvement
+in resolution, color accuracy,
+and reduced aberrations compared
+to the work of Colburn from 2018.
+Here is another result, a
+still image showing again, the,
+uh, achieved improvements of
+resolution and color accuracy.
+And here is yet again,
+another still result.
+We also perform a spatial resolution
+test using a Siemens star chart.
+Our nano optic imager achieves
+accurate performance across all
+color channels, as you can see on
+the right, whereas the previous
+method exhibits, severe aberrations.
+Okay, so now that we have shown that
+neural nano optics can outperform
+the previous, uh, meta optic imager
+works, how does it compare against
+a conventional imaging system
+using, uh, refractive lenses?
+So now we will show that neural nano
+optics can achieve a very similar quality
+as a conventional camera, despite being
+over 500,000 times smaller in size.
+So here are some side by side comparisons
+of full color captures by both the
+conventional camera and the nano camera.
+And we can see that, although the nano
+camera is not perfect, there's still
+some room for improvement, we see that
+it is quite close to the performance
+of the conventional camera, which uses,
+uh, highly corrected compound lenses.
+And here's another video result, which
+shows that we can achieve high quality
+color results, comparable to the
+conventional camera on diverse scenes.
+Here's a still image result, comparing the
+compound optic and the neural nano optic.
+Again, we see that although the
+neural nano optic is not perfect,
+it is, uh, able to achieve a lot of
+similar resolution and color accuracy
+as the compound optic on the left.
+And again, here's another still result
+showing, uh, similar performance.
+We again performed a resolution
+test by using the Siemens star.
+And as you can see, we achieve a
+similar resolution quality across all
+wavelengths as the conventional camera,
+despite, uh, the nano optic being
+orders of magnitude smaller in size.
+And here I am showing some
+more comparisons against
+alternative meta surface designs.
+Starting from the left, the
+hyperboloid design is designed
+specifically for a single wavelength.
+In this case, the green
+wavelength at 511 nanometers.
+Although the performance is good
+for that wavelength the imaging
+quality at other wavelengths at
+other wavelengths is very poor.
+And applying a simple Wiener filter
+doesn't improve the performance much
+as can be seen in the next column over.
+The middle column shows the work
+of Colburn from 2018 again, uh,
+which also uses Wiener filtering.
+And as we, uh, showed before the, uh, work
+from the imaging quality from that, uh,
+also still exhibits a lot of aberrations.
+The next two columns show, uh, what
+I've shown already, uh, the neural
+nano optics imaging result at the
+different wavelengths followed by the
+ground truth, uh, imaging result using
+the conventional compound optics lens.
+Overall, neural nano optics is able
+to achieve the best performance to
+date, uh, for meta surface imagers.
+Okay, so, um, that mostly
+concludes, uh, the imaging, uh,
+performance, uh, that I wanted to
+talk about for neural nano optics.
+And, uh, in this slide, I just
+wanted to talk about the fabrication
+of these meta surfaces and how we
+can go about making a lot of these
+meta surface imagers at scale.
+So in this work, we fabricated the
+meta surface through, uh, electron
+beam lithography, uh, and then, but
+which is good for this, uh, work here,
+but it is somewhat of a slow process.
+In order to scale production to a
+commercial scale, we can leverage IC
+manufacturing techniques, such as deep
+ultraviolet and immersion lithography.
+Going forwards, we believe that
+meta surface imagers could become
+commercially viable through
+these manufacturing processes.
+That concludes, uh, my
+segment of this course.
+To summarize, we presented neural nano
+optics, a nano scale camera that we
+built by co-designing a single meta
+optic and software correction, and we
+achieved full color imaging with quality
+comparable to commercial cameras.
+We hope that this work can inspire
+more research and development into
+meta surfaces for imaging and beyond.
+For more information, including
+example code, please visit our website.
+Okay.
+I'm Seung-Hwan and today I'll gonna be
+talking about differential illumination
+and temporal sensing.
+Let's get started.
+Before diving into the details.
+Let me first introduce myself.
+As I just
+mentioned, I'm Seung-Hwan. I just joined
+as an assistant professor at POSTECH
+and I'm studying
+how to capture, model, analyze
+and exploit light waves for graphics,
+vision, imaging and display.
+So my specific research interests
+or research areas include
+differentiable camera
+time of flight imaging, reflectance
+imaging, hyperspectral imaging,
+polarimetric imaging, plenoptic imaging,
+holographic display and neural
+visual representation.
+Okay.
+And today, specifically for this session,
+I'll gonna be mostly talking
+about this differentiable illumination
+and temporal sensing,
+which includes both differential camera
+design and also time of flight imaging.
+And then let me give you the high level
+overview about what
+differential illumination
+and temperature sensing is
+So here in our modern imaging systems,
+we not only have a camera,
+but also illumination modules. Right.
+And then here
+in this example of mobile phone,
+we have a flash that to emit
+light to a scene
+And then the light will travel the scene
+And finally, reflected towards this camera
+and the light will be gathered by our lenses
+and then focus down to a sensor
+Then the sensor records the incident light
+energy and generate a form of image
+such as this
+nice chameleon image. Then we have amazing
+post-processing algorithms these days,
+for instance,
+in a form of a neural network
+that estimates the many properties
+of a scene or even understand and infer
+some of the information hidden in this image.
+For instance, in this example,
+our neural network estimates
+the class of the image.
+And here our neural network predicts that
+here we have a chameleon in this image
+In order to make our neural networks
+to do this task, we train
+this neural network using a loss function
+based on the output of the neural network,
+which supervise or train this neural
+network via backpropagation,
+and then in this regime
+of differential camera and display,
+what we want to do here is we want to
+optimize our imaging
+system that includes this illumination
+module and also jointly optimize
+our neural network
+for post-processing algorithms.
+And here this will innovate our
+the existing illumination
+designs of our cameras
+and even optimizes the entire
+hardware/software imaging systems
+from the illumination to the scene
+and back to the sensor.
+And how to process that to acquire
+hidden information of the scene.
+This is the essence
+of differential illumination
+I want to provide two specific examples
+of this differential illumination
+research.
+And the first one
+is about differential time of light.
+And this is a joint work
+with Ilya, me, Qiang, Wolfgang,
+and Felix.
+This work was published at CVPR 2021.
+And the original paper's title is Mask-ToF:
+Learning Microlens Masks
+for Flying Pixel Removal
+in time of light imaging.
+So let's first
+begin with a general introduction
+on the time of light imaging.
+In natural systems or even in
+one of the manmade system like submarine.
+We can see exciting ways of estimating
+the distance or depth from a scene
+to our imaging sensor.
+We do that.
+We can do that by emitting
+some of sound
+from an imaging system
+or from a system to a scene.
+And then measures
+how long does it take from the sound
+reflected back to the imaging system.
+By measuring this time of flight,
+we can understand or we can measure
+the distance between the imaging system
+and then the object.
+So if we move our focus
+to the time of light imaging cameras,
+what we do here is emit actually light
+to the scene instead of sound and measure
+how long does
+this light take from its emittance
+And then traveling to the scene
+and the back to the camera.
+The basic theory is same.
+This time of light information
+relates this distance
+between the camera and the scene
+with the speed of light.
+Okay, so time of flight is equal
+to the two times of the distance
+between them divided by speed of light
+in this medium.
+There are many applications of time
+of flight imaging systems,
+and we can briefly categorize the time
+of flight cameras into two different ones.
+First
+one is the direct time of flight camera.
+And second
+one is the indirect time of flight camera
+and direct time of flight camera
+offers many interesting advantages.
+And because of that,
+we now have direct time of flight
+cameras in the mobile
+phones and autonomous vehicles
+and even airborne devices that measures
+our terrains, a geometric structure
+also indirect time of flight camera has its
+own advantages over direct ones as well.
+And often we use indirect time of flight
+cameras for gaming applications
+or any human computer interactions
+or augmented and virtual reality
+systems.
+And we often call indirect time
+of flight cameras as correlation imagers
+We will gonna look into the details
+of correlation time of flight imaging
+or indirect time of flight imaging.
+The operation of a time of flight camera
+or indirect time of flight camera
+begins in the optical domain.
+Here we illuminate a scene
+with continuously modulated light
+or illumination.
+What that means is that
+our illumination emitted to a scene
+has time-varying intensity
+in a sinusoidal manner.
+Okay.
+And the illumination
+hit is our target scene.
+And if we zoom this a little bit, we can see that our intensity
+of illumination
+is sinusoidally modulated.
+And then the light will gonna be
+reflected from the target to a sensor.
+And here,
+due to the travel distance
+from the camera to the target
+we're going to have some phase shift
+between the two signals. Right.
+And this phase shift encodes the actual distance
+from the time of flight
+camera to the target.
+And if we can estimate this phase shift,
+then we can estimate the distance or depth
+then once we captured this,
+the reflected light
+using our time of flight sensor, then
+in the existing indirect time of light
+camera sensors, we have a special
+sensor design,
+which we often call photonic mixer device
+or in short PMD
+and this PMD sensor,
+what it does is it first converts
+the instant photon energy into electron energy in the analog domain.
+And then this is the captured time
+varying sinusoidal signature reflecting
+a promising right.
+And we all know that now with this capture
+signature
+has a phase shift with respect
+to a reference sinusoidal pattern.
+Right.
+And then
+if we calculate the correlation
+between these two sinusoidal patterns
+with a phase shift,
+then what we can obtain is a
+constant value that corresponds
+to the specific phase shift.
+Okay. And from the phase shift,
+we can estimate the depth.
+So here the goal is we want to obtain this
+correlation value correctly.
+Then the
+seems like we are all good
+and we can estimate
+the accurate depth information
+using this indirect time of flight
+imaging But here still, we have a
+we have many existing limitations
+in this indirect time of flight imaging.
+And one of them is called as flying pixel.
+So let me first describe
+what the flying pixel is.
+Here we have a time of flight camera,
+indirect time of flight camera.
+Specifically.
+And in here, as I discussed,
+we have illumination light source.
+And typically we use LED
+and then we have a lens
+that we collect the light
+reflected from a scene.
+And then as in any lens system,
+we have a aperture
+that we're going to control
+the how much light we are going to
+collect.
+And then we have a sensor here, right.
+which consists of many pixels
+and more importantly, microlens array
+right in front of this sensor
+Let's say
+let's say that we have a foreground object
+and then background object innocent.
+And then let's see what is going to happen
+for this indirect time of light imaging.
+When we estimate the correct depth,
+the LED will gonna flood
+our sinusoidally modulated illumination
+into a scene, then
+our real world
+scenes which are foreground
+objects and background objects here,
+they're going to reflect
+this illumination back to the camera.
+Then the reflected light.
+will be collected by our lenses
+and then some of the light
+will be blocked by our aperture
+finally, focused down to a sensor
+so this blue lights all come from this
+background
+object whereas this red light
+come from this foreground object.
+And here interestingly
+at this particular pixel that we
+described, it collects the light
+both from the foreground
+and then the background signal
+because we are capturing this
+this edge between the foreground
+and the background. Right.
+And once we have this mixed light
+reaching to a single pixel,
+then we are going to have a problem which we call as flying pixel.
+So let's understand it in more detail.
+If we zoom in the sensor region,
+we have this red light
+coming from the foreground
+and then the blue light
+coming from the background.
+And that they're going to be collected
+by our micro lenses.
+And then one specific pixel
+we're going to record
+just the energy of this instant photons
+regardless of its origin,
+whether it is coming from the foreground
+or background,
+we're going to just collect it
+and just the record it's intensity value.
+Then here
+if we utilize the captured intensity
+to calculate the depth information
+using correlation computation,
+we will going to have some flying
+pixel problem. What is flying pixel here?
+So let's say that this is the x axis,
+here is the measured depth
+and then y axis is the probability
+of estimating
+whether this is the correct absolute.
+And then let's say that we want to
+our target depth that we want to
+measure is the background one here
+corresponding to the blue object.
+And that depth or distance from the camera
+is located farther than the red one.
+However,
+since we have measured the intensity value
+with as a mixed value
+between this float around
+and in the background,
+then the estimated scene depth
+would locate
+in between this foreground and background,
+meaning that the pixel
+will gonna be appear as
+if it is floating in between the surface,
+in other words
+it is flying pixel
+So it is a little bit straightforward to
+solve this problem
+which we can do
+by actually reducing this aperture size,
+let's say, if only this center light
+can passes through this lens system,
+then we are not going to have any more
+any flying pixel problem
+because like the
+there is no light coming from the
+the foreground
+reaching to this specific pixel.
+So in this case,
+we are going to have this correct
+depth estimation at the true depth.
+But here a problem arises
+because of this reduced light energy
+entering this
+and only the center part of the end
+because we have less and less light energy
+reaching down to this single pixel.
+We're going to have more noisy
+estimate, right?
+So because this pixel value
+becomes noisy with less amount of light
+then
+we are likely to sample the depth at the
+different location or a different
+position than this true detph.
+It's more in a mathematical term,
+it's standard deviation because I mean, is
+this spread and is of this measuring
+the depth of probability becomes wider.
+So it is going to be uncertain measurement
+deviating from our true depth.
+and now
+we proposed a technique
+to solve this problem
+which we create call as Mask ToF.
+which true to its name
+augment this camera pipeline
+using a specifically designed
+the micro lens mask.
+So specifically here,
+this is the micro lens mask pixel
+that exists between the sensor CMOS pixel
+and then the micro lens.
+All right,
+then let's see what is going to happen
+if we have
+instant light to a micro lens,
+then the light will be
+occluded based on this microlens
+mask pixel pattern pattern.
+And then our CMOS sensor pixel
+ we're going to collect only the light
+energy that passes through this mask.
+Okay.
+And this mask selectively blocks
+this incident light energy.
+And that allows us to effectively give
+each pixel its own custom aperture here.
+We can augment our camera
+to have spatially varying
+susceptibility
+to noise and flying pixels.
+And this leverages
+the denoising and deflying pixel's
+local spatial neighborhoods.
+So what that means is
+here, given this information
+of this microlens mask,
+if the microlens mask has a
+like this middle size shape
+then it is going to be in between the
+tradeoff of the noisy
+and flying pixels. As we just saw,
+if the size of the aperture is quite
+large which corresponds to this case
+shown in here.
+If it is the case, then it is likely that
+we're going to have more flying pixels
+but less noise.
+However,
+if the size of the aperture is smaller
+that looks like this,
+And they're going to give the really noisy
+or uncertain depth estimates
+However,
+it would be free from this flying pixel.
+right? Then
+implementing this in the microlens level
+will gonna give us this
+diverse sampling
+with different tradeoffs
+between the noisyness and the flying pixel problem.
+So here important thing
+is that if we have a global aperture
+that controls the size of aperture
+then we are not going to be able
+to obtain these diverse sampling.
+So what that means is on this left side,
+this is the sampling
+result by our global aperture.
+If you open your aperture
+to a large extent, then all of your pixels
+will gonna suffer from the
+flying pixels.
+However, there will be great samples in terms of the noisyness
+if we
+if we use this global sampling,
+using your aperture,
+using your overall aperture,
+then there is no spatial information
+that you can make use of to
+resolve these flying pixels.
+However, if you use our specific strategy
+of this micro lens masking
+and if you used this different
+per pixel aperture implementation
+then we can make use of this diverse
+spatial information in the pixels
+with varying
+the tradeoff between the noisyness
+and the flying pixels
+to decode the problem of denoising and deflying
+okay and zooming back out.
+Now,
+we pass this mask array and mask
+correlation images
+into a convolutional neural network
+which refines our estimated depth
+to output a decoded depth estimation
+results.
+And here,
+note that what we want to do
+in a differentialble
+camera and display manner
+is that we want to find out the best
+design of our micro lens array.
+Okay.
+In addition
+to our refinement neural network
+So here we calculate the error
+with respect to the ground truth depth.
+We can propagate this loss function
+through
+the network
+and then the mask pattern.
+we can jointly optimize or learn this
+refinement network and the micro lens mask
+in this way,
+starting at an initial mask iteration,
+We can simultaneously learn them right
+We optimize this micro lens mask and also
+we optimize this refinement network
+To fully validate mask ToF, we built an
+imaging prototype of the system.
+Given the impracticality
+of accessing the sensor surface,
+we move the mask onto a virtual plane
+with a custom
+designed optical relay system.
+And we also lithographically manufacture
+this mask pattern
+and mount them on a 3D translation
+stage for focusing.
+Okay. So here,
+note that
+why we did
+this is because of the difficulty of
+taking this sensor
+micro lens apart by ourselves.
+But for the actual time
+of flight camera manufacturer, for them,
+it would be easy to place this
+our learned mask pattern right in
+front of their sensors.
+Just a proof of concept
+in research academic lab,
+we just optically relay
+this sensor plane to a virtual one.
+Then we placed a still lithographically
+fabricated
+our learned micro lens
+mask on a free space.
+So here
+this is the results from our method.
+And we captured a scene of this pumpkin.
+And if you just use
+the conventional time of flight camera
+that uses a wide aperture, they're going
+to give you the high accuracy surface,
+the 3D depth information
+for the center part of the object.
+But for the edge
+information,
+then you're going to see lots of flying
+pixels around the edges,
+because of the large aperture.
+However, in our case, shown
+on the right, this is our estimated
+result from the real prototype,
+showing that we were able to reduce
+this flying pixels quite significantly
+by utilizing both learned mask
+and refinement network.
+In total, we are able to reduce
+around 30% of the flying pixels.
+That was the first part of our talk.
+Let me begin
+our second part of this session,
+which is differentiable active stereo.
+And this is a joint work with Felix.
+And the work was presented at CVPR 2021.
+Title is Polka Lines
+Learning Structured Illumination
+and Reconstruction for Active Stereo
+To explain our work,
+let's first begin
+with the definition of phase of light.
+Phase is the offset of a light
+wave with respect to a certain base,
+and phase is invisible to human eyes
+as we can only sense the intensity
+of light by integrating different
+lights with different phases.
+So however, actually phase is everywhere
+and can be utilized for specific purposes.
+So here let's say that we have an incident
+light wave onto this glass
+Then light waves
+slows down inside of the glass
+because of the refractive index difference
+between the glass and then air.
+Then this induces phase delay to the exitant
+light after passing through
+this glass denoted here as red arrow.
+And this phase shift can be described
+mathematically
+as an equation shown
+in here. The phase delay phi is equal
+to the wave number k multiplied
+by this refractive index difference eta the height of this glass h.
+And now if we have another glass
+with different thickness,
+then phase delay becomes different
+because of this equation here
+height is different right? Then
+this results in
+phase shift between these two light waves
+so diffractive optical element
+DOE consists of micron scale
+million number of glass slabs
+with different thicknesses.
+So this allows us to spatially modulate
+the phase
+distribution of incident light waves.
+So one of the application of this DOE
+is depth imaging.
+So here
+depth imaging we want to use it for the
+various applications, including the AR/VR
+robotics
+and this autonomous vehicle to understand
+the 3D structure of our neighboring scenes
+so active stereo system is a cornerstone
+depth imaging
+modality for its low cost
+and robust depth estimation performance
+so active stereo systems consist of stereo
+cameras looking at a scene,
+and it also has a structured
+illumination module consisting of a
+laser illumination and a DOE.
+And this DOE is designed
+to produce
+a specific illumination image,
+to a scene. Then this illumination pattern
+is engraved to a scene as a light source.
+Then this illumination pattern
+are captured also by our stereo cameras
+the captured images from stereo cameras
+now contain
+both scene texture and illumination patterns
+on top of the scene.
+ we estimate
+the depth information by matching
+correspondence between these two images.
+Since we have additional illumination
+projected onto a scene,
+we can make use of them
+in addition to the scene texture
+to build this correspondence mapping,
+which is converted
+into a depth information for each pixel
+so this reconstruction algorithm
+therefore make use of both
+in texture and illumination
+pattern here as shown on the top right
+our depth information z
+can be obtained
+with the known focal length of the
+stereo camera's lens
+and then baseline b, which is the distance
+between the two stereo cameras
+and the disparity d, which is
+the displacement of pixel location
+between the left camera
+and then the right camera.
+Then let's look at the conventional design
+pipeline of active stereo depth
+imaging systems.
+which has a pipeline design framework.
+So first, the what people have been doing
+so far is we handengineer
+or set the heuristic measure
+of the illumination pattern
+for their optimal performance measure
+and for example, to optimize
+their randomness of the pattern
+while maintaining their
+fabrication easiness.
+and the once they obtain
+this illumination pattern,
+then they develop reconstruction algorithms
+to obtain the best depth accuracy
+as much as possible from the fixed
+hardware system
+here, fixed hardware system
+means that the illumination
+pattern itself is fixed.
+So on the right
+hand side, we show a 2D graph
+about the expected depth error
+and the X-axis.
+Here, the horizontal axis
+is the reconstruction algorithm,
+the space of the possible reconstruction
+algorithms, the y axis here
+to describes the space of the illumination
+images possible.
+Right.
+And then as you saw
+in the conventional pipeline design,
+we first only
+scan through this illumination
+image space and find the best one.
+And then once that is fixed, we
+search for the potential reconstruction
+method
+using the neural networks
+or any other methods.
+So here to overcome
+the limitations
+of the sequential design, which is that
+we may not find the best optimal solution:
+best optimal
+combination of illumination
+image and reconstruction algorithms for
+for giving this best depth accuracy.
+What we here
+propose is to jointly optimize
+our illumination image and reconstruction
+algorithm to find
+a better
+depth accuracy
+by jointly estimating the illumination
+image and reconstruction.
+In order to do this,
+our key idea is to have
+this differentiable flow from the DOE
+to the reconstruction result and optimize
+both illumination and reconstruction.
+Let's say
+that we simulate the illumination
+pattern and stereo images
+for a given the DOE phase map,
+then we estimate depth information
+using a reconstruction method
+in a form of a neural network
+then loss is computed
+compared to the ground truth
+and the loss is backpropagated all the way up to the DOE.
+Note that here
+the back propagation
+based optimization requires
+the differentiability of the image
+formation model here
+and the differentiability of
+our reconstruction algorithm
+then let me now introduce
+how we could make these two differentiable
+so that we can optimize both the DOE
+profile which is at the DOE phase map
+and the reconstruction algorithm jointly.
+So we introduced a differential simulation
+for active stereo image formation model.
+So we emit light from a laser
+passing through the DOE.
+Everything is in simulation.
+And we emit the light
+passing through the DOE to a scene
+and this DOE, as I described,
+is parameterized as a phase map,
+which corresponds to a specific height
+map of the DOE
+Then if we have this DOE phase map
+in our hands, then we can calculate
+what kinds of illumination
+image would be projected to a scene
+based on Fourier optics so here,
+as taught in our
+course, we use far-field propagation,
+specifically Fraunhofer propagation,
+in order to obtain this illumination image
+for example, here, for the
+explanation purposes,
+this illumination image,
+I corresponds to this DOE phase
+map calculated based on the equation
+that I just showed before.
+Now, as we have this illumination image
+and then the virtual scene asset,
+including the depth information, normal information, and  it's albedo,
+then we can simulate the captured images
+from the stereo cameras
+Given this scene illumination image
+then we can calculate
+these stereo images
+where the DOE illumination is projected
+on top of the scene using geometric optics
+specifically epipolar geometry
+Now that we have simulated
+this sensor input, we reconstruct depth
+by estimating correspondence
+between the images.
+So here we develop a neural network
+method that exploits the known illumination
+being optimized
+different from the conventional stereo
+matching network
+In more details from these two stereo
+images, we extract their spatial features
+using a feature extractor and also
+we extract feature from the illumination image.
+Then given these features of these
+three images, we construct two cost volumes
+for the wide baseline image
+between these stereo images
+and also reconstruct another narrow
+baseline course volume with a stereo image
+and illumination image.
+Then using this information both,
+we estimate depth at a low resolution
+which is upsampled to a higher resolution
+using a convolutional upsampler
+so as both image simulation
+in the form of differential image
+formation and our reconstruction which
+is a neural network are differentiable
+Now we can backpropagate
+the loss to the neural network
+and then to the DOE phase map.
+So now we can estimate the
+the best optimization parameters
+for the DOE phase map and reconstruction
+to make our estimated depth
+as close as possible to the ground
+truth depth information.
+so this is the result.
+So as a result of our computational
+end-to-end optimization of illumination
+and reconstruction, we obtain this
+interesting illumination pattern
+which we call as polka lines
+And as the name suggests, these polka line
+illumination pattern
+consists of small size
+dots slanted along a certain direction.
+And it has varying intensities
+for inside of this each slanted dots.
+And at the center we have some dots that have
+has high intensity and some other dots
+have the low intensities,
+and it has very high density for sure.
+So for a comparison,
+this is the conventional hand
+designed illumination pattern
+from Intel RealSense D415 sensor,
+and it has a regular structure
+with constant intensities
+and with large size dots right.
+And as this is not directly optimized
+for improving depth accuracy,
+it often fails for a challenging sense
+as shown on the right.
+This is the estimated depth in simulation
+so in contrast,
+our learned illumination pattern
+enables accurate depth estimation
+shown on the right
+so we fabricated the learned DOE
+using a photolithography technique
+and built a prototype system
+that experimentally produces
+the polka line illumination pattern
+shown on the left.
+So here we used two
+NIR stereo cameras
+and built our illumination module
+with NIR laser and coordinated light.
+And also there is
+amounting device that holds
+our fabricated is
+Our prototype system
+can acquire accurate depth information
+for challenging scenes
+including the textureless surfaces
+under diverse environments
+from indoor illumination
+to outdoor sunlight.
+For example, on the most
+the left side, we have put
+multiple objects on our optical table
+in an indoor lighting illumination
+condition with our fluorescent light
+also the second one is me
+the wearing a tshirts
+and with my fingers.
+that is also captured
+on the indoor lighting and
+the next example, in the third column,
+we captured a textureless box without any ambient
+illumination in an indoor condition.
+In the fourth
+column
+we captured a notebook under the sunlight.
+Yes, but still in the indoor condition, on the most right hand side, we
+bring our imaging system to the outdoor
+condition and captured myself,
+my body under the sunlight.
+Okay.
+Our system also runs in real time.
+We capture challenging objects
+such as low reflectance, diffuse bag
+and a specular stop sign, a color checker
+and a transparent bubble wrap.
+And as you can see here,
+so we also tested our
+what kinds of patterns that we could
+optimize for different environments.
+So what we call this application
+is like we call as
+environment-adaptive illumination design,
+which means it is very easy to obtain
+the optimal illumination patterns
+for different simulation environments,
+such as different laser power,
+different ambient light illumination,
+different noise statistics and so on
+and so on.
+If we feed
+this different simulation environment
+into our end to end training pipeline,
+then we can optimize, we can obtain
+the corresponding illumination pattern
+so this is the result in simulation.
+if we first in the first experiment
+we tested the impact of ambient light.
+So if the ambient light is low,
+if the ambient power is low,
+then as you can
+see on the most left hand side,
+the optimized illumination pattern
+becomes more dense
+with low intensity However, as we increase
+the ambient illumination power
+on the most right hand side,
+then you can see that this intensity
+of each dot becomes higher
+and the dots are getting the sparser.
+So this is because in the high ambient
+light situation, our
+the illumination patterns should
+stand out of this ambient light.
+So it becomes
+higher in terms of intensity.
+And in order to do that,
+we need to sacrifice
+the density of the projected dots a little
+bit because our power budget is limited.
+So the entire dots are getting a little bit sparser
+Also,
+it tested the impact of noise.
+For instance, like if we have the
+the large aperture size of the camera,
+that is going to allow us
+to have less noise.
+However, if we have the really small
+aperture of the lens system,
+then we are going to likely
+to have the high noise.
+Or you can think about this, the
+the other configurations where the noise
+varies, such as if you bring
+your system into the low light conditions
+or in a different configuration, then
+in that case, if you have the moderate
+degree of noise shown on the left,
+then we are going to have really dense
+illumination patterns.
+And on the right,
+if we have the high level of noise,
+then in order to stand out of this
+noise level,
+our illumination pattern
+also becomes sparser
+and with the higher intensity.
+and these illumination
+patterns
+optimized for the specific environments
+could provide robustness of depth
+imaging in the extremes scenarios
+Depending on the users,
+the preferences for the
+for the environment,
+we believe that this environmental
+adaptive illumination design
+could be a very useful
+In summary, in our work,
+we described how to utilize this,
+illumination design
+and then the end to end optimization
+in this differentiable camera regime
+to achieve this superhuman capability
+for specifically in our work on depth imaging.
+And we believe that jointly optimizing
+our illumination design and camera system
+and our reconstruction algorithm
+will allow us to open up new potential
+of this computational imaging
+Thank you very much.
+That was my session about differentialble
+illumination and camera.

@@ -1,0 +1,299 @@
+Hey there and welcome to this video! Today, I will 
+talk about gradients with respect to inputs and  
+I will give you two examples of how you can use 
+them. The first one is adversarial attacks. The  
+goal is to fool a pre-trained network to change 
+its prediction by modifying the input features.  
+The second example is going to be about trying 
+to explain predictions of a pre-trained neural  
+network. Before I start let me just give a quick 
+shout out to the more notorious gradients and that  
+is the gradients with respect to the parameters 
+(which you can see on the right). They are used  
+heavily during the training process of neural 
+networks because it is with their help that we can  
+update the trainable parameters. Anyway, let's get 
+started. The first example is going to be using  
+an algorithm called the Fast Gradient Sign Method 
+(FGSM). I believe it was first introduced in this  
+paper "Explaining and harnessing adversarial 
+examples" written by Ian Goodfellow and other  
+authors in 2015. I'm not going to describe this 
+paper in detail and instead I'm just going to show  
+you the place where they propose the algorithm. 
+First of all, the figure is really instructive.  
+The setup is the following. We start with an image 
+of a panda. As you can see the classifier is able  
+to correctly predict that it is indeed a panda. 
+Our goal is then to find a small perturbation of  
+the image that will fool the classifier network. 
+Funnily enough, the small perturbation might not  
+even be visible to the human eye. So how 
+do we come up with this perturbation. Well  
+it is nothing else than the gradient with respect 
+to the input, however, we are only interested in  
+its sign. Since we add this perturbation to the 
+original image we are hoping to increase the  
+classification loss. Also note that we multiply 
+the perturbation image by a small epsilon to make  
+sure that the change is minimal. All right, let 
+us first create a couple of utility functions.
+We are using Pillow to deal with images. We are 
+using torch to do deep learning related things  
+and finally we are using torch vision transforms 
+to pre-process our images. Let us start with  
+the star of the show which is a function that 
+computes the gradient with respect to inputs.
+The first argument of this function is a callable 
+and it should define how we get from the input  
+to a final number representing let's say 
+the loss. The second argument is going to  
+be our input tensor and finally we have keyword 
+arguments that we can pass to our "func" callable  
+what our function returns is the gradient and 
+it has exactly the same shape as the input.
+Here we are assuming that our input tensor is a 
+leaf node and by setting "requires_grad" equal  
+to "True" we are telling torch to compute 
+the gradient with respect to this tensor.  
+We take our input tensor and we run it through 
+the "func" callable. What it could represent for  
+example is a forward pass of a neural network 
+followed by some loss criterion. Here we tell  
+torch to compute the gradients and finally we just 
+undo what we did as a first step of this function.  
+This function then returns the actual 
+gradient tensor. As you would probably agree,  
+this function is extremely simple yet it 
+does all the hard work. Let me now define  
+a couple of boilerplate utility functions 
+that we will use in both of our examples.
+The  
+goal of this function is to take an image that is 
+lying somewhere on our disk and convert it to a  
+tensor that we can right away use with pre-trained 
+networks. The composite transform contains the  
+following steps. First of all, we resize our 
+image to be a square and then we crop a smaller  
+square in the center. We then convert the image 
+to a "torch.Tensor" and finally we normalize.  
+Note that these means and standard deviations are 
+available in the documentation of torchvision and  
+I guess they were just computed from the training 
+set of Imagenet. We transform the image and then  
+we add an extra dimension to the front of it 
+representing the batch dimension and we return it.
+This function will take an input tensor. It 
+will undo the normalization that we did in the  
+previous function and it will turn it into a numpy 
+array that we can use in matplotlib right away.
+We remove the batch dimension.
+This transform is supposed to undo the 
+normalization we did in the "read_image" function.
+We run the transform and then 
+we permute the dimensions  
+in order for the channels to be the 
+last dimension and then just return it.
+This function is motivated by 
+the fact that gradients can have  
+any values whatsoever and our 
+goal is to take a gradient tensor  
+and turn it into a tensor that has elements 
+in the range of 0 and 1. This heuristic can  
+help us visualize the magnitude of the 
+gradient in different parts of the image.
+We first compute the absolute values. 
+Then we take an average over the channel  
+dimension and finally we put the 
+channel dimension to the very end.
+Here we divide all the elements of the tensor 
+by a number that is very close to the maximum  
+but it's not quite the maximum here I chose the 
+98th quantile but you can play around with this.
+Here we make sure that all the 
+elements are in the range (0, 1).  
+And finally we turn it into a numpy array and  
+return. All right let us now 
+move to the actual example.
+As you can see I imported "torchvision.models" 
+in order to be able to load a pre-trained model.
+I'm also going to import some of the 
+utility functions we just implemented.
+We will pass this function to 
+the "compute_gradient" utility  
+it will compute the negative log likelihood 
+loss for a given input image and a given target.
+We run the forward pass and 
+then we compute the loss.
+We print its value and return it and now 
+we're ready to write the attack function.
+All right the first argument is a tensor which 
+represents the input image. The second argument  
+is our pre-trained classifier network. Epsilon 
+will control the size of the perturbation.  
+Number of iterations represents the maximum 
+number of iterations we run the attack for.
+What this function returns is a new image 
+that is going to be hopefully as similar  
+to the input as possible. However, the 
+predicted label is going to be different.
+First of all we clone the input tensor 
+so that we are not modifying it in place.
+We check what the original 
+prediction is on the input image.
+And now we move to the main "for" loop.
+First of all, we make sure that 
+all the gradients are set to zero.  
+We use our utility function "compute_gradient" 
+to get the gradient with respect to the input.  
+Note that the target here is going 
+to be the original prediction.
+This line represents the core of this 
+attack. We compute the sign of our gradient,  
+multiply it by a small number and then we 
+add it to the current image. We also clamp  
+this image into the range of -2 and 2 in order 
+to make sure that the image stays realistic.
+We take our new image and we 
+let the network classify it.
+If the new prediction is different than the  
+original prediction we managed to fool 
+the network and our attack is over.
+Finally we just returned a new image, the 
+original prediction and the new prediction.  
+Let me just stress that the idea of the algorithm 
+is to move in the direction of the gradient and  
+that way we are hoping to increase the loss. 
+All right, let's see this attack in action.
+we load a pre-trained resnet using torchvision 
+we set it to evaluation mode because it has  
+multiple batch normalization layers 
+and they behave differently at  
+training time and at inference time. We 
+use our utility function "read_image".
+Here we run our attack and the 
+only thing left to do here is  
+to visualize how the image looked 
+like before and after the attack.
+We turn the tensors into arrays so that we 
+can visualize them with matplotlib and we also  
+create this difference array that is supposed to 
+highlight where exactly the biggest changes are.
+Finally, we format the plot a little 
+bit and then save it into an image.
+As you can see, in each iteration the loss 
+was going up and after 16 iterations we were  
+able to fool the network. Also note that we are 
+getting this warning because our clamping was  
+not that strict. As you can see the original 
+image is clearly a lion and that is exactly  
+what the network predicted. Note that I actually 
+added the classes corresponding to the label ids.  
+When it comes to the modified image, the network 
+thinks it's a golden retriever. The difference  
+between the original and the modified image is 
+really subtle. It is the color of the sky that is  
+slightly different. Anyway, I find it impressive 
+that we're able to fool the network with such a  
+simple algorithm. The second example is going 
+to demonstrate the Integrated gradients method.  
+It was introduced in this paper called 
+"Axiomatic attribution for deep networks"  
+written by Mukund Sundararajan and other authors 
+in 2017. Again, I'm going to leave out all the  
+details and just focus on the essentials. The 
+Integrated gradients is a simple algorithm that  
+allows us to determine how much different input 
+features contribute to the final prediction.
+Instead of just using a single gradient with 
+respect to the inputs they propose to generate  
+a straight line path between a baseline input 
+and our actual input. For example if our inputs  
+are images the baseline could be an image that 
+is entirely black. Anyway, once we have this  
+path we collect multiple gradients along it and 
+then aggregate them by the following formula.
+Here we can see visually how the algorithm 
+performs compared to the simple gradient  
+approach. It seems to be way better. Let 
+us create a script called "explain.py".
+The goal of this function 
+is to run the forward pass  
+and then to extract the logit 
+corresponding to the target.
+Now we can implement the function that 
+computes the integrated gradients.
+The first argument is the input image Baseline 
+is the other image as discussed in the paper.  
+This is going to be a classifier network. Finally, 
+target is going to be the ground truth label id.
+Number of steps will determine the number 
+of tensors along the line from the baseline  
+to the input image. This function 
+returns two different tensors of  
+the same shape. The first one is going 
+to represent the integrated gradients  
+and the second one is going to be the 
+gradient with respect to the input image.
+This path list is going to hold all the tensors on 
+the straight line from the baseline all the way to  
+the input image. Note that the last element of 
+this list is going to be the input image itself.  
+Here we are computing the gradient with respect 
+to all the tensors that are lying on the line.
+This line approximates the 
+integral proposed in the paper.
+Finally, we return the integrated 
+gradients and also the gradient  
+with respect to inputs. Let 
+us now see whether it works.
+As in the previous example we load 
+the pre-trained resnet and set it to  
+the evaluation mode. We load our image 
+and then also convert it to an array.
+Here we prepare the inputs for the 
+"compute_integrated_gradients" function.  
+Note that this baseline image should be very 
+close to just a black image. The reason why we  
+construct it like this is because the resnet 
+already assumes that the input is normalized.  
+Here I call our function and I 
+also hardcode the target label  
+to be 291 corresponding to a lion. 
+Now the only thing left to do is
+visualization.
+As you can see I'm using the "scale_grad" 
+function that we wrote at the very beginning  
+of this tutorial. I take these scaled gradients 
+and I multiply the input image with them. This  
+way we will have an idea what parts of the image 
+are explained by the algorithm and which aren't.
+Now we should be ready to run it.
+Here you can see the results. The first two images 
+represent the baseline and the input respectively.  
+The third image shows how the single gradient with 
+respect to the input explains where the network is  
+looking. The brighter the pixel the more relevant 
+that given pixel is for predicting the lion class.  
+Even though it is really noisy we clearly see that 
+the face and the mane of the lion are something  
+the network focuses on. Finally, if we look at the 
+rightmost image it shows the Integrated gradients  
+approach. It has less noise than the other 
+approach and one can clearly see that the face of  
+the line is the most important part of the image. 
+Before I finish this video let me just show you  
+two really amazing open source projects that are 
+focused on the two subjects that I discussed today  
+the first one is named Foolbox. It is focused on 
+adversarial examples and it implements a lot of  
+different algorithms and some of them don't even 
+require access to gradients. The second project  
+is called Captum and it is focused on interpreting 
+of predictions of neural networks. It is closely  
+linked to PyTorch and it has an amazing API and 
+a wide range of implemented algorithms. Thank you  
+very much for watching this video. If you enjoyed 
+it do not forget to like it and if you would like  
+to get similar content in the future do not 
+hesitate to subscribe! See you next time!!!

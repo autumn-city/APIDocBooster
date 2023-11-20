@@ -1,0 +1,517 @@
+ Alright, so this is going to be the last video in this lecture
+ on recurrent neural networks. So we are now talking about
+ implementing an RNR classifier RNN classifier in pytorch. So
+ the many to one word RNN that we just talked about in the
+ previous video. So it will be essentially this whole process
+ from going from a text to building a vocabulary, then this
+ integer representation and then using an embedding to get this
+ input to the RNN, which will be when you recall be this one many
+ to one RNN where we have one sentence as an input and one
+ class label as the output. So I have actually two codes here.
+ One is an LSTM and one is a packed LSTM. The packed LSTM is
+ just a more implement a more efficient implementation. So
+ let's just talk about me. I just let's talk about the regular
+ LSTM first the regular approach. So it took a couple of minutes
+ to run this. I'm not gonna rerun this we are just taking a look
+ at the results and I will upload this to GitHub if you want to
+ play around with that. So we are going to use torch or pytorch
+ and torch text. So in particular, any version of torch
+ text that is point nine or higher. Also notice, I don't have
+ any helper files here because this is like a tricky
+ concept to explain. I wanted to keep everything in this notebook
+ to make it a little bit more easy to explain by walking you
+ through this instead of visiting different files. But yeah, you
+ could technically also use these helper files when code becomes
+ larger. So here, the training function will be very simple. I
+ don't have any fancy training function this time, just to keep
+ things simple, because I think an RNN is already complicated
+ enough. So compared to a convolution network, these RNNs
+ are actually really tricky to implement, at least in my
+ opinion, I actually very much prefer working with convolution
+ networks. So here are some general settings. So we are
+ going to use the vocabulary size kept at 20,000. The learning
+ rate, batch size, number of epochs, this is something
+ familiar to you. The embedding dimension that we will use is
+ one or 28. The hidden dimension will be 256. This is like on
+ after that. And then the number of classes is two. So first,
+ we're going to download the data set the IMDb movie review
+ data set. So here, in this, in this part, we are downloading it
+ from my book, because yeah, just for simplicity, because this
+ will save us some pre processing steps, there is actually an IMDb
+ data set implemented in torch text. But here, I'm also
+ explaining to you how you can use an LSTM on your own data
+ set. So it's basically two steps in one. And we're using this
+ because it's in CSV format that is already I would say easy to
+ use. So we can skip all the pre processing steps of this
+ particular data set so that we can more focus on how torch text
+ works. So this is just downloading it from this GitHub
+ repository. Then this is unzipping it. And then this is
+ loading it into a pandas data frame, because it's just a bit
+ simpler than using anything else. So this is a CSV file. So
+ we are using pandas to take a look at it. So it has, I think,
+ 50,000 entries. So yeah, these are the first five, the review
+ is the text, the input text, and the sentiment is the class
+ level. It's kind of too personal to me, a common gotcha to have
+ the wrong names later in the code. So here, I'm using
+ something called a text column name and label column name as
+ the name for these, because you will see that later, you have to
+ provide kind of like an attribute access to these
+ features in the training loop and the same for the labels. So
+ depending on the names of your columns in the pandas data frame,
+ your training loop might look different, you have to rewrite
+ it. And I find this very tedious. So I would give my
+ pandas data frame if I have worked different data sets,
+ always these names just to keep it simple. It could be something
+ else, but I find it also capital letters useful. So it reminds me
+ of what this means or what this is, it's just easier to see it
+ just screams out, okay, this is a column name here. And this is
+ important. Alright, so I'm just giving it the generic name, text
+ column name and the generic name, label column name here.
+ Alright, and then I'm deleting this again. So here was just
+ essentially loading it, renaming it and saving it again. And then
+ here, this is just for taking a look at it again, that it looks
+ okay. And then I'm deleting it because I'm not using it here
+ anymore. Then we are going now to prepare this data set with
+ touch text as input to the RNN. For that, we are going to use a
+ library that is called spacey, spacey is a very popular natural
+ language processing library for Python, Python. And in
+ particular, we are using the tokenizer. So by default, it
+ would use tokenizer splitting on white spaces. But I heard from
+ people working with real world data sets that sometimes these
+ are not very robust to let's say weird characters. So also HTML
+ characters and things like that. And this tokenizer also gets rid
+ of certain formatting things you find in HTML, like these on these
+ symbols here and so forth. So it's like a little bit more
+ sophisticated than just splitting on white space. So
+ what this is doing is it's splitting a text into white
+ space so that one token is one word. And we are using here this
+ English language, it's, I think it stands for English core web
+ and something. And this is not for something. I'm just saying
+ something, I forgot what this means. But this is essentially a
+ library or not a library on dictionary for English words and
+ web things encountered on websites and stuff like that. So
+ this is usually useful if you just work with a data set like
+ scrape from somewhere on the internet. If you are just
+ running this, it may be that you encounter will encounter an
+ error. So you have to run this one first, which will you have
+ to run this on a command line, this will download this. Yeah,
+ dictionary here. And yet to install space here, I recommend
+ conda, but you can also use pip pip install. Now, like I said
+ before, in the previous video, things have changed in touch
+ text. So we are going to use the old way called torch, torch,
+ text legacy. But if you want to convert this to the new one, I
+ actually spent a lot of time yesterday, and then it was not
+ working very well. So I use the old way again. But if you're
+ interested here, there's a tutorial for migration on the
+ slides. So to migrate to the newer way that it doesn't use
+ this legacy thing. Alright, so we are now defining a field for
+ the text. So this will be our features our tokens. So this
+ this will be so if we have, for instance, on oops, if we have
+ this text here, this will be something like a list containing
+ of containing these consisting of these words split by
+ approximately something like the white space, but a bit fancier
+ than that. But each entry in the list will be one word
+ essentially, using this tokenizer. Alright, the second
+ one is the label. So this is for designating this label, which
+ will be our integer long, long is just a 64 bit integer. Here,
+ we are providing these fields. And this is so we are providing
+ these fields, which are the text that we have defined here and
+ the label that we have defined here. And we're using this
+ tabular data set, which will read our CSV file, and then
+ parsing out these things. So that we will can then load them
+ as a data loader. So here, this is why it's so here, this is
+ important, this name has to be the name that is actually here.
+ And personally, it's, that is where I always make mistakes. So
+ I let's say don't rename it, if I don't rename it, I would have
+ to put in like, oops, I would have to put in review here. And
+ then sentiment here. And then later, I have to also use these
+ words. And if I have a predefined training loop, I
+ would have to rewrite certain things depending on what data
+ set I use. This is why at the beginning, I renamed the column
+ so I can always leave it like it is right here. Now, the only
+ thing I have to change is, of course, the path to my data set.
+ Alright, and in this case, it doesn't have a header. So you
+ also have to check in this case, there is no header row, there
+ are only the column names, but there's no no particular header
+ row. Oh, wait, sorry, there is no skip header, there's no
+ header, it's skipping the header. Okay. So it's skipping,
+ skipping these, sorry, what I meant is, it has a header, it
+ has these column names, and it's skipping those. Okay, so this is
+ now the way we process our CSV file into a data set. Next, we
+ want to have a training and a test data set. So I'm using this
+ split function, I'm splitting this data set into two training
+ and a test data set. Actually, I tried to split it into three
+ directly, it should technically support that. So I had something
+ like point 7.1 and point two. But it gave me some very weird
+ results. I think it's a bug. So because what happened was, I had
+ a validation set like this. train data validation data, test
+ data. For some reason, I don't know why the validation data was
+ much bigger than a test data, which should be the opposite.
+ And I tried many things, it seems to be a bug. So I do it
+ in two steps. First step is I'm splitting the training data or
+ the data center training data, 80% and 20% test data. So I'm
+ double checking here. So the data set consists of 50,000 data
+ points, 40,000 will be for training, 10,000 will be for
+ testing. And then I split the training data further into a
+ training data set again, and validation data. So in total,
+ what I will have is 34,000 training examples, 6000
+ validation examples, and 10,000 test examples. Just to make sure
+ everything looks okay, we are now taking a look at the first
+ training example. So zero index zero is the first training
+ example. And this is how it looks like. So text column name,
+ that is the tokenized. So this is using the tokenizer. This is
+ the tokenized review text can see it keeps punctuation, it
+ keeps numbers. So for some unknown reason, comma, seven
+ years ago, comma, I watched blah, blah, blah. So you can see,
+ yeah, this is not the tokenized text. This is from using the
+ spacey tokenizer. And also, there's the name here. This is
+ like the this should be the class label. Actually not sure
+ why this is not an integer later actually doesn't cause any
+ problem. So it seems to be okay. But I feel like this should be
+ without quotation marks. But anyways, all right, so now we
+ have the data sets, the training data validation center data and
+ the test data. What we're now doing is we are building the
+ vocabulary. So here, build vocab, I'm setting a maximum
+ size for the vocabulary because yet to prevent overfitting. So
+ we are only using the most used words, the 20,000 most frequent
+ words. So I defined a vocabulary size here somewhere at the at
+ the top can play around with that can use 10,000 25,000 30,000
+ depends a little bit on how big the training set is, and how
+ how diverse the data points are, the texts are how long the
+ texts are, but 20,000 is a good number to start with. So we are
+ building this now. And for some reason, it's also called build
+ vocab here, I think I'm doing it right. So vocabulary size, what
+ we will find is it's 20,000 and two, not 20,000. And this is
+ because we have the unknown word token. So if we encounter an
+ unknown word that it will not crash, and then also the ones
+ for padding, and we have two classes zero and one. Here, I'm
+ now showing the just to look at whether it makes sense. Actually,
+ I can see there's something that I feel like shouldn't be there
+ is this this break character here. I thought to be honest,
+ the spacey tokenizer would be a bit more robust, that it would
+ not have these types of things, but oh, well, happens. Spray not
+ perfect. So here, we are looking at the 20 most frequently
+ encountered words or tokens. So the very frequent commerce
+ frequent point punctuation, and so forth. But yeah, this kind of
+ bothers me, this shouldn't be here. So we would, in a real
+ world application, probably have to deal with that using a
+ different tokenizer, or maybe just stripping it out before we
+ pass it to the tokenizer or something like that. All right,
+ next tokens corresponding to the first 10 indices, just to look at
+ those. So we have our vocabulary that is of size 20,000. So if I
+ go back to my on my slides, so we have this vocabulary. And we
+ are now looking 12345, the different integers, the strings
+ correspond to. So the first entry in my vocabulary is this
+ unknown one. Second one is the padding, and then the comma
+ point, and a O F, and so forth. And just for just making sure
+ things work, technically, so we will use that data for making
+ predictions. But laterally, generally, we can also just take
+ this vocabulary for the text field and convert any word into
+ this integer corresponding to the dictionary. So the according
+ to this vocabulary, the word the is at index position two, so
+ 012. So here, we're putting it in and get the number two. So
+ this is all we are here currently, this is not necessary.
+ We are just investigating what's going on just to make sure
+ things look okay. Oh, yeah, I see. So yeah, we have now this
+ class level vocabulary. And I mentioned earlier, there
+ shouldn't be strings. I mean, this is probably because, yeah,
+ we could have here, we could have put the word pause on neck
+ for positive or negative. This is what's original in the movie
+ review database. So here, I in my book, I converted it to one
+ and zero already. And the code thinks these are strings. Kind
+ of funny. So it's mapping one to zero, and zero to one. So we
+ would have to keep that in mind when we later do the prediction.
+ So we could have just used words like a pause and negative and
+ stuff like that. We could also, yeah, we could also change that
+ if we wanted to. It's just, um, here, it's just, I think,
+ alphabetical order or something like that.
+ It can't be alphabetical. I think it's just what it has
+ encountered first or something, or maybe it's even random, just
+ have to remember that the string one in our label column
+ corresponds to the class label zero in the tensor later. Then
+ here is our frequency count of the vocabulary, sorry, of the
+ training data points. So we have approximately 60,000
+ corresponding to zero. And this one is actually negative zeros
+ negative, and one is positive and 70,000 positive ones. On one
+ more thing I wanted to say is that's here, I'm building the
+ vocabulary only on the training data, not on the whole data set.
+ Because as usual, we pretend that the validation and test
+ data are unseen that there are new data sets. That's what we
+ use for evaluating our model. During training, we pretend we
+ don't know these, it's like independent data. So we are only
+ building the vocabulary based on the known data, the training
+ data. All right, so you can see, it's really complicated to
+ implement an RNN and lots of steps involved. It's way more
+ complicated than a convolutional network. So if you don't really
+ understand everything, the first time, it's totally normal. It's
+ just it's very complicated. People study this for many
+ months to before they become comfortable using those things.
+ Now we are implementing the training validation and test
+ loader, we use something called a bucket iterator, which is a
+ special iterator in pytorch, torch text, which will group the
+ batches such that the sentences have similar length, and that
+ reduces the number of padding that is required. Okay, here,
+ now we are testing whether those work, actually, these data
+ loaders, and you can see what I'm just doing is I'm like
+ before in my other code examples, I'm just doing for
+ batch and train loader, and then I print these, and then I do a
+ break. So it only shows the first batch, I just want to see
+ if it runs okay. So you can see for the first batch, it's
+ actually pretty large, I should say, the first value here is the
+ sentence length. And the second one is the batch size. So this
+ is a little bit different from the conversion networks, where
+ we had the batch size first. This is what makes I feel like
+ everything also a bit complicated to understand it's
+ like that the sentence length here is first. And the sentence
+ length is these integers here, these here. So I have a better
+ one here. Yeah, this, this is basically the sentence. Well,
+ this is for one word, sorry. I don't have a good one here in
+ the lecture notes. But so if you concatenate these together,
+ this would be on the sentence length. And then this is the
+ batch size. I think, yeah. All right. So now the RNN here. So
+ the RNN, okay, sorry, let's just have to make this a bit bigger
+ here. So the RNN looks like as follows, we're actually using an
+ LSTM. So there are several things now we are using this
+ embedding that provides the input to the LSTM, then the LSTM
+ itself, and then the output layer, hidden layer, sorry, the
+ output layer, it's not a hidden layer. This you can think of, of
+ the LSTM, you can think of as the hidden layer. Whereas, you
+ know, the embedding comes before that it's like preparing the
+ input for the hidden layer. Actually, in the slides, I said,
+ it's this one, but then there would be another matrix. So
+ it's technically a little bit confusing, I should have
+ actually not done that I should have showed you it as a
+ embedding that comes before that it prepares these access. And
+ this this W technically belongs to the RNN hidden layer. If we
+ would implement this one here. And the LSTM has a more
+ complicated setup, as you recall from last time, so it has all
+ these different types of hidden layers here.
+ Okay. Now, what we have here is the embedding that converts the
+ word into the real value vector. If I go back to my slides,
+ again, this is giving us this matrix here. So this goes from
+ text to this integer vector to these embeddings. And then the
+ LSTM takes in this embeddings and produces the hidden
+ activations. And then this is just like a classification
+ layer, like in a multi layer perceptron or the last layer of
+ a convolution layer, this goes from the hidden dimension to the
+ class labels, or put them as the number of class labels. Now,
+ these are defined here, we can't use easily a sequential like we
+ did before, because there's a little bit, the output looks a
+ little bit different. So I'm also maybe I should say, you can
+ technically use an RNN instead of the LSTM, but you will find
+ the performance is relatively poor. So you probably want to
+ use an STM. But if you want to do some experiments, you can
+ actually use the RNN instead of the LSTM. The LSTM is
+ essentially on what I showed you before in the last two videos
+ ago, the STM hidden layer. Okay, the forward pass gets a text. So
+ this gets really the text, this goes through the embedding. And
+ then the embedding is the input to the LSTM. So I call it RNN
+ RNN, but the LSTM, and it outputs the output, the hidden
+ and the cell state. So just looking for a good slide here.
+ So we have this many to one here. And the should focus on
+ many, one too many, or many too many. Okay, so let's, let's
+ consider this many too many here, when I call the LSTM, it
+ will output. So the orange one, you can think of as the LSTM,
+ it will output something that goes to the output thing had a
+ better slide somewhere here. Yeah, here. So it will output
+ this y. And it will output the hidden state for the next hidden
+ layer. So this is the output is the y. This is the y hidden is
+ what goes here in this arrow, what goes to the next one. And
+ cell state is specific to the LSTM. That's this LSTM state.
+ Okay, so we scroll here. So we have cell state that is output
+ here, right? So this one here, then we have this is the y here
+ to next layer where it says to next layer, this would be the
+ y, this would be the output. And HT, this would be the hidden
+ and sell, this would be the CT. It is complicated. So if it
+ doesn't make sense immediately, it is a complicated concept. So
+ since we have, let me find a better representation here again.
+ Since we have many to one, we are not going to use these
+ years. So we are not going to use this one and this one. So
+ this one, we are not going to use this one is not we are not
+ going to use. And this one is kind of also included in this
+ output. So to make things simpler, we are going to use
+ actually me run arrow. So what we are going to use here is we
+ are going to use the hidden output from the last one, which
+ is this hidden here. And then we will provide our own hidden
+ layer, our own output here, instead of using this green one,
+ we will have our own fully connected here for connected
+ there. This is what we're doing here. So we are computing our
+ own output, we are removing this, it's, let's say too
+ complicated, we don't want to use all all these green ones, we
+ are going to only use the hidden one, which is the output of this
+ orange here of the last orange, and then have our own fully
+ connected layer to get this output here. This is what's
+ going on here. All right, I hope this makes somewhat sense. So
+ if we look at the sizes, we go from sentence length to batch
+ size, this is like what we had before, sentence length and
+ batch size, the matrix of our input, then this goes into the
+ embedding layer, which produces a sentence length, batch size,
+ embedding dimension, this is our, I don't know why it is
+ arranged like that. But this is our let me delete this. So we
+ don't save it later when I export it for you. Yeah. So
+ this will be the this is the embedding. This is the embedding
+ matrix. This is the embedding for one training example. We
+ have some we have multiple because I have a batch size and
+ the batch size dimensions between the embedding and the
+ sentence length. So the sentence length, length would be the
+ rows here. It's also the rows and the columns isn't here not
+ the embedding dimensions, it's the batch size. So we have
+ sentence length, batch size and embedding. So you have to think
+ there would be an additional dimension here. And then this
+ goes sentence length, batch size, hidden dimension, this is the
+ dimensionality of our hidden layer. We chose I think 256. And
+ then we what we output get is only one. So hidden is one,
+ because it's the last one only the last one dimension is batch
+ size and hidden dimension. This is usually what would go into
+ the next hidden layer. And we want to give it to all we like I
+ said, before we make our own output layer, this is our fully
+ connected layer, this one. So we are removing here with squeeze,
+ we are removing this one. So we make this a batch size times
+ hidden dimension. And this is something you have seen before
+ all the time when we use the multi layer perceptron and
+ convolutional network. So squeeze is just we're saying
+ remove the first dimension, the one here, so that it is
+ compatible with our linear layer here. Again, this is complicated
+ stuff. So if that doesn't make sense, you don't have to
+ memorize any of this, I can totally understand if this is
+ come complicated. To be honest, I also spent several hours just
+ implementing this. It's, it's not easy, it's complicated. And
+ if you really want to work with text, of course, watching this
+ one lecture gives you just the introduction. It's normal to
+ spend weeks or months or professional spend years really
+ doing all these things. There are many, many aspects to
+ working with text, this is just the introduction. So don't feel
+ bad. If this looks a little bit complicated to you, it
+ naturally takes time to work with this. And you have to get
+ a better grasp of what's going on here.
+ Okay, but moving on, so we initialize now our recurrent new
+ network, the input dimension is equal to our vocabulary size,
+ that's a 20,002. So we use that here in our to create our
+ embedding matrix. Then the embedding dimension, we had
+ something like 128. And the hidden dimension is 256. And
+ the more classes we have to, we set it to two. So if I scroll up
+ to the top, we set it to two here, hidden dimension 256
+ embedding 128. We could technically use just one class
+ and then use our logistic sigmoid instead of softmax
+ function. And then we could use the binary cross entropy loss
+ instead of the regular cross entropy loss in pytorch. I did
+ that at first, but then I was thinking maybe you would like to
+ use this code here as a template for some other classification
+ problem that is not a binary one. And then you would have to
+ rewrite everything. So I implemented that here with two
+ output nodes, although it's redundant, I implemented it so
+ that you can adopt it to your own data set. So I thought it's
+ more useful in this way. So you don't have to rewrite any code
+ if you want to use that for your project.
+ All right, so now, let's get so this is initializing the model,
+ I'm just using Adam. Now let's get to the part where we have
+ the training. So here's the accuracy function for computing
+ the accuracy. So yeah, so yeah, we're just computing the
+ accuracy. And here, that's the training. Interesting. I should
+ have, yeah, I could have also done it like that. But so to be
+ clear here, how this works is I have batch index and batch data.
+ So here, I did a little bit differently. So yeah, I already
+ enrolled this, it seemed to work. But yeah, so here, batch
+ index and batch data. So it's the training loop, iterating
+ over the epochs, setting my model to train mode, and then I
+ iterating over the data loader. And it gives me two things that
+ text, which is batch data dot text column name, and labels,
+ which is batch data dot label column name. This is why I
+ earlier renamed the columns. Then I'm providing you the
+ logits. This is the output from the model. So we give the text
+ to the model, and it will do the embedding for us. And then run
+ it through the STM. And out come the logits, which is just like
+ logits, which is just like the logits in a multi layer
+ perceptron on the convolutional network that we have seen before.
+ And we have the labels here, the labels or sentiment. And this is
+ exactly how we've seen that before. There's nothing new
+ here. And yeah, it trains. Actually, I was training it and
+ I noticed, okay, it's not really working, right? You can see it
+ doesn't really work. And I was like really frustrated because I
+ spent many hours implementing this and then it didn't work.
+ But then for some reason, it picked up training here. And the
+ performance got really good. So at the end, I had a test
+ accuracy of 84%. And also to make sure I should have used the
+ same dictionary, I don't know why I didn't do that. For the
+ tokenizer. Anyway, so here is just an example. This I took
+ actually modified it slightly. This is based on based on this
+ tutorial here, took it from here. So modified it a little
+ bit for this code. This is just like an example of the things we
+ have to do in order to put something into our text if we
+ have new text. So let's say I have my model, and I have a new
+ text, like, this is such an awesome movie, I really love it.
+ And I want to know whether what the probability that this is a
+ positive review is turns out it's 98% positive, which is what
+ we would expect. So what did I do here, I put the model in
+ evaluation mode, I tokenize the text. So yeah, so I'm tokenizing
+ a text using this LMP tokenizer, I should have maybe used the
+ same as above this on Web dictionary, but it worked just
+ fine. Then I'm getting the integer representation, the
+ length, I don't need here, I need it for my other model. This
+ is why I think I've just left it in here. Then I'm converting it
+ to a long tank tensor, and put it onto the GPU. That's where my
+ model is, if it was on the GPU, otherwise, it will be on the
+ CPU if devices, CPU, just an optional step if you trained on
+ the GPU. Um, yes, is the index tensor. And this index tensor
+ will go to the embedding. So the embedding will not do the text
+ into embedding, it will be two steps. So we have to prepare the
+ indices. Okay. Yeah, and then that's the softmax, because we
+ don't have any softmax in our model ourselves. And yeah, this
+ is just this predict sentiment function for putting in
+ arbitrary text. And here's the same for the computing, the
+ probability that something is negative, it's just my one minus
+ this, right. So here, I really hate this movie. It is a really
+ bad movie and sucks. And you can see, model also detects that
+ this is indeed a negative one. Alright, so this is how it
+ essentially works. So this is the LSTM, the regular LSTM, it's
+ pretty complicated, as you have seen, you can actually make a
+ more complicated using this packed approach. So if you're
+ interested in that, there's a very good explanation here. So
+ essentially, it's about ordering the sentences and the batches to
+ minimize the number of computations, because we have to
+ do a padding, right. And if you just shuffle your data set, there
+ will be randomly long and short sentences together. But it is
+ inefficient, because for some batches, you have to pad a lot,
+ just because there are one or two long sentences. So this
+ packed approach, what we will do is it will look at the whole
+ training set, and organize it such that it minimizes the
+ number of padding required. So there are a few changes that you
+ have to make for that. So I highlighted them here. So you
+ have to include the length in the tokenizer, and so forth. So
+ some changes. I don't think here were this sorting within the
+ batches also required. Yeah, and then here, that was what take
+ took me a long time to figure out, you have to use this RNN
+ dot pack dot padded sequences, and then provide also the text
+ length took me literally hours to figure that out. was kind of
+ frustrating. But anyways, okay, so and then I had to modify this
+ a little bit in the accuracy function. In any case, long
+ story short, it's trained, it trained actually very well. I
+ didn't expect it to train that well. I'm not sure if there's a
+ bug, but it's trained so good, actually, or so well, that it
+ got 99% test accuracy. So essentially, this should be just
+ the same as this one, but more efficient because it puts or
+ organizes it so that we minimize the padding. And it is also
+ faster. Because of that, you can see if I go here, for one
+ epoch, it takes only point three, three minutes, whereas here, it
+ takes almost more than two times as much. And yeah, you can see
+ it gets 99% test accuracy. I took a look at this, I can't
+ find any mistake or bug. I think it's just a great model here
+ that trains well, it could be that there's a bug somewhere.
+ Because this is a little bit suspiciously good. But yeah,
+ well, I take it 99% doesn't sound too bad. So yeah, so here
+ you have two templates. And based on what I've seen,
+ actually, I think this one looked really good. So here you
+ will have some additional resources, if you are really
+ interested in working with text. But again, this is a very
+ complicated topic. And I don't blame you if this looks all
+ complicated to you. So you are just learning about it probably
+ for the first time. People who work with natural language
+ processing spend many, many days, weeks, months, learning
+ these types of things. So here, I gave you the overview, I hope
+ it's, it's useful. Next lecture, we will now then finally get to
+ the generative modeling part. So now I gave you the introduction
+ to the general machine learning and deep learning concepts. In
+ the next lecture, we will take a look at deep learning models for
+ generating new data auto encoders, variational auto
+ encoders, generative adversarial networks. And if we have time,
+ maybe also transform us. All right, then see you on Thursday.

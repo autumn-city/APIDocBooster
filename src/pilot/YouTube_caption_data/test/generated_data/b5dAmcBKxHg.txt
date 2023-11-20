@@ -1,0 +1,576 @@
+okay so i'm paul graham i'm a solutions
+architect with nvidia based in edinburgh
+in the uk
+and today i'm going to be talking about
+automatic mixed precision training in pi
+torch
+okay so why do we care about mixed
+precision training well it can offer
+significant benefits uh especially on
+the latest generation of gpus which have
+dedicated hardware
+for performing certain calculations at
+different positions
+so that hardware is in our volta touring
+and now our new ampere gpus
+so this can really speed things up but
+it can also mean that we use less memory
+uh we can just as powerful and just as
+accurate in terms of our model
+performance
+with no change to our model network
+architecture
+the reduced memory requirements of mixed
+precision also enable you to build
+bigger more powerful models if you
+choose to do so
+hopefully you'll come away from this
+talk uh with uh
+an introduction to mixed precision
+training and with a good idea of how you
+can introduce it into your
+um training uh paradigms we're going to
+focus on pi torch today
+um because that's what the rest of the
+webinars are focusing on
+but there are similar efforts for
+automating mixed position training
+in both tensorflow and tensorflow and
+mxnet
+in particular uh today i'm going to be
+talking about a tool that nvidia has
+written
+that has now been incorporated into
+native pi torch originally we had an
+extension called
+apex which you use for doing automatic
+mix precision but because
+this becomes so important and so
+commonly used it's now being
+incorporated into native
+pi torch so this automatic mix precision
+or amp as we call it enables you to take
+advantage of mixed position training
+automatically just by adding a few lines
+of python to an existing trainer script
+so just to cover the agenda uh we'll
+introduce
+what is mixed precision training uh
+we'll look at some of the important
+theory and concepts behind it
+and the potential benefits then we'll
+look at the principles to bear in mind
+when making use of amp
+and finally i'll go through the tools
+we've written to streamline the
+implementation of mixed precision in
+your own models
+so first of all we'll do an introduction
+to mixed precision training
+so what do we mean when we talk about
+different positions well this is
+basically how
+the gpu and how computers generally
+represent uh
+floating point numbers in in memory um
+so you can imagine the ruler analogy if
+we think of a ruler the
+length of the ruler is our range
+it shows that how large the number we
+can represent in our different positions
+the number of tick marks on our ruler
+shows the precision
+so the mantissa part this shows you how
+so the
+more tick marks you have the finer
+precision you can have so for fp32
+single position
+we see here that we have an 8-bit
+exponent so this gives us that range we
+can
+see a large range of numbers going down
+to very small numbers
+and a 23-bit mantissa that gives us lots
+of tick marks
+uh on our ruler for fb16 we have uh
+a much smaller exponent and a much
+smaller mantissa so that means the range
+of numbers that we can represent is much
+smaller it only goes up to 65
+504 there and also the steps between
+those numbers
+are are fewer as well so there's fewer
+tick marks on that ruler
+but why do we use these different data
+types in different places so
+we can make use of these different
+positions for different operations
+uh some operations can be handled at the
+lower position so half position fb
+16 and some but some require this the
+single position fb32
+if you're doing inferencing you can
+actually even go lower you can go down
+to indeed for example
+but for training you want to go focus on
+floating points
+and by taking advantage of these
+different positions we can take full
+advantage of our hardware
+we compare the certain operations with a
+certain position
+and this could take advantage of the
+dedicated hardware and the gpu for
+performing these particular operations
+allows us to run our models quickly and
+still achieve high
+accuracy in addition uh we have a new uh
+data type represented in our ampere
+architecture gpus
+called tensorflow 32 which has the uh
+dynamic range of fp32 with a precision
+fp16 so this
+is also almost hardware support for
+mixed precision but i won't go into too
+much detail on that today
+so we want to maximize our model
+performance
+so fb16 half precision is fast and
+memory efficient so if we think of
+single position fp32
+uh we set that as our bar as one times
+compute throughput one times memory 3.1
+times memory storage how does fp16
+compare um well it's about half the size
+so we need half the storage
+so half the model size required for
+memory or twice as many layers
+or twice as big a batch size or we can
+increase the predictive power with the
+same architecture in the same footprint
+but gives us more room for
+experimentation
+smaller size means that bandwidth bound
+operations where the speed is determined
+by the rate at which we can pull data
+from global memory to the cause
+uh and we can achieve two times uh
+speeder by taking advantage of that
+if we take advantage of the tensor cores
+we can actually improve our compute
+throughput by up to eight times
+and that's the main point that we would
+want to use fp16
+we have these tensor cores which i'll
+speak about in the next slide
+so this diagram represents the volta and
+turing tensor cores
+ampere tentacles are more flexible in
+the sense they can take different size
+matrices
+so testicles are hardware enabled matrix
+multiplication and accumulation
+operations uh or and
+convolutions on fb16 inputs which we can
+get up to 125 teraflops throughput
+which is effectively eight times faster
+than fb32 on the volta v100
+uh i mentioned there at the bottom there
+the a100 actually goes up to 16 times
+faster the testicle hardware internally
+carries out accumulated in fp32
+so it takes an fp32 or fp16 input
+internally performs fp32 accumulate and
+out the ndi gives you the fp 16 fp32
+output
+so the mass is fast it's bandwidth
+efficient it's high throughput
+but also numerically stable so this
+raises the question
+why do we not run the whole model in
+fp16
+so
+fb32 has its own share of benefits it
+has wider dynamic range we saw it could
+represent the larger range of numbers
+and because of this increased precision
+it can capture small accumulations
+and these can be very beneficial for
+certain operations in the network
+so if we look at this example here
+here's a sum
+over an array of 4096 elements each with
+a value of 16.
+so if we want to do that sum in um
+in half position we actually get an
+overflow here
+the half position can't represent the
+sum so we get a
+an error in fp32 it's absolutely fine
+because it's well within the range that
+being represented
+so this is an example where fp32 would
+be preferred
+due to its better range
+fp32 helps if your function is
+numerically sensitive to its inputs
+and also if your function produces
+outputs outside the dynamic range of
+fp16
+and if you're accumulating which of
+course may involve addition of small
+values plus large values
+so for an example of where you see such
+a calculation is for your way to update
+for example latent training when your
+gradients are small especially when
+you're multiplying them by the learning
+rate
+the magnitude can get very small so
+you're adding a parameter value plus a
+relatively small gradient update
+so here you'd probably need a wide wide
+representation of precision
+you need a lot of position to actually
+capture that update so that the network
+trains correctly
+so for example in this one if my
+parameters value is 1
+and my gradient value is 0.0001
+if i try and try this in fp16 it just
+gives us a value of 1 again
+it doesn't take into account the
+gradient it doesn't have enough
+precision to capture that update
+the the technical limit for this uh to
+happen is when the ratio of the update
+to the parameter is smaller than two to
+times ten to the minus eleven which is
+approximately point zero zero five for
+fb16
+which is a small value but not
+unreasonably small you can certainly
+imagine
+uh weights and gradients having some
+effect at that scale
+so that needs to be taken into account
+obviously in fp32 this is some
+and indeed all positions there is a
+similar effect but the ratio where that
+takes effect is much greater than for
+fp16
+so in this case of course fp32 can
+capture this update uh
+very very straightforwardly so that's
+another situation where we want to
+use fp32 instead of fp16
+so to summarize it's beneficial to match
+up operations that fp16 friendly
+with fp16 precision and fp32 friendly
+with fv32 position
+for example if you want to ensure that
+your matrix multiplications and your
+convolution
+convolution operations in fb16 and so
+you take advantage of the tensor cores
+designed specifically for that task
+and you also like to be sure that your
+weight updates are being carried out in
+single positions so that you get the
+benefits of fp32
+so here's a little example graph
+with examples that two operations that
+are fine in half precision fp16
+and then you switch to single position
+for the operations that benefit fp32 so
+the point
+that we want to make here though is that
+automatic mixed position or amp can do
+all of this for you
+you don't have to worry about this i can
+go through your network
+and make sure that your operations are
+paired with the appropriate position
+ensure that you're training as
+efficiently as possible and taking full
+advantage of your gpu hardware
+so why do we care about this because it
+makes things go faster so here's a few
+examples of
+on volta v 100 card of using mixed
+precision versus
+uh single position in your training so
+for bird we're seeing between a three
+and four times speed up
+for jasper two two to three times speed
+up
+uh and various other speedups there so
+these are all significant and if you
+think about the new a100 architecture
+you can pretty much double uh double
+these values
+and even more in many cases
+but what is the impact on accuracy of
+our network we're doing things at a
+lower position so perhaps
+this will have an effect well we've
+looked at
+many many different networks and applied
+mixed position and we found
+that all of them have converged to an
+accuracy comparable to that of the
+default pure
+single position as long as you implement
+mixed precision properly
+you use it for the appropriate
+operations the converge actually
+accuracy tends to be comparable with
+default single precision end to end
+it's important to emphasize with mixed
+precision you do not need to change your
+hyper parameters or your learning rate
+schedule
+so you don't need to do any retuning in
+that sense you can just enable mixed
+position
+your model will run faster and converge
+to the same accuracy
+so how can you realize these benefits in
+your own network
+so we're going to dive a bit more deeply
+into what what's happening
+under the bonnet and the mixed precision
+principles used in this operation
+so the two main principles we want to
+accumulate in fp32
+and then we also want to represent the
+values uh
+throughout our training and the
+appropriate dynamic range
+so we've established there's no cost in
+terms of accuracy convergence
+but there's also lots of potential
+benefit
+for retraining for example once a
+baseline is established you may discover
+that mixed precision receives the same
+accuracy and half the time or less
+so we just need to make sure that we
+make use the correct position for the
+correct calculations
+so at this point you might be asking
+yourself why do everything fb16
+well as we showed you earlier
+sometimes you can do everything in fb16
+but certain operations that benefit from
+fp32
+and leave them in fp32 can improve
+accuracy and stability and end-to-end
+training
+one of these is the weight update we've
+already seen this example earlier
+so the issue i mentioned earlier the
+weight updates are an accumulation so
+reiterating that slide if we update our
+value of one in float 16 with point zero
+zero one we just get one but in fp32 we
+get the right answer
+as the weight updates are an
+accumulation amp maintains those weights
+in fb32
+there's another challenge with a thing
+called gradient underflow
+the gradients can become very small
+especially late in training for earlier
+layers in the model
+and those small values can underfloor
+the fp16 dynamic range effectively
+becoming zero
+and your model will stop training
+as we can see in this stylized depiction
+you start from your loss creating some
+gradients
+and as they flow back through your model
+they get smaller and smaller until
+eventually they're under flow to zero
+so the way amp handles this is something
+called loss scaling
+you multiply the loss by some scale
+factor and by the chain rule this also
+scales all the gradients as they flow
+backwards to the network
+and in this schematic depiction you can
+see that this is ensured that all the
+gradients as they slow
+flow through the network remain within
+the fp16 representable range
+and then finally when we get to the last
+layer whether the last layer happens to
+be fp32f316 we end up with some scale
+gradients
+and we copy those to back to single
+position
+before we unscale them after we divide
+by this loss scale to return the
+greatest order it would have been in
+other words such this orthogonal to the
+learning rate
+it doesn't affect the learning rate at
+all um so
+we can use lost scaling uh without
+having any impact on the learning rate
+because we unscale
+the gradients because we unscale them in
+single position we may end up with
+values that weren't representable in
+fp16 but that's fine
+because we want to do the weight update
+in fp32 anyway so we just don't scale
+into fp32
+we do the weight update in fp2 32 and we
+have that full position
+range working for us
+so in a little more detail in the code
+what appears is you just
+multiply the loss by some scale factor
+to create some scaled loss so here we
+see the line scale loss equals loss
+times s
+then you call scaled loss backwards on
+the scale lost which again by the chain
+rule
+also scales all the gradients which
+allows us to preserve small gradient
+values as it boosts them into the fb16
+representable range
+and then finally we unscale the
+gradients in full fp32 position before
+calling optimizer step
+and again this unscaling ensures the
+gradient values are what they would have
+been if you haven't used any scaling
+so therefore lost scaling doesn't affect
+any of your hyper parameters
+and it doesn't change your effective
+learning rate
+amp takes care of both those things for
+you automatically
+so let's see how you can enable amp
+programmatically in pi torch
+[Music]
+i mentioned earlier that we used to use
+an extension called apex when performing
+automatic mix precision
+in pi torch but now that this approach
+has become so prevalent in the training
+process
+is it has been incorporated fully into
+native pi torches as
+amp as a module is more flexible and
+intuitive to use and has various of
+advantages which makes this a really
+positive move
+we're going to see over the next few
+slides how to take an existing single
+position
+training script add a few lines of code
+to invoke amp and then gain the benefits
+of accelerated training
+so let's look at the different steps we
+need to incorporate amp
+into your your training so first of all
+i need to import the modules we've got
+uh torch.queue.ordercast
+and torch.grad scalar so just two
+modules we need to import
+order casting automatically chooses the
+precision for gpu operations to improve
+performance
+whilst maintaining accuracy the gradient
+scaling improves the convergence for
+networks with
+fp16 gradients by minimizing the
+gradient underflow as we showed uh
+in the example earlier
+for step two we're going to make use of
+auto casting this automatically chooses
+the appropriate precision for operations
+on the gpu to improve
+performance while still maintaining
+accuracy
+for step 3 we introduced the gradient
+scaling as explained earlier gradient
+scaling improves convergence for
+networks using half precision gradients
+by minimizing any gradient underflow
+first we scale the loss to create the
+scaled gradients to be used in the
+backward propagation
+then we invoke scalar.step this first
+and scales the gradients and checks for
+any which contain an
+infinite or not a number value if you're
+okay great
+it proceeds to call step on the
+optimizer if they do contain an
+infinite or not number the optimizer
+step is skipped and the scale factor is
+reduced in order to try again
+note that the reverse is also true if
+there is a run of successful steps with
+no infinite or not number values then
+the scale factor is increased
+just to recap here are all the steps
+required in one script
+we set up the gradient scalar we apply
+order casting to the forward pass
+and then apply the gradient scaling to
+the back propagation just a few lines of
+code added to your trainer script
+and this allows you to significantly
+accelerate your training by taking full
+advantage of the underlying gpu hardware
+if you were doing multi gpu training
+with harvard this is compatible with amp
+and here's a simple example showing how
+you might do that
+notice social here that we've added an
+argument args.usamp to the grant scaler
+and autocast calls
+this allows us to easily enable or
+disable amp by setting this flag to true
+or false
+hopefully you've seen that utilizing app
+is very straightforward
+we've focused on pi torch in this talk
+but there are similar approaches being
+used in other frameworks such as mxnet
+and tensorflow
+and if you're using gpus for your
+training i'd strongly recommend taking
+advantage of this
+you'll see significant speed ups thus
+reducing your overall training time but
+also give yourself some flexibility for
+example to try larger models
+as you are using a smaller precision
+apex amp still exists to support
+backwards compatibility
+but going forward we'd recommend using
+the fully integrated app module in pi
+torch
+i've provided some links here so there
+is the amp package and some further
+examples of its usage
+and an interesting blog post which
+includes some more performance figures
+including some of the new a100 gpu
+amps available in our latest ngc
+container for pi torch and also in the
+1.6.0 release for pytorch
+and finally i'd just like to acknowledge
+my colleague michael corelli who
+developed dampen pi torch and provide
+much of the material for these slides so
+my thanks to him
+okay any questions

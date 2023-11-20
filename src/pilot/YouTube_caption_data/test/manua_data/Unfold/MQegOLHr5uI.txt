@@ -1,0 +1,120 @@
+Good day! My name is Hans van Gorp,
+and I will be presenting the work on
+"Image Denoising with Deep Unfolding and Normalizing Flows".
+This work was peformed by Xinyi Wei, in collaboration with: 
+me, Lizeth Gonzalez, Daniel Freedman, Yonina Eldar, and Ruud van Sloun.
+So, "Image Denoising with Deep Unfolding and 
+Normalizing Flows" is quite a mouthful.
+So let's delve into the details.
+Specifically, we are looking at inverse problems.
+So, inverse problems are all around us.
+Think about: black and white image coloration,
+or denoising, or medical applications, such as MRI, or CT, or JPEG decompression.
+And central to inverse problems is the equation: y = Ax + n.
+Where y is a measurement we have access to,
+x is some ground truth we are trying to recover, 
+but this problem is made difficult because: either our matrix A, 
+is not an identity, or there is some additive noise n, or even both.
+So a popular way to solve inverse problems are with iterative algorithms.
+For example ISTA: Iterative Shrinkage and Thresholding.
+And the idea behind this is that we have many iterations.
+Where we are doing two steps.
+Namely: data conistency, where we are trying to make sure that
+our recovered signal here, x-hat, is close to our measurement y.
+And also we have some proximal operator, basically  
+a prior on the structure of x.
+This could for example be: a sparsity prior, in for example Fourier domain
+Now the problem with these iterative algorithms is that we have to hand-craft 
+this prior,  and that it can take many iterations to acutally get a good result.
+So, recently, a popular way to deal with this is by 
+going with deep algorithm unfolding.
+Here we unfold an iterative algorithm in way fewer steps, 
+maybe three or five steps.
+And each fold of the algorithm we will make sure to replace
+some parts with deep learning or neural networks.
+So, specifically, this could look something like this. Where we have a 
+measurement y, of for example an image of a celebrity.
+But we are missing part of this image, and we want to reconstruct / 
+recover this full image image here on the right.
+And over here we are showing the "Neural Proximal 
+Gradient Descent" algorithm.
+Where we have data consistency steps and 
+learned proximal steps.
+Popular choices for this learned proximal step could for example be:
+a U-Net, or a ResNet
+However, these discriminative neural networks, we don't really know
+what's going on there under the hood.
+So, we have chosen to explore whether you can also use
+normalizing flows for this learned proximal step.
+So, let's take a bit of a side detour here,
+to think about, wat are these normalizing flows?
+So, a normalizing flow is a type of neural network which is bijective.
+So we can go forwards, as well as, backwards, in this network.
+And the idea is, that we have some complex distribution, here on the right.
+This could be any type of distribution...
+over here we have these two semi-circles, 
+but it could also be the distribution of images.
+And on the left we have a Guassian space.
+And the idea here, of the normalizing flow, is to fit this algorithm in such a way 
+that it will transform this complex distribution into a Guassian distribution
+and back again. So we can go both ways.
+So coming back to our neural proximal gradient descent algorithm,
+the data consistency step, we have not touched.
+But the learned proximal step we are now going 
+to change with normalizing flows.
+So, an image comes in on the left, an idea of an image, 
+so in this case  x-tilde here,
+and we will map x-tilde to this Gaussian latent space using our flow: 
+the forward flow. So we will map to some place in this Gaussian space here, z.
+And then we know that the more likely solutions, so better images,
+are actually more close to the origin.
+So what we do is, we perform a shrinkage step. Over here, we multiply by
+one over one plus lambda.
+Where this lambda is also learned and positive,
+so bigger than zero.
+So what we do is we move, actually, close to the origin.
+And then, now, because our flow is bijective we can do the reverse direction 
+and map back to a better image here, x.
+So really, what we're doing is
+we're taking this image x, going to Gaussian space, going to 
+a more likely position in Guassian space, and mapping back to a better image.
+So, what does this look like over several folds? Well over here we have this 
+same example. We're missing this central square here of this iamge.
+And what we do is, we start with an initial guess.
+Basically, z is zero at our flow, so the origin of the flow.
+We get this very interesting eigen-face here, going on.
+And what we then do is, we do a data consistency step. 
+So we basically mix this image with this eigen face and then we get this going on.
+ And then we do a step of flow, so we make, we come closer to a more
+likely solution. But as you can see the surrounding parts of the image,
+which we have actually measured, so we actually know what's going on there, 
+we have reconstructed something different. 
+So we do a data-consistency step to make sure that it gets back
+to what it is supposed to be.
+Right, so now we see that this outside is back to being normal again.
+and then we do again a proximal operator with a step of flow,
+data consistency, and again a step of flow. 
+And as you can see, we then get a very nice recovered image here,
+on the top, which looks almost similar to our target image, x.
+So we are not restricted to inpainting, we can of course also do denosing,
+what our paper for ICASSP is actaully showing, right.
+So we have here a denoising, and what we can see we have compared our
+proposed flow proximal operator with a U-Net and also a ResNet.
+ And on top here we've got noise level of sigma 0.2,  and then we can see that 
+all of these networks  are indeed able to denoise this image.
+Our proposed model does get the best results in terms of PSNR.
+And then here on this bottom row, we actually increase the noise level slightly.
+So important to know here it's only trained on this 0.2 level
+and we increase the noise only slightly to 0.25.
+And then we can see that our model still performs well, while these other models, 
+these discriminative neural networks, they actually completely fail.
+So we see that these get some very strange reconstructions.
+So our model, this flow model, is much more robust to changes 
+in the measurement setup, after training.
+So what have seen? We have seen that normalizing flows are actually 
+a more powerful proximal operator that standard discriminative neural networks.
+And that these normalizing flows allow for an explicit structural prior,
+due to their Gaussian latent space.
+So, I hope you found this interesting. You can of course visit us at the online 
+poster presentation, and hopefully also at the offline physical location in Singapore.
+Thank you very much!

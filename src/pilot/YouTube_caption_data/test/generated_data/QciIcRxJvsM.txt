@@ -1,0 +1,362 @@
+recurrent neural networks are very
+versatile as we can use them in a host
+of applications in the last video we saw
+a few architectures like vectored
+sequence models sequence to vector
+models and sequence to sequence models
+you could go back and watch that video
+but even if you don't that's okay let's
+just make sure that we're on the same
+page so what is a neural network we
+could define a neural network
+mathematically as a differentiable
+function that maps of one kind of
+variable to another kind of variable
+like how in classification problems we
+convert vectors to vectors and in
+regression problems we can convert
+vectors to scalars recurrent Nets just
+throw sequences into the mix and so we
+end up with numerous architectures that
+can be used in various applications one
+architecture is a vector to sequence
+model we take a vector and generate a
+sequence of desired length trending
+research that uses this is image
+captioning the input can be a vector
+representation of an image and the
+output is a sequence of words that
+describes that image a second
+architecture that we discussed is
+sequence to vector models the input is a
+sequence of words and the output is a
+fixed length vector typical use case
+would be in sentiment analysis the input
+could be the words of a movie or product
+reveiw and the output could be a
+two-dimensional vector indicating
+whether the review was positive or
+negative the third architecture we
+looked at is sequence to sequence models
+where both the input and the outputs are
+sequences in the last video we even
+coded a model of this type using only
+numpy the input was a set of words of a
+sentence and the output at each step was
+to predict the next word in a sequence
+with sufficient training this word level
+language model can generate its own
+sentences but here's the thing this
+sequence the sequence model had equal
+sized inputs and out
+it's most applications out there don't
+have equal size inputs and outputs
+though like in the case of language
+translation a 10 word sentence in
+English may not have a 10 word German
+translation even in the case of text
+summarization the input is a set of
+sentences but the output by definition
+is a reduced set of sentences clearly to
+deal with this new set of problems
+we need another type of architecture
+that takes in an input sequence but
+outputs a sequence of different lengths
+from the input it exists and it's called
+the encoder/decoder architecture I'm
+pretty sure you can predict the two
+parts of this architecture the first is
+the encoder it converts the sequence to
+a vector and the second part is the
+decoder that converts the vector to a
+sequence take the example of English to
+German translation each sequence is a
+sentence or a set of sentences each
+neuron XT is a word in the input English
+sentence and each neuron YT is the word
+in the output German sentence the
+encoder takes a sequence and converts it
+into a vector so it takes an English
+sentence and converts it to some
+internal representation this
+representation which is a vector holds
+the meaning of the English
+representation but it isn't human
+interpretable the decoder takes this
+meaning vector and converts it to a
+sequence which is a German sentence so
+here's a question how long can these
+sequences really be theoretically they
+can be infinite but we run into a
+problem let's take a simple example
+consider a simple recurrent net with no
+hidden units but with a recurrence on
+some scalar some x0 after n time units
+its value would be xn and we write it in
+this way because we consider a discrete
+dynamical system since we have ourselves
+a network we need to learn the scalar
+way W by the back propagation through
+time algorithm but what
+happens to the value of xn for a very
+large n well if W is slightly greater
+than 1 then W to the NX 0 explodes and
+if W is slightly less than 1 then W to
+the N X 0 would tend to 0 or would
+vanish because the forward propagated
+values explode or vanish the same will
+happen to its gradients we could
+generalize this to matrices as well XT
+could be a vector and W could be a
+matrix transformation in this case for
+value entries of W greater than 1 the
+corresponding eigen vectors of W to the
+N will explode this means that the
+values of the input in the direction of
+the eigen vectors will explode to
+infinity and we'll lose input
+information the opposite is observed
+with values of W less than 1 the
+corresponding eigenvectors become near 0
+values and the components of the input
+in the direction of these eigen vectors
+just vanish which again leads to loss of
+input information now you're probably
+thinking but Ajay don't we observe
+something similar in deep neural
+networks isn't vanishing and exploding
+gradients the reason we can't go deeper
+into those architectures as well what's
+so special about recurrent Nets and my
+answer to that is the effect of
+vanishing and exploding gradients is
+much worse in RN ends than it is for
+traditional deep neural networks this is
+because dnns have different weighted
+matrices between layers so if the
+weights between the first two layers are
+greater than 1 then the next layer can
+have matrix weights which are less than
+1 and so their effects would cancel each
+other out but in the case of RN ends the
+same weight parameter R occurs between
+different recurrent units so it's more
+of a problem because we cannot cancel it
+out interestingly this problem in deep
+neural networks for long sequences was
+investigated way back in 1991 by harsh
+writer posh writer Porsche writer Hotch
+writer support writer it's an
+interesting read
+and I'll link the paper in the
+description we have some ways of dealing
+with this problem of vanishing and
+exploding gradients the first thing we
+can do is skip connections we can add
+additional edges called skip connections
+to connect States some D neurons in
+front of it so the current state is
+influenced by the previous state and a
+state that occurred D time steps ago
+gradients will now explode or vanish as
+a function of tau over D instead of just
+a function of tau this concept is
+exactly how the popular resonant
+architecture works in the convolution
+neural network space the second thing we
+can do is actively remove connections of
+length 1 and replace them with longer
+connections
+this forces the network to learn along
+this modified path now the third thing
+we can do is well let's consider our
+vanilla over current neural network but
+this time append a constant alpha over
+every edge joining the adjacent hidden
+units this alpha can regulate the amount
+of information the network remembers
+over time if alpha is closer to one more
+memory is retained if it is closer to
+zero the memory of the previous States
+vanishes or it forgets a modification of
+the leaky hidden units is the gated
+recurrent networks instead of manually
+assigning a constant value alpha to
+determine what to retain we introduce a
+set of parameters one for every time
+step so we leave it up to the network to
+decide what to remember and what to
+forget by introducing new parameters
+that act as gates one of the most
+commonly used gated recurrent neural
+network architectures is LS TMS which
+stands for a long short term memory
+consider our vanilla recurrent neural
+network now replace every hidden unit
+with something called an L STM cell and
+add another connection from every cell
+called the cell state and that's it this
+here is now our LS
+trnn Ellis teams were designed to
+mitigate the vanishing and exploding
+gradient problem apart from the hidden
+state vector each LST M cell maintains a
+cell state vector and at each time step
+the next LS TM can choose to read from
+it right to it or reset the cell using
+an explicit gating mechanism each unit
+has three gates of the same shape think
+of each of these as binary gates the
+input gate controls whether the memory
+cell is updated the forget gate controls
+if the memory cell is reset to 0 and the
+output gate controls whether the
+information of the current cell state is
+made visible they all have a sigmoid
+activation but why sigmoid it's so that
+they constitute smooth curves in the
+range 0 to 1 and the model remains
+differentiable
+apart from these gates we have another
+vector C bar that modifies the cell
+state it has the tange activation now
+why Tangier with a zero centered range
+along some operation will distribute the
+gradients pretty well this allows a cell
+state information to flow longer without
+vanishing or exploding now you have an
+intuition of why LS TMS are constructed
+in this way and how it helps to mitigate
+the problem of vanishing exploding
+gradients the equations shouldn't be too
+difficult to understand now each of the
+gates takes the hidden state and the
+current input X as inputs it
+concatenates the vectors and applies a
+sigmoid C bar represents a new candidate
+values that can be applied to the cell
+State now we can apply the gates like I
+said before the input gate controls
+whether the memory cell is updated so
+it's applied to C bar which is the only
+vector that can modify the cell state
+the forget gate controls how much of the
+old state should be forgotten this state
+is applied to the output gate to get the
+hidden vector
+here we have three gates per lsdm so we
+have a slew of parameters to model but
+do we really need this complex structure
+we could get away with just two gates an
+update gate and a reset gate and this is
+the basis for gr use GUID recurrent
+units on a wide variety of tasks LST M's
+and gr use have similar performances
+I'll be making a specific video on gr
+use pretty soon we have a pretty good
+hold on theory now let's now build an LS
+TM text generator more specifically a
+character level language model here the
+RNN we'll take a look at a set of
+sequences one character at a time and it
+will learn to generate the next
+character in a sequence this is similar
+to the text generator that we built in
+the last video using only numpy but this
+time we're using Kerris a deep learning
+library built on top of tensorflow
+the data set we'll be looking at is a
+collection of State Union speeches that
+dates way back to the 1940s you can get
+this from pythons NLT que corpus NLT K
+is the natural language processing
+toolkit in Python you can use it for
+text manipulation but here we're going
+to just use it to get the data numpy is
+pythons math library from matrix
+operations os is used to read data from
+my local file system random here will be
+used for initializing our tensors we'll
+import different modules in Karos
+callbacks are invoked after some event
+happens like the end of an epoch during
+training model is used to construct our
+RNN layers is used to add LST m and
+normal components to our network
+optimizers allow us to define the
+optimizer for training this first chunk
+of code here reads all the files in the
+directory of our corpus into a single
+string next we construct a mapping from
+every character to a number and also its
+inverse mapping the number of characters
+per sequence will be the number of
+stem cells in the unrolled Network the
+trainset will be a set of these
+sequences the labeled output will be the
+next character I define that callback
+print callback and define a method on
+epoch end which as the name suggests is
+executed after every epoch an epoch is
+complete when all the sequences have
+been read once by the model here I just
+want to generate sample data we use
+temperature sampling to generate the
+next character at various temperatures
+and just spit it out all in screen I
+also save the weights of a model in an
+hdf5 file so you can continue training
+where I leave off now we build our model
+adding the LST M cell with a 128
+dimensional hidden vector and the output
+is simply a softmax vector of characters
+the actual result however is a one hot
+encoded vector
+I chose Kaos for the implementation to
+hammer home the fact that there's only
+one Ellis to himself for which the
+hidden vector updates the unrolled
+version is good for understanding
+mathematically and theoretically the
+intuition behind recurrent neural
+networks but the loop version is how we
+construct the network programmatically
+we use rmsprop to learn the weight
+parameters as our optimizer the default
+parameters tend to work well for
+recurrent Nets but you can always play
+around with it and then we begin our
+training I trained this network for 30
+ebox and it took about six hours ish on
+my little maca boy if you take a look at
+the sample sentences generated after
+every epoch you can see the generated
+sentences get more coherent pretty slick
+right if you want to train this further
+for better results yourself just
+construct the model load the weights and
+you're good to go I'll leave a link to
+this code in the description down below
+a few things to take away from this
+video recurrent neural Nets are
+basically feed-forward neural network
+layers just copy and pasted they learn
+parameters through the truncated back
+propagation through time algorithm
+which is basically backprop but applied
+at every time step longer sequences in
+traditional are n ends are a problem as
+they lead to vanishing and exploding
+gradients l SVM's and gr use our gated
+recurrent networks that can deal with
+such long sequences with the power of
+these recurrent Nets you can dive into
+stock prediction language translations
+speech recognition and so much more
+hope I left you knowing a little more
+about sequence modeling if so hit that
+like button smash that subscribe bring
+that Bell share the video add it to your
+playlist add my other playlist to your
+list of playlists and I look forward to
+your support

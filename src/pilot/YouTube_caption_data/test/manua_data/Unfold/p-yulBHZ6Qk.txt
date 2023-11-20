@@ -1,0 +1,1216 @@
+(upbeat music)
+- Welcome to this morning's
+Spark + AI Summit general session.
+Our next speaker should be
+familiar to a lot of you.
+Adam Pazske is the author of PyTorch,
+which has made huge inroads
+in the machine learning research community
+over the past few years.
+Join me in welcoming Adam,
+as he talks about recent efforts
+to help drive adoption of PyTorch,
+things like easy model
+packaging and export,
+simple mobile deployments
+and Python-free execution.
+He'll also cover the core
+concepts behind the library
+as well as upcoming features.
+So let me hand it over to Adam.
+- Hello everyone, my name is Adam Pazske
+and I'm one of the original
+authors of PyTorch,
+although this talk really is on the behalf
+of the whole PyTorch team
+and really all the contributors too
+because it's an open source project.
+Today, I want to present to you
+PyTorch as a modern platform
+for machine learning
+research and production.
+So if I were to describe
+essentially what PyTorch is
+using just one sentence,
+I would say that PyTorch is
+NumPy with batteries included,
+and especially some of
+those batteries are crucial
+when it comes to executing
+certain kinds of workload,
+so in particular, machine learning.
+So those features, those batteries,
+those features include things
+like accelerator support,
+so you can easily write your code,
+your ndarray-code which
+essentially not only can execute
+on the CPU as it would
+normally with NumPy,
+but it can also use GPUs
+or TPUs, or any other accelerator
+that might become popular in the future.
+Also another really important feature
+is high performance
+automatic differentiation.
+Basically what it does
+is you only have to write
+basically your complicated
+machine learning model
+and the code to compute the gradient of,
+let's say, some loss function,
+can be derived by the system
+automatically for you,
+without you having to
+sit down and actually do
+the derivation by hand
+and later implement it in code again,
+which is obviously very error-prone.
+More importantly I guess
+for this conference,
+the features which we will
+be covering right now,
+are a just-in-time optimizing
+compiler for ndarray-code,
+which also supports code export
+such that in can actually
+execute entirely with a Python
+and also a distributed
+computing library for PyTorch.
+So a bit of a origin story of PyTorch
+is that it actually came
+from Facebook AI research
+and as such, research has
+always been this driving factor
+in how we were designing,
+how we were thinking about the library.
+We were always striving to
+make it as flexible as we can
+and I would say that in research,
+we did a pretty good job.
+If you look at the implementations
+of the latest machine learning papers,
+that in the last quarter,
+over half of them were actually
+implemented in PyTorch,
+so that is more implementations in PyTorch
+than in all the other libraries combined,
+which I think is extremely exciting.
+But ultimately, we had this,
+we started with research,
+but research is not everything.
+A lot of this research
+is done to produce models
+that are supposed to
+interact with real world.
+You can think of autonomous
+driving cars as one example.
+Industry and deployment
+and actually interacting
+with the real world is not an area
+where we did great in the the
+past, I would have to say,
+but it was really our focus
+for the past few years
+and hopefully as you'll see,
+we are really achieving
+a lot in that regard.
+So, when I'm talking about deployment,
+there are really two use cases I think,
+that are somewhat different.
+That even includes training.
+One is embedded devices where essentially,
+those are often battery-powered
+and you really want to run
+with maximal efficiency
+with no cycles wasted on jobs
+which you wouldn't normally have to do,
+such as executing Python.
+So regular ways to use PyTorch,
+which is just writing Python scripts,
+that doesn't really scale
+of those embedded devices
+and so we had to come up
+with a solution for that.
+On the other end of the spectrum,
+you have computing at scale,
+so you might be deploying
+your machine learning solution
+to a whole fleet of servers,
+or you might running essentially
+a large scale distributed training,
+which is very popular these days.
+Previously, people would be
+training a single network
+on a single GPU for a few weeks
+and now on the same data sets,
+people can actually use
+obviously old clusters,
+they can basically train those
+networks to similar accuracy
+within seconds, or sometimes minutes.
+So the question is,
+we started with this PyTorch Eager,
+is what we called this NumPy-like mode,
+which doesn't really scale
+properly to both of those,
+scale up nor down to both of
+those deployment scenarios,
+so our solution to this was
+to create PyTorch Script.
+PyTorch Script essentially
+is a whole new programming language
+but you shouldn't really
+be afraid of that,
+because the new programing
+language essentially is Python
+for the large part,
+so uses exactly the same syntax
+and every TorchScript
+function is essentially
+a valid Python function
+and it is exactly the same function,
+it computes exactly the same
+thing every time you call it.
+The only caveat is that
+it is not all of Python.
+So there are some restrictions.
+Python is extremely dynamic
+and because of this,
+for example, the Python
+interpreter is incredibly complex
+so we had to actually
+restrict it in some ways
+to actually make it one more optimizable
+so we can do more advanced
+static analysis on our code
+and we can actually, let's say,
+rewrite certain patterns
+to make them faster
+and automatically stable.
+The other benefit we get from that
+is that it becomes exportable
+such that it runs entirely
+without the Python interpreter
+and we can just use our
+own lightweight interpreter
+as I've mentioned,
+because the language is so much simpler
+than the regular Python
+but also caveat here,
+is that it is a restriction
+but it is a pretty expressive restriction.
+So really most of the
+models that I've seen
+that are written in PyTorch
+easily fit within the realm of TorchScript
+and you should be able to
+convert those relatively easily.
+So just to give you an idea
+of how such a conversation looks like.
+The coding here is not super relevant,
+but the general idea is
+that this is part of the implementation
+of every cardinal network
+that it could find in
+some PyTorch examples
+and so there are really two steps
+you have to do to convert
+your function to TorchScript.
+One is you have to add
+argument type annotations
+this is because TorchScript
+is actually strongly typed
+and so it will check that
+you're not overriding
+a variable with a value
+of a different type,
+but annotating arguments
+is actually sufficient.
+The rest of the body can be
+handled using type inference
+and so with this limited
+set of annotations,
+it's actually sufficient for us.
+Also, this is obviously also
+a benefit for documentation
+of our code, where
+callers of those functions
+will at least know what
+they should be passing in.
+Then another thing to do
+is this small annotation
+here at the top,
+that says torch.jit.script,
+and basically what it does is,
+when Python gets there,
+when it actually creates the function,
+whenever you put torch.jit.script,
+instead of creating a
+regular Python function,
+this annotation will look at its source
+and it will try to verify
+if the source actually fits
+in the subset that we decided to,
+that we can actually
+support in TorchScript.
+If it does, then everything's all right
+and your program functions
+exactly the same,
+there's really no observable difference,
+it should give you
+exactly the same outputs,
+no matter whether you have
+this annotation or you don't.
+The only difference is
+that every time you call this function,
+it doesn't go through the
+regular Python interpreter,
+it actually goes through
+this optimized path,
+which can do really interesting re-writes
+as well as sometimes even code generation
+at run time to really produce
+something very tailored
+to your particular workflow.
+Now the other alternative is
+that whenever you put this annotation,
+something fails, you get an error.
+Whenever you get an error,
+this basically means that
+something inside this function
+does not really fit into
+the subset of TorchScript
+and the error should
+basically point to exactly
+the place where that happens
+and basically explain you
+why that is and how you
+should be able to fix it.
+So you can see that hopefully
+this would be relatively
+straightforward and as you can see,
+that should already give
+us a relatively good path
+to embedded deployment.
+The workflow goes like this.
+You write a PyTorch model
+using regular PyTorch Eager
+you iterate (indistinct).
+The research is often
+significantly different
+from deployment in that in research,
+you really want a lot of flexibility
+because you will be
+iterating on the model.
+Deployment usually is taking
+the result of the final iteration
+and actually putting it
+into some environment,
+except at this point,
+it should really run as
+efficiently as possible.
+So you write your PyTorch model
+using PyTorch Eager, you iterate
+on it as long as you want.
+Once you're done,
+you just as those TorchScript annotations
+in a few places in our code
+and then using torch.jit.save,
+you can actually emit a
+self-contained package,
+which contains both all of the parameters
+and all of the state of the model
+and of the code that is there,
+along with the serialized code.
+Once we have this package,
+there are ready made
+libraries available on both
+Maven and Cocoapods for
+Androids and iOS respectively,
+which you can easily
+link to your mobile app
+and they will be able to
+actually interpret those packages
+such that you can easily
+generate predictions
+from those models, or even
+in the future, frame them.
+Those packages are really lightweight,
+it's essentially just,
+let's say, five megabytes
+and that's all the
+weight it actually adds.
+All right, so let's move
+to more of a theme of this conference,
+which is actually working at scale.
+So when it comes to deployment,
+one thing we were really missing,
+I think, in the past is a good
+out of the box deployment
+solution for web.
+Now we actually have PyTorch Serve,
+so that is an official
+project which exposes,
+essentially can take those packages
+that either TorchScript produces,
+or because it runs on a regular computer,
+it can also take your
+models in which case,
+it'll use Python to
+actually serve those models.
+But the nice thing about it is basically
+for the common tasks like
+object classification,
+you basically get a nice REST API
+which synoptically makes
+sense for a particular task
+and for a particular domain
+and you can easily,
+basically in minutes, you
+can get up and running
+and serving your model to the web.
+It also supports some
+interesting features.
+For example, a lot of those
+models are more efficient
+if you evaluate them on
+multiple inputs at once,
+but usually for every single user,
+you will only be getting a single input.
+So what PyTorch Serve can do for you,
+is it can batch requests.
+So whenever requests are coming,
+it can delay them until
+a finite time horizon,
+a short time horizon,
+and it can try to
+accumulate a few of those
+in that amount of time
+and it'll try to evaluate the
+model on all of those inputs
+at the same time, to better
+make use of your hardware.
+All right, so that was the main thing for,
+when it comes to deployment,
+I think that was the
+main advancement we did.
+Now let's focus more on the
+actual large-scale training.
+So since version 0.2, that
+was a really long time ago,
+the main way to actually
+do distributed training in PyTorch
+was to use an MPI-like
+multi-controller model.
+So the idea is that it writes
+a single Python script,
+you launch it on a lot of different hosts
+and all of those hosts
+evaluate the script as they go
+and sometimes they reach something
+called a collective operation,
+which is essentially some data exchange
+between some of those hosts,
+and those include most MPI
+collectives you might know
+from different MPI implementations,
+like broadcast, allreduce,
+gather, scatters,
+point-to-point communication
+using send and receive as well.
+That seemed to work out pretty okay.
+The only problem with a lot
+of those MPI-like interfaces
+is that, well, they lack full tolerance
+and full tolerance is really important
+once you really want to scale up.
+So we did a lot of changes
+in distributed back end
+and that led to PyTorch Elastic.
+So PyTorch Elastic is exactly this wrapper
+around your MPI-like job,
+which utilizes a Kubernetes cluster,
+you can either get one on premise,
+or you basically rent those
+from any of the cloud providers
+and what it gives you is,
+is it provides you full tolerance,
+so any time any part of the jobs fails,
+it'll restart it automatically
+from a well-known state,
+without reconstructing the
+whole system from scratch
+and also another really
+cool thing, I think,
+is dynamic capacity management.
+So you can, for example,
+use on spot instances
+and whenever they become cheaper,
+you can actually scale up your training
+and whenever they become more expensive,
+you can actually scale it down,
+without aborting the whole job
+and restarting it periodically,
+which I think is also really nice,
+and also, in case those instances
+get taken away from you,
+everything's handled for
+you automatically as well.
+All right, so getting back
+to how you express those jobs though,
+in version 1.5, which
+is the latest release,
+there's actually a super exciting thing,
+which I would call a
+single-controller model
+for distributed.
+So the difference now is,
+unlike in the multi-controller model,
+where you have a lot of those scripts
+which have this distributed control
+and sometimes will decide to communicate,
+now there's only one Python script
+actually executing the code
+and the rest of the host
+just become dumb workers
+which await commands from
+the single-controller script.
+So obviously there are
+some problems with that,
+like the single host might become
+a little bit of a
+bottleneck for the system,
+but assuming you can actually
+slice off chunks of works
+that are large enough,
+such that the single machine
+might still be enough
+just to saturate still
+a fair amount of hosts.
+The API itself is really
+simple I would say.
+It's really just three
+functions and one class.
+Basically what those do
+is again really simple.
+rpc_sync, you give it a worker name,
+so that is the process in which
+the particular computation
+will be evaluated.
+You give it a function to evaluate
+and you give it arguments.
+What rpc_sync does is it
+will take the argument,
+it will ship them to that worker,
+it will compute the function,
+it will get the result and
+will ship it back to you
+and once it gets back to you,
+it will return the result.
+So it's blocking, this
+is why it's synchronized.
+Then there's rpc_async,
+so that is very similar,
+it's just that once it ships the argument
+and computes the function,
+it returns immediately.
+It doesn't wait until
+the data comes to you,
+but the data will come to
+you automatically as well.
+The only difference is
+that rpc_async actually returns
+something called a future object,
+which essentially you can use
+to wait on the result of this job
+and actually get it
+once it arrives to you.
+But you can, for example,
+use it to dispatch a bunch of those jobs
+and then wait for the results to come in.
+More excitingly, I think,
+the last two things are
+really much more interesting.
+So remote is again, very
+similar to rpc_async,
+the only difference is
+that it obviously executes asynchronously
+but it also does not imply
+that the result will ever actually
+come back to the controller program.
+Instead of what it returns to you,
+is a remote reference object.
+Those remote references are
+really, really interesting
+because they can also be passed
+around as regular objects,
+as arguments to other functions as well.
+So what this means is you don't have
+this implicit data transfers
+to the control program
+and from the control program.
+You can just, whenever some function
+finishes on some worker,
+it will just store its result
+and it will store its result
+as long as any other host
+in the host system contains a reference
+to that particular object
+but the reference to this
+object can be shared.
+For example method calls on this object
+will become tasks to
+be queued on the worker
+which actually manages
+that particular object.
+So some use cases for this
+particular solution are,
+pipeline parallelism, you can easily,
+using this remote reference,
+you can chain different tasks
+and by passing those remote references,
+you can make it easy to build
+very complex communication structures
+between different tasks
+in those pipelines.
+Also model partitioning.
+If your model does not fit
+onto a single computer,
+or in a single device,
+you can easily launch a bunch
+of processes with this API,
+you basically write as
+if you were writing,
+programming a single process,
+but now different parts of
+your model actually compute,
+do the computation on different
+parts, on different hosts.
+Then asynchronous parameter servers,
+this and reinforcement learning example,
+actually makes use of a
+very interesting feature
+of remote references,
+in that you can actually create
+a remote references yourself
+to the objects that are in
+your controller program.
+Once you create those references,
+you can also pass them
+on to other workers.
+What this basically means
+is that those workers,
+getting means to asynchronously call back
+to your controller program for example,
+inform it about some progress.
+Or ask it about the
+next actions to be done.
+I actually have an example
+for reinforcement learning
+that makes use of that.
+So often in reinforcement learning,
+you have some agent and
+you want to train it
+to make wise decisions about which actions
+to choose in what circumstance.
+You want the agent to basically interact
+with a lot of different environments
+but maybe if the environments
+are somewhat expensive to simulate,
+you might want to
+distribute the simulation
+over multiple different environments
+over multiple hosts.
+So the way you write it on
+a single-controller program
+and again, all of the
+code that you see here,
+essentially lives in a single file,
+it's just the distribution,
+the code that actually
+cues those functions,
+which will distribute the computation.
+So we have an implementation of the agent,
+which is a class with two methods,
+select_action and receive_reward,
+to better inform the
+future choice of actions.
+So at the bottom in the controller half,
+what you can see is
+that in the controller,
+we will essentially create the agent,
+we will launch a bunch
+of those experiments,
+using the async call and we
+will pass a remote reference
+to the agent to every
+single one of those workers.
+Then we will basically wait
+until all of those experiments complete.
+At the same time, workers,
+so this def run_experiment is still
+of course in the single program,
+it's just that it will
+actually be executed
+on those workers
+because we passed it to our rpca_sync.
+What each one of those workers will do,
+is it will basically loop until
+the simulation is not complete
+and as long as it is not,
+it will basically ask the agent
+which lives in the controller program,
+so this is this asynchronous callback,
+for the next action.
+It'll simulate a step of the environment,
+and it will inform the
+agent about the reward,
+so this way you can easily, for example,
+create agents which interact
+with lots of environments
+at the same time, in a distributed fashion
+using basically a really tiny script,
+which I'm super excited about.
+Then finally, this is a bit
+more of a back end change.
+We're also working on
+overhauling the back end
+for this particularly
+single-controller mode.
+The difference now is that previously
+we were leaning on a lot of
+libraries that were designed
+for this collective communication
+but this single-controller
+model makes more use
+of a point-to-point communication
+so TensorPipe is a new
+back end that optimizes
+point-to-point communication and also adds
+a lot of interesting features.
+It is topology aware,
+if a few of your processes
+are on the same host,
+it'll not go through
+the network interface,
+it will just use shared
+memory to exchange the data.
+It no longer requires full meshes,
+so that is better for full tolerance.
+Whenever anything drops out,
+you don't lose your whole network,
+a large part of your
+network can stay untouched
+and it also supports structured messages.
+So you can not only send
+unstructured buffers of data,
+now you can also ship, let's say,
+dictionaries with some
+tensors and some metadata
+that will explain you
+how to interpret them
+whenever the receiver gets them.
+So that is everything when it
+comes to distributed updates
+I think in PyTorch,
+just to close off, I wanted to
+share a few success stories,
+just to show you that
+we're not only doing good
+with research right now,
+we're also getting
+increasingly a bigger foothold,
+in the industry as well.
+So I have four stories to
+share with you right now.
+One, on the left, you have Mars.
+Mars is a company that produces
+a lot of the well-known sweets
+and they're, for example,
+using PyTorch to do quality assurance
+as part of their production processes.
+Then a lot of the
+self-driving car companies
+also actually use PyTorch
+and that group includes
+companies like Tesla.
+Then you can have, in engineering,
+you have Autodesk, so the
+makers of some very popular
+CAD software packages,
+they're actually using PyTorch
+to also do semantic search
+for some parts that might be
+relevant in certain contexts.
+Finally, when it comes
+to translation, Duolingo,
+which is an application that you can use
+to learn foreign languages,
+they actually use PyTorch
+to tailor the experience,
+tailor the courses to everyone,
+every single user individually.
+Just to finish off, some
+interesting statistics
+as a health check on the project.
+Right now, we have over
+39,000 stars on GitHub
+and we have 1,400,
+over 1,400 contributors.
+Of course, we're extremely grateful
+to every single person there.
+We also have very active user forums,
+if you have any issue
+you can just go there
+and some very experienced
+members of the community
+will surely help you,
+no matter how simple or
+complicated your problem is.
+Those forums actually get over
+three million monthly views
+and if you count all the downloads
+from the official distribution
+channels for the package,
+that amounts for over 10 million downloads
+since the beginning.
+All right, so that is everything
+I have prepared for today.
+Thanks a lot for listening
+and I hope you've enjoyed it.
+- Thank you Adam.
+The COVID-19 pandemic
+has lead to an explosion
+in curated data sets
+and scientific papers
+on epidemic modeling,
+epidemiology and related topics.
+That's what's making it
+challenging to identify trends,
+or potential breakthroughs.
+Join me in welcoming Amy Heineike,
+the principle product architect at Primer.
+Amy will talk about the
+website they launched,
+COVID-19 Primer, which
+uses the latest advances
+in NLP technologies,
+to discover trends in research papers
+and what they've learned so far.
+Please welcome, Amy Heineike.
+- I don't need to start this presentation
+by telling you how much of a
+challenge this pandemic has been.
+We have all been living it every day.
+The scientific community
+has risen to the challenge
+at a speed that is breathtaking.
+This chart shows the growing
+size of the literature.
+We're now at well over 25,000
+papers, letters and preprints
+and numbers growing daily.
+But this chart tells us a lot of stories
+of fast turn around times,
+of doctors, of researchers,
+who have spent their lives
+studying similar viruses,
+and have now turned their
+attention to this one.
+And also of labs and of scientists
+who have completely
+re-tooled and re-focused
+to rise to this challenge.
+This chart tells us
+about a mass mobilization
+but there's also a catch,
+a growing information glut
+that is hard to make sense of.
+Life and death decisions
+weigh on the question,
+which papers do you pay attention to?
+Which do you trust?
+I work for an AI company called Primer.
+We use natural language
+processing and machine learning
+to structure large,
+unstructured document sets
+and to summarize them,
+to help make sense of them for people.
+When the outbreak started,
+we re-focused our efforts
+and we built this public, free website,
+in order to give people
+another way to explore
+this growing literature.
+We shared it with
+scientists, with researchers,
+with policy makers,
+and I hope that after this talk,
+you'll have an opportunity
+to go and explore it too
+and I hope that you'll find it useful.
+Now, I'm going to spend a
+very short amount of time
+talking about how we built it
+and then a longer period
+talking about the lessons
+that we've taken from building it.
+We started by collecting the literature.
+Firstly, we went to PubMed,
+which is a large collection of published,
+peer-reviewed papers and letters.
+These are from all kinds
+of different journals.
+We also went to the
+three preprint servers,
+bioRxiv, medRxiv, and arXiv.
+We supplemented these
+with a stream of news and Twitter data,
+linking them up when they
+mentioned the papers by URL.
+We set up a process to get this every day
+and we feed it through a pipeline
+of natural language processing,
+doing things like
+extracting people's names,
+extracting quotations, attributing them,
+resolving them, summarizing.
+That's what gave us this site.
+Now, there's a number of different
+ways to explore this site
+and I'm not gonna talk about all of them
+but I am gonna show you
+a couple of my favorites.
+So firstly, we have a
+dashboard that gives you a view
+of the most recent changes, so what's new.
+We then have a fully automated
+natural language briefing,
+so this is generated
+without human intervention
+every single day
+and it gives you
+highlights of recent papers
+that were widely shared and discussed
+and my favorite feature on this
+is that we're able to find
+quotations by paper authors
+when they appeared in the news
+talking about those papers
+and show them alongside.
+We use classification to bucket the papers
+into major research categories
+and we use an unsupervised topic modeling
+to discover emerging
+areas of new research.
+So, what did we learn from this?
+Well, this is going to
+be a tale of three parts.
+Of confusion, of conspiracy,
+and finally, thankfully, of hope.
+Science is not a tidy process.
+It leaps forwards in fits and bounces,
+and especially in a pandemic,
+when the available data grows rapidly,
+as ideas are challenged,
+our best interpretation keeps on changing.
+This is a well-known researcher
+walking back his earlier findings
+on how the virus made its way to Seattle.
+After taking more samples,
+after doing more research,
+what they realized was,
+there was another path
+that perhaps made more sense,
+through British Columbia.
+This is how science is meant to work.
+But it does make it very
+hard to keep track of,
+to know the current status of each idea,
+and to weigh the uncertainty
+of what we know now.
+That's especially difficult
+for policy makers,
+who have to make decisions now.
+But this is happening at a time
+when the scientific process is changing.
+Preprints are new to the
+biomedical literature,
+so these are documents
+that are not peer reviewed
+before publication
+and instead, that review
+from other scientists,
+happens in the public eye
+after they are shared.
+Now, this means that the research
+can be shared much more quickly
+and a much wider set of
+eyes can look at them
+and this is really, really
+good news in a pandemic
+where time is of the essence,
+but it does make it very
+hard to know what to trust.
+So we've had preprints
+around for a long time
+in the mathematics and physics world,
+arXiv has been around for decades.
+But medRxiv, so in the
+medical space in particular,
+it's very, very new.
+medRxiv was only launched last summer,
+we're still figuring out the APIs,
+we haven't had time yet to figure out
+how to talk about these publicly,
+but they are a large
+proportion of the research.
+So 25% of the content on our site
+is from these preprint servers
+and a third of the news talks about them,
+so they are very much in
+the public conversation.
+But this is also happening
+at a time when journalism
+is under duress,
+as a result of the pandemic
+and of longer term changes and challenges,
+40% of journalists in the
+US were laid off this year,
+40%, that's a staggering number
+and it means that there are
+far less people in newsrooms
+able to take the time
+to help us make sense
+of what's going on.
+And what does that mean?
+Well, here's a paper that
+was published in early May.
+In it, the researchers looked
+at samples of the virus
+that they took from different patients
+and they compared them,
+they compared the genetic sequences.
+What they found was, that
+there were differences,
+there were mutations between them
+and that some of those
+mutations, some of the versions,
+were much more prevalent than others.
+So what do we take away from that?
+Well, the first interpretation,
+the first interpretation
+is that this means
+that there is a newer,
+scarier version of the virus,
+that is wildly transmissible
+and maybe it means that
+things are different,
+we should be concerned.
+On the other hand, there is
+much more nuanced reporting,
+that explains that
+possibly what we're seeing
+is just the result of chance.
+Some version just happen to be
+the ones that spread further.
+So our interpretation affects how nuanced
+we think the science is
+and how much more there is to learn.
+But there are also less
+benign processes at play here.
+One of our findings has been
+that the most widely
+shared papers on Twitter
+are the most controversial,
+not the most useful.
+This paper, which was
+posted at the end of January
+was at the top of that leaderboard
+until about the middle of May.
+In it, the researchers compared
+the genetic sequence of the coronavirus
+with the genetic sequence of HIV
+and what they found was
+that snippets of the genome,
+of the coronavirus genome,
+look the same as snippets of HIV.
+This they called, "Uncanny."
+It begged the question,
+how did they get in there?
+Well, as soon as this paper was released,
+the scientific response was
+immediate and very harsh.
+Here's one example.
+An assistant professor of biochemistry
+from Stanford University.
+She said,
+"The similarity is spurious,
+not higher than chance."
+As a result of this and of
+the overwhelming feedback,
+the authors withdrew it.
+This was celebrated as a
+great moment for science
+and this is how it's meant to happen.
+Anyone can upload their research
+to the preprint servers.
+The scientific review happens
+and if the science is found to be faulty,
+the paper can be withdrawn,
+and then we can all move on.
+Apart from, if we don't all move on.
+We found that of the 42,000
+tweets about this paper,
+20% of them happened after
+the paper was withdrawn
+and even now, if you
+search for this paper,
+what you find are tweets like this one,
+asking whether the withdrawal
+is actually evidence of suppression.
+These tweets feud into a
+wider conspiracy theory.
+How do we have these
+conversations about uncertainty,
+where our view updates,
+when there are people
+willing to jump on it
+and interpret it this way?
+So where do we find hope?
+Well it helps to go back
+to this incredible chart.
+Science is marching on,
+we know so much more about the virus now
+than we did when this started.
+We know how it affects our bodies,
+we know how it's transmitted,
+and we have many more ideas
+about how to treat it.
+Science is a fantastic
+process of finding knowledge,
+even though it is confusing.
+It's a fantastic process because it works.
+But that doesn't help
+us answer the question
+of who do we trust?
+How do we make sense of this
+as we see it unfolding before our eyes?
+Well the first good thing to look for
+are the people helping explain it to us.
+So great journalism is able
+to engage with the nuance
+and the uncertainty.
+This article from Ed
+Young at The Atlantic,
+does that very well.
+There's no clear evidence
+and there probably won't be for months.
+This is the article about
+that confusing mutation study
+that I showed you earlier.
+He's written a fantastic
+series of articles
+that explain some of the uncertainty
+that we have to live with as
+we walk through this pandemic.
+There are also a large
+number of scientists
+who are taking a lot of time
+to explain and contextualize
+the research that we're seeing.
+In the site, if you go and look
+for the people who are most quoted,
+you click on the numbers,
+you can read some of their recent quotes.
+One of my favorites
+here is Caitlin Rivers.
+She's able to bring her
+background in public health
+to explain what the path out
+of lockdown might look like.
+Here she is describing how Liberia handled
+the Ebola epidemic and she's hopeful
+about what we can achieve now.
+So here it is.
+We should take time to explore
+and engage with this literature
+and we should do so as optimists,
+skeptical ones, skeptical optimists,
+engaging with this growing content
+and realizing that it's uncertain,
+but looking for the places
+where emerging scientific
+consensus is growing,
+where papers build upon each other,
+where the evidence is mounting.
+So what lessons can we take
+away from this, more broadly,
+and especially for our work as data teams?
+Well firstly, it's very good
+for us to reflect on the fact
+that this is the era that we live in.
+One in which information is
+abundant and easy to access.
+But one where we don't know
+why we are shared the
+content that we are shared.
+Why do we see what we see?
+We don't know how it fits
+into the bigger picture.
+You and I could spend all
+day reading true things
+and at the end of the day,
+not have read any of the same things
+in common with each other
+and have a completely different
+view of what's important.
+That gulf between us
+is an enormous problem.
+It's one of the defining
+challenges of this era,
+but I do see some reasons for hope.
+We have a toolkit in front of us,
+where we can do things
+like structure text,
+aggregate it, compare it, summarize it,
+we can do that at scale.
+Recent advances in natural
+language processing
+allow us to do it
+with much more precision than ever before.
+Recent advances in the infrastructure
+allow us to do it with a much greater ease
+than we've ever been able to do it before
+and those to me, seem like
+some of the building blocks
+that we need to be able to build tools
+that really support people's quest
+for knowledge and for truth.
+And especially for people whose job it is
+to make sense of all of this for us,
+whose time is tight and
+incredibly valuable.
+I think we have a real
+responsibility in this moment
+to see what we can do to bring
+to bear these technologies
+to make better sense of it.
+Thank you.
+- Thank you Amy.
+This concludes our general sessions
+of the Spark + AI Summit 2020.
+Your feedback is important to us.
+Please take a moment to
+complete the conference survey
+in the navigation panel
+and as a reminder, we hope
+you'll consider participating
+in our summit donation matching program.
+Help us reach our goal of a hundred K.
+Thank you and see you next year
+at the Spark + AI Summit
+2021 in San Francisco.
+(upbeat music)

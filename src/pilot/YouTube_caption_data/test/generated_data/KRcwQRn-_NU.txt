@@ -1,0 +1,3081 @@
+all right we are
+live
+hello
+everyone
+i am charles frye and i am your host
+today in this wnb
+live stream
+go ahead and say hello in the chat let
+me know where you are coming from uh
+maybe that's uh where you're coming from
+in the world i think we're going to have
+some folks worldwide here at this i'm
+coming to you from oakland california
+where it is eight in the morning
+and also maybe let me know how you heard
+about this live stream uh and uh
+maybe what brought you here
+um
+so just uh pop that into the chat um
+uh while i tell you a little bit about
+what this live stream is about what our
+goal is here uh so
+uh what we're going to be doing is we're
+going to be working through one of my
+favorite uh and one of a lot of people's
+favorite pie torch tutorials
+called what is torch.nn really uh by
+jeremy howard uh who is the
+sort of lead creator at fastai
+and
+the idea in this tutorial is that we are
+uh we're going to start with just
+absolutely raw pie torch no special
+features um just the very basic sort of
+stuff that pytorch offers
+um
+the
+the
+uh just
+sort of some math basically that's the
+that's the core of of pytorch fast
+matrix math with derivatives uh and then
+we're going to add more and more
+features from the rest of pytorch from
+this torch.nn module the neural networks
+module of pytorch until we've got a nice
+um
+well-written
+neural network uh sort of set of
+training code
+um
+i'm seeing i'm starting to see some
+things come in to the chat uh some folks
+saying hello from china uh some
+compliments to oakland it is a beautiful
+city i love oakland
+um and oh coming in from italy that's
+nice
+um yeah so
+uh so i took basically these uh what
+what is torch.nnn really
+uh this tutorial and just modified it a
+little bit for use with this uh jupiter
+notebook presentation tool that i'm
+going to be using so what you can see
+over there is um
+this some jupiter notebook slides that
+um
+i'll be going back and forth here uh you
+uh as a like basically as a slide deck
+but underneath it is a jupiter notebook
+so just uh just to show you what that
+looks like just to be you know say
+nothing up my sleeves there's the
+jupiter notebook that backs this uh you
+can see it's just a regular jupiter
+notebook
+um
+and
+i am uh
+all i've done is add this little rise
+extension that allows you to make these
+cool presentations like this
+so you can uh you can follow along with
+this in a live collab you won't get the
+presentation style uh for that i you uh
+you have to use raw jupiter notebooks
+um oh somebody else saying hello from
+dusseldorf in germany uh nice hey there
+vincent
+um oh and onwald saying hello from india
+hi there animal
+all right uh so
+let's let's dive in now that i've given
+you um
+uh giving you a little bit of background
+so
+uh
+the
+the
+the core i i copied a lot of the text
+out of this um out of this tutorial here
+so the words here are pretty much all uh
+jeremy's uh jeremy howards i'll just be
+sort of providing a little bit of
+commentary as i read them
+so
+pi torch has these really really nice
+modules and classes in torch.nn
+torch.optum dataset and data loader
+and they're like
+easy to use almost too easy to use you
+know um
+uh because people will use them without
+actually understanding what exactly
+they're doing so they don't know how to
+customize them
+so the idea of this tutorial to concede
+to this tutorial is to use the most
+basic pytorch tensor functionality of
+matrix math and derivatives and then
+build up from there to
+like incrementally in this really nice
+sort of step-by-step way adding one
+feature from these higher level
+components of pi torch until
+uh until we've got basically much
+cleaner code at the end that uh does
+that's either
+either simpler or more flexible
+uh so the there's kind of this
+presumption that you're a little bit uh
+a little bit familiar with
+the basics of tensor operations uh that
+or or at least that you've tried
+something like numpy or matlab um the
+like pie torch stuff is like very very
+similar in terms of just the the the
+tensor operations
+um so there's a presumption that you're
+a little bit familiar with that i think
+some folks are coming here from our pi
+torch reading group uh that we organize
+on this channel um or possibly coming
+from our fastai fastbook uh reading
+group so if you should be you'll
+probably be loosely familiar with some
+of these ideas and we're gonna really
+explicate um uh how those how those
+ideas get used to make a neural network
+here
+so
+before we get started doing stuff with a
+model we got to have our data set up
+so we're going to use this classic uh
+handwritten digit data set called mnist
+black and white images of hand draw
+digits between zero and nine um and
+we're going to try and be as explicit as
+possible about all the pieces that were
+that we're using in this tutorial
+so down to the brass tacks when we're
+dealing with data we've got to um
+uh we've got to use
+uh all the um
+we've got to use lots of pieces of like
+the python standard library and other
+things for handling files and dealing
+with files so we're going to be using
+pathlib uh for dealing with paths it's a
+nice way to abstract paths away from
+just plain old strings uh it's part of
+the python 3 standard library starting
+with i think 3.5 python
+um correct me if i'm wrong in the chat
+if you know which version they added
+paths to uh and then we'll use the
+requests library to download the data
+set requests is the preferred way i
+think by most people uh to use
+uh to download
+uh to like
+pull stuff from the internet
+programmatically with python um for at
+least relatively simple things
+um so
+uh yeah so
+the this requests
+or we'll start with path we we're
+building our path where our data is
+gonna go here relatively simple
+and then we
+we want to grab a url from uh or we want
+to grab a file from a url so we're
+pulling it with requests
+and writing it to the disk
+so nothing neural networky yet uh but i
+really what i do like about this
+tutorial is just how sort of like
+pedantic it is about getting every
+single
+piece uh very explicit what are we doing
+here uh why are we doing it uh so
+in that spirit we've got a data set
+that's a numpy array it was pickled
+pickling is how you save
+python objects to disk uh the pickle
+library
+and so it takes these things that you
+have in your python uh like uh memory
+and it uh and it saves them
+uh it uh it's kind of how you would
+pickle a vegetable so it lasts a little
+bit longer um this is also the basic
+idea behind how say a torch model is
+saved it's also um i think in the end
+based on pickling
+um so we gotta we gotta unpickle our our
+data uh is what it's called you can't
+unpickle a vegetable but you can
+unpickle data um so we gotta unpickle
+our data here
+and um
+and get it loaded so we've got a
+training set and a validation set uh
+we'll talk a little bit more about what
+a validation set means if you haven't
+seen that before uh but importantly
+we've got our inputs and our and our
+targets
+our inputs are uh 28 by 28 images stored
+as um as
+uh vectors so stored as things of shape
+28 by 28
+so here's an example you can see the 28
+by 28 is not a particularly big uh big
+image but you can see it there let me
+resize that image while we're while
+we're here no not reshape resize
+here uh let's do 256 by 256 there we go
+all right slightly bigger version of
+that image
+um so this is um
+uh yeah this is one of the benefits
+actually of doing the your presentations
+as a jupiter notebook you can change
+these sorts of things on the fly using
+python so if you have questions actually
+about the material if you post them in
+the chat
+i can try and
+try and resolve those
+and change things around with the code
+for example if you want to know a little
+bit more about this resize method
+i could do something like that pull up
+the docs here
+and now here we've got the
+resizing
+method uh pulled up with all the
+information about it in case we wanted
+to read more uh but for now we don't
+care about those details let's just show
+uh let's just see the image so this is
+these are this is our data it's a it's
+handwritten digits we want to train an
+algorithm to say that you know this
+digit's a five another digit maybe let's
+grab a different digit even we can also
+do that uh so this one we'd want our
+network to say that's a three what about
+this one we'd want our network to say
+this one is an eight
+um so
+uh yeah that's the neural network
+problem that we are tackling here so
+that's a classic problem so i'm not
+spending too much time on it um if you
+want uh post in the chat and i'll uh and
+i can send links to other tutorials
+where you can learn a little bit more
+about that that uh classic example oh i
+see there's uh some more stuff coming in
+in the chat let me look back there oh
+hello from uh uh from spain victor
+davier no carse is coming in from spain
+uh hey there uh santosh prashanth and
+shwetank hello to all of you oh thanks
+for the thanks for the compliments for
+tonk tritonk loves my live streams
+that's great i love my live streams too
+um
+so
+uh pytorch uses uh numpy uses arrays and
+maybe you're familiar with arrays if
+you've if you're coming from matlab or
+if you've used numpy in other parts of
+numerical python um
+uh numerical computing with python
+before the idea of an array is very
+common
+the the equivalent of an array in pi
+torch is called a tensor um there's not
+much difference on a mathematical level
+but um you know inside of the the
+computer program
+we need to be explicit that these things
+are tensors and uh like what what is
+actually going on
+uh under the hood in um
+uh what what an actual tensor is um is
+it's got extra things on top of just
+being an array with data in it that
+allow us to do uh like do machine
+learning
+um
+so uh the content looks the same so
+we've got uh what this cell is doing
+here is it's printing out
+uh our our training data our the data
+we're gonna show our neural network for
+the inputs x uh and the and the targets
+y so you can see the tensor full of
+numbers uh in this component of the
+screen here that guy
+the first one's a five the second one's
+a zero
+that last one is an eight
+um
+and
+we've also got some useful information
+about these um
+about these tensors also being printed
+so there's there's features of these and
+functions defined on them that you might
+be familiar with from other array
+libraries so ytrain.min ytrain.max here
+are telling us what the minimum and
+maximum of that of that target's tensor
+is and minimum zero the maximum is nine
+those are our labels
+uh and then we've also got the shape of
+our
+x uh train tensor here shapes are a
+really important fact about uh about
+tensors this may be the most important
+piece of information about a tensor
+besides its contents is its shape we
+won't be talking too much about that
+stuff here about the linear algebra if
+you want we also have the math for ml
+series that talks about linear algebra
+calculus and probability that really
+explains a lot of those ideas so there's
+videos for that on our channel and we're
+also adding some more videos on that
+coming soon in the next couple of weeks
+so keep an eye out for that
+some nice
+videos on on
+on math uh and python and machine
+learning
+um but yeah but for now we've just got
+these tensors we're running with those
+and this is all we need really uh
+tensors and tensor math is all we need
+in order to make a neural network from
+scratch so back in the day when i was
+first getting started with uh with
+training neural networks almost 10 years
+ago now uh this is how you had to do it
+um you didn't you know you had to roll
+your own torch.nn um so
+uh this is this is a throwback for me um
+so we're going to create our model using
+nothing but these pytorch tensor
+operations um and if you know
+this i'm not going to go in detail over
+what's happening inside neural networks
+there's course.fast.ai um is jeremy
+howard's course he's the author of this
+tutorial he made that that course
+um we also have uh tutorial information
+about about neural networks on our
+channel uh you can find that as well uh
+the ceo of weights buys lucas b wall did
+this really nice course it's in keras
+rather than torch but it's a really nice
+course on neural networks
+uh so
+pytorch gives us methods to create
+tensors
+and create random tensors so tensors
+full of random numbers or tensors full
+of zeros and we're going to use those to
+create the weights and biases uh no
+relation to the company uh so to speak
+the weights and biases the actual
+numbers in our neural network um
+for uh for just a simple little linear
+model
+they're just these are just regular
+tensors
+and there's just one particular special
+edition
+we tell pytorch track this because i'm
+going to ask you to give me gradients
+for this i'm going to ask you to do
+calculus on this tensor tell me what
+would happen if i changed its values so
+we have this require
+require grad
+argument that we pass when we make the
+tensor saying pay attention to this
+tensor pi torch and that will cause
+pythagoras to record all the operations
+done on the tensor so pi torch is you
+know while we're running python pi
+torches in the background sort of taking
+notes and being like okay you added it
+oh and then you multiplied it by five oh
+and then you um you applied the sine
+function to it or whatever um and then
+that will allow it to calculate
+gradients during back propagation
+automatically so gradients and back
+propagation these are ideas you might
+have come across in a different class
+where you talk about um
+where you've learned about um
+about neural networks but these are the
+things that we need to do in order to
+make our neural networks better in order
+to optimize them on our data
+uh so for the weights we make our weight
+tensor uh and then we apply requires
+grad afterwards um because we don't want
+to take the gradient with respect to the
+initialization that would be somewhat
+strange um so we don't want to do that
+now
+so that's our our first two lines there
+weights equals torch.rand that's a
+random normal matrix we're creating
+there
+and then we're requiring the gradient
+and then the biases we're just going to
+fill with zero so we set all the entries
+of the bias tensor to zero
+and
+let's see i think i'll print the weights
+on the next slide so i'm not gonna are
+the biases maybe so i'm not gonna print
+them just now
+um but just some notes about this
+uh one is you have to pick the
+how you know to say you're making a
+random
+uh
+matrix is you know you have to say what
+kind of random values do you want normal
+is a really common choice sometimes
+people use uniform but the other really
+important thing is scale in addition to
+needing to know the shapes of tensors
+when you have a especially when you have
+a random tensor the other big thing you
+need to pay attention to is how big are
+the numbers here uh and this particular
+choice where you multiply by 1 over the
+square root of the number of inputs is
+called xavier initialization and i
+believe it's the default in pi torch
+there are actually better
+initializations uh there are there are
+different ways of doing it maybe more
+sophisticated better ways of doing it
+but this is this is a nice and simple
+one
+and is at the very least very closely
+related to the default in pi torch if
+it's not exactly the default
+um
+the other little the other little uh
+bonus piece of information here is uh
+we've got this underscore at the end
+requires grad when you're doing stuff in
+pi torch at the bottom level of pi torch
+um you can put an underscore at the end
+of almost any function and say do this
+operation without moving the tensor in
+memory um or without creating a new
+tensor
+that's that perform this operation in
+place
+um so that's that can sometimes be
+useful like we we want the weights to
+require grad but we don't want to make a
+new tensor to do that um so that's why
+we use the in place version of dot
+requires grad
+all right so this is so this level of
+detail that we're going into here um is
+not the level of detail you normally
+have to operate when you're writing pi
+torch right because we are just doing
+we're pretending that pytorch was just
+low level tensor operations and we're
+writing our own neural network like
+completely from scratch uh so just just
+a reminder that this level of detail is
+not the level of detail you always need
+so for folks coming from say like
+facebook um
+who are maybe used to working at a
+higher level don't worry we'll be
+getting back up to the higher level by
+the end of this stream
+uh and
+um
+now we need to make our model and back
+in the day one of the tricky parts about
+this um like this goes even actually
+before i started writing neural networks
+so maybe 15 or 20 years ago you would
+have had to write your own derivatives
+uh for for your model as well as just
+writing your model but we don't have to
+do that anymore
+um because all we have to do is write a
+forward pass we have to write how our
+model operates on the data um as like
+data goes through it gets transformed by
+the various components of our model so
+here data comes in to our model xb comes
+into our model gets matrix multiplied
+with the weights and then we add the
+biases to it
+uh to the output then um since we're
+doing a classification uh network we
+have to toss this log softmax on the end
+um to
+turn the outputs of our of our model
+into sort of log probabilities uh and uh
+if you want to know more about that
+again like mathml series talks a lot
+about why we need these log
+probabilities here
+um and talks about where that this uh
+where these ideas come from in a
+classification network um but we're
+focusing on the mechanics right now
+rather than the sort of theory uh and
+mechanically the important thing here is
+that i'm doing all these operations here
+x minus x like e to the x
+um summed along its last dimension take
+the logarithm of that uh and then
+reshape so i'm doing all of these i'm
+doing all these operations here
+um
+uh and
+that's but i only need to write them for
+the forward pass i don't need to write
+anything about what the derivatives of
+these things are because any sort of
+like pi standard python function or
+callable object can be used to write a
+model in pi torch
+and you'll get gradients automatically
+uh yeah so what what do we have any more
+notes here uh yeah at is our dot product
+or our matrix multiplication
+um
+and the key thing to come out of this
+with is pytorch provides you a lot of
+pre-written stuff pre-rolled components
+to make it easy just because there's
+lots of things people use over and over
+again
+but even though that is the case
+uh loss functions activation functions
+things like that
+you can easily write your own using
+plain python and pytorch will make this
+code pretty fast
+so it'll write it so that it runs on the
+gpu
+or runs on the cpu in a vectorized form
+uh and you
+um
+so
+you know you don't have to worry about
+those things that's the other big thing
+besides getting derivatives for us
+automatically pytorch also makes our
+code run fast for us automatically
+and if you want to learn a little bit
+more about how pytorch
+makes
+makes your code run fast and how it gets
+things running on the gpu and stuff like
+that
+i recently wrote a little report uh
+about that using the pytorch profiler
+let me drop that link in the chat uh
+because that's a good one that's a good
+one to learn more about
+pi torch okay juan b me slash trace
+hyphen report okay if that link doesn't
+work let me know and i'll fix it um but
+yeah that talks a lot about like what is
+the you know what is the forward and
+backward pass and like mechanically in
+terms of how they are run on the gpu but
+we won't talk about that today
+we've we've gotta we've got enough just
+crocking the torch library
+all right so we've defined a model
+function uh we did def model just now uh
+and we can call that on a batch of data
+and take a look at the outputs um
+so uh
+data uh like
+images a bunch of images together is
+called a batch uh and or a mini batch uh
+depending on who you ask
+uh and so we're pulling out from x train
+we're pulling uh 64 examples here
+passing them through our model and
+looking at what the model's outputs are
+so the model's outputting
+uh some numbers these are log
+probabilities here uh in our uh in that
+tensor on the left so this tensor on the
+left here is our predictions on the
+first uh on the first
+input digit um you can see that there
+are 64 predictions and each and there
+are uh so for the 64
+inputs and then each one has 10 entries
+each entry corresponds to
+the logarithm of the probability the
+network assigns to the statement this
+this image is a zero this image is a one
+all the way up to this image is a nine
+uh oh i got a request to zoom in on the
+slides i'll do that i might have to zoom
+out again a little bit um
+and uh
+when i do uh just because there's uh
+there's a lot to fit vertically at a
+couple points um but hopefully a little
+bit of zoom there is helpful
+uh great so
+uh there's one more note here which i
+talked a little bit about the contents
+and the shape of the tensor notice the
+preds tensor there has this grad
+underscore fn also attached to it
+um
+and that preds tensor has not just the
+values of of the tensor but this this
+gradient function and this gradient
+function is what pi torch is using to
+sort of record um what to do when you
+want to do calculus on this tensor so
+that grad function says um
+uh that grad function says here's the
+operations like here's the operations
+that created this tensor so you can then
+go back and find uh the other tensors
+so we can actually take a look at what
+that looks like um what this like uh
+computational graph that pi torch is
+building for you as we go uh so
+how to read this graph at the bottom we
+have our output in green that is our
+these are our this is our preds tensor
+and then going all the way back we have
+our weights and our biases the w and b
+weights and biases of our
+in our model
+and
+what you can see is there's a matrix
+multiplication here mm backward
+and add backward that's matrix
+multiplication of weight with input and
+then also
+adding the bias so that gets us to our x
+here
+or the output of our first layer
+and then uh this block here is our um is
+our log soft max calculation
+let me actually go back
+in our log softmax calculation we took
+the value x uh that goes into the log
+softmax and we did this set of
+transforms on it and we also subtracted
+its value and all those operations are
+recorded here in this computational
+graph and you can see that this this
+input to log softmax addbackward0 here
+is both passes through this graph in two
+ways it both goes into the subtraction
+operation uh and it goes through that
+series of x sum log um so you can see
+all the operations that we did on the
+tensor
+uh on all the all the tensors in our our
+our network our humble sort of small
+little network uh are
+are recorded here
+um so this is the this is a big part of
+what pi torch is doing is tracking this
+stuff for us uh so that we don't have to
+do it ourselves and say these are the
+gradients um and uh
+and you know this is the derivative of
+this operation and all that kind of uh
+that kind of stuff calculus is
+automatable uh and pi george automates
+it
+um
+so
+the uh last so one last thing that we
+need to do i think this is the the
+absolute last thing uh we need a loss
+function
+and the loss function that people use is
+the negative log likelihood aka the
+surprise um and this it's calculated in
+this particular way there's like a hack
+for kind of calculating it with integer
+labels here um but it's based uh it's an
+entropy loss it's like this model it was
+said there was a really low probability
+of this digit being a one but it
+actually was a one um and so we want to
+uh we want to punish the model the more
+the lower probability it assigns to the
+correct um
+the correct label
+uh so now not only can we run something
+through the uh the network but we can
+also
+uh we can also calculate a loss so now
+we're running we have a batch of of x's
+that gave us our predictions now we're
+calculating the loss on the combination
+of of those predictions and the true
+labels so that's lost func that we
+defined here that negative log
+likelihood and we're um
+uh we're taking the loss with our
+predictions and our uh and the labels
+so this is where we're starting at uh
+and it's about 2.3 uh that happens to be
+the log of 10 um so this is basically
+the uh the loss you would get from
+guessing randomly
+or or always guessing the same
+uh always guessing the same
+um
+[Music]
+the same digit every single time you
+would get i think the same the same
+answer here it's the um it's um
+one digit in gnats um if you're uh if
+you know your information theory that's
+where the um that's where this loss this
+starting loss value actually uh comes
+from this value of 2.3
+um so i'm comparing it against log 10
+there
+um all right so
+uh we're almost done we also in a d so i
+just gave you a breakdown of where that
+cross-entropy loss value came from how
+to interpret it but it's maybe easier to
+think in terms of accuracy if we want to
+know how well our model is doing
+so accuracy we just want to um you know
+there are tools for calculating this and
+fast ai and pi charge lightning and
+torch metrics
+but
+uh you know if we're doing this in pure
+pie torch so let's let's calculate it
+ourselves we check whether from our
+predictions we grab the highest
+probability uh what was the high which
+to which uh value did our model assign
+the highest probability was that index
+is that index the right index is it
+equal to
+our the the targets
+um then we uh then we take the the
+average of that uh of this boolean
+tensor here that's saying are our
+predictions uh the same as the labels
+all right so then we can check our
+starting accuracy we're actually doing a
+little bit better than chance here
+fifteen percent rather than ten percent
+um but
+uh yeah but we're not doing super great
+uh you can easily get 95.99 uh nearly
+100
+performance on uh on mnist
+so
+uh we're now ready to run a training
+loop uh so we needed the loss and the
+accuracy and then we're uh and then
+we're ready to go so we put all the
+pieces in place for doing a
+um
+uh for training our neural network so
+we're gonna what do we need we need we
+need data to give to our model to make
+predictions we need a loss so how well
+did our model do and then we need a we
+need to calculate the gradients we do
+that with dot backward um and then we
+update the parameters of the model using
+the gradients so the rule here is the
+gradient descent rule we take the
+gradients and we and we basically
+subtract the gradient um scaled uh from
+the current value of the tensor
+so again we uh the math for machine
+learning uh will tell you a little bit
+more about those um
+uh about where those things come from so
+let me i'm gonna zoom out again a little
+bit just so we can see all of the code i
+think i can get away with that um so
+what are we doing
+we're going to range over our data
+multiple times the number of times we do
+that is controlled by this for loop here
+each instance of that for loop each
+iteration of it is called an epoch
+that's one loop over all of our data and
+we loop over our data bit by bit batch
+by batch so that's the second for loop
+there
+and we're pulling out the uh the values
+in x and the values in y passing the x
+values through our model comparing them
+to the predictions with the loss
+and then
+uh calling lost dot backward
+to
+to calculate those gradients pi torch is
+ready to calculate them uh like whenever
+whenever it's uh doing operations with
+tensors that require grad it's tracking
+this in it's like tracking everything it
+needs to calculate it but it's lazy you
+know it's waiting for the moment uh when
+you're going to ask
+for that gradient and that's law stop
+backward
+and then we want to apply those
+gradients
+and that's this uh that's this width
+block here
+so if you've used pytorch before to
+train a model some of this might
+actually look somewhat unfamiliar to you
+because you've probably used things from
+torch.net and torch.optim and in and in
+that case you don't have to do all this
+stuff by hand
+um but what we're doing here in this
+last with block is we're saying let's
+update
+those uh let's update those parameters
+let's take the weights and subtract the
+gradient from them that's what this
+minus equal does it's an in place
+subtraction let's take the gradient of
+the weights weights dot grad here and uh
+subtract it from the weights we scale it
+with this learning rate here um
+which helps us control some of the like
+numerical properties here uh like maybe
+like if we were doing uh you know this
+this uh maybe i won't go into the sort
+of like physics analogy here um but
+let's let's just say that sometimes the
+gradient may be really big even though
+the parameters are really small uh and
+you don't want to change the parameters
+uh make a huge change the parameters and
+the learning rate helps us control that
+so that's a little magic number that you
+need to pick um and i think you can also
+sort of try and set it programmatically
+there's ways of doing that as well but
+we're just going to
+set a little fixed value
+then the last thing that we need to do
+this dot backward a funny thing about it
+is it actually
+like sort of accumulates gradients over
+time which is what allows people to do
+more complicated things with pytorch
+than just this simple
+forward backward update uh kind of style
+that neural networks use or or the
+mainstream neural networks use
+so because of that we have to do this
+last operation here we take the weights
+we grab their gradient and we set it to
+zero so we zero it out we get rid of the
+values that uh that have accumulated
+into it and uh we do that in place
+that's what this underscore means just
+like this minus equals here means we do
+a subtraction in place here this
+underscore in pi torch means we do this
+uh replacement of the values in place
+without without making a new tensor so
+we set the values to zero which means we
+can then start this loop over again uh
+back set you know sort of like reset
+ourselves and do this um
+do this over again uh you'll also like
+this this parameter update thing is
+inside the with block the width block of
+torch.nograd says don't track these
+operations for gradients right you would
+only need to do that if you were trying
+to do gradient descent on your gradient
+descent if you're trying to take the
+gradient of your optimization process
+which is possible uh but tricky um that
+sort of meta uh approach which you could
+yeah which you could use to say optimize
+your learning rate uh over time
+uh but we won't be doing that so we put
+it inside a no grab
+um right so most of these notes here
+from jeremy's tutorial are things we've
+already talked about
+um yeah lost it backward adds the
+gradients to whatever is already stored
+rather than replacing them uh and yeah
+there's a little bit more detail if you
+have the um
+the link to the collab that's floating
+by my face there uh you can get the um
+you can get these links uh to things
+like more information about pi torch
+autograd
+um all right so we've we've done it
+we've done our from scratch uh
+implementation here so actually let me
+go ahead and update my to-do list here
+boom
+we uh
+uh we have completed our from scratch
+neural network and now we're gonna move
+on to uh to to
+uh refactoring once of course we checked
+to make sure that our uh that our code
+actually worked how do you check whether
+machine learning code actually worked
+that's a really tough question but the
+biggest you know the sort of starting
+thing is does the loss go down do does
+the like metric that i care about go up
+so the loss indeed goes down if i
+compare the starting loss to the final
+loss we started off at about um
+uh one uh one digit uh 2.3 cross entropy
+and now we're much closer to zero across
+entropy that's what you want to see
+and then we
+our accuracy went from about 10 percent
+uh on this on this on this on this batch
+to about to 100 percent uh so our loss
+has decreased and our accuracy has
+increased um so it's a good it's a good
+kind of correctness check um
+sanity check if you will to make sure
+these uh these things happen in your um
+uh in the neural network code that you
+write in the machine learning code that
+you write these are sort of like uh you
+know the way you would unit test uh your
+uh your machine learning code
+all right so now it's time to start our
+refactoring so everything we we built
+we're not really for a long time
+actually we're not going to add any new
+features to what's happening in our in
+our code for a good chunk of the rest of
+this stream we're just going to be doing
+some refactoring here
+which is refactoring is is right when
+you replace code with different code
+that does the same thing so the behavior
+of the program doesn't change but the
+way it's written changes um and that can
+make it easier to make it do other stuff
+um or it can make it easier for humans
+to read it and we're going to do both of
+those things as we do our refactor here
+so this is how we're going to learn what
+pytorch.nn really is because we're going
+to see how it takes the code that we
+wrote in raw pi torch and makes it makes
+it better
+so our goal here at each step should be
+to make our code shorter more
+understandable and or more flexible at
+each step
+so the first and easiest step is to like
+just get rid of some of those
+handwritten activation and loss
+functions with uh things from
+torch.nn.functional
+which is the
+which is the component of pytorch that
+mostly is full of functions so if you
+look here i've printed out the elements
+of
+torch.nn.functional here
+so these are all of the things inside
+torch.nn.functional you can see that
+most of them have lowercase letters at
+the front which is sort of python
+standard style to indicate that
+something is a function and in fact let
+me do a little bit of
+kind of a wild thing here let's check
+what uh let's check what these things
+are
+are these things all functions are these
+things all callables here
+in f
+and so that's what i'm that's what i'm
+doing with this little for loop here i'm
+looping through everything in torch on
+nn.functional and checking whether it's
+something that you can call whether it
+is a function
+and the answer is uh for almost all of
+them yes so these elements of
+torch.nn.functional
+uh aliased usually as just f are
+our functions primarily so functions
+in the pure sense functions with no
+state
+so the other parts of the library mainly
+contain classes
+contain definitions for objects whereas
+these are definitions for functions
+so you also there are
+there are a bunch of nice functions that
+we need in neural networks like pooling
+functions in addition to loss and
+activations there's also functions for
+doing things like convolutions
+in linear operations but it's better to
+use uh other parts of the library for
+those layers of the neural network as
+we'll see i think yeah in the next
+section
+um
+so uh we can drop both the negative log
+likelihood loss and the log softmax
+activation because pytorch puts those
+together into a single function
+cross-entropy that combines the two
+this makes it the operation more
+numerically stable less prone to error
+with really
+really extreme values
+uh so we can uh that means we actually
+can just drop the uh
+activation function from our model and
+just write lost func is f dot cross
+entropy and now our model is just this
+linear component here take the input
+matrix multiply the weights add the
+biases
+um let's check and see if we still uh
+get the same loss and accuracies before
+yep we still get that low loss uh and
+that accuracy of 100 on this particular
+batch um so we've refactored we've
+changed the way the code is written but
+we have not changed what it does um and
+this is a simplification we've pulled
+the log softmax out of the model we no
+longer have our own implementation of
+that of that log soft max with that uh
+that x sum log
+um so that's uh
+uh that's good uh we've simplified our
+model and we we take advantage of the
+fact that the operations that we're
+doing are common operations in neural
+networks and they're
+and so they're in pi torch already
+and somebody's written a really nice
+implementation of them that say
+uh doesn't break on really extreme
+values so we can take advantage of the
+hard work of the folks at uh at pytorch
+and in the community that contributes
+to pytorch
+that they've made these
+high quality implementations of all the
+things we need for our neural networks
+so that one was pretty straightforward
+all right let's update our to-do list
+boom and we now move on to
+adding some modules
+uh so let's refactor using nn.module
+so this is a slightly bigger refactor
+than the last one um nn.module and
+nn.parameter are the things we're going
+to use to sort of clean up our training
+loop what these do is they track
+they kind of wrap our tensors and track
+tensors that are you that are going to
+be used not as like the inputs or the
+things being passed around inside a
+neural network but are used as the
+parameters of a neural network that's
+what nn.parameter does gives us
+convenience functions for those and the
+modules will sort of wrap up this idea
+of i have things that i want to apply to
+inputs that maybe have lots of pieces or
+components to them
+so these are inside torch.nn
+uh
+nn.module
+is uh is a class that we subclass when
+we make new components for our neural
+network so an nn.module is this generic
+class that has a bunch of attributes and
+methods
+that we'll be using either explicitly or
+under the hood
+i'll try and point out the under the
+hood cases when we go buy them so it has
+some a convenience function for pulling
+out all the tensors that require grad
+that are attached to it dot parameters
+um it is a convenience function for
+zeroing the gradients of all of those
+parameters all at once so dot zero grad
+so we don't have to do it ourselves um
+so
+uh this general nn.module is sort of the
+way that in i like to think of it as a
+way to have functions that also have
+state right so normally when you write a
+function it doesn't really have state to
+it it doesn't accumulate information
+over time it just has its source code
+and it operates on on inputs
+with
+with with a neural network like our
+neural network is a function in some
+sense it takes in inputs and returns
+outputs but it also needs to keep track
+of state it needs to know what its
+parameters values are and that's what
+nn.module does it tracks those uh tracks
+those parameters that state
+so we want to have something that's kind
+of a hybrid of a function and an object
+and that's what nn.module is stateful
+functions so here's our example here
+our mnist logistic model uh which has
+weights and biases these are neural net
+these are nn dot parameters so tensors
+that require grad um
+and we assign them uh at the top level
+of our of our module and then the module
+knows the the convenient thing here is
+that any attribute of the module that's
+a that's a parameter will be will be
+treated especially by pi torch um for a
+couple of things uh like that dot
+parameters method and that dot zero grad
+method as well i believe
+um
+so
+if we uh
+if we call we can define our module here
+now instead of we used to define a
+function now we define a method called
+forward
+um oh yeah one quick note uh nn.module
+pytorch specific concept um we'll use
+it's like a very important class in pi
+church maybe the most important after
+tensor the most so the most important
+class in torch.nn is definitely an
+nn.module
+this is different totally distinct from
+the a python module lowercase m
+a file of python code that could be
+imported these are different things same
+word unfortunately
+um so now we're using an object instead
+of using a function so we've got to
+instantiate our model so we mnist
+logistic was that class that we just
+defined we instantiate it
+uh but now we can uh we can still
+calculate the loss in the exact same way
+nn.module objects are used as if they
+are functions
+uh so i literally just
+like
+parentheses around input still so it
+looks just like i'm calling a function
+but in this case i'm using a um
+uh using a
+uh this module object
+all right one second here i think i'm
+having a little bit of a video glitch
+one second boop
+all right let me know if you see
+anything strange going on with the video
+there
+um i'm going to keep going for a little
+bit just to see
+but the upshot is we apply inputs to our
+uh
+we give our model inputs just as though
+it were a function um but it
+uh
+but it's actually an object under the
+hood pytorch is calling that forward
+method whenever i whenever i give an
+input to my model uh so we're getting
+this is now the exact same uh thing that
+we had before uh but now we have this
+object this class that can track our
+state for us
+so the the big improvement is to this
+component of our um
+of our training loop to the
+uh to the no the part where we applied
+the gradients we had to
+manually update the values for each
+parameter by name manually zero them out
+uh with with code that looked like this
+here
+and
+uh now we can take advantage of the fact
+that uh that the module knows about the
+parameters attached to it um
+uh which uh and can do things like loop
+over them
+and zero out their gradients so we still
+have to do it in a with torch dot no
+grad block
+but now we're looping over the
+parameters with a for loop uh and uh
+instead of like just writing out all the
+parameters which would be a real pain if
+we had a more complicated model and we
+just zero the gradients of everything at
+once with dot zero grab
+uh so let's um
+let's take a look at how that changes
+our
+uh how that changes our code
+uh so
+the
+uh the fit function uh or we're now
+taking that that loop that we wrote
+previously and turning it into turning
+it into a function now this fit function
+here
+looping over uh we're looping over the
+data uh in our inner for loop we do that
+multiple times in our outer for loop the
+big change here is now that our model is
+a uh is a torch module
+instead of just
+some functions using torch we have this
+nice clean much cleaner
+application of our of gradient descent
+down here at the bottom with a with with
+no need to mention that we just have
+weights and biases uh and uh and to know
+the names of those tensors
+so nice and clean uh the fit function
+runs all as well uh we can check that we
+didn't break anything again our loss
+goes down uh good news uh we haven't
+broken anything with our refactor
+all right so that makes us that takes us
+through uh
+uh oh no we have a little bit more
+refactoring using modules uh so we can
+uh the torch.nn.modules
+uh there are lots of examples of them
+that are very very common modules so one
+um
+like we manually defined our linear
+layer of our neural network our our
+logistic regression we took the inputs
+matrix multiplied them and added uh
+added some values with uh xb at
+self.weights plus self.biases
+um but pytorch actually you know that's
+something people do all the time in
+neural networks and so this is built
+into pi torch so that you know so that
+you are using the same of the same code
+the same
+implementation as everybody else and can
+take advantage of improvements as they
+come along
+um so
+uh nn.linear here uh we can read the
+docs for this a little bit if we want to
+learn a little bit more about it this is
+doing that linear transformation to
+incoming data uh y equals x a transpose
+plus b just like that uh um at
+self.weights plus self.biases
+uh so there's lots and lots of these uh
+predefined layers that can really
+simplify our code and can make it faster
+because they maybe know little details
+about how to call things in pytorch uh
+to make it run better
+so
+boop that should be yeah need to zoom
+out a little bit to be able to see it
+all here uh but now our mnist logistic
+is even simpler we just define that it
+has a linear layer so we instantiate it
+just like we instantiated the weights
+and biases when we initialized our
+network we need to instantiate this
+nn.linear module when we uh when we
+create our network um but then
+uh because it's a module it has its own
+forward method so we just call the
+module on its inputs so there is this
+kind of cool thing where the components
+of a of a torch.nn.module
+are additional
+torch.nn.modules it's kind of like a
+recursive uh data structure modules
+contain modules just like lists uh can
+contain lists and you know what an array
+or a tensor is kind of like a list of
+lists uh and so models are actually
+modules composed of modules
+so that's a cool feature about the
+design of pytorch uh that's much nicer
+than i think you know most people would
+wouldn't think to design it that way uh
+when if they were building their own
+neural network library
+um so that's a neat little feature uh
+and so we have our linear layer here
+that is a module attached to our overall
+model
+so we can instantiate our model and
+calculate the loss just the same way we
+did before nothing has changed here
+again we're just refactoring aren't
+really changing the major components of
+the behavior we're just
+we're just
+changing what is sort of under the hood
+uh to make it cleaner and easier
+and we can even still call the same fit
+method as before because all that the
+fit method knew was that model was a
+module so it had dot parameters and had
+zero grad
+that fit function that we wrote will
+work with this model and make its loss
+go down as you can see here the loss
+goes down from two and change down to
+close to zero
+um
+and it's
+uh
+it's able to do that because we're just
+using the the features of a module we
+aren't using the special fact that
+there's uh that it has that are the one
+we wrote at first had weights and biases
+as special as uh
+as
+uh attributes at the top level uh that's
+what we used when we were writing our
+own loops by hand so torch.nn allows us
+to write more general and flexible code
+so we also want to
+so that that covers our refactoring
+using modules so let's move
+let's put another one on the board
+uh in the old to do list
+all right yes um oh is that to-do list
+not updating
+there we go
+all right
+um so the uh we're now going to refactor
+using the torch
+optim uh
+library uh or or submodule of pi torch
+optim is going to handle the
+optimization the updating of our
+parameters to make them better
+so
+um this torch.optim has a bunch of
+optimization algorithms uh these update
+parameters instead of us doing it
+manually we have this manually coded
+step with torch dot no grad do all this
+stuff instead we and and we happen to
+use stochastic gradient descent which is
+very simple easy to write a lot of other
+optimizers that work very well with
+neural networks are not so easy to write
+easy to write incorrectly you might say
+uh and so we don't want uh so we so we
+really don't want to be writing that
+ourselves i wrote a bunch of
+optimization algorithms myself uh a
+bunch of second order optimization
+algorithms in uh in grad school and boy
+did i write those incorrectly like 10
+times i had to come up with pretty
+sophisticated testing to make sure i was
+doing things right um
+and
+that you don't want that to be happening
+when what you really want to be doing is
+trying out cool stuff with neural
+networks or building a cool
+ml application so we want to use those
+optimizers so they both give us better
+correctness guarantees
+and they clean up our code that for loop
+becomes opt dot step
+and the zero grad stays the same op dot
+zero grad um but you no longer if you
+had multiple models for example the
+optimizer would take care of that
+uh a little bit of zoomed out here this
+one was this one ended up being a very
+long slide uh yeah op dot zero grad
+resets the gradient to zero yeah and we
+need to call it before calculating the
+gradient for the next mini batch just
+like we needed to do zero grad before
+doing the next mini batch each time
+so uh
+at this point uh we can also refactor
+we've made it easier to make our model
+we've made it easier we've now got this
+optimizer for optimizing it so let's
+make a nice little cute function to
+build this
+um
+uh abd is asking in the chat will we be
+going through the stochastic weight
+averaging optimizer
+um i wasn't planning on it maybe if we
+have time at the end we could try it uh
+try that out um you can swap out the
+a nice thing about this is you can swap
+out the optimizer pretty easily by just
+changing this optim dot whatever here
+the optimizers are all these different
+classes so we could change that to optim
+dot something else
+i guess optimum dot add a delta add a
+grad atom
+we could change that to something else
+if we wanted i'm going to stick with sgd
+um
+uh but
+at the level that we're operating right
+now like i'm trying to stay away from
+too much of the actual
+like machine learning ideas and theory
+here and trying to focus on the
+mechanics of the code uh because the um
+like these are these are kind of two
+separate things mechanically what's
+happening versus like why are we doing
+uh you know why are we doing this why
+does this make models better etc etc um
+this the this
+uh this stream is really about making
+about understanding the the mechanics of
+of
+torch.nn and torch in general uh rather
+than understanding the
+uh rather than understanding what's
+going on inside of inside of our models
+uh all right so we we define this little
+get model function which will which will
+allow us to just create our mnist
+logistic model uh and an optimizer for
+it
+uh as we go that it makes our lives a
+little bit easier um and now we are
+using that optimizer
+in our backwards
+after our backwards pass to update the
+parameters down here at the bottom and
+we can see that
+uh even though we've changed our
+our setup we're still getting pretty
+much the exact same behavior
+our model
+starts off with uh with a loss of 2.3
+random uh random chance performance and
+then uh improves
+drastically when we when we run our
+training code there
+uh so we've got
+uh so we've we've changed these things
+we've added optim but we and we've added
+an optimizer but we have not changed the
+actual behavior um uh so
+our code keeps getting cleaner and
+cleaner and more and more reusable
+as we add more high-level torch features
+from torch.nn and torch.optim
+but the behavior isn't changing
+all right so
+uh that's
+that's optim done
+and so now let's move on to
+adding data loaders so we've mostly been
+uh been focusing on refactoring the
+model code more than the data code um
+playing with model code i find is like a
+lot more fun than playing with the data
+code but we need to do we need to have
+both we need to do both here
+so we're going to use data sets there's
+this abstract data set class in pytorch
+a data set is anything that has a len
+function and a get item function can be
+a data set so len
+is what happens when you call this
+dunder len method is what uh is what
+gets called when you call len on um
+uh on something so if i call like len
+string i'm calling let's see can i do
+this yeah len
+of some string really what's happening
+is i'm taking that string
+and i'm calling it dunder len method
+and these two things are the same it's
+uh this is python magic uh dunder magic
+as they call it uh that makes it more
+easier to use
+but you can hook into this with your own
+classes if you define a dunderland and a
+dunder get item uh and
+we will go into a ton of detail about
+writing things with data sets that's uh
+you know data engineering is is a whole
+uh a whole field of its own but there's
+a nice tutorial on the pytorch website
+uh for creating custom data sets we're
+going to use a pretty simple data set
+here which is just a data set that wraps
+tensors you just you send it you give
+this thing tensors that fit in memory
+and it makes a data set out of them
+um so why do we have uh oh the other the
+other dunder method is get item uh
+that's the that's what what gets called
+whenever you index into uh something in
+python so using those square brackets
+and um
+so by defining a length and a way of
+indexing this also gives us a way to you
+know iterate index slice along our um
+along our data sets and for a tensor
+data set that's along the first index of
+the tensor the batch index of the tensor
+um so this is going to make it easier
+for us to access those x and y train
+values so a tensor data set can have
+multiple tensors associated with it and
+when you iterate over it when you slice
+through it you get both at once so
+previously we pulled an xbox and a y
+batch separately from x train and y
+train and now with this refactor using
+this data set we can pull them at the
+same time so this saved us one line um
+so not a huge savings in terms of lines
+but it's um
+it's made things a little bit simpler to
+use a data set instead of uh
+instead of a
+just those raw tensors so this would
+where this would really help is if your
+data set doesn't fit in memory and
+you're having to load stuff from disk
+you keep that logic out of your training
+loop and inside your your definition of
+your data set uh and then you don't have
+to you don't have to have all this like
+file reading and writing kind of code uh
+or pre-processing code mixed in with
+your training it would be in the
+definition of your data set class
+which is nice
+um so now let's refactor using the last
+i believe this is the last piece of of
+torch
+dot nn that we're really going to use um
+here are the sort of like main pieces
+the last bit is this data loader
+and a data loader abstracts the process
+of of actually um turning a data set
+into batches so data loaders responsible
+for managing batches
+it may seem a little bit strange that
+we're that we have like a separate class
+in order to do this with our simple
+example but data loaders really so for
+us really all it's going to do is like
+turn our this like complicated indexing
+thing we're doing to pull out our
+batches into just a for loop so that
+already looks kind of nice it's kind of
+clean but really data loaders allow you
+to be much much faster with loading your
+data with multi-processing
+and they
+and when you start to do more
+complicated kinds of batching you really
+need these data loaders to do it but we
+won't see any of the advanced data
+loader features here uh in this tutorial
+so for now all it's doing for us is
+making it easier to iterate over batches
+so we used to iterate over batches
+manually by controlling an index uh so
+we had an index number we were
+multiplying it by the batch size to jump
+through our tensor at a given sort of
+stride and pull out entries
+uh
+the data loader instead we say let's
+pull out uh you know let's loop over
+this data loader so a data loader
+defines an iteration procedure that
+pulls out the batches so instead we have
+four x b y b in train data loader
+uh um
+like the like that's how we pull out the
+the data rather than having this kind of
+looping structure which is really nice
+to sort of separate a separation of
+concerns the data loader is concerned
+about how to build batches and the
+training code just cares that it can get
+batches from the the data loader
+and if we run this
+we run this code we once again get the
+uh that the loss
+is close uh goes down when we uh when we
+run it gets down closer to
+zero um but now our code's gotten much
+much shorter right our we've lost like i
+think like five or six lines of code um
+which is a lot for something that's only
+like seven lines of code
+uh uh uh that it that started only at
+like 12 lines of code and um
+not only that but we've also made in it
+we're not just playing code golf here
+we're also making our code more reusable
+more extensible
+uh so that allows us we've now gone
+through everything that we need since
+we've made it to the end with this data
+loader here uh to answer the question
+what is torch.nn really uh that is the
+title of this um
+uh of this tutorial
+uh so we've what are the components of
+torch.nn that we that really matter for
+uh for building our neural networks
+we've got modules which are
+um
+which create these like callable things
+that behave like a function but also
+contain state so they take in inputs and
+give outputs but they also have
+information that persists over time like
+neural net layer weights
+it's sort of main responsibilities to
+track the parameters that it contains
+a parameter by the way is a wrapper for
+a tensor that tells the module that it
+has something that needs to be updated
+during back prop weights and biases
+parameters in general um so modules uh
+and parameters are our
+our layers of our neural network are
+pieces of our neural network and the
+tunable p bits of those pieces
+uh then inside torch.nn there is this
+module lowercase m so a python module
+that contains all the non-stateful
+operations stuff that don't need to be
+modules that don't need to track
+information uh over time so this is
+non-stable operations or things like
+losses activations matrix multiplication
+is defined in uh in
+torch.nn.functional um so this is all
+the the components
+of pi church without state
+it's kind of like a tiny subcomponent of
+torch that's a functional programming
+language um uh if you've if you've ever
+played around with a functional
+programming language
+uh and then uh we've also got
+torch.optim in there torch.optum has our
+optimizers like sgd
+that update the weights of parameters
+during the backwards step so they you
+a torch.optim
+knows about parameters and knows that
+they need updating
+let me zoom out here so we've got enough
+space for all the pieces of torch.nn
+here uh the last two bits uh everything
+up to this point has pretty much focused
+just on models uh on the way our data
+gets transformed the last two pieces are
+the actual data itself
+we have um an abstract interface for our
+data based off of knowing how long the
+the the data set is how many entries
+does it have and how do i get a
+particular entry that's len and get item
+give us those and then data loaders
+uh take data sets and turn them into
+iterators over batches um so so data
+loaders handle batching data sets handle
+you know getting the data off the disk
+um
+so those this is what torch.nn is you
+could do all this stuff yourself
+baseline torch basically all the pieces
+of torch.nn are implemented in terms of
+the rest of torch so the like core
+components of torch that are
+fast
+accelerate like you know accelerated um
+matrix math with derivatives that's what
+uh that's what the core functionality of
+torch is and then torch.nn wraps all
+that stuff up into these nice little
+pieces here module parameter
+functional components
+optimizers data sets and data loaders
+and
+basically
+does all the things that you would
+normally do
+in order to use the basic pieces of
+torch in order to build a neural network
+that's what torch.nn really is
+so
+uh you know i've got my beloved tada
+emoji here because we have reached the
+end of the of this yeah we've answered
+our question of what is torch.net really
+uh so you know maybe we could it's it's
+worth celebrating for a brief moment
+um so
+this these pieces have made our training
+loop dramatically smaller and easier to
+understand um and so we're not done yet
+because uh all we we wrote a very
+bare-bones version of neural network
+training
+and now
+uh we're
+uh we what we need to do now is add a
+bunch of features that um
+are necessary to create effective models
+in practice
+um oh yeah sebastian says in the chat uh
+torch.net is kind of like scikit-learn
+uh but it's best specialized to neural
+networks yeah yeah scikit-learn is kind
+of built on top of numpy and scipy and
+sort of
+creates a bunch of machine learning
+algorithms uh
+you know the high level algorithms uh
+out of those pieces torch.net is the
+same thing it's just that pi torch is
+one library instead of being split into
+psychic learn and sci-fi and numpy
+all right so now let's start to make our
+um make our neural network
+uh not we're
+now gonna start adding features rather
+than just refactoring we're not just
+making our
+our neural network code cleaner more
+extensible we're making it better now
+so the first thing we're going to do is
+we're going to add logging so we're
+going to use weights and biases waste
+biases
+is the company that runs this channel
+it's the developer toolkit for
+uh for machine learning i like to think
+of it as the multiplayer machine
+learning developer toolkit because what
+it does it allows you to reproduce
+results
+so multiplayer in terms of playing with
+yourself in the future but really also
+to make these interactive dashboards
+register models and data sets share them
+um and
+create
+like um you know create
+kind of blog posts or or other ways of
+kind of sharing information about your
+machine learning with other people right
+now all we've done is use print
+statements to talk about what our models
+are doing good luck convincing somebody
+uh uh you know in a in a meeting or in a
+talk
+of something just using like print
+statements right we need more than that
+in order to communicate our machine
+learning results and that's a big part
+of what weights and biases provides
+so
+it's there's a python library an open
+source python library
+on github that's the weights and biases
+client um that allows you to um
+that allows you to track stuff that
+happens
+in your uh in your neural network
+training uh and save it to w and b
+uh so to a web service um so there's two
+different or there's actually three ways
+uh that you can pronounce w and b um so
+w and b uh is the sort of acronym for
+our name weights and biases named after
+the components of a neural network layer
+uh so that's one way to pronounce it uh
+and that so that's connected to our name
+or you could call it wand b um which is
+because it is magical uh and we'll uh
+will really um cast a spell over your
+over your neural networks
+um or you can call it one db uh because
+it's like a database for information
+about the experiments and the machine
+learning uh runs that you have done
+and for this we only need to do two
+things in order to get the sort of basic
+stuff going with weights and biases we
+run wanby.init to say all right we're
+about to do a uh we're about to do some
+neural network training uh we give this
+project a name torchnnn um and so this
+says hey wnb i'm about to track
+something i'm about to do some machine
+learning um you know you can also track
+any python code you want i have used it
+to track i was playing around with the
+fibonacci sequence and i track that in
+weights and biases so you can do that
+too
+most people use it for machine learning
+though um and all we need to do is add
+to that block of our training code we
+add one b.log
+here and we pass in a dictionary of
+stuff that we want to log for now we're
+just going to track uh what epoch was
+this batch in and what was the loss on
+that batch so relatively simple
+information to track here and you can
+see uh one when you do that uh when you
+run one be done in it you get a link to
+a dashboard where you can see the
+information that you're logging
+um though the information is also saved
+local locally um so you can see that
+i've got this uh
+um uh you can actually tell now that i'm
+running this on windows here
+and
+so we can
+view most information log to wnb we can
+view it actually directly inside jupyter
+there's no need to necessarily leave
+jupiter in order to
+um
+in order to
+look at the stuff logged weights and
+biases so here's we logged the loss and
+the epoch so previously we just looked
+at the loss at the beginning of training
+and salt was high and then at the end of
+the trip of training we saw it was low
+but there you know we calculated the
+loss over and over and over again during
+training and that information was just
+lost uh during training so we we lost
+all that detailed information uh by
+adding that wanby.log here we're not
+this is not on this is saved so we
+didn't lose it
+um it's not only saved
+in that like it's you know available
+locally but it's also available online
+so um
+there uh that link uh that was was
+produced would go to a dashboard version
+of this on online but i'm just looking
+at that same information inside jupiter
+here and you know this is we have a
+plotting library so we could do things
+like change the the y-axis and the
+x-axis here so maybe i want to change
+the y-axis there a little bit uh apply a
+little bit of smoothing because there's
+some noise here and i don't necessarily
+care so much about maybe i want just
+like the running average here
+or
+some gaussian smoothing
+uh so that i get a nice smooth loss
+curve so i can see how you know how is
+the loss moving in aggregate there's
+lots of other stuff you can do with wnb
+charts but the most important thing that
+i want to emphasize here
+is that you can share them with other
+people so i'm going to add this guy to a
+report um to a little uh to a to a sort
+of combo dashboard blog post and say
+yeah the loss is
+going down so there's uh now what i've
+got here is not just a chart but some
+information um so this chart
+was logged
+during the
+torch dot nn live stream
+great
+uh we're really happy that our loss is
+going down so let's put that there
+and uh in addition to having just like
+the ability to write stuff add these
+kind of uh wnb charts here there's lots
+of other stuff you can do so for example
+let me go ahead and grab
+this here boom that's a link to the live
+stream
+oh hold on
+so you can add links that's that's nice
+that's cute but if you uh if you grab a
+full youtube link i guess not a
+youtube.be link but the full youtube
+link here not a short link but the
+actual link paste that in and boom
+the
+a link to the recording of the time that
+i ran this run so
+here's a recording
+of
+the logging of this run
+and more so that's now inside of this um
+uh of this report that i've made so my
+colleagues can come along and and see
+what exactly was i doing when i log this
+there's lots of other stuff um let me do
+one last thing here in this report uh
+what else can we log let's do
+uh we track a lot of stuff besides the
+stuff that uh that you explicitly ask us
+to save so for your convenience one fun
+one that i noticed when i was uh when i
+was playing around with this
+is
+the actual the actual notebook
+uh and the actual uh executions that
+were associated with this guy
+let's try looking at this notebook
+oh that one didn't work shucks all right
+well um
+that's what happens in live demos not
+everything works every single time
+but you can add lots of different things
+in here uh you can add let's just
+directly add the code i didn't save the
+code this time
+um you can add you can add different
+things in here um other things that if
+i'd logged other stuff there'd be more
+stuff to log so actually let's go on and
+instead of um
+you know instead of spending more time
+on this run that i didn't log much on
+let's go and look at some other things
+oh by the way since i've since i've
+saved that report i can now share that
+with other folks so let me just drop
+that in the chat there you can go and
+see that um that report that i just made
+uh and look at it so this allows you to
+share information with other folks who
+you're working with uh whether that's
+other folks you're working with you know
+via the internet uh or your colleagues
+um or you know if you wanna write a blog
+post that you wanna share with people
+you can do that all in wnb
+um
+so the last thing we so what were we
+doing here just to remind we started a
+run we did some stuff we logged it to
+wnb
+the last thing we need to do is close
+that run out
+so say wnb i'm done
+with what i was doing before i'm no
+longer
+i'm no longer doing any machine learning
+on this run
+so it's closed out
+and let me just quickly show you there
+is that uh there's like this
+general dashboard here let me also drop
+that link in the chat if anybody wants
+to check that one out
+um that's got
+a bunch of information about our run so
+it does have that code here that i can
+view
+so here is that uh that um jupiter code
+save to uh safe to weights and biases so
+if you're coming along and reproducing
+somebody else's uh somebody else's work
+you don't need to ask them to send you
+the jupiter notebook that they ran you
+can just find it
+lots of other metadata and other
+information is logged here
+system metrics all kinds of things like
+that
+uh without me having to explicitly say i
+want to log all those things and that's
+the nice thing about using a logging
+framework instead of doing it yourself
+the logging a logging framework will
+handle a bunch of stuff you wouldn't
+think to log um but you may need three
+or six months down the line
+um then the last thing just since we're
+doing stuff in pi torch i wanted to show
+you a little special pie torch tool we
+have one b watch that uh that tracks the
+um
+the
+values of gradients and parameters and
+stores them as um
+and stores them as
+uh histograms on w and b so let's take a
+look at what this dashboard looks like
+so now in addition to the the loss and
+the epoch values that we that we log
+directly we've also got the uh the
+biases and the weights they're actual
+values stored as histograms so we can
+see the weights actually a lot of the
+weights are very close to zero that's
+interesting we could probably compress
+this network
+um oh no those are the gradients
+well the weights are also close to zero
+that's this this set of charts at the
+bottom here are the parameter values
+themselves and then the gradient values
+are um
+are in this other uh panel here so i got
+that just by calling juan b dot watch um
+so that information is tracked so you
+can watch for things like gradients
+getting too big gradients getting too
+small um look for interesting patterns
+in your gradients or in your or in your
+weights
+so you can learn more about that uh on
+our youtube channel um uh i've got some
+videos on uh specifically on integration
+with pytorch that's what this uh video
+here is
+um but then there's also
+oh yeah i forgot the um
+the share dialogue on youtube does not
+like the
+version of windows i'm currently running
+so i won't be able to share that
+directly
+but you can find this video on our
+channel um and we all have this playlist
+uh of a bunch of videos of how to
+integrate weights and biases and use
+weights and biases tools
+um so you can learn uh more uh by
+checking uh checking that uh that out
+um
+and uh oh yeah i just by the way what am
+i doing here i'm using the
+ipython.display library which is a
+hidden gem i would say in ipython and
+jupiter which allows you to just like
+render and show lots and lots of
+different things
+so people are used to like printing
+stuff and showing stuff in jupyter
+notebooks but they mostly print things
+like arrays or lists or strings but you
+can actually display a like you know
+there's a special youtube video class
+here which pulls videos from youtube
+um so there's uh like there's a lot of
+stuff in there and there's a lot of
+things that kind of hook into the rich
+display features of jupiter notebooks
+including those weights and biases runs
+i was showing you
+all right so that's our we've added
+logging to our to our setup um
+so now let's keep going and talk about
+some of the other things that we might
+want to add um we'll do a little bit
+more we'll add some validation and do a
+little bit more refactoring here
+so um
+in
+the first section we were just trying to
+you know just get a reasonable training
+loop set up for uh use on our training
+data and we only had one type of data
+and that was just to sort of make things
+simpler while we were writing everything
+out while we were writing everything
+explicitly
+we really only wanted to have one
+data set it would have been a pain
+to loop over multiple data sets but you
+really always should have a validation
+data set data that your model has not
+seen that's not been used to update its
+parameters that you can use to check to
+see whether your model does well on data
+it hasn't seen before
+this is what's going to happen in
+production right you're going to fee you
+aren't just going to feed in the network
+data it's already seen before you're
+going to feed in new data coming in from
+your users
+or coming in from a sensor stream
+and so this validation set sort of
+mimics that by having data that is not
+used to update the parameters
+so we um it would have been really hard
+to add validation data when we were
+writing everything raw in pi torch but
+now that we've got these this like two
+liner that's like build a tensor data
+set turn it into a data loader now it's
+really easy to do that we just grab that
+validation data uh the input and output
+validation data and make a different
+data set and data loader here
+so there's a couple of notes here on the
+code one is that
+shuffling training data is really
+important um this is a feature of the
+various uh stochastic optimizers that we
+that we use if the batches are too
+similar to each other like if the first
+batch is all ones the second batch is
+all twos third batches all threes uh
+then that can actually cause really
+gnarly misbehavior of your optimizer so
+you definitely want to shuffle the
+training data
+with validation data we aren't using it
+to update the parameters so it doesn't
+matter uh whether the gradients are
+correlated from batch to batch we don't
+calculate those gradients so we don't
+want to shuffle it um
+uh we'll also use a batch size for the
+validation set twice as large as the one
+for the training set so we use bs batch
+size for the training data loader we
+double it for the for the validation
+data because when you do back
+propagation calculating the gradients
+takes up memory right we needed to like
+calculate and store those gradients in
+order to opt and then like update the
+parameter values on the basis of those
+gradients
+um
+that takes roughly
+the same amount of memory to do back
+propagation as it did to do the forward
+operation uh uh so it's so you end up
+with like uh twice as much uh as much
+stuff stored in your gpu ram uh and so
+the forward pass takes twice as much or
+the four to backwards pass takes twice
+as much memory as just a forward pass uh
+and so we use uh uh if in the validation
+data where we just do a forward pass we
+don't do back propagation we can have a
+batch size twice as large
+and that will help us compute the loss
+more quickly because we're
+basically better able to take advantage
+of the parallel computations that are
+going on with vectorized cpu code or gpu
+code
+um so we'll calculate and log the
+validation loss at the end of each epoch
+um just a little uh note here when you
+are when you're training your model you
+want to call this dot train method when
+you are just evaluating your model you
+want to call this dot a val method
+um dot train
+does the um
+sets all the components of your model so
+that it tells all of them hey it's about
+to be time for training
+and some pieces of the model really care
+about that we aren't using any of them
+but batch norm and dropout are two very
+prominent examples uh that behave
+differently in training and inference uh
+batch norm collects statistics during
+training and then fixes them during
+inference or evaluation dropout randomly
+gets rid of neurons during training but
+then
+does not do that during evaluation
+so this is another utility of having
+something like torch.nn
+these uh these you know tricky bits
+about uh about sort of context switching
+are handled by the um handled by
+torch.nn with this simple
+model.trainmodel.eval
+but make sure you don't forget to do
+that um when you are writing your
+pytorch code
+um and now we're also logging that
+validation law so we compute the
+validation loss on all of um on all of
+the things in our data loader um
+and uh and log that let's take a look
+um so now we have the validation loss
+along with the training loss actually i
+kind of want to see those next to each
+other how the training loss and
+validation loss compared to each other
+um and let's make that nice thick line
+um yeah so you can see the validation
+loss is a little bit lower than the
+training loss that's good to see we
+aren't over fitting uh with our model
+yet so that's what this uh that's what
+this chart with our train loss and
+validation loss shows
+so it's good to see you always you'd
+hate to see overfitting
+and now we have a little bit more
+refactoring to do um like we have all
+that stuff that we're doing in the in
+the fit uh to fit our model that's
+pretty generic um
+uh like calculating training loss
+calculating validation loss updating
+parameters all that stuff is generic
+enough that you can probably reuse it
+across projects across models and and
+data sets
+um
+and we'll also you know we're we
+calculate loss on batches both for the
+training set and the validation set so
+we'll make this lost batch function to
+make that the same
+um
+and
+uh there's a
+and we'll use that if if this loss batch
+function gets an optimizer then it does
+backprop if not it doesn't do backprop
+so it's a cute little way of splitting
+it up um if you use a high level library
+like
+um like pie torch lightning or fast ai
+um then like this you know this is
+closer to the level where you're
+actually gonna operate at when you're
+writing stuff
+than the level we've been operating up
+to this point
+uh so also if you've used keras uh
+tensorflow keras you also operate at the
+level of calling a dot fit um on your on
+your models rather than than than you
+know iterating over gradients yourself
+for um or zero ingredients yourself
+um
+right okay so we have that uh we have
+that lost batch function um to to do
+that so this uh and we wrap all this
+stuff up in fitfit needs to know how
+many epochs to train a model with which
+loss function applying what optimizer to
+that loss function uh to calculate uh to
+to take gradients and turn them into
+parameter updates for a model
+it needs to know the training data
+loader and the validation data loader so
+we can loop over them uh and then lastly
+i've added these so i've added to the
+existing code that jeremy howard wrote
+for this tutorial i've added these two
+uh little extra hooks on train step and
+on val epoch end
+to do our logging for us so
+if you pass in
+the
+a function for on train step or on val
+epoch end then it gets called with the
+with the training loss and the
+validation loss
+um but otherwise uh you know you can
+just pass in none and nothing happens so
+this allows us to turn on and off
+logging
+with our model
+and the this this sort of structure here
+is kind of a simple version of a hook
+and callback system uh so places in code
+like a function like dot fit where you
+can provide a function and that function
+will get called so a more sophisticated
+version of this hook and callback system
+is how logging code and a bunch of other
+bonus features uh in things like fastai
+and pytorch lightning are are are
+implemented so um
+like you know learning rate scheduling
+changing around the behavior of
+gradients all this kind of stuff hooks
+and callbacks are how these are
+implemented so this is a very simple
+version of it for our very simple model
+um but you know this is this is a
+demonstration of the principle here
+um so
+uh we'll see what those what those what
+the callback uh
+for logging looks like in a second
+um we've also got uh in addition to fit
+we also wanna wrap our our sort of like
+data loader building stuff um uh this
+wraps the this sort of um abstracts the
+idea of building a data loader from a
+data set
+uh doubling the batch size and shuffling
+the training data but not the validation
+data that's something you're going to do
+all the time so we can do that um for
+our logging
+uh we're gonna have four uh we're gonna
+refactor it just a dictionary of
+information is gonna come in we'll save
+that to weights and biases that's
+that's our
+our fitting operation uh and then we'll
+wrap our fit function with fit and log
+um
+that uh just uh does
+weights and biases stuff initializes a
+run watches the
+parameters and the gradients uh and then
+um and then uses that log dict function
+to log the information on each uh
+on the end of each training batch and at
+the end of a validation epoch
+so now our whole process of obtaining
+data loaders fitting uh and then like
+making a model and then fitting a model
+and um uh and tracking what happened in
+it uh can be run in just three lines of
+code so that's great um it's still very
+flexible um you know we can change
+around what our model is we can change
+around what our data is but this like
+high level stuff is all um you know
+has all been made
+uh
+uh relatively simple and so this is not
+built into torch.nn we're moving beyond
+torch.nn now but this is the kind of
+stuff that's built into those higher
+level libraries um so hugging phase uh
+fast ai pi torch lightning um pytorch
+ignite any of these other higher level
+frameworks for um
+for doing pi torch training
+um and yeah let's just check and see
+that everything logged to w and b uh
+yeah we i also tracked the batch size
+just for fun since since there was more
+information to to track anything else
+interesting oh yeah the training loss
+um
+oh right i put the training loss and
+validation loss together on one chart
+here
+um oh some fun other stuff we track uh
+we track the graph of your model uh if
+you do one b dot watch um so this one's
+pretty simple we just had that one
+module we'll see a little bit of a more
+complicated example later
+um oh this one's fun uh we if you're
+using jupiter we track the session
+history so we track every cell that you
+ran so remember like if you were
+watching at the beginning of the stream
+i had some images i resized them i ran
+the cell a couple of different times you
+can see that's tracked so that if
+somebody's coming along and reproducing
+this run they they can see oh you did
+something weird 10 cells above
+when you ran the cell 10 times that's
+why we're not getting the same answers
+when we both run this um
+when we run this notebook because you
+didn't run it beginning to end you also
+did some you know some maybe a little
+naughty stuff with your jupiter you uh
+uh you ran
+uh the same cell multiple times uh so we
+tracked that session history for you as
+well that's pretty that's that's a neat
+little feature
+but yeah uh so all that and just uh you
+know once you've abstracted it it can be
+it can be done in three lines of code if
+you're using uh fast ai hugging face or
+pytorch lightning wnb is integrated into
+them so not only you get all this um
+nice sort of high level neural network
+behavior in terms of
+uh you know training validation data
+loaders um and optimization but you also
+will get that logging uh in the same
+like few lines of code
+uh and these same basic three lines of
+code can train a wide variety of models
+uh and we're gonna now switch to doing a
+cnn on a gpu on a graphics processing
+unit uh so that's what we're gonna close
+out here today doing we're gonna do
+a um
+uh we're going to
+uh switch over rewrite our model as a
+convolutional neural network uh so a
+neural network designed for working with
+images and then we're going to run it on
+a gpu
+so we're going to use multiple layers
+now instead of just one layer
+and we'll be able to use them because
+they don't assume anything about the
+model because they've
+successfully abstracted away the details
+of the model from the details of
+training
+we'll be able to run exactly those
+functions with no modifications
+uh so and so the difference with this
+model from our last one is we're going
+to use conf 2d instead of so nn.com2d
+instead of nn.linear
+so i won't go into details about how to
+build a convolutional network that's
+stuff that's covered in our um in our
+courses on uh on deep learning
+uh
+so but we still we still need to do the
+same thing we initialize our module and
+and create the it's sub modules so we
+initialize those convolutional layers
+we've got three of them they have
+parameters uh that that we choose these
+are based off of pretty typical
+parameters you can look on the internet
+uh to find other examples of
+convolutional networks and the
+parameters that they choose in general
+you kind of want to stick to stuff
+people have done in the past and only
+slowly sort of expand outward from there
+um so copying and pasting code is um
+perfectly fine
+and then um
+and then we've got our our forward
+method here that takes the inputs and
+passes them through those layers we've
+got some functional components here
+we're using torch.nnn.functional that
+capital f there to apply activation
+functions uh and then do
+at the end to get our final outputs
+we're going to use average pooling to
+take our uh to take the output of our
+last convolutional layer and turn it
+into a single value uh for each um for
+each class and that will be our
+our final um
+uh values that go into that log softmax
+um so that's that last average pool 2d
+layer also coming from torch on and dot
+functional
+i see a question from rahul in the
+youtube chat i'm assuming i would need
+to provide some other permissions to log
+the notebook history other than just
+installing one b is that correct yeah
+absolutely so this is i was showing you
+that the session history was logged to
+weights and biases uh you the you know
+source code can be intellectual property
+we won't we don't want to steal your
+property um or accidentally share it
+with the whole world if you didn't mean
+to uh so that is that's a setting you
+have to enable on your wnb profile to
+say yeah i want to save code um so
+that is um
+uh that's definitely something to
+uh yeah uh don't worry we won't uh we
+won't be sharing your information
+um
+yeah so oh yeah by the way the logging
+stuff here does require a wnb account if
+you were to run the notebook the the one
+whose link is floating down by my face
+here um the you'll need to create a
+weights biases account to do that
+logging the accounts are free if you're
+doing um you know so long as you're not
+uh doing work uh in in a team in
+industry so if you're sort of in a
+profit setting uh then just like with
+github uh there's like paid features of
+weights and biases that you would want
+but if you're
+if you're just working on your own or if
+you're trying us out or if you're an
+academic or a non-profit
+then there's uh there's free um or very
+low cost versions of wnb available
+but we give you 100 gigabytes of free
+storage of like um
+of things like uh models and data sets
+uh and then uh a like a pretty much
+unbounded amount of storage uh for your
+um for
+metrics and things that you might log
+all right um so
+uh let's see getting back in and talking
+about our convolutional neural network
+here yeah we've got um three layers of
+convolutions we've got our um
+we've got a reshape operation with dot
+view in uh so it's the pi torch version
+of numpy's reshape
+um but yeah we've got active we've got
+non-linear activations and linear layers
+um
+uh where those linear layers are
+convolutional uh and we've got average
+pooling at the end to give us um
+uh this is also called global average
+pooling by the way giving us one number
+for each class
+uh also one little one little additional
+piece because this cnn's a little bit
+harder to train than the than the linear
+network we were working with before
+we add this momentum variation of
+stotastic gradient descent which is just
+a keyword argument it's not even a
+different optimizer it's just a keyword
+argument to stochastic gradient descent
+uh you'll notice this one takes a lot
+longer to run um it takes like 10
+seconds instead of like under a second
+um yeah run time uh yeah we can see the
+run time was about 10 seconds there in
+our run summary at the bottom
+um and yeah so training and validation
+loss both going down still we can see
+the gradients and parameter values for
+all those convolutions and their weights
+and biases
+um that's interesting it looks like
+there's some different bias values for
+different components of the convolutions
+that might be fun to dig into one bias
+is behaving very differently than all
+the others
+oh yeah that model looks a little bit
+more interesting now we've got those
+convolutional layers in the graph
+so this is this is something uh logged
+thanks to juan b dot watch we've got
+this information about output shapes
+parameter counts
+um and
+and the structure of our graph
+all right a little bit more refactoring
+still um which is
+uh so you may have noticed you know what
+we've what we did kind of is like we we
+like chained a bunch of operations
+together here so in our forward method
+we're kind of like just composing a
+bunch of operations one after another
+there's no like there's no ifs to like
+branch things there's no for loops
+there's not there's not really this like
+complicated control flow
+nor are like inputs being copied and
+sent to multiple places it's just the
+input of one of one operation uh
+sorry the output of one operation
+becomes the input of the next operation
+so
+xb
+uh is sent through a convolution then
+through a rectified linear then through
+a convolution then through a rectified
+linear unit uh so
+um we do these
+we're doing this all very sequentially
+and pi torch provides a convenience
+class nn.sequential
+that will simplify your code and can
+actually also make it faster um
+sequential object runs the modules
+contained within it in a sequential
+manner uh to simplify the writing of our
+uh neural network in order to fully make
+everything um
+uh
+uh a sequential we'll have to we'll take
+that dot view that's the only part that
+doesn't have a layer to it um everything
+else that we were doing our release our
+average pools our comms all of those
+have torch.net.modules but we can write
+our own module uh and that's what this
+does this uh this lambda layer here
+takes in a function and we'll apply that
+function to uh to its inputs so this is
+a new nn.module we're subclassing
+nn.module here to make a new layer
+called lambda um and that will um
+uh so sequential requires you to define
+everything as a bunch of modules it does
+it's a module that contains effectively
+a list of modules so we have to turn
+that first operation that we did
+in our uh in our convolutional network
+just going back a little bit here we
+have to turn all of these things into
+layers
+in order to run it with sequential and
+that's exactly what
+that's exactly what our
+uh what our lambda layer will allow us
+to do i will allow us to turn
+that last bit of the view into a
+sequential
+so in order to make a model with
+sequential we just pass in basically
+a list of the modules that we want to go
+into our model so
+first we reshape with that lambda layer
+uh then we apply convolutions and then
+rectified linear units convolutions then
+rectified linear layer convolution then
+rectified linear layer closing out with
+the average pool 2d and another lambda
+layer to um to do that last little bit
+of reshaping at the end
+but now we've made our model with this
+simple nn dot sequential here and that's
+much
+cleaner uh than the way we were doing it
+before we had where we had to define the
+forward pass where we had to do all this
+um
+uh we had to do a bunch of extra work um
+but if we're doing a relatively simple
+kind of neural network that just that
+just sort of feeds everything uh forward
+with no splitting no branching uh no
+control flow then we can use
+nn.sequential
+uh let's take a look uh the one thing i
+would want to say is that also this
+gives us a nice a nicer look for our
+graph the graph um uh that we that we
+track with one b dot watch here only
+pays attention to the modules uh and so
+by turning everything into a module we
+now have a much clearer explication of
+what our um what our model was that's
+stored in this nice clean way along with
+our
+uh yeah along with our run data and
+along with our charts along with our um
+our metadata and our and our source code
+and all these other nice things oh you
+can even see information about my system
+hardware i got a 1080 ti gpu which we'll
+be making use of in just a minute
+um
+oh yeah though
+this little refactoring here uh that we
+need to do are we we wrote a cnn but we
+wrote it in a way that assumed we were
+getting 28 by 28 length vectors um and
+had a cnn grid size at the end of 4x4 uh
+when we built that average pooling um
+so let's just get rid of those two
+assumptions so that the model works with
+any 2d single channel image so get rid
+of the lambda layer by moving the data
+pre-processing into a generator so we'd
+have to write a new preprocessor for
+different data um but um
+this
+um
+but now it's at least separated out from
+the actual model code right our model
+our cnn model now doesn't necessarily
+know that it's being fed uh images from
+m from mnist in particular our data
+loader does we're writing a wrapped
+version of our data loader that does the
+pre-processing for us but you know this
+sort of thing about like what's the
+shape of the inputs that's properly
+considered that's the domain of the data
+loader not the domain of the model
+um and that uh in order to be able to
+change the sizes of our input data and
+but still get that uh still get that the
+final output of our network is one
+number for each class we replace the
+average pool 2d with adaptive average
+pooling 2d which defines the size of
+output tensors and we say we want an
+output tensor that's one by one rather
+than saying i you know our input tensor
+is going to be four by four which is
+basically what we did with nn.average
+pool 2d
+so this allows our model to work with
+any size input which is great this is
+this is an important feature of
+convolutional neural networks and it's
+easy to like you know write them in a
+way that's easy to write but then makes
+it so that they can't handle different
+sizes of data um so this is this is the
+cleaner way of writing that
+convolutional network so that it works
+with different size inputs so that you
+know if i deploy a web app and it's
+operating on images you know i don't
+want all my users to have to upload the
+exact you know 256 by 256 images that's
+not good experience uh for somebody
+using my app
+uh all right so let's try it out we've
+uh we've built this uh convolutional
+network we've um you know we wrapped the
+data loader made things nice and and
+simple we aren't actually checking to
+see that it works on data of different
+sizes that would maybe be good uh it's
+always good to to test your code do unit
+testing and integration testing um but
+we won't be doing that here
+that's maybe that's a really important
+component of designing good neural
+network code that's not covered um in
+this in this tutorial but yeah i'll
+maybe i should do something about that
+on this channel soon let me know in the
+chat if you think that's a good idea
+uh so the last thing we'll do here is
+using uh is accelerate our code with uh
+with a graphics processing unit with a
+graphics card
+so cuda capable gpus these are nvidia
+gpus pretty much exclusively it's kind
+of hard to run gpu accelerated code for
+neural networks on anything other than
+an nvidia gpu um so these can be hard to
+come by they can be really expensive um
+you're fighting with you know
+cryptocurrency miners uh and uh and
+other folks uh to buy the gpus but you
+can also rent them for about 50 cents an
+hour from a cloud provider or use
+something like google colab to get them
+for free
+for limited periods of time
+or kaggle kernels or paper space
+gradient these are all places where you
+can find
+gpus to accelerate your code
+gpus do matrix math really really fast
+and pytorch is designed to make that um
+uh to to make it so you can write this
+high level python the way we've been
+writing it uh but then it gets compiled
+or turned into
+uh this fast gpu code um if you have a
+gpu available so you can check whether
+the the gpu is is available and working
+so my gpu is available ready to go
+um
+uh in torch this is this is like a core
+idea in torch is that there are devices
+that are describing a model or building
+a model and then there's possibly
+separate devices where the models
+actually run where the actual tensor
+operations occur
+uh and so these are torch.devices
+and the key thing that you have to do if
+you're writing pi torch code as opposed
+to code in a higher level library built
+on top of it is move models and tensors
+onto the appropriate device
+so on to the gpu if you're using a gpu
+onto a tpu if you're using that um
+this is something that you have to do if
+you're using one of these neural network
+accelerating chips
+um so for our data so for removing data
+tensors to uh to an accelerator like a
+gpu or a tpu that is the that's kind of
+the responsibility of the data loader uh
+uh in my opinion uh rather than the
+model the model shouldn't necessarily be
+the one keeping track of where the data
+is
+the model does need to know that where
+it is it needs to know that it's that
+it's on the gpu
+and
+so
+the oops i got an extra copy of the
+optimizer here so let's drop that
+um
+so when we we make our model uh and then
+move it to uh to that device to the gpu
+just like we move our data tensors to
+the device uh um when we load them
+uh model that two device here um to
+accelerate the uh to make sure that the
+model knows that it's on a gpu and
+should expect to operate on tensors that
+are on the gpu if you forget to do
+either one of those things you'll get a
+weird error a kind of gnarly error
+message that's like i can't i don't know
+what to do if you give me one tense
+around the cpu and one on the gpu what
+am i supposed to do with that
+um so
+you have to you have to track these
+things if you're using a higher level
+framework fast ai pie charts lightning
+hugging face whatever these things will
+be handled for you which is very very
+nice especially when you're using
+multiple gpus multiple tpus and things
+get really wild
+you may find that the code runs faster
+now um
+so
+uh in in my experience it hasn't
+necessarily run faster on my gpu um i
+think that's a little bit it has to do
+with the model would maybe need to be
+bigger the batch sizes would need to be
+bigger yeah this ran in seven seconds
+instead of ten seconds uh yeah maybe
+running with uh bigger batch uh with
+yeah bigger batch sizes over for more
+epochs might be we might see a bigger
+run time difference
+for our for those gpu accelerated code
+it could be challenging to write code
+that actually makes full use of the gpu
+so actually let me show you an example
+of that one b dot me slash trace
+workspace
+um real quick here let me show you an
+example of uh some runs uh in you know
+what what an actual pi torch with the
+actual code that gets executed uh when
+you're running pytorch what that looks
+like
+using this little trace viewer here
+it takes a second to load um because
+it's got a lot of information in it
+great um so
+uh taking a look at this guy uh uh this
+the important thing let me just collapse
+a bunch of this other stuff here this is
+the stuff that's happening on the gpu
+here this middle row and you can see
+these colored blocks are operations that
+are happening on the gpu uh and you can
+see there's lots of gray here there's
+lots of times when the gpu is not doing
+anything it's waiting on the uh on the
+python code that's executing for example
+it's waiting on stuff happening on the
+cpu not uh stuff that's happening on the
+gpu and that can be particularly bad let
+me see i think i have a nice report
+that directly shows these
+we need to increase data loader
+efficiency yes here's a good report a
+little quick dashboard that i put
+together in wnb
+that shows that uh that profiling
+information um and shows an example of
+some some accidentally badly written pie
+torch code that doesn't really make good
+use of the gpu um so that's now loading
+for me
+great pop this guy open uh and you can
+see actually let's let's collapse those
+cpu traces um and you can see here uh
+this gpu stream here which shows me
+everything that happened on the gpu you
+can see it's almost entirely gray uh
+there's almost nothing happening on the
+gpu most of the time and it turns out if
+you if you really look into this you can
+see that it's um it's because the data
+loader is not written right um and so
+let me uh you can read more about that
+uh uh how to read those traces and how
+to write fast pi torch code in the
+report uh that i just shared in the chat
+oh yeah prashanth loves the profiler
+integration i love it too i think it's
+awesome
+all right uh so it's um it's almost 10
+o'clock which is when i plan to stop
+this stream and conveniently enough if i
+look we are at the end of my slides yeah
+i don't have anything more here
+yeah let me uh let me just
+yeah look through here there we go
+yeah all right the g using our gpu was
+the last sort of idea that i wanted to
+to cover here so let me actually
+uh turn off my screen share then
+and
+maybe
+oh no i'm having some uh view uh i don't
+know if anybody else in the audience
+does streaming but i'm having a little
+bit of obs troubles here um
+uh my uh my stream uh does not look in
+obs like it looks on the uh on youtube
+uh so i i cannot move my face and resize
+it the way i'd like to as i say goodbye
+here um so uh the show must go on i
+guess uh so i'll just say uh we do a lot
+of these kinds of educational uh
+experiences here on the wnb youtube
+channel we've got a podcast that's sort
+of at a higher level where our ceo
+interviews uh folks from the world of ml
+uh from the industry and sort of gets
+their inside takes on how to do ml uh
+well uh and learns uh you know it's it's
+a very informative really fun podcast
+gradient descent um that's on our
+youtube channel and then i put up
+educational videos do live streams we've
+got a pie torch uh reading group going
+through the official pie torch book
+we've got another reading group going
+through the fastai fastbook um so
+uh if you're not part of those
+initiatives check out our youtube
+channel for more information about how
+to join those
+um so
+uh with that i'm gonna i'm gonna close
+out here and i will hopefully see you
+all around in the uh in the wnb
+community uh we uh you know we've got
+we've got blog posts we've got a slack
+forum we've got lots of places um
+and we'll be doing more of these live
+streams coming up uh so yeah i'm
+starting to see some some thanks coming
+in in the chat uh from yl and rahul uh
+thanks so much for for sticking uh
+sticking through this session learning a
+little bit more about pytorch and yeah i
+look forward to seeing you all uh
+elsewhere in the world of machine
+learning
+so until then take care and happy
+learning

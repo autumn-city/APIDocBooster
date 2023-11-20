@@ -1,0 +1,1011 @@
+hello everyone and welcome to this brand
+new episode which is a very special
+episode again and in this one I'm going
+to talk about entity extraction using
+bird so a lot of people have asked me to
+just to do this video and I thought it's
+now the right time to do this video and
+entity extraction using word is not
+really straightforward you have to think
+awful lot of different things and as you
+can see in the background there is this
+book of mine so if you're interested do
+buy it don't go for pirated copies so
+entity extraction using word so first of
+all what is entity extraction of course
+I'm not going to tell you that so you
+have to you have to just see what entity
+extraction is I will show you one of the
+datasets that we will be using today and
+based on that we will build a model for
+entity extraction so this data said that
+I found was an elated corpus for named
+entity recognition obviously and it has
+two different types of tags BOS part of
+speech tag and IOB tag and when you use
+a dataset you should upload so that's
+what I just did and let's scroll down a
+little bit and see this file called any
+our dataset dot CSV so here what you
+have is you have the sentence number so
+this is the sentence number one and
+sentence number one say thousands of
+demonstrators have Marsh rule London to
+protest the war in Iraq and demand the
+withdrawal of British troops from that
+country okay I didn't realize that it's
+going to be a long sentence but yeah so
+there is this sentence and to every word
+there is some kind of part of speech tag
+associated to it and the other kind of
+tag the IOB tag so you have like London
+as a proper noun geo tag is associated
+with it
+so same for Iraq and same for this
+British BGP II I don't I don't remember
+all the things not all the full forms
+here but I guess it's very easy to just
+go and google it and figure out what
+these tags are so in entity extraction
+what's happening is like you have a
+sentence and you have different entities
+associated with different tokens or
+different words or phrases of the
+sentence and you have to extract what
+kind of entity it is so entities can be
+anything ranging from date time to year
+to name of a person name of a place name
+of some kind of food items or things
+like that and you these kind of models
+are really used very widely in the
+industry these days so let's say you get
+an email and from that email you want to
+extract all the important dates and
+times and create a calendar event
+automatically so there you can use
+entity extraction there there are many
+many use cases this is like one of the
+use case I told you about so first of
+all we will download this data set now I
+have all already downloaded this data
+set and I have created a bunch of
+folders called input folder and SRC
+source folder so here I have this any
+are data set so which a sentence number
+world force tag right and I also have
+bird base uncased files and bird base
+cased so entity extraction models which
+you find online or the traditional
+entity extraction models they always
+dependent on like the casing so if I
+write my name is Abhishek probably the
+entity extraction model the traditional
+entity extraction model is not going to
+determine if Abhishek is a name or not
+but the new ones might so let's see the
+transform based
+models they might be able to do that so
+what we are going to do first is we're
+going to first create a contact file so
+the config file will consists of a few
+things first we will import transformers
+so I'm going to use Transformers from
+hugging face and then you define a bunch
+of things like Max Len so I will say
+it's 128 will you up training batch size
+now with 128 I can have a bad side which
+is a little bit larger for Bert because
+bird takes a lot of space and then you
+have validation bat size and probably
+eight it is fine I can define a pox 10 a
+pox maybe so define some kind of base
+model path and in my case I have
+everything in input input folder right
+so bird base uncased so I think it's an
+underscore bird base uncased right so we
+have that and then we need where do you
+want to save the model so model path can
+just be model dot bin so we just save it
+in the source folder and then you have
+you can have you know many different
+things here but like training file right
+which is
+and would slash NER I think it was
+underscore dataset dot CSV and you have
+tokenizer
+which is then took another regret from
+the Transformers package so what you can
+do is you can also use token Isis from
+tokenizer library which is also from
+hugging face but I'm for this video I'm
+grabbing it from the Transformers
+library so you have transformers dot
+board tokenizer dot from pre-trained and
+then here you can write the path so path
+will be base model path and should have
+one argument to lowercase equal to true
+so we lowercase everything and for
+birthdays we don't we do need two
+birthdays uncased we do need to
+lowercase everything so if you use the
+keys to version of word pace then you
+don't need to lowercase so once you're
+done with this you have all the config
+in one place so now you can you can just
+use conflict for everything else and now
+we will come to the next part which is
+data set so when you are training a
+torch model you need your PI torch model
+you need some kind of data loader right
+so let's import conflict and let's
+import torch and you have you have to
+think how this data set is going to how
+this data is going to look like so I
+create a new class called
+entity data set right and inside that I
+have the init function
+so now what what do we need we need
+texts so all the text that we have right
+we need the paw stag and we need the
+tack itself so this I obey diagrams is
+going to call it tag throughout the
+video so I'm going to see we have text
+we have was and we have tags okay so
+self dot text is Tex okay not that oh no
+sorry self dot horse is pause
+self-taught taxes dance so how does text
+look like here
+so text is nothing but a list of less hi
+my name is Abby shake okay so maybe
+there's a comma and you can see that
+there is a space before the comma and
+after the comma so it's a simple thing
+so when you input you have to you have
+to make sure that you are tokenizing
+based on space simple hello blah blah
+blah blah blah and so on so this is your
+texts and similar to texts you have the
+tags now tags like they are probably
+numbers so one two three four one I
+don't know to something like this three
+five whatever and same
+here so you have this list okay so this
+is a list of lists and the next one
+starts from here and so on and similarly
+you have the same thing for tags
+okay so just imagine that we have
+converted the part of speech names to
+numbers using legal encoder of cycle and
+so that's what we are going to do in
+some time and then you have the Len
+function which is going to return the
+length of the data set length of self
+dot txt so self dot txt is length is the
+list of less that's what you have to
+remember that's it now we define a get
+item function self and item index okay
+so get atom function so whenever you
+enter one index index 0 to the length of
+data data set it will return one item
+which will consist of some thoughts and
+tensors and stuff so your training data
+and your labels so self taught text item
+so this is the item that has been
+extracted and similarly you have pause
+and tags right cell taught tags and here
+it will be so pause part of speech and
+tanks now you have all these things now
+the next part comes which is about
+tokenizing these sentences so sentences
+are currently lists of lists
+here okay so it's not like this sorry
+it's going to be like this so one token
+is one word and so on okay let me finish
+this one just to make sure everything is
+correct as examples okay and similarly
+on this side so this is already
+tokenized but it's not tokenized for
+bird so you have to tokenize it for bird
+now so I will do something like I will
+create some empty lists so this is my
+list of ID's then I need target so I
+will I have two targets your target
+pause and target underscore tags or just
+tag so I have these three things and now
+I will I need to tokenize them so I can
+just do four i comma s and enumerate the
+text if I enumerate the text it's going
+to give me one word at a time and I can
+just stay do inputs is so I have defined
+a tokenizer in conflict dot encode and
+here you have a sentence which is just
+one word in our case and then you need
+an another parameter because when you
+use this tokenizer it's going to add the
+special tokens in the CLS token and the
+ICP token so you don't need that so adds
+fresh tokens false okay so now the word
+tokenizer has tokenized the input so if
+my input is Abhishek and maybe it's no
+the vocab so maybe it's splitting as
+like this okay so you are splitting one
+word to four different words so what is
+the length of input which is quite
+simple you can just do input inputs
+right and now you take this and extend
+IDs so input so it's it's just adding to
+the list
+it's like extending the list it's not
+appending to the list and we also do and
+you also do target underscore pause not
+extend and shear you do so now you have
+the post type which is associated with
+one word so pause I the index and you
+multiply it the number of times you have
+the input input length okay so now you
+have like if my if the name is noun all
+of these are going to be nouns so it's
+like that and you do the same thing for
+tags okay now the next part comes where
+you want to pad it so what we are going
+to do is I'm going to say first I'm
+going to say my IDs are IDs starting
+from 0 to conflict or max Len the total
+length so we have the length 128 minus 2
+so why I'm doing - - because you need to
+add some special tokens and need to do
+the same for pause and targets
+to just keep them all the same so once
+you're done with that your IDs will
+become one on one which is the CLS token
+plus IDs plus 1 or 2 which is the SP
+Dogen so that's how umber expect this to
+be and to copy this twice and shear what
+I'm going to do is I'm just going to add
+zeros to targets
+boss and targets tag ok so now all of
+these have the same length and mask the
+attention mask will be nothing but once
+of same length as IDs and your token
+type IDs will also be the same but with
+0 okay so now you have everything except
+that you still need to add then put if
+your input is smaller so I can just do
+padding Lin which is config dot max Len
+- the length of IDs so that's my padding
+layer so now I'm just going to Pat the
+inputs on all of these inputs on the
+left hands on the right hand side just
+as Bert expects to me
+so IDs IDs plus 0 times m t0 into
+pairing Len ok and let me just copy this
+thing so we need mask we need token type
+IDs target pause target neck my target
+tag sorry
+so we have the mask and we have token
+type IDs all of them need to be the same
+length so that's all you need to keep in
+mind
+and I'll get pause and I'll get tagged
+and now you can return a dictionary so
+you can just write returned IDs yes tour
+Todd tensor IDs comma and you need to
+specify the d-type so torch not long
+here because all of them are long in
+this right you need to do the same for
+mask then you have token type IDs and
+you have target for target neck so
+that's that's all you want to do and let
+me just finish this here choking type
+IDs so go here target force will go here
+and target tag now for target pause and
+target tag it's also the same data type
+long because these are also ends right
+and that's our data set class so now the
+next thing that we have to do is go for
+creating the engine file which will
+consists of our training an evaluation
+function so we have we have done it so
+many times before right so it's very
+easy but we will do it in a little bit
+more compact way today so import proj
+and from ticket IAM just to monitor the
+progress import t curium and now you
+create a training function what do you
+need when you're training you don't need
+a lot of things or maybe you need a lot
+of things when training but not when
+evaluating so you have the data loader
+you need the module you need optimizer
+you need device you need scheduler and
+that's all you need
+okay and then you put the model in train
+mode and you have some kind of final
+loss which is zero and now we can loop
+over the batches from data loader so I
+can just do for data in ticket iam data
+loader and here the total will be the
+length of data loader okay
+now the interesting part comes is what
+you can do you can do for K comma V in
+data items so you take everything so we
+have always done it individually right
+and you can do data at K is equal to V
+dot 2 device so now everything has gone
+to device and we have already assigned
+the data type so it been taken care of
+and you've 0 grad the optimizer now and
+you get some kind of loss from model so
+like this so the only thing that you
+need to take care of when you build this
+model it should take the same input
+names as you specified in data so like
+ID masse token type IDs are get pause
+dog attack so it should have the same
+names that's it and you can do lost or
+backward you can have to optimize a
+jockstrap and scheduler that step so in
+case you have a scheduler
+and your final loss would be final loss
+plus loss dot item okay you have that
+and then in the end you return final
+loss divided by the length of data
+loader
+so that's your training function now the
+evaluation function is not very
+different so I'm just going to copy this
+thing here call it eval function so you
+have the data error you have the model
+you don't need optimizer you don't need
+the scheduler you need to put the model
+in eval mode instead of Train mode you
+mean to zero grads you have still have
+the loss you don't need backward
+optimize the step scheduler dot step you
+don't need all these things and
+everything else remains the same so easy
+peasy so yeah less than 30 lines of code
+for just training in an evaluation and
+it didn't take much time either so yeah
+let's hope it works so we have we have
+all these things now and now we can go
+on and create our model itself so model
+is very important here in this
+particular problem model dot pi so I
+will import conflict because I will need
+something from conflict I will import
+torch we will need transformers and
+import torch dot n has a none because we
+were a returning loss in the engine so
+that's what we are going to do so our
+model will call calculate loss and
+return the loss so we don't need to
+calculate it inside the engine and now
+you have a model so let's call it entity
+model
+jenn-air it's from an under module okay
+and you define the init function so what
+should this take itself for now and
+nothing else
+and this is super titty model in it
+so now you're ready to write a few
+things here so first of all we will have
+the birth model itself so that's
+transformers dot world model so now we
+are all aware of the step so from
+pre-trained and here you can have
+conflict dot base model path so if you
+if you're searching to Robert then you
+just need to change from birth model to
+Robert remodeler and you also need to
+change the tokenizer inside conflict so
+that's all you need to do and now we
+write a foreword function in drive
+forward so it should have the same names
+so let's copy the names so we have ID
+mask took a token type IDs target pause
+target tags
+okay so ID or IDs IDs I think mask token
+type IDs target underscore or target
+underscore tag target on this code tag
+okay so this is fine and now we have our
+birth model so this equals self dot Bert
+Heidi's Venetian mask is equal to mask
+and token type IDs is equal to token
+type IDs so I have taken the first input
+which is sequence output and obviously
+there is a reason for that because in
+particular problem you are not
+predicting just one value you were
+predicting one value for each and every
+token and when that's the case you have
+to take the sequence outputs so I can
+say like Bert output for tag in his cell
+taught now we can also include some kind
+of drop out here self-taught Bert drop
+one is and then dot drop out so point
+three maybe and same for the other one
+part of speech so self dot Bert drop
+underscore one and sheer you have a one
+right and you can do the same thing for
+part of speech us and it will remain the
+same instead of for drop one you're
+going to use but rock tube and now you
+have some kind of tag output so this is
+like a kind of a linear output for each
+in every word so what should be the
+length of this the length should be
+determined by the number of tags you
+have in by the number of unique tags you
+have in the tag variable so self dot out
+tag I can say this is Anand or linear
+and I know that I have seven or six here
+input because it's Bert bass and
+self-taught num tag
+now self-taught num tag is not available
+so we need to define it so pause and I
+can say that sheer as input I need num
+tag and num was okay self dot num tag
+will become numb tag and num boss
+okay
+so we have the tag output now which is
+self dot out tag and vo underscore tag
+and same thing that you can do you wanna
+ask your boss and instead of tag you
+have boss so now you got everything but
+still there is something missing so we
+can return tag you can return false but
+you also need to return the loss so you
+have to calculate the loss so the loss
+of tag this loss function now this this
+function should calculate the loss for
+tag and one more for boss and there are
+multiple ways of calculating these laws
+and you can do loss underscore tag plus
+loss underscore boss and you can take an
+average you can return an average of
+these two losses now how do you
+calculate this loss so let's say we need
+a few things here let's go and define
+the loss function loss function so we
+will be calculating categorical sorry
+cross entropy loss because it you're
+you're predicting different tags right
+like a classification problem so it
+should take an output it should take a
+target right and here you can define
+let's say a loss function is dot cross
+entropy loss okay
+now there is a very interesting part
+comes here which I have borrowed from
+hugging faces repository so with say
+look at active loss what is active loss
+active losses wear mask attention mask
+value is one
+so you don't need to calculate the loss
+for the whole sentence right you just
+need to calculate the loss where you
+don't have any padding where you don't
+have any padding it means the mask is
+one and then you have active logits so
+that will be the same but for the output
+so you can do output dot view minus one
+but if you do output dot view minus one
+and if you have like eight different
+types of tags you need to put eight here
+and this number is not known to us now
+so I can just do num labels and take num
+levels as input to this function so you
+got this one and then you need to say
+okay what are active labels so you have
+the target already so you what you can
+do is you can use tor software and you
+can take active loss here and the second
+variable will be target okay dot view
+and minus one so active loss and target
+dot view minus one have the same length
+and here you can do too
+what do you want to replace it with so
+torch dot tensor and elephan dot ignore
+index and which is of the same type
+as target so what's happening here is
+nothing but we are taking the active
+loss variable we are taking Terrier view
+this and we are saying if active loss is
+if active loss is false or zero then
+replace it with this value now this
+value you can you can just do import
+torch and then define this elephant and
+you can print this value this value is
+minus 100 so just saying where it's
+minus 100 ignore that index for
+calculating cross-entropy loss and then
+you calculate the loss and which is
+elephant simple and you have active
+logit and actor labels so just ignoring
+those minus 100 stop and return loss so
+we can we can also take a look at it
+it's not very difficult so I can do I
+can go to ipython import torch import
+torch dot and then as an and then I have
+okay I cannot copy okay I think I think
+I cannot copy so elephant Liz and Endor
+cross and trophy loss right and then you
+have to print what is this elephant dot
+ignore underscore index so elephant dot
+ignore minus 100 so so yeah that's
+that's what is being ignored so we got
+everything here so now we can calculate
+the loans for both our variables so what
+do we need here we need output target
+mask and num labels so output here is
+tag then you have target underscore
+mask and self dot num tag was it's a
+Tottenham tag yeah and we need to do the
+same thing here but instead of tag we
+will use boss u.s. part of speech okay
+so now this is our models and I really
+hope it works I think everything looks
+fine now so we are in Indian we're
+reading tag and us and the loss itself
+okay and everything comes from here we
+are returning few more things so we must
+fix this but we we don't need them but
+we are doing it for like if we want to
+create an inference script so now we we
+have we have everything here so what we
+can do now is we can create a training
+script our final script to train them
+all so I'm just going to call it trained
+up by okay so training spit now here you
+have to use something that we have
+already developed some time ago the bird
+sentiment model so I'm just going to
+open that one here and you go to source
+and train dot PI so if you have not seen
+this video where I built this bird
+sentiment model go and take a look at it
+so I will be copy pasting some of the
+stuff for this video from here because
+it's easy and we have already done that
+so why should we do it again so let's
+import a few things so we need pandas
+for the model sorry for the data for
+reading the data import numpy yes and
+we need numpy and we will also need
+torch and we will need pre-processing
+from scikit-learn
+to use the label encoding we will need
+model selection from psychic learn to
+split the data and we will need some
+kind of we will need the usual things
+that you want to have to train a bird
+model which is an optimizer the atom
+doubleu optimizer that we always use and
+linear schedule with warmup
+so other than that you need config you
+need data set so this is these are the
+files we have created engine you need
+the model itself from model import I
+think we call it entity model ok so you
+need all these things and now you can
+start training orders but you have to
+first read the data right so you your
+data here is a bit different so you have
+these sentences and you have the word
+and you have pause and tag right so we
+need to modify it a little bit so I will
+say that we have a function called
+process data that takes the data path
+and this function reads the data in a
+data frame DF PD dot read CSV data path
+now I have seen I have already seen this
+data set so I know that what kind of
+encoding to use so I will use a Latin
+one encoding so that nothing crashes and
+then we need to do something so let's
+read the data here
+and my DF will be mm PD dot read CSV any
+our data sets at CSV and encoding go to
+okay I think the name is wrong let me
+see what the name is NER underscore data
+set dot CSV yeah just what I'm using
+okay um underscore sorry about that okay
+so now we have our data Prime but you
+can see like it's a sentence 1 and then
+it's nanan and then when you scroll down
+a bit more than it's a sentence too and
+it's empty empty empty right so it's
+land values so we need to fill those
+values so to fill these values it's like
+it's quite easy with Fonda's so what you
+can do is sentence hash dot fill any and
+you can use this F fill method
+so now you got sentence 1 1 1 1 1 0
+habla so now nothing is not filled right
+so you have all the values that you need
+so that's what we are going to do here
+so sentence number hash and that equals
+DF sentence ash dot fill na and here you
+specify the method F well okay now you
+need to encourage encoder for pause
+pause attack part of speech tagging so
+pre-processing dot label encoder and you
+need another one for the tag okay and
+what we are going to do is we are going
+to convert this these tags so you you
+can just do DF should be DF Tatlock DF
+force ENC underscore pause dot fit
+underscore transform okay sorry
+and you can do the same for tags let's
+see where was the name pause and tag
+with a capital T tag okay now we want to
+convert this to a list of Lists right
+so we first we need the sentences
+sentences will be DF taught group by you
+group by the sentence number and you
+take the word column and you apply less
+to it dot values
+okay so you see what I did there so I
+grew up by the sentence number column
+and I took the word column which is like
+one word and then so now you have like
+one world world one word two word to
+vote for in a list and I can rotate this
+to an empiric so it's an array of lists
+and you need to do the same for a pause
+tag so I will just copy this thing here
+and and you also need to do it for tag
+so you group by word and here is the B
+pause here it will be tag right and then
+you return sentences or tag and wattles
+encoders C tag okay so now we have
+everything I think we have everything so
+I'm just going to read the data process
+data and this will take config dot
+training file but it won't return to DF
+so it returns the sentence pause tag
+like this right so let's print print
+sentences and let's go to our terminal
+okay we don't want to do that so I will
+just do Python train dot pi and let's
+see what it returns but token ia okay
+yeah should be per token nice serve
+I hope this works so it should give me
+array of lists of sentences tokenized by
+whatever token they have chosen so as
+you can see like this is this is working
+so you have this first one then you have
+the second list and so on and the same
+is true for the tags and tags have the
+same length so this is one thing that we
+did now I will store it somewhere I will
+store some metadata somewhere so
+metadata it's like in C pause I'm just
+saving the encoders so this will be in C
+in a Scorpio s and E and C underscore
+tag and C underscore tag so that's all
+you need what is the number of POS tags
+that you have which is length of this
+list
+ence underscore cost or underscore
+glasses and the same for num tag en SI
+units code tag not on the spoke classes
+so this is the level encoder object and
+underscore glasses gives you all the
+different classes and you want the
+length of it so let's save a few things
+using job Lib what I'm going to save
+here is this metadata so I will just do
+I was just dumped without the conflict
+you can dump with the conflict if you
+want so here we are only saving it so
+you have the meta data and I can just
+call it a matter of bin and it will save
+me the encoders that I might need for
+inference
+so we got week we got everything I think
+and now we can try to split the
+sentences so train sentences test
+sentences train pause just was train tag
+test tag so we got everything here and I
+can just call model selection dot train
+test split so there's not a lot of data
+so I'm just going to use 10% of data for
+testing so here you can have sentences
+pause and tag and I will just say random
+state is what I do and test size is 0.1
+so this this will give me everything
+that I need for training so now I will
+copy this from the Bert sentiment model
+that we built and copy everything all
+the parameters and everything till we go
+forward a double parallel so in this one
+I'm not using data parallel so we were
+here so we have trained it as it now it
+comes from dataset birth date as it but
+we don't have to birth it is that we
+have data set thought entity data set I
+think entity data set so I'm just going
+to take this one and instead of world
+data set I have entity data set at both
+places
+okay and what do I have an intertext
+what was on tags right so I'm just going
+to take that too and put it here and
+remove this one and put it here so texts
+here will be trained sentences US will
+be trained boss tags will be
+train tag and here test sentences test
+boss test underscore tag and everything
+else remains the same
+instead of both based on caste model we
+have the entity model now so let's plug
+that in model goes to device which is
+fine sorry number of training steps you
+don't have the length off there is no DF
+train train sentences everything else
+remains the same and let's see what the
+last part was so we have the best
+accuracy and we calculate the accuracy
+and stuff and save the model so let's
+copy that tube so instead of best
+accuracy we now have best loss and best
+loss is infinite loss when we are
+starting so we have the Train loss
+because our engine returns the training
+training loss now and we have a test
+loss or validation loss and we don't
+need these things and here I can say
+instead of activity score
+I have valid loss and this becomes test
+loss and train loss so we can print both
+and this is train loss so it's easy when
+you have done it once becomes super easy
+save a lot of time instead of greater
+than you have now
+less than and instead of accuracy you
+have test loss okay so if my test loss
+is if if the loss if the validation loss
+of current epoch is less than the best
+loss then it's going to save the model
+and replace it with best loss test loss
+okay so I think we have everything now
+we can go ahead and try to train the
+model and see what happens
+it's a Python train dot by now I hope
+everything works here yeah it will take
+some time so label encoded object has no
+attribute underscore classes of course
+it should not be underscore classes it
+should be classes underscore okay one
+more try
+so it's like these type of errors you
+get you just open the documentation or
+label encoder and it has everything so
+it becomes very easy level encoder
+object has no attribute classes
+underscore okay so this can happen when
+you have not fit the label encoder I can
+see and cause it has been fit twice in
+tag has not been fit so this is wrong so
+you don't get classes underscore but if
+you are not fitting in the level in
+color and now I think this should solve
+this issue and it should start training
+the model we're being very optimistic
+here so let's see okay so entity model
+has two arguments num tag and numbers
+and we created that but we didn't use
+them so num tag is num tag number of
+classes in the tag column and num OS was
+number of classes in the part of speech
+from different parts of speech so let's
+see one more try
+and we need to wait for some time and in
+these cases because it's doing all the
+data munging so what you can do is
+instead of reading the full data set you
+can only read 1,000 rows and then it
+becomes easy so I I got some my guy with
+a mirror so let's see that why is this
+error happening I think the problem
+should be in the model somewhere since
+it's complaining okay so this one it
+should be out boss okay let's see let's
+see now try to train it again and I hope
+it works
+we need to wait a few minutes nah it's
+there so it seems to be working quite
+well and now you can train the model on
+full data set if you want so I'm just
+going to stop it for now
+for myself and I have already trained
+the model previously so let's try to see
+how it looks in inference so now I will
+add the model here later so how can just
+to predict the pie which is not much
+different from training dot pie right so
+let's copy all these things here and
+let's start deleting stuff that we don't
+need we don't need all this stuff we
+probably don't even need pandas maybe we
+don't even need numpy but let it be and
+we need we don't need to process data
+folder so you have so we need metadata
+so we will instead of grabbing it from
+here we will just load it and job live
+using job loop dot load so let's do that
+metadata is job loop dot load and you
+have the meta dot bin and everything
+else comes from there so Hank boss will
+be meta data encoder POS and encoded tag
+so we have that and we don't need this
+anymore we don't need all this stuff
+maybe we need a data set and we don't
+need we don't need all these things we
+need the model so we have the entity
+model and now we have to load the model
+weights so you can just load the state
+dict
+of the model so you can just do model
+dot load state taped tour start load
+config dot model path is that's where
+your model is and you don't need the
+params anymore I don't need all of this
+so we have the model and now we need to
+input a few things inside the model
+right so your train data set so let's
+input a sample sentence here that we
+want to do the tagging on so my sentence
+is Abhishek is going to India so you see
+I'm just using lowercase everywhere so
+my sentence that I want to supply will
+be sentenced dot split split by all
+white spaces so let's just print the
+sentence and now we need to encode the
+sentence - so encoded or tokenized
+sentence is config dot tokenizer and we
+can just write sentence here but it's
+not it should not be here so we have the
+sentence here and so this is only for
+our reference this tokenized sentence
+right now so we have the sentence add
+special tokens so we can we can keep the
+spatial tokens doesn't matter for now it
+doesn't matter because we just were just
+using it to see how it looks like and
+Trent tokenized sentence print sentence
+or we can just print tokenized sentence
+right after the sentence
+and we have the data set so let's call
+it test data set so instead of train
+sentences we have sentence which is
+tokenized which is split and then you
+need pause and tags so you can you can
+input anything you want here right so
+what you can do is you can just have
+zeros times the length of sentence which
+is split and you can do the same for
+train tank because this is test data so
+you can have any kind of label that you
+want another matter and now we have to
+do with Tosh dot no grad and we can we
+can also copy some things from engine
+dot PI right or instead of just engine
+dot PI we can maybe just let's just copy
+it this this thing we don't need
+anything else so for K we in data out
+items so your data here will be test
+data set 0 because there is only one
+element and everything else looks fine
+this is I think tag Model Model tag and
+was and loss ok tag and force and we
+don't need the loss so now let me copy
+the model ok so I have copied the model
+and here you also need so this is only
+one batch so you need unscrews 0th index
+because you have to make it batch wise
+right and now you can print the tags so
+print tag dot R max and this will be the
+second index the last one and convert it
+to CPU dot numpy
+and okay let's try this thing so you can
+just do Python critic dot pie but
+tokenizer object is not callable okay so
+this should be dot encode and okay so
+now you see this is our split sentence
+this is a tokenized one and tokenize one
+adding two special tokens CLS token one
+no zero one and the SCP token one zero
+two and this is our prediction this
+prediction doesn't make sense obviously
+so we will do the inverse transformation
+on that so I can just do end tag dot
+inverse transform on this 1.3 shape
+minus 1 because this is a simple list so
+I hope this works and then we run it
+again let's see what happens now ok so
+now it is returning me something it was
+returning me different tags so but we
+don't need all of them so we only need
+only till then off we only mean learn
+off sentence actually length of sentence
+or length off probably we need length of
+tokenized and sentence and now let's
+let's try to print and see this thing so
+we have the inverse transform and then
+we take everything to the length of
+tokenized sentence and this is your tag
+variable so okay it is predicting
+something ok so now we have something so
+let's print the other one to the power
+of speech thing
+so instead of tag you have POS part of
+speech and that's it okay so now it's
+done so let's see so we know that the
+first token is the one on one token is
+the CLS token 102 is a CP token so we
+can ignore this article but then you see
+we have person person person person it's
+because my name is being split into four
+different tokens by Bert and then you
+have B art which is article is then we
+have person 0 0 0 so there's something
+looks incorrect I think something is
+incorrect let's see let's see if we are
+doing it right so we have this tag dark
+max to reshape minus 1 I guess it's a
+better idea if I just train the model
+again so let me do that quickly so
+instead of training I went for a lot of
+investigation and I found out I made a
+major blunder so here is the blunder so
+this should be outside for loop and I
+hope I really hope that this fixes our
+stuff so let's see
+it's the same model so I did not train
+the model at all okay so looks a little
+bit better now but I won't say it's
+properly fixed maybe I need to train the
+model again so after training the model
+again let's see the results one more
+time things are not going my way it
+seems okay okay so now it seems to be
+much better so we had a major blunder so
+we have 101 which is CLS and then one or
+two a CP token so this and this we can
+ignore and rest
+my name is split into four so that's
+person token tokens and then other other
+other then you have geo token which is
+India and same here so you can see like
+two goes to two and you can ignore the
+first one and the last one
+so finally we were able to build a model
+using word for entity extraction and
+this is like one of the state-of-the-art
+models right now so you can you can take
+this code the way I have I've done it
+you can extend it to a single type of
+entity for almost any kind of data set
+you want and you can very easily change
+from word to Robert or to any other
+transformer based model that you want
+you just need to take care of the
+tokenizer
+one thing I'm not showing you here is
+how to assign this word to this entity
+but that's something I will leave as an
+exercise for you and if not I will try
+to do it in one of the next videos and
+thank you very much for watching today's
+video and I'm sorry about all the mess
+that happened but everything works and
+you will find the code in the github
+repository as it is so take a look and
+train your own model
+and let me know how was it thank you
+very much and like if you liked the
+video and do subscribe so thank you and
+see you next time bye

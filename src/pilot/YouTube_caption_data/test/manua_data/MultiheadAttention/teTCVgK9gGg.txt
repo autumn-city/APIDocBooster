@@ -1,0 +1,2180 @@
+>> Human parity and
+automatic translation
+is that even possible?
+I can tell you that machine
+translation has surpassed
+this human's ability to
+translate between
+Estonian and Korean,
+a long, long time ago.
+But it turns out that
+surpassing or even
+meeting the quality of
+the professional human
+translator is quite a challenge
+and has really been
+the holy grail of machine
+translation research,
+for the last 60 years or so.
+>> Until now.
+>> Until today or
+maybe a couple of
+weeks ago that's right.
+Today we have Hany
+Hassan Awadalla
+and Christian Federmann,
+report on the project to
+achieve human parity.
+That's the Parity
+with the kind of
+human who was
+a professional translator.
+Hany and Christian both work
+in the Microsoft Translator Team.
+That's the team that builds
+the translation service that
+powers translations in
+Microsoft products,
+and in many third party products.
+Hany is a principal
+research scientist
+in the team focused on
+advancing the foundational
+technologies that
+formed the core of
+the translation engine,
+the piece that we
+call the decoder.
+His interests are in the
+areas of machine learning
+and deep learning applied
+to machine translation,
+natural language processing,
+speech translation,
+and semi supervised
+machine learning.
+He completed his PhD at
+Dublin City University
+after finishing his master's
+at Cairo University.
+He Started working
+at IBM in 1996,
+where he was also a member of
+the IBM team working on
+machine translation.
+He has been a member
+of the translator team
+since he joined
+Microsoft in 2010.
+He's responsible for the major
+breakthroughs that enabled
+us to ship Speech Translation
+in Skype in 2014,
+namely the technology we call,
+"True text," turning
+what a person
+said into what the person
+actually meant to say.
+And making machine
+translation friendlier to
+social media and
+colloquial utterances.
+Christian is a senior
+Program Manager in
+the translator team.
+He owns evaluation methodology,
+and he owns orchestrating
+the actual evaluations
+with human judges.
+He's the gatekeeper for
+quality for every release,
+and every update the team
+makes to the production systems.
+He defined what human
+parity means for
+translation in
+concrete provable terms,
+and was responsible for
+gathering results in
+a meaningful and
+fully traceable way.
+Because you can
+assume that making
+such a claim invites
+a lot of scrutiny,
+from the other people
+working in the field.
+Christian finished his PhD
+in machine translation at
+Saarland University in
+saarbrucken in 2013.
+He has been leading
+MT evaluations
+since that time including;
+defining and managing
+the evaluation
+for industry-wide
+MT competitions.
+Namely the Workshop on
+Statistical Machine Translation,
+and the International Workshop
+on Spoken Language Translation.
+Christian is also the author
+of the Open Source Tool Appraise,
+which is used for running
+all of these evaluations,
+you can ask him after
+the talk how to make
+use of this tool, and
+how to contribute.
+Now let's start,
+Found in Translation,
+Achieving Human Parity on
+Chinese and English
+News Translation.
+>> Thanks Keith, so
+good morning everyone,
+thanks for being here today.
+Christian and myself will
+like to introduce
+you to our journey,
+trying to achieve human parity
+on Chinese to English
+News translation.
+That was a wonderful
+collaboration
+between our Microsoft
+team at Redmond,
+and MSRA teams,
+Deep Learning Team,
+and NLC teams at China.
+So, the people in
+archive and we have
+many outstanding research we've
+collaborated on that effort.
+So, first the
+internal project name
+or code name for
+that project was,
+"Project Babel," and yeah,
+you can imagine that the Babel is
+correlated to achieving such
+high quality of translation.
+But we started at the beginning,
+trying to answer two main
+question; The first question,
+is the machine translation
+quality is now high enough,
+or approximation to
+the human parity?
+Or how far we are?
+The second which is
+more fundamental question,
+how we can measure that?
+On other fields like
+speech recognition for example,
+it is easier to measure
+the human parity,
+in translation it is even much,
+much harder to
+measure the quality
+rather than the human evaluation.
+We will cover in the talk,
+how we achieved the human
+parity and how we measured it.
+There was claims around 2016,
+that the new wave of
+Neural Machine Translation is
+approximating human parity.
+Now, we can be
+sure about that we're really
+achieving that human parity.
+I like that sketchy timeline
+for machine translation
+from Chris Manning 2016.
+It's very sketchy as you can
+imagine because it is not
+actually based on some numbers,
+on the MT quality side.
+But machine translation has
+been a dream for decades.
+Starting from the '40s and '60s,
+people started to look at
+machine translation as a problem
+that can be solved by computers.
+At around the '60s,
+people stopped looking
+at that due to
+some skepticism about how
+computers can do reasoning.
+Still as of today,
+we don't do any reasoning,
+but we're getting
+better in translation.
+So, around the early '90s,
+there were a breakthrough
+in translation when
+Statistical Machine
+Translation has been
+introduced based on
+information theory.
+And from that time a lot of
+momentum for the translation
+has been gained.
+Mainly, introducing phrase
+based translation in
+the mid of the last decade.
+That enabled us and
+all other players on
+the online Machine Translation,
+Google, and others to shape
+online translation system,
+that is really scalable
+and of good-quality.
+Eventually, researcher
+community start to add
+syntax based to the translation,
+phrase based translation.
+But still it is being
+noticeable that it is
+machine translation,
+not human translation.
+Then around 2016, when
+the new wave of
+Neural Machine Translation
+has start to be mainstream,
+and at that time,
+we start seeing good momentum
+for the Neural
+Machine Translation.
+As of today, we can modify
+Chris Manning chart a
+little bit by adding
+our milestone of
+achieving human parity,
+and we still think
+there is a lot of
+remaining problems to be done and
+solved on machine translation
+to reach better quality.
+Okay. So, we will
+have an overview of
+the current state of the art
+of neural machine translation,
+then we'll go through
+our contribution in that work.
+Sorry I keep reading
+the transcription
+for debugging purposes
+but it looks okay.
+So, the main approach
+for Neural Machine Translation,
+is called the encoder-decoder.
+In the older day when we started
+doing phrase based translation,
+we used to split
+or shunk that input
+sentence into pieces.
+These pieces were
+called the phrases,
+and for those phrases we seek to
+translate each phrase
+on it's own,
+and then eventually we use
+language models to
+put pieces together.
+As you can imagine
+this introduces
+a lot of disfluent
+albeit on translation,
+and that was
+the main characteristic
+of the phrase based translation.
+Encoder-decoder framework for
+neural machine translation
+has been early
+proposed around 2014,
+by two different people
+and it mainly
+tries to achieve
+full representation
+for the input syntax,
+and use that representation for
+decoding the output word-by-word.
+In representing
+the encoder a lot of
+approaches has been
+proposed there but
+mainly the mainstream component
+follow the encoder-decoder
+architecture.
+As you can imagine
+that is more at
+least appealing for
+the human cognition,
+because when you're trying to
+understand or
+translate a sentence,
+you really look at
+the full sentence trying to
+understand the meaning and
+to get the representation
+from there.
+The actual representation
+of the encoder.
+The first minutes
+dream, neural network,
+neural machine
+translation system,
+all of them based on
+encoder-decoder framework,
+and it tries to represent
+the input as recurrent network.
+In recurrent network you
+go through time step on each one,
+trying to learn
+the fuller representation
+for the sentence at once.
+And then by the end
+of the sentence,
+you have a stage that you can
+use to generate the
+decoding step-by-step.
+That was very surprisingly for
+the whole machine translation
+community that it worked
+at the beginning, and yeah,
+it's a very simple,
+it's a just bilingual
+language model that
+use simple end-to-end model
+to produce translation.
+It works quite well
+for shorter sentence,
+but not for the longer one.
+For the longer sentence,
+I can imagine that
+you are not seeing
+the title of the slide I told
+you to the transcription.
+What we actually do, okay.
+>> You can move it
+to the bottom and-
+>> It's okay.
+So, mainly- How do you
+move it from here.
+>> [inaudible] left
+and right, top right.
+>> [inaudible].
+>> Yes. Okay. So,
+the main breakthrough
+in Neural Machine Translation,
+was the introduction of
+the attention based model.
+Attention based model are like
+the sequence to sequence,
+encoder-decoder model
+without attention.
+It can represent
+longer-range representation.
+Instead of depending on
+the last state for representing
+the whole sentence,
+we have self distribution
+on all possible states.
+Mainly, we can query
+the similarity between
+the current word
+we are trying to translate,
+and all other words on the
+sequence of the encoder,
+and when do with soft weights
+that we can normalize and
+do with a soft distribution
+on all possible state.
+That gives us flexible
+representation for
+the input sentence based on
+which word you translate.
+That is really what enabled
+neural machine
+translation to work
+across all different approaches.
+So, the mainstream approach
+now for sequence to sequence
+modelling is
+RNN-based approaches.
+It is very efficient
+representation.
+Our products are based on
+that actually currently,
+and it can get a lot of credit
+from the attention-based for
+long-range dependencies.
+Though, it has a couple
+of limitations,
+meaning it is very
+hard to parallelize.
+Second, it has to go through
+sequential computation for
+each time-step and harder
+to catch long-term dependencies.
+Some other approaches
+start to appear to
+try to overcome such limitations,
+mainly convolutional-based
+approaches.
+By fear and Google-bite
+Newton WaveNet.
+WaveNet is again,
+encoder-decoder architecture
+that is now the new state
+of the art for
+text-to-speech workload.
+Moreover, newer approach start
+to depend only on the attention,
+which is the Attention Audio
+Mode Model Transformer,
+proposed by Google Brain Team.
+Here, we just relieve
+the whole constraints
+of sequential operation and
+move everything to
+the attention field.
+Instead of having
+the recurrent network
+to model the encoder-decoder,
+we use what's called
+'Self Attention'.
+In that, each word can
+attend to the next
+towards in the sequence.
+This nice visualization,
+representation,
+for the attention model,
+you can see the encoder
+are going step-by-step,
+calculating the attention between
+all sequence on the source side.
+Then at decoding time,
+it starts calculating
+the attention between
+the source and the target as
+well as different targets,
+and to keep generating
+in that way.
+You choose only the last layer on
+the encoder and it choose the
+left side of the decoder.
+As you can see here,
+it is very easy to parallelize
+all those operations because
+there is no sequence bandwidth.
+It can be just two matrices
+that when multiplied together,
+they can speed up the
+training process massively.
+So, let us take
+a more closer look
+on that Transformer Model
+because that was
+the main component that was
+used on the human parity project.
+So, starting from the Encoder,
+we'll have input embeddings and,
+since the Transformer
+Model doesn't know
+anything about the position,
+we add positional Encoding
+to that as well.
+Then we step-by-step try to
+have layers of that
+Multi-Layer Attention
+over all sequences of the inputs
+along with residual
+and normalization,
+followed by Feed Forward Network.
+These all represent
+one single layer,
+that we have
+many such layer there.
+At the Decoder side,
+we'll follow exactly
+the same architecture.
+Though here it is mastered
+because we don't want
+to look at the right side,
+only the left side.
+Then we have
+Multi-Layer Attention
+between the source
+and the target,
+followed by a Feed
+Forward Network.
+All these once again,
+one layer only, and you have
+like six layers among those.
+Transformer Model now
+represents the state of
+the art on Neural
+Machine Translation,
+and we are using it in most
+of the systems that we
+are reporting today.
+So, we will cover
+the areas that we explored
+during that project.
+You can imagine that we
+explored a lot of other areas,
+but at least we are here
+covering both works.
+A lot of the approaches we
+tried didn't work actually.
+So, we are trying to explore
+two main directions here.
+First, how we can explore
+the Duality of the Machine
+Translation Problem.
+The Duality of the Machine
+Translation Problem
+means that we can
+have two different problems
+that really help each other.
+The first is, translating
+from- for example,
+Chinese to English, the
+other is translating
+from English to Chinese.
+If we can get the
+systems to help each
+other to refine
+their translation,
+that is the duality of
+the translation problem.
+We'll explore that duality
+in many components and
+areas in our system,
+as we'll show later.
+To give some contrast
+between duality and
+back translation,
+which is widely used in
+the research community,
+and who are still using
+back translation as well.
+One hour work in
+back translation,
+you start with bilingual
+training data,
+you train a reverse system
+from English to Chinese.
+For example, use monolingual data
+to generate synthetic
+training data,
+and combine that with
+the original bilingual
+data to train your system.
+In contrast to the duality of
+the MT dual learning approach,
+we have some limitation
+for the back translation.
+First, if you have
+back translation,
+it will be propagating
+toward your system.
+You don't know how to
+judge if it's good or bad.
+In the dual problem,
+the other system can
+guide you if it's good or bad.
+The second, in
+back translation you
+only depend on the target
+monolingual corpus,
+not for some target.
+In the dual learning,
+we can depend on
+both [inaudible].
+For sure, for dual learning,
+we can use it both supervised
+and semi-supervised.
+In our work, we
+deploy and utilize
+both Back Translation and
+Dual Learning for
+improving our system.
+The first use of Dual Learning,
+we use it in an unsupervised way.
+In that setup, we have
+monolingual corpus in both
+source and site, and in that,
+we can use a lot of
+feedback signal during
+the Dual Learning loop
+to learn how to
+improve the system.
+First, we can start from
+the English sentence here,
+and move it to Chinese
+using the first system,
+then we bring it back using
+Chinese-English translation.
+Then we have
+the original sentence,
+and the wrong translation.
+We can calculate
+the reconstruction
+caused and that give feedback
+signal to the model,
+how good is that whole process.
+The second, for
+sure since we have
+Multilingual Corpus
+on both source
+and site, and target side,
+we can use the language model to
+get feedback signal on how
+good those translations are.
+We keep doing that during
+our learning process to
+improve both models together.
+The second view for
+the Dual Learning is
+the Dual Supervised
+learning approach.
+In that task we don't
+have Monolingual Corpus,
+but we still have two systems
+trained on Bilingual Corpus.
+the main objective of
+that model is to try
+to minimize the gap,
+and the differences between
+the joint probabilities of
+the symptoms in the
+source and the target.
+If it is produced in
+either x to y, or y to x.
+That is very helpful in
+refining the translation
+model as well and,
+the work of the human
+pilot project we deployed
+both supervised and
+unsupervised in the same way,
+in the same set of Imin.
+We do that online
+during training,
+like for each mini-batch we
+pick one mini-batch
+from that direction,
+other from the other direction
+one mini-batch from
+Monolingual Corpus x,
+and other formal
+English Corpus y and
+keep training and
+improving the models.
+Another approach for utilizing
+the duality of the machine
+translation model instead of
+trying to do that
+on online platform
+like we did with
+the dual learning approach,
+we do that in batch mode.
+In other words, we train
+a baseline system using
+only b zero system here
+and there using
+only the parallelism.
+And using that system,
+we can use the monolingual
+corpus or the source,
+monolingual corpus
+on the target to
+generate say two parallel
+data for the boost system.
+That comes with scores on
+how confident we are
+in the translation.
+We train a newer system in
+the first situation
+for both direction,
+keep iterating four, five
+iteration over that to
+improve our system.
+As you can imagine,
+it very similar to
+the learning but that is not
+done in virtual line mode,
+it is done in more expectation
+maximization fashion,
+and when you try to
+train the whole systems
+and refine the probabilities
+at each iteration.
+There are some theoretical
+foundation for that
+from EM perspective
+and the second is
+that you are propagating
+like a lot of
+the gradient on
+very large batch mode
+rather than doing that
+on the online mode.
+Both approaches have been
+tried and pushed Hilbert Paras
+on like utilizing the duality
+of the machine
+translation prompt.
+So far, we covered the dual
+learning and joint training.
+Second problem we focused
+on on the payoffs for
+the left-to-right.
+During translation.
+We usually translate from
+left to right and that
+cause a problem in that we
+are propagating the errors.
+At training time, we see that
+through examples during decoding,
+we see the expected or
+predicted examples there.
+If we produced a problem
+or error at the beginning,
+it will be amplified
+quickly till the end,
+especially if the sentence
+are quite long.
+Again, we explore
+two different approaches
+to like outcomes such problem.
+The first is what about if
+we do multi-pass decoding?
+Like rather than decoding
+the sentence ones,
+what about decoding it twice?
+And that is very coherent with
+what human are doing actually
+because when you are trying
+to translate or understand
+the sentence you
+can write it once,
+revise twice, revise
+the third time, and so on.
+How we do that actually,
+would do that in
+two parts decoding.
+As the fairest, we
+run on an encoder as
+usual and then we run
+first pass decoder,
+full system trend end
+to end to produce the
+first pass decoder.
+To produce the
+first pass decoder,
+we take the output of
+the fifth pass decoder
+augmented with
+the output of the encoder
+and pass that to
+a second pass decoder.
+The second pass decoder
+now has full view
+of the source and
+a rough estimation of
+the full sentence in
+the target and that can
+help a lot on getting
+the translation in
+a better quality.
+In a more concrete way here,
+that is the formalization for
+the model of the problem,
+we start with the encoder,
+whenever we finish the encoder,
+that's the last layer of
+the encoder, for example,
+transformer model, and then we
+start decoding the first pass.
+Rather than predicting
+the actual word,
+we take the last layer
+of the decoder.
+Before Softmax and feed that
+into another through
+a gate to another decoder.
+As well as augmented
+or concatenating
+the encoder path to
+that second best decoder.
+If that is the transformer model,
+the second pass
+decoder now doesn't
+have to follow
+the constraint of looking
+to the left only not
+right because here you
+have full view of the rough
+sentence from first pass,
+the full source
+sentence so you can do
+full attention on both source
+and target to revise
+your translation.
+That has proved very good
+approach to get better quality.
+Second approach, try
+that when that is done
+as the depletion networks are
+done as two-pass
+approach when you
+have to do two decoder
+at the runtime.
+We can think of
+another way of doing that
+simply trying to
+retrain the model in
+some way to respect
+that agreement
+between right-to-left
+pass and left-right pass.
+We do that same, very similar
+to what we did with
+the joint training,
+but instead of doing
+joint training
+on source and target would
+do it on right-to-left model
+and left-to-right model.
+In the left-right model is
+the usual model we train,
+the right-to-left model
+is the other model we try
+to predict English from
+the last word to
+first, for example.
+If we can get the two models
+to agree together,
+then we seek better agreement
+between both right-to-left,
+left-to-right
+translation and that
+can help in solving
+such problems.
+Now, we turn our attention
+to increasing the amount of
+training data we have so far.
+Using the above
+approaches we ended up
+with many different approaches,
+many different systems.
+Still up to that point,
+we are using standard
+WMT training data along
+with monolingual data through
+the back-translation dual
+learning and joint training.
+Up to that we are ending
+around 35 million symptoms.
+We thought that we may
+scale up our approach
+to more data but with that comes
+more noisy data from
+the web crawl data and
+we turned our focus on
+how to pick cleaner
+data to help our mode.
+For that, we proposed
+a new approach as
+a multilingual sentence
+representation using
+multilingual system
+and we end up with
+a sentence representation for
+each sentence in
+our various corpus,
+hundreds of million of sentences,
+and then we measure the proximity
+or the similarity between
+the source sentence and
+the target sentence.
+Based on that similarity
+we can decide if
+the two sentences are
+good translation to
+each other or not.
+Simply, we do that using
+sequence-sequence model again
+but at that time the model is
+trained as a multilingual system,
+in that case, it's
+bilingual only.
+The input can be
+either English or Chinese.
+The output can be either
+Chinese or English.
+The system doesn't know
+what is the input sentence,
+and it always can produce
+the correct output.
+That is multilingual system.
+It is slightly less quality
+than a dedicated
+one-directional system,
+but works quite well to get us
+a representation for
+a given sentence
+regardless of the language.
+We end up with having
+the same exact representation
+for each sentence,
+regardless either
+Chinese or English.
+Okay, how we utilize
+such systems?
+We run the encoder part
+only of the joint system,
+the tutoring, the multilingual.
+Giving English sentence
+or Chinese sentence,
+we end up with averaging over
+the context representation
+for each word,
+and to get the sentence vectors
+for calculating the
+cosine similarity
+between the two centers.
+It prove to be very
+good approach,
+even detecting bad translation,
+partial translation with
+even machine translated
+data because
+some of the machine
+translated data from
+very old system are quite bad
+and quite harmful for the system.
+So, we ended up filtering out of
+the data, but at the end,
+we can get cleaner data
+to fit our system more.
+We ended up with
+many systems now.
+As you can imagine, we
+tried the joint training,
+we tried dual learning,
+we tried towards decoding,
+area to regularization, and
+we have many systems to try.
+And not just for trying
+system livery ranking
+on the sentence level.
+For that, we use feature to
+re-score the candidates
+from the different systems,
+and rerank those candidate
+to pick the best system.
+We train such ways for a system
+reranking on held-out this set,
+and we use many features
+that is listed over here.
+Among the features we are using,
+the original system score
+and which system will use
+which translation,
+regular language,
+five-figram model trained
+on the English news data,
+and we re-score both the input
+and the translation using
+another right-to-left
+system to see how good or
+bad the translation given
+the right-to-left constraints,
+then we do the same
+with English to
+Chinese as well, like
+reverse direction,
+and we repeat that same
+features rather than
+going through the system
+to score both translation,
+we use sentence
+vector representation
+to measure how good or
+bad we are doing using
+that similarity score.
+So, we now move to
+our experimental result.
+Starting with comparing
+two-three base line,
+the first base line is
+Google base line which is
+the best system on WMT
+evaluation last year,
+and our baseline
+transformer model
+is getting us around
+24 BLEU points,
+adding the back
+translation we get 25.5,
+and then we'll start trying
+our different approach proposed
+above plus combination
+of them all.
+As you can see across the board,
+we are getting almost one and
+sometimes two BLEU points
+over the baseline plus
+back translation which is
+quite a large improvement.
+Although, [inaudible]
+are state of the art
+compared to the last
+WMT evaluation,
+though, it is not good enough to
+achieve human parity yet.
+Then, that is the set up of
+the data selection with
+filtering more data,
+moving toward larger models,
+that this model, as I said,
+that is a transformer model
+with back translation,
+and when we have very large
+transformer model,
+when we would like
+8,000 dimension
+for the feed-forward network,
+we'll get slightly
+better improvement
+of such large system,
+then we start adding
+more data to see how
+far we can get from
+adding 35 million more
+to 50 million and so on.
+And as we can see in
+the third part of the table,
+we can get a lot of
+improvement using
+the data selection approach here,
+and we vary that with
+from dropout ratios
+because it can be very
+effective on training
+very large systems.
+So, as you can imagine here,
+we ended up with many,
+many systems that we need
+to combine together,
+and as I said, the
+system combination is
+just sentence level combination.
+So, start combining system
+from different categories here,
+and we ended up with
+combining a lot of
+variation of the systems.
+The last combo
+systems here are the
+best-performing giving BLEU
+score on that test set.
+Okay, so far,
+we have reviewed the approaches
+we have introduced.
+We have reviewed
+the neural machine translation,
+and before moving to Christian to
+review the human
+parity evaluation
+that is among many of
+the research areas that
+still worth investigating,
+the two didn't touch,
+and we think it will be
+of huge impact in
+the near future.
+Low-resource languages for sure,
+real-world problem
+and named entity,
+domain adaptation,
+topic adaptation.
+All our work here
+is sentence level,
+we don't get at all into
+the document level or
+quantics level translation,
+like if you have
+a dialogue between
+two speakers and how to get
+the context into the game,
+how to get the document
+level information into the game.
+Multimodality, text speech video,
+and a lot of signal coming from
+all those modalities can be
+used to improve the
+translation quality.
+We reviewed the
+different approaches,
+different architecture
+for neural MT.
+We still believe there
+is a lot of space
+for mixing and matching
+those approaches together,
+and transformer, CNE, and RNN can
+play together in
+much efficient way
+to get better systems.
+Finally, returning back to
+the 60s that we're not
+doing any reasoning,
+and we may want to still do
+some structure and understand
+what we are translating.
+Rather than depending
+on pattern with translation
+as we are doing now.
+So now, I'm moving to
+Christian who will review
+the human evaluation.
+>> Thank you Hany.
+Test, test. Yes, that
+works. All right.
+We take questions at
+the end of the talk when
+we're done with the
+human-eval stuff.
+So, the basic premise of
+the whole human parity project
+was that now given
+the NMT advances,
+we see MT quality which
+is so much improved
+compared to the 60s,
+or the 90s, or the 2000s,
+that it seemed to
+be a good idea to
+now check if we can best
+Google's 2016 year
+parity by actually
+achieving a proper human parity.
+What do you need to do that?
+First, you need to define what
+exactly you understand
+by human parity.
+So, the obvious first thing
+is you do this in
+a direct equivalents
+based fashion,
+where you basically
+say something when a
+bilingual human being assigns
+a quality metric
+score whatever to
+machine translation
+output into human output
+and this is equivalent
+in terms of quality.
+Then at that point,
+your machine has
+achieved human parity.
+That is a good first draft
+but it's really hard to measure
+and determine what
+your equivalents
+of translation quality is.
+So that means, instead
+of doing that,
+we inverse the whole thing and
+go for indirect
+difference-based approach
+because that is something we
+can measure statistically by
+testing if there's a
+significant difference between
+the two systems and if not
+given enough sample points,
+we then can deduce
+that we have equivalents
+and hence parity.
+That somewhat flips the whole,
+say point of proof and burden of
+proof in our favor a little bit.
+Because if we are simply
+unable of determining
+reliably existing difference
+between the two system,
+the human and the machine
+translation system,
+then by our base assumption,
+we still have human
+parity that somewhat a
+point of criticism we ended
+up being flagged for.
+But at least this allows us,
+given there are somewhat
+reliable scoring metric,
+to measure it and to
+provably claim we
+have parity based on sample
+data points we collected.
+So yeah, that's what I just said.
+So effectively, we will jump from
+this equivalent-based
+direct approach
+which allows us to imply or
+deduce human parity to
+the not an absence of
+significant difference allows
+us to go for human parity.
+If you tricked worked
+out surprisingly well,
+as we will see in
+the following slides.
+An important thing to frame
+the whole discussion is
+all based on assumptions.
+Because of the main feedback
+points we received
+after the parity announcement
+did not come necessarily
+from the research field,
+where everybody believes, okay.
+Yes, you can do a sampling of
+data to form test sets
+and then you can take
+segment scores and
+aggregate them into
+a joint metric of
+system quality for translation.
+But then you have end users,
+you have translators and
+people who believe that
+machines cannot really
+do proper translation.
+For them, you have to
+state the fact that we
+have to assume this is
+possible because otherwise
+the whole framework falls apart.
+Lastly of course, without
+any reliable metric
+of measuring quality,
+the house of cards falls apart
+and we cannot really
+measure this.
+Luckily, we have several such
+metrics so we can proceed.
+Second, it was important,
+and we spend some care
+on the paper writing,
+making sure that we do not
+claim any superiority.
+So, we're not here, we
+are not yet talking
+about superhuman translation and
+we're barely touching
+the first steps
+of human parity for MT.
+So, this is different
+from ASR where you can
+measure your human level
+of quality and where
+some of the existing systems
+actually achieve
+superhuman performance.
+Second, it gives you
+no guarantees whatsoever that
+the translation output of
+a human parity system
+is necessarily
+error-free or always
+mostly right.
+Humans make
+translation errors and
+our machine translation
+systems are not
+much different in that aspect.
+I guess, we might even
+make more errors but,
+yeah, so it's not
+necessarily error-free.
+Lastly, given the fact
+that all of that is based
+on evaluation on test sets
+and samples of course,
+any of the results only
+correspond to
+the respective sample.
+So, they need not generalize to
+the full set of potential
+scenarios domains problems.
+Though of course,
+using random sampling,
+we hope that for a lot of
+those scenarios our results
+would still apply.
+So, that's the base of
+the whole thing in
+terms of defining it and
+that for the first time.
+So previously, nobody ever
+dare talking about
+human parity because
+that immediately triggered
+knee-jerk reflexes
+from everybody outside of
+your own research group,
+telling you you're nuts
+and this is not possible.
+So, now we tried to
+start off a very,
+hopefully, agreeable
+definition on what
+human parity could be defined as.
+Then reformulating it in a way
+where we can measure it.
+So that now, people can
+take our annotation output
+and check if that actually
+fulfills our definition.
+Then at some point,
+they might concede,
+okay, you have parity
+for that sample or not.
+So, that's the whole idea.
+I talk about the reliable
+scoring metrics.
+So the question is, what
+can we do to measure
+the translation quality of
+our human translation system
+and our machine
+translation system?
+One idea we have is
+everybody uses BLEU.
+So, BLEU is stood the test of
+time and gets the respect
+of water NaCl.
+This year, everybody uses
+that for the tuning,
+for development for evaluation.
+When I started working on
+MT-Eval it was 10 years back.
+It was more or less not
+so common that people
+run human-eval.
+So, my main mission is
+to bring human-eval to
+every MT experiment
+on this world,
+and everybody just reported BLEU.
+There was a sharp point
+in time where people
+diverged a bit into METEOR
+got some attention, TRH.
+This nice set of
+metrics you could use,
+but at the end of the day
+everybody goes back
+to using BLEU.
+It's nice and simple and
+people tend to trust it.
+So of course, given our
+definition of human parity,
+what we could do
+is we could simply
+use BLEU as our reliable
+scoring metric.
+Take MT output,
+take human output,
+see all that compares against
+the BLEU test set and
+then decide, okay,
+that's human parity or
+not. What would we need?
+We would need
+high-quality references,
+because otherwise of course,
+the whole argument
+of human parity
+becomes somewhat weakened.
+We wanted to base
+the whole Chinese to
+English news translation
+parity project
+on what had been done
+at last year's WMT,
+because that's state of the art
+and accepted in
+the research community,
+it was the right language pair.
+Sadly, what we did not have at
+the WMT17 test set front
+was super reliable
+high-quality references.
+That was the first
+time we ever had
+Chinese in WMT inside
+the news shared task,
+and some of the references
+we're just not that great.
+So, there's a subset of
+data which later was
+replaced with
+an improved reference.
+But the trustworthiness of
+the WMT17 reference translation
+was not that great.
+So, we decided okay,
+in order to make
+this whole thing fly,
+what we first need
+to do is we need
+to create additional references.
+So that meant, we actually
+tried to measure two
+different things.
+One is we created
+a post-editing based reference
+based on crowd-sourcing.
+That's quick and
+dirty way of getting
+additional human quality or
+human level, human
+generated reference.
+But of course, it will not be
+the same level of
+quality compared
+to a full from scratch
+human translation,
+which is why we
+created the later,
+the HT reference as well.
+So we could compare,
+how does translation quality
+for a reference of
+a human from scratch differ
+to post-editing quality.
+That's of course, quite expected
+that they differ because
+post-editors would
+not be paid the same.
+We will try to optimize
+again by being faster,
+so there should be differences.
+Now, having those two
+different human systems,
+we looked at how do
+things look when we actually
+compute the BLEU's course.
+So, what you see here is or
+what you can't see because
+of the subtitles on top,
+they would be combo
+six which refers
+to the table Hany
+presented just before.
+So, combo six, combo five,
+combo four would be
+our best combined systems
+from the parity project.
+Then, there's Sogou which is
+the winning system from
+last year's WMT17.
+Then there's two online systems
+which happened to be part of
+WMT and also part of
+our evaluation campaigns
+throughout the parity project.
+Now, these list of systems
+is ordered by decreasing quality
+according to
+all the human evaluation
+we did for the final paper.
+So that means, combo
+six, combo five,
+combo four are better than Sogou.
+In this case, significantly
+and all four of them are better
+than the online systems.
+Now, the interesting thing is
+the only reference set for
+BLEU which captures that is
+the HT reference because
+that gives us more
+or less the same scores for
+the combo systems
+which makes sense.
+So, goes a little worse and then
+the online systems
+should be flipped
+according to BLEU but
+that matches expectation.
+Then, if you look at online-B and
+the post-editing and
+the WMT references,
+something is severely odd,
+because based on those scores,
+we would assume maybe online-B
+should be really, really,
+really great and it
+consistently in any
+of the campaigns we
+ran across the parity
+projects or 15,
+a larger amount of
+campaigns since last year,
+the two online systems always
+ended in the last cluster.
+So, they never ever jumped
+into a position where
+they would even
+somewhat become close to
+being second worst, right?
+So, this was always really bad.
+An interesting thing here is to
+see a system achieving 46,
+48 BLEU points but
+being completely and consistently
+penalized by human annotators.
+So at that point,
+we decided a human BLEU score
+is not what we need for
+the parity project.
+Instead, we really want
+to focus on asking
+bilingual speakers and not only
+ask them to compare
+output against references
+because references even might
+introduce bias and OB 40.
+So, we actually opted for
+source-based human evaluation.
+So, quick summary of
+what that means for
+our measuring of human parity
+so now we talked about
+definition and why blue
+is not a metric for that.
+So, in order to
+proceed for parity
+what we needed was
+this reliable score metric.
+Now, that we already
+took the WMT test set from
+last year's WMT we
+designed okay look at
+the human evaluation we
+performed there and adopt
+what they did which
+is basically called
+a direct assessment.
+It's a technique where you
+take a pair of
+candidate translation and
+some reference or
+translation hint and you ask
+people to assign an absolute
+score between 0 and 100,
+collect enough of those scores
+and then over time you
+can identify spammers
+and random clickers,
+eliminate them from
+your pool of workers
+and collecting enough
+data allows you
+later to determine
+system level quality
+for your set of systems.
+So that's adopting the
+state of the art from WMT
+17 and we then
+had our little requirement
+of going source-based.
+Which is we adopted or
+changed the recipe to
+follow what we did last December
+for the WSAT workshop
+where we flipped
+from reference-based
+direct assessment
+to source-based
+direct assessment.
+The obvious caveat here
+is you now need
+bilingual annotators
+which are harder to find and
+more expensive to pay for
+in the context of
+our project that
+was luckily not an issue.
+It is an issue for WMT
+and WSAT because there if
+your crowd pricing
+jumps from a couple of
+dollars per task
+to 10 times that,
+they will not end up
+getting enough data points
+so the whole campaign is at risk.
+Last but not least,
+an important distinction to
+the previous campaigns and
+our human parity approach is
+that we wanted to make sure
+that really nobody could
+claim that our results are
+just random and we were just
+majorly lucky over time.
+So, that means instead
+of just following
+the standard assessment
+approach which is you
+take a random sample of
+segments for system A, B, C,
+D whatever, and collecting
+scores for all those segments
+aggregating a system score based
+on those and we actually
+enforce that for
+every system we looked at,
+we compare the same segments.
+So, the set of segments for
+all the systems is actually
+frozen and completely identical.
+That's a difference
+in random, and
+in standard the aids just
+randomly sampled so that over
+time given enough
+segments you will
+end up having
+a fair representation of
+system quality and in our case
+it actually is completely
+redundant so that we can for
+every segment for all the
+systems compare how they fared.
+Then to make it
+even more redundant
+we not only had
+the single annotator per
+segment but we enforce
+at least three of those
+and see in a little while on
+the evaluation design for
+the final campaign for
+the parity thing we
+tripled that again so
+the final data we report
+results on this
+actually at least nine
+annotators per segment or
+system for a lot of segments.
+So, highly redundant and we
+believe highly reliable,
+so that's why we put
+out all the data
+publicly so people can
+use that to check
+and verify them.
+For the final evaluation,
+an interesting twist on the
+evaluation campaign design is
+that campaigns or
+share tasks like
+WMT and WSAT operate on
+a once a year level.
+So they get a dump of systems and
+outputs and they
+are only concerned
+finding this one ranking of
+systems in the matter of
+a couple of weeks and
+then declare winner.
+Then everything is
+forgotten about,
+and next year there's
+a completely different set of
+participants and
+a different campaign.
+In our scenario we
+actually needed to
+have some level of
+continuity between
+the campaigns because
+we wanted to inform
+system builders on our team
+how we fared compared
+to the other systems so that
+we would measure
+progress over time and
+that means we had to introduce
+some continuity between events
+in the form of systems
+we always evaluated.
+There was also making the task
+harder because we had
+to always carry six systems which
+we kept stable across
+evaluation campaigns which
+meant we basically wasted
+annotation mass for
+those systems but at
+least it meant we could
+now fairly compare
+stuff overtime.
+The rest is just small stuff.
+So, we tested on a lot
+of different subsets.
+We ended up collecting
+roughly the same amount of
+data points than was
+collected for WMT
+17 so it's a
+large-scale eval just
+for the purpose of
+our parity announcement,
+and we covered due
+to the different subsets
+nearly half of
+the 2000 segments of
+WMTs new test 2017,
+test set which is also a lot.
+This is the direct
+assessment base thing.
+The example just shows you
+the English reference-based
+thing from WMT last year.
+In our case
+the reference would be
+the Chinese source text
+and it's literally
+a very simple task.
+This is a lot faster and it's
+a lot easier for people in
+terms of cognitive load
+when compared to the relative
+ranking task we did in the
+2008 to 13 range for WMT.
+The nice bit is you can enforce
+reliability of scores
+by editing spike data.
+So what we literally
+do is we have
+some source and candidate
+translation which gets scored
+whatever and then
+what we do is we take
+the same candidate translation
+and we artificially
+distroy its contents
+by chopping off
+a phrase of a certain length
+relative to the target length and
+then we know by swapping in
+something from a different
+system which is completely
+unrelated on a different
+segment that this
+cannot be same level of quality.
+So, we know this is
+expected to be really,
+really worse in quality
+and then if you collect enough of
+those and run
+significance testing,
+you end up having a good metric
+which allows you to
+quickly eliminate random
+clickers and then spammers.
+So, as I mentioned we have
+this enforced segment overlap
+so again reliable scores as
+much as we could make them.
+In terms of the eval campaigns,
+the rough timeline
+was that we conducted
+monthly large-scale evals for
+the current best research
+systems we had and our set
+of framing systems to
+make them continuous over
+time and then the final round
+of evaluation campaigns
+happened in February,
+March this year
+when we approached
+parity and found in one of
+our final evals it gave,
+we're there and then we set up
+the big evaluation
+campaign described in
+the paper to be able to
+announce the whole thing.
+In terms of scale, it's
+literally WMT 17 plus
+plus and a lot of
+redundancies so it
+is as large-scale as
+anybody has done it.
+So, we can skip about that.
+Let's just look over this.
+So, this is just a quick look
+at the evolution over time.
+So, the first eval from November
+was just the very first attempt
+at having a research system in
+the Bible parity
+project and we just
+compare that against
+online systems and go
+and on your references
+Then over time we had
+larger sets of systems and saw
+how the whole thing fared.
+Noteworthy is how online systems
+always end up being dead
+last which confirms results
+from NASA's WMT where they also
+did not fare well
+in the human eval,
+so that's consistent and then
+the interesting thing is
+how the research systems over
+time more and more
+closely approach quality
+of the human references.
+So, what's missing
+here is the say
+the watershed moment in
+at the end of February
+and a one-off eval
+and we figured out that
+our combo systems actually
+jumped into the same
+result cluster and
+that was the point in time
+when we design to keep them,
+now we need to set up
+the whole thing see if we
+can measure the whole parity.
+Finding and prove it,
+and the tables you saw there
+actually are the result
+clusters from
+WMT lingo that is
+based on pair-wise
+comparison of systems.
+It's not very intuitive
+and it's always confusing.
+So we have a much nicer
+representation coming up next.
+In a nutshell, what
+those tables mean is
+that each of the systems
+in a high cluster.
+So the first rank
+one cluster outperforms
+significantly all the systems
+in lower ranked clusters.
+That means for some system,
+if it is significantly better
+than some other systems,
+but then within the same cluster
+you have no idea if
+it's better or not,
+because in that same
+cluster you have
+this underlying
+assumption of if I
+can not prove a
+significant difference,
+then it is equivalent,
+by our definition number 2,
+and then you have the Z-score
+and R-score that are just
+used to provide an ordering
+because people like to see
+stuff in some ordered fashion,
+but doesn't really tell you much.
+Specifically, the differences and
+Deltas between
+the standardized scores,
+the Z-scores don't
+tell you anything,
+and the rest is
+just the average score,
+the system achieved from
+this 0 to 100 scale.
+Which tells you a bit,
+but also I mean it's hard to tell
+if the 0.5 between convex six and
+reference HT means
+something or what
+they exactly denote
+or not and then
+considering the
+reference post editing
+is still in the same cluster
+but has significantly
+lower scores
+in R- score and Z-score,
+the whole thing is,
+it works as a means
+of properly computing result,
+rankings but it's hard to
+interpret for human beings.
+So what we do here is,
+for the rest I'll just show
+you the final results for
+the parity claim for
+our best systems
+against the respective
+run-up systems,
+and give you a graphical way
+of understanding
+the whole thing by moving from
+the result clusters which
+contain just all the systems to
+a pairwise density
+based representation.
+This now looks a lot more,
+a lot nicer and hopefully,
+easier to interpret
+what you have.
+On the X-axis is just the
+scores ranging from
+0 to 100 so that's
+literally the range of the slider
+the humans had to assign quality,
+and then you have
+an overlaid version of
+the histograms of the score bins.
+And then you have the
+corresponding density functions
+for the two systems.
+So what you see here is that
+the blue graph will always be
+our best combination system
+from the parity project,
+and the gray one will always
+be a competing system.
+Here it's Zho, so that's
+the winner from WMT 17.
+What you can see is
+the dash lines are
+the mean scores for the two
+systems and you see
+that four combo 6 we have
+roughly 69 as the mean score,
+and Zho is at 62.
+So there's an openly visible gap
+between the two systems
+and you also see based
+on the histogram
+and on the shape of
+the two density curves that
+obviously the Zho curve in gray,
+has more area in the lower part
+of the whole graph,
+whereas the blue curve
+of the combo system
+it's at a lower level
+there, right?
+This gives you a sort
+of some understanding
+if I now tell you
+that based on this we
+claim that our system
+is better than
+the Zho system this
+is a much nicer way
+of framing it than
+this stupid cluster where you
+don't understand
+any of this. Yes.
+>> Once we're both Zho
+don't do that well.
+>> Yes.
+>> Sixty or below
+something like this.
+We look at whether what's
+the correlation of
+the seven seasons.
+Are we bad with
+the same sentences
+or are we bad for
+different things?
+>> We didn't look, but you
+can, all the data is there.
+Or I can, yes.
+This is, yeah.
+It's an open, as Hany said,
+there's an open research
+question for
+a lot of things and that's
+one of the questions we will.
+Technically, we use
+the same power covariance so
+that is something I'm
+looking at a lot.
+But we didn't explicitly
+for this year.
+So now jumping back and
+forth between that Zho,
+nest WMT and that's
+the WMT reference.
+So what you see here
+is, where is it?
+So that's Zho again, that's WMT.
+So the gray curve
+moves a little bit,
+but not much the mean score
+is literally a little
+worse than for Zho,
+but again clearly, this here begs
+why they end up in
+the lower cluster and we
+end up in a higher cluster.
+So again, more understandable
+how our system is better.
+Now it gets interesting, now
+we jump to the cluster where
+post-editing and
+human translation
+and in our system ends
+up in the same cluster.
+That's the one way you see
+everything is indistinguishable,
+we don't really know how
+that looks like and now,
+it gets much more interesting.
+You see directly
+that the mean scores
+jump to being very close,
+and you also see that
+the shape of the curves
+somewhat converges
+in a sense, right?
+So and here that explains
+in a graphical way what it
+means to be indistinguishable.
+The main thing at the end is
+the dumped to
+the human reference,
+we literally have nearly
+perfectly overlapping curves
+and except for some noise
+on the histograms.
+These systems seem to
+perform somewhat on the
+same level of quality.
+Now an important point all
+of you brought this up,
+we don't necessarily know
+if the scientist scores for
+the respective bins correlate
+to the same segments.
+So there might be
+some difference there,
+but considering that we
+collected tens of thousands
+of data points,
+the main take-home message
+here would be
+that to the best of
+our data collection abilities at
+this point in time given
+the constraints of
+having the human evaluation
+people around, etc.
+These systems are equivalent
+or not significantly different
+and hence in
+our indirect fashion,
+they are equivalent
+and that's why we end
+up having human parity.
+So that was the
+final thing we then
+reported versus
+a nicer graphical way
+of explaining those wonky tables
+and following
+Hany's approach here,
+let's also talk about what
+we could be doing next.
+Of course, we released
+all the data publicly
+which is not so common
+in the industry.
+So we encourage people to look at
+the data and tell
+us where we messed
+up so that we can
+improve on that.
+Improving the
+translation quality is
+something Manie had a ton
+of things NMP architecture,
+work, and modeling can do.
+Most importantly, people
+complained about us not being
+able to consider
+context in any way,
+where we just have
+this sentence level approach.
+An interesting comment on node
+was that it might be
+somewhat now possible to
+look at how does MT
+compare to humans of
+a certain certifiable level
+of translation.
+The ability for some scenario.
+We could build a test set
+or find annotators who have
+a certain certified ability
+and then we can compare our
+[inaudible] Is our MTs,
+I don't know, like
+the first grade,
+or the fourth grade.
+I don't know, I mean,
+that's an approach
+or a direction we could
+look into and it's not worth it.
+So why this is parity,
+this statistical
+definition we have
+enough data points to
+back that this actually
+is parity not near
+parity, it's parity.
+It's only the first step
+on our trajectory towards
+having and reaching fuller,
+more omnipresent
+human parity for MT,
+and there will be lots of
+new languages,
+domains, scenarios,
+architectures we can try and push
+towards ever increasing
+human parity like quality.
+All right and with that,
+we conclude and I
+invite Teniap and we
+take questions that you
+might have. Thank you.

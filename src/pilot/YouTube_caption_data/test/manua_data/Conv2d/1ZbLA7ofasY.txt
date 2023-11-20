@@ -1,0 +1,291 @@
+Hey guys and welcome to this video. Today, 
+I will talk about forward hooks and PyTorch  
+and how you can use them to visualize 
+activations of your neural network.  
+So what exactly are these forward hooks? Well, 
+said shortly they are just functions that get  
+called right after you do your forward 
+pass. I decided to show you where  
+exactly in the source code they're implemented 
+because I find the source code really readable  
+and very instructive. All right, before I do 
+so though let me just pin the version of Torch  
+to a specific version, let's say 1.7. So that 
+if you're watching this far away in the future  
+you can see exactly the same source code. And 
+the module I'm after here is called module.py.
+It's here. The full path is here. 
+And what this module actually  
+contains is the building blocks of 
+PyTorch, let's say. If I open it
+what I'm after here is the class called Module. 
+Here it is. And you've probably seen this class  
+before because it is the way how you define your 
+custom layers in Torch and also all the existing  
+layers are subclassing from it and I actually 
+find the small example that they're providing here  
+really nice so let me quickly explain how one 
+defines a custom layer in Torch. So you first  
+need to subclass from the parent and then you 
+need to define two methods. One is the constructor  
+(the __init__) and the other one is the forward 
+method. So in the constructor you're supposed to  
+first call the constructor of the parent and 
+then you're supposed to define all your layers  
+that you're planning to use in your forward 
+pass as well as any learnable parameters.  
+And then the second method forward represents 
+the forward pass where you define how you go  
+from the input to the output. The thing that's 
+really interesting is this call to the parents  
+constructor. I actually have the the constructor 
+right here and as you can see there's a lot of  
+initialization going on and the attribute that 
+we're interested in not surprisingly is called  
+forward hooks, underscore forward hooks. And this 
+is where PyTorch stores all of our forward hooks.  
+So just keep that in mind and let me go back to 
+the example and point out one important thing and  
+that is that whenever you are using this neural 
+network you're not supposed to call the forward  
+method directly and instead you're supposed to use 
+the __call__ method or just call the class. And  
+the reason for that is the following. If I go 
+to the implementation of call you can see that  
+it actually calls the forward method inside of 
+itself and on top of that it has a lot of other  
+functionality. And this functionality is related 
+to all kinds of different hooks that PyTorch has  
+but what we are interested in in this 
+video is the block of code right here that  
+gets executed right after the forward method and 
+it represents the calling of the forward hooks.  
+So what it does is that it iterates one by one 
+through our forward hooks that we have registered  
+and it then calls them. And what's really 
+important is that you can see that it has  
+three parameters. One is the self which is the 
+module itself, then it's the input and then it's  
+the result of the forward pass. What's really 
+important is that if it's actually not none  
+we redefine the previous result with whatever 
+the hook outputted. So i would imagine that  
+you probably have already many ideas how you 
+could use this because this hook framework  
+is really powerful but what i want to talk about 
+in this video is how you can use it to visualize  
+activations. But before i do so let me just 
+probably point out two other applications that  
+i've seen before. First of them is definitely 
+using forward hooks for debugging purposes  
+because you can do a lot of 
+printing and logging inside of your  
+function. And the second application that 
+I've seen is on purpose modifying your  
+output tensor or whatever the output of the 
+forward method is. Anyway we are focused on  
+visualizing of activations. I think that's it 
+for the theory. Now I would like to show you a  
+very short example of how one can use the forward 
+hooks in action. Let's get started. Let me create  
+the script and let me do some imports so i 
+will import torch then i will import functional
+and lastly let me import two modules one would 
+be linear layer and then the parent module
+class. Linear and Module. Now we're 
+ready to define our custom network. So  
+as discussed we need to subclass the parent 
+and then we need to define two methods the  
+constructor and the forward so let's do 
+that. Let's call our network Network and  
+subclass from the parent. Let's start with the 
+constructor. The only argument there is the  
+instance of self. First of all, we need to call 
+the constructor of the parent. Something like this  
+should work. Then let me just define a couple of 
+linear layers. Let's say like this. Three of them.  
+So here rather two. And here i will get three. 
+Perfect. Let me just make sure that the dimensions  
+are matching. So here 20, here I will put it equal 
+to 30 of course. Here I also need to put it equal  
+to 30. And at the end, let's say, our output 
+size is going to be 2 for no specific reason.  
+The second method I would need to define 
+is the forward method. This one takes in  
+the self instance and also the input tensor. 
+Here, I guess not surprisingly, I will just do  
+something like this for all of the linear layers 
+that i defined. Cool. And to make things a  
+little bit more interesting let me also run the 
+output through a RELU activation. Something like  
+this should work. Cool. Now if I didn't make a 
+mistake we should have a valid neural network:  
+a multiplayer perceptron. One way to test 
+this is to just generate a random tensor  
+and run it through the network. Let me do that. 
+Let me turn this into a legit Python script. If  
+__name__ equals main. Here let me generate the 
+tensor so we use torch.rand. To simplify things  
+I will just set the batch size equal to 1 which 
+means there's only 1 sample in my batch. Here,  
+I need to match the first linear layer (the input 
+features). And let me instantiate the network.  
+It's nothing else than this. To actually 
+run the forward pass we use the call method  
+(rather than the forward method that we 
+implemented). We should get our predictions.
+All right, let's just print this out. 
+Let's format this. Here, in the second  
+window I'm in the same folder. Let's just 
+see whether it works. I should be getting  
+two outputs. What's interesting also is that as 
+you can see the result is different each time and  
+the reason for that is actually here. Because each 
+time the input features look differently. Also  
+the fact that we re-instantiate the neural 
+network and also the weights of the linear  
+layers are initialized differently each time. 
+All right, so we have a working neural network  
+and let's continue. Now, the goal is to 
+visualize activations of my linear layers.  
+I will use TensorBoard to do that. A solution 
+that doesn't use forward hooks is just  
+simply calling the logger manually each time 
+you want to log a specific tensor and create  
+a histogram of values. Let me show that to you. 
+Let me start by doing some additional imports.  
+Here, we import a SummaryWriter which is 
+the actual class that is doing the logging.  
+Let me just instantiate the SummaryWriter. 
+What it expects as the only parameter is the  
+path of the folder where you want to have 
+the logs. Let me create this variable.
+Let's call it tensorboard_logs. 
+All right, good enough.  
+Perfect. We have an instance of the writer 
+that we can access as an attribute. Here,  
+after the first linear layer, we can simply 
+use the method add_histogram. Let's say we  
+will call this value "1" and we provide 
+the tensor . We want to copy paste this  
+to all the places where we want to log the 
+tensor. After each of the linear layers.  
+Now we should be ready to run this. Let's 
+see what happens. This we have seen before,  
+however, what also happened in the background 
+is that the tensorboard_logs folder got created.  
+To launch the TensorBoard UI you just use the 
+tensorboard executable and you provide the path  
+to your logs folder via the logdir option. It's 
+this one. We can see right away that it proposes  
+a localhost url and if we go to 
+histograms we right away see that  
+all of the three tensors got logged correctly. 
+We see their corresponding histograms.  
+This definitely works but as you would 
+imagine it's by far not the optimal approach.
+The main reason why this solution is not that 
+great is because of the forward method and how  
+it looks like. First of all, one right away sees 
+that we call the add histogram method three times  
+which is very redundant and one should probably 
+refactor it. Second of all, the forward method  
+should arguably only contain code related to the 
+forward pass and any debugging, visualization  
+or logging functionality can be there ,however, 
+chances are it's only going to be temporary  
+and it's very likely that you don't want to keep 
+it there if you deploy the model in production.  
+A solution that addresses both of 
+these problems is using forward hooks.  
+Let me just quickly delete what we did here. At 
+the bottom of this page, let me define a function  
+that I will call activation_hook.
+It's going to have three arguments 
+and I will describe them.
+First of all, we need to provide the instance 
+of the layer that we want to attach the hook to.  
+This is in general going to be a torch.nn.Module.
+The second parameter is going to 
+be the input so it's the same at  
+input that goes to the forward method. In 
+our case, it's going to be a torch tensor
+It's just the input to the forward method.  
+Lastly, the third argument is 
+going to again be a torch.Tensor. 
+In theory, we can also return a modified 
+version of this output but we don't need  
+this. We only want to use this forward hook for 
+logging purposes. There is no need to modify it.  
+First of all, let me just make sure that we are 
+here that we can see it in the standard output.  
+Then we want to replicate the functionality of 
+the previous example. To do that, let me just move  
+the instantiation of the writer which 
+is going to work okay in our example.  
+Let me remove the self here. As we 
+did before we simply take the writer  
+and we add_histogram. Now what do we want 
+to use as a name? Well I suggest we can just  
+use the representation of that layer because 
+Torch provides really nice representations  
+of its layers. I would use that. Then we want 
+to provide the actual output of the forward.  
+At this point, we more or less replicated the 
+above functionality. The only thing that is left  
+is to somehow tell Torch to use this function as 
+a forward hook. For exactly that purpose there is  
+the register_forward_hook method. We take our 
+network. We take the layer we want to attach  
+the hook to and then we run register_forward_hook 
+and we give it the activation_hook. Perfect. We  
+can just do this same thing for all three of the 
+layers. The last thing, we need to move the actual  
+forward pass on the entire network. The reason 
+for that is that here we instantiate the network  
+and at this point it has no hooks assigned to 
+it. Here, we actually assign the hooks to it.  
+Here, it's going to contain it so when we run 
+the forward pass it's already going to be active.  
+Whereas, if we kept it here it would still have no 
+hooks attached to it Let me put it here and let's  
+try to run this and see whether it works. Let me 
+maybe remove the TensorBoard logging directory  
+and let me run the source code. Cool. You see 
+that the "Here" was printed out three times  
+and that we again got the two element tensor 
+as an output. Now, we want to check TensorBoard
+The same as we did before.
+Going to histograms. And we can see here that 
+we again have three different histograms all  
+representing the three linear layers. The 
+representation is different. Before we used  
+just numbers. Now we have like a full blown 
+representation string of that layer. We managed to  
+reproduce the functionality that 
+we had before with forward hooks  
+which was the goal. Arguably this solution is 
+way cleaner. I have used it a lot of times.  
+Before i finish this video though let me just note 
+one more thing. You probably wonder "Well, what if  
+I also want to dynamically remove a hook?". Now, 
+whenever you call the network the hooks are going  
+to be active. But what if you want to dynamically 
+choose when the hook is active when it's not? Is  
+there a way how to deregister the hook? The answer 
+is yes. You just need to somehow put or cache the  
+return value of the register forward hook into a 
+variable which would be a handle for that hook.  
+What you want to do if you want to deregister the 
+hook you just use it and call the remove method.  
+To illustrate that it works let me do the 
+forward pass one more time afterwards. I can  
+remove this at this point because it's useless. 
+Here, all three of the hooks should be active,  
+however, here only two of them should be 
+active (if did this right). Let's see.
+Exactly. These three are coming from the first  
+call to the network and then the last 
+two are coming from the second one.  
+All right! Hopefully, this video was 
+helpful and I will see you next time!

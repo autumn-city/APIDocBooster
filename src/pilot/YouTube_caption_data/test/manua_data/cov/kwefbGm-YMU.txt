@@ -1,0 +1,1453 @@
+If we only need Mibnerve, we don't need to train the multi-degrees
+If we just want to see the results of the single-degrees
+Does the single-degrees one have any letters here?
+Let me see
+The name here is MultiBlender
+Let me see how do you generate those Raids
+There is an experiment in the paper
+Does the single-degrees one also use this file?
+Let me see your structure first
+I think you will do a GenerateRaid first
+What is LoadRendering?
+LoadRendering is to read the image
+After reading the image, the next step is GenerateRaid
+GenerateRaid is to call out the original direction, radius, and RGB
+You haven't written the scale of the single-degrees one yet
+I think the scale of the single-degrees one is better
+Let's finish reading the part you wrote
+Fix to Cam
+Let's call out the file first
+The structure of the file is like this
+Every scene has Transform
+It contains the location of the image and rotation
+No, it's TransformMatrix
+It's the location of the image
+Let's read the UV of each pixel
+Pixel Direction
+Pixel Direction
+Here is...
+Did you write this part yourself?
+Or you copied it?
+If you copied it, there should be no problem
+Just copy each pixel's origin, direction
+This part is in the last part of the thesis
+I'll show you
+In the last part, you need to use the
+model
+It should be in the model
+Let's see
+Not this one
+MIP?
+It should be here
+It should be here
+Let's find it
+Here
+It's called conical frustum to Gaussian
+It's a model using Gauss distribution
+It has three parameters
+Mu t, sigma t and sigma s
+There are different parameters
+Direction
+The direction of each line
+And
+The distance between the two segments
+T0 and T1
+Base radius is R0
+There are other parameters
+First is the calculation
+It's not difficult
+Just copy it
+Let's confirm
+It needs to use
+T mu is 2 times 2
+Half width is T1 minus T0
+It's more stable
+The calculation process is more stable
+I'll explain the reason later
+Copy it
+Mu is this
+Half width is this
+T min is mu t
+Mu t is T mu plus this
+There should be no problem if you copy it
+I'll skip this part
+It should be right
+There should be nothing to simplify
+Let's see
+Nothing
+At most, it's 3T mu plus T sigma square
+We can calculate it
+And use it separately
+Acceleration should be limited
+After all, it's not too difficult
+Let's do it
+There is something called stable in the argument
+What are the parameters of stable?
+Let's see
+If you calculate the value of the value
+We said that the value of the value
+We said that the value of the value is based on the formula
+If you just calculate the value
+The value of the value will not be as beautiful as before
+It will look like this
+R0 squared times 3 times T1500 square minus T05 square
+T1 squared times 3 times T0 squared
+But if you calculate it like this
+Because T0 and T1 are actually two continuous planes
+Because we have to compress the whole scene before training
+Between negative 1 and 1
+So after T0 and T1 are compressed
+The difference between them will be very small
+If you do this kind of calculation with two very close numbers
+The result will be very different
+The result of the calculation will be very unstable
+So they came up with a method
+They set two variables
+One is T mu and the other is T sigma
+It looks like this
+If you use these two variables
+The original sigma R sigma T can be changed
+Use T mu and T sigma to modify
+The result of the calculation will be more stable
+That's the purpose of this stable
+So basically this thing is always true
+We don't need to think about the false situation
+This is usually a personal preference
+Because when I finish reading the thesis
+I feel that this thing is always true
+Then why do I still want it
+He also said that setting this to false will cause catastrophic failure
+If you set it to false
+The training will explode
+Then I don't need this at all
+And delete will reduce my code a lot
+So I would like to put this
+Something that will not be used at all
+Just delete it
+Of course you can keep it
+Anyway, this is not the problem today
+Ok, then this part is the result of the seventh formula
+What we are going to do next is
+We are going to calculate the 3D distribution of this Gauss distribution
+The distribution of 3D has just these values
+These values ​​are some pure quantities
+Then we have to turn it into 3D
+Then we will calculate this
+See if this side can be out
+Can't be out
+Then I use this color for the quantity
+Then our mu
+3D Gauss distribution
+I said in the thesis that I want to normalize
+What did you say to normalize
+A whole scene
+Oh no, I just
+No problem
+Should not normalize
+What I mean is that if the scene is too big
+You have already used it in the blender
+What I mean is that if you do training in a large scene
+Is to normalize
+Then we calculate these parameters of 3D
+Then mu equals to O plus T
+Mu TD is the one that was calculated just now
+What I wrote in blue is the quantity
+It is a n times 3
+Because we will use batch to calculate later
+So these things
+Its shape is b times 3
+We use batch to consider
+Then this sigma is this 3D
+3D Gauss distribution
+Its standard difference
+Then this will be equal to sigma T square
+Top CDT
+CDT
+I use the scratch here to scratch it up
+Here, it will use the linear index
+So maybe the first look will feel a bit complicated
+I will slowly tell you what it is doing
+Then it is identity minus this is 3
+Identity 3 minus DDT
+The square of T
+Ok
+Then here we will use the same formula
+To calculate mu and sigma
+Then this should be where you wrote
+Yes, it should be this place
+Leave the Gaussian defined along a ray to 3D coordinate
+That is, we have to put those just now
+Those things just now
+Turn it into a three-dimensional Gauss distribution
+Let's write this shape
+We just did this direction is b times 3
+Then T0 T1 is float, that's right
+Base radius is also float
+Or actually
+Then we will see this diagonal later
+What does this mean
+This T0 T1 can also be b times 1
+Is it b times 1?
+That is, every batch has a number
+It should be like this
+Then here
+mean
+Then take a look here
+What it wants to calculate is these values just now
+That is, mu equals O plus mu TD
+Then here
+It doesn't have a mean here, does it?
+It hasn't entered O here yet
+It should be added to O at the end
+So we just need to calculate the value behind
+This is mu T times D
+Then here we can use the previous one
+Rearrange this function
+Then our mean will be equal to
+We just said
+We also wrote it in detail here
+Every direction
+What is the shape of each input
+I just said that the direction is b times 3
+Then T mean
+T mean because it is mu 0 plus mu 1 divided by 2
+So the shape is the same as mu 0 mu 1
+Not mu 0
+T0 T1 is the same
+Then T var is the same
+T var and R var are b times 1
+Here T var is sigma T
+Then R var is sigma S
+This side should be the same
+This side is b times 1
+So
+A better way to write is to unify
+Just look at your thesis
+How is it called
+How do you call it here
+Because sometimes I am reading the thesis
+When it is different from the code
+I will feel very annoying
+For example, this place
+It is called mu T
+Not mu T
+Called T mu
+Then why is it not called T mu here
+Called T mean
+I will feel very annoying
+I will feel very annoying
+For example, this T var
+It is called sigma T in the thesis
+Sigma T square
+This is just a small complaint
+But as long as we understand
+Let's come back here
+We just said that this direction
+To put it with this
+T times together
+Then
+output a mu
+T0 is b times n
+Wait a minute
+T0 is b times n
+You make sense
+T0 is b times n
+T0 is b times n
+I think about it
+You should be right
+Is that every batch
+There will be n
+Every batch will have n samples
+So we said that there will be n samples in total
+So there will be n T0
+So here is b times n
+So here is b times n
+Samples
+What about this base radius
+Base radius
+This is just float
+But b times 1 should be right
+This place is a bit complicated
+Because...
+Let me think about what to say
+I've been looking at this place for a while
+This place is a bit complicated
+Let me think about what to say
+Let's start from here
+Let's calculate the mu and sigma first
+After calculating the mu and sigma
+These are some...
+This mu is b times 3
+And this sigma is...
+This mu is b times n times 3
+And this sigma is b times n times 3 times 3
+What we are going to do next
+Is actually very similar to the original positional encoding
+Originally, every point, a 3D point
+We threw it into the positional encoding
+We have said this before
+Yesterday or this afternoon
+This calculation result
+Can be expressed by an encoding
+Let's define an encoding
+For example, P is 1
+We have 3 times 1, 1, 1, 1
+Then 2, 2, 2
+Then 4, 4, 4
+Until 2 times n times square
+For example, 2 times 9 times square
+2 times 9 times square
+Let's put this transpose on X
+And then make sine and cosine
+When we do it this afternoon
+Or when we did it this afternoon yesterday
+We also do it this way
+This positional encoding
+We can imagine it as
+There is an encoding like this
+Then we put this encoding
+And this X together
+And then take out its sine and cosine
+If you forget, you can review
+The city written yesterday
+Because I have uploaded it all
+Including all the experiments we did this afternoon
+I threw it in this release
+You can download it and take a look
+The P we just said
+Is this thing
+We have an encoding like this
+Then it is
+What we define in this train is
+It is an encoding with many corners
+Then put 2 on one side
+Then put them all together
+After having this encoding
+We calculate the positional encoding
+I am very excited now
+I read it wrong
+Calculate the positional encoding
+It becomes very simple
+We just have to put X on P
+Is to do the encoding punishment
+Then calculate the sine and cosine separately
+It's over
+It's the same here
+After having this positional encoding
+After having this P
+We calculate the positional encoding is very simple
+Then this integrated positional encoding
+Also use the same idea
+At this time, we will also have a P
+P this array
+But the P at this time is not the same
+Because it is calculated according to this three-dimensional array
+So we
+This X part is still the same
+P times mu
+After we define this P
+We have to calculate this P times mu
+Calculate this P times mu
+It also has to calculate this P times sigma
+Transpose of P
+Yes
+Written here
+Then the last last last last
+This thing is
+This thing is all inside
+All these inside this
+All the points in this array
+Some functions of its positional encoding
+Some variables are all in here
+In the end, we need to calculate this
+Calculate this expectation value
+Is the expectation value of these numbers in the field of X in this array
+Then the expectation value of this number
+It is the same
+After helping you to use a simple sine and cosine to calculate it
+It tells you that if it is an array
+Then the final result will be like this
+This is sine of mu gamma
+Then multiply by exponential minus one second
+This sigma gamma diagonal
+Write it a little clearer
+This is our mu gamma
+Then this is our sigma gamma
+This thing
+We first calculate
+The first step is to calculate this first
+The second step is to calculate this
+I can't wipe it off
+The first step is to calculate above
+The second step is to calculate this
+Then the third step is to calculate the final expectation value
+What about the expectation value?
+He said because he wanted to calculate this
+An array of his
+That
+Not an array
+An array of his對角線
+It will take a longer time
+Let me see if it's like this
+Sigma R is not
+It's not too long to calculate the對角線
+It's too long to calculate sigma R
+You can see that sigma R
+It's actually a P
+What we just said is a
+It's the same as what we wrote before
+It's a
+It's a 3xF array
+Just look at your positional encoding
+There will be as many
+How many frequencies will there be
+So your P is actually a
+10x3
+It's the opposite here
+So for example, it's an array of Fx3
+The size of this P is an Fx3
+For example
+For example, there are three directions
+Then for example, we have ten
+If there are ten frequencies, then F will be equal to 3x10
+Then sine and cosine will have two
+So multiply by 2
+That will be 60
+So P is an array of 60x3
+Then sigma is an array of 3x3
+So this
+The thing below will become an Fx3
+Then multiply by 3x3
+Then multiply by 3x60
+An array of 3xF
+So he said that the calculation thing
+It will become more complicated
+It should be said that the calculation time will be longer
+In order to reduce the calculation time
+He thought of a simplified method
+What is the simplified method?
+The simplified method is that
+Because we only need to
+Finally, after calculating this expectation
+After the expectation value
+What we need at the end is
+Just the part that proves its diagonal line
+So it's not a diagonal line
+In fact, we don't need to calculate it at all
+Yes, if you don't need to calculate it at all
+We can directly from that
+Get from the positional encoding
+Not from the positional encoding
+Get directly from this sigma
+So the diagonal sigma R
+He directly simplified it like this
+Then each of the diagonal sigma
+Will become like this
+So that is to say
+If we only need to get the right angle
+We can simplify some calculations
+But you have to follow the formula
+If you directly calculate this
+I think it's not impossible
+After all, this is only 60
+So it shouldn't be too big
+Ok, let's come back to this code
+First, let's see if it's diagonal
+If it's diagonal
+We can just calculate this thing
+How do you calculate this thing?
+This thing first counts Equation 16
+This is your own column
+Equation 16
+It first counts this diagonal sigma
+This thing
+That first is D times D
+This thing is a B times 3
+A constant
+This thing is B times 3
+We are the same every variable
+We mark out its shape
+Then
+Next
+No outer diag
+Why do you call it like this?
+Is it supposed to be called like this?
+Let's take a look at its name
+It's also called like this
+Ok, ok
+It's called like this
+Let's follow its call method
+This thing is another one
+It's the one behind
+E minus D squared
+So the square we calculated just now
+Hello, Dengshank
+This is being changed
+Written by someone
+He's writing this paper
+And he said
+The result is not as good as the paper
+So I'm helping him see
+Where may be wrong
+Then at the same time
+I also put the original
+May be written
+The original code is written
+More unclear place
+Add a few more columns
+Then use some easier to read
+Channels to write it
+So here
+The right one should be E minus this thing
+Then this one
+Its shape will be B times E
+D outer diag
+Or B times 3
+E minus this thing
+So it's B times 3
+Then the next thing to be calculated is this sigma t square
+Sigma t square
+Is t variance
+Then multiply
+D outer diag
+Just calculated this
+Then we have to do the same
+Bn times B3
+So we have to do the same
+Rearrange these
+The method is actually the same
+Let's rearrange this thing
+B1C
+Then C var is rearranged into Bn1
+The result will be B times N times 3
+This one is D
+The one on the left
+The one on the right is also the same
+Then we will copy this thing
+Then paste it
+Then change the name
+This is t no
+Then this is R
+OK
+So if it's diagonal
+Then this covariance
+Diagonal, this thing will be these two together
+Yes
+OK
+The last thing to be calculated is
+It seems not to be calculated here
+The last thing to be calculated is
+Personal encoding
+We have to layer this frequency
+But the layer seems not to be here
+It just passed the message
+That is
+This thing
+With the thing just now
+No positional encoding
+That frequency goes in
+OK
+Then this diagonal place should be
+That's it
+If it's not diagonal
+Then we have to
+All things are calculated
+We have to calculate this thing
+We have to calculate this thing
+Because later
+We have to put this thing on the layer
+So we have to calculate this sigma first
+Then this calculation is actually not difficult
+Let's first calculate this D times Dt
+So here you have to pay attention to
+What is the size of each
+We say D is 3 times 1
+We say batch times 3
+But it's a 3 times 1 quantity
+If you look at it one by one
+So this D times Dt
+It's actually 3 times 1
+Then multiply by 1 times 3
+So it will be 3 times 3 at the end
+Like this
+OK, then we are here
+What is here
+We change it to this
+Rearrange
+Then we have to
+Direction multiplied by its transpose
+So our first one is to be in the last
+One axis plus one axis
+The second one is in the second axis plus one
+This is how it will be
+B times 3 times 3
+It's like his comment
+This thing will be B times 3 times 3
+OK
+Then next
+Next, we have to calculate this one on the right
+This one on the right is actually the same
+Then we have to calculate an I first
+I is the angle of view
+Then the angle of view is like this
+OK like this
+Then set the device to that
+A device with the same direction
+If it's a GPU, it's a GPU
+OK, then this one below
+No outer
+It will be
+D times Dt
+This is actually what we calculated just now
+This thing
+So we don't have to calculate it again
+D outer
+Then divide by D square
+D norm square
+But we have to remember to rearrange this side again
+Because it was originally B times 1
+But this D outer is B times 3 times 3
+So we have to give it one more axis
+It was originally B1
+Then we have to turn it into B times 1 times 1
+This is how you can do a calculation with 3 times 3
+OK
+Then
+Covariance
+That's the same here
+But we just add a few more axes
+Originally this T variance is B times N
+But now we have to do something
+B times N times 3 times 3
+So we have to give it two more axes
+D outer is B times 3 times 3
+Then we have to add one more in the second axis
+B times X Y
+Then it becomes B times 1 times X Y
+Then it will come out like this
+Just like what it says
+B times N times 3 times 3
+Then this X Y covariance is also the same writing method
+Just like this
+Then change the corresponding places
+This is R
+Then this is no outer
+Then the last return is
+Min and
+Cov
+Or did you just delete it?
+Oh yes
+Then Cov is these two added
+T covariance plus X Y covariance
+OK, we finally finished this
+If this thing is diagonal
+We directly calculate the diagonal of sigma
+If it's not diagonal, we calculate this thing
+Yes, yes, this is different
+Then the mu is the same
+Let's go back to this box
+Mu T times D
+OK
+Then we can finally enter the next function
+The next function
+We have already seen this
+Let's close it
+Where is the next function
+Next function
+It should be to calculate this positional encoding
+Where is this
+It should not be this
+It should be this
+Integrated positional encoding
+So we just have to actually put this
+IPE is this thing
+So what we just said is called IPE
+We have to actually calculate this thing
+With the calculation results of our midway
+Correct
+Then the result of this
+We have to calculate it based on this mu gamma sigma gamma
+Then this will also be based on whether it is diagonal
+Will be different
+OK
+If it's diagonal, let's take a look
+If it's diagonal
+What we calculated just now
+Min
+Min and this covariance
+We will store it in one place
+It's in lift Gaussian
+These two things come out
+This min and covariance
+It will be stored in this place
+Then
+So let's take a look here
+Covariance
+OK
+Then
+If it's diagonal, we have to put
+Scales
+Scales are those frequencies
+Those frequencies
+Take a look
+Forge.tensor
+Let's take a look at how it was originally done
+Integrated
+Wait a minute
+Let's talk about this
+We have to calculate the mu gamma
+Think about it here
+After p times mu is mu gamma
+Then we have to calculate the sine mu gamma
+Then we just p times mu
+Then p is this thing
+Then p is this thing
+But if it's diagonal
+We don't have to bother
+We only need 1 4 4 l minus 1 square
+The scale here will be 1 to 2 l minus 1 square
+Then
+We have to calculate the mu gamma and sigma
+Or diagonal sigma gamma
+Then mu gamma is
+7 times
+7 times mu
+7 times mu
+Does that count?
+Let me take a look
+X times scale
+Wait a minute
+Then pass into that
+But why doesn't it use p here?
+It uses p down here
+Then it should be like this
+Because it only counts the angle
+So the equation of the equation is
+Just multiply the number of pixels
+So we are here
+Reduce the mean
+Rearrange
+For example, we can write this
+Mean is originally b times n times 3
+b times n times c
+Yes, this is mu
+Then we turn it into b times n times e times c
+Then multiply
+I'll use two steps
+The first step is these two pixels
+Scales also rearrange
+Scales
+Here is l
+Yes l
+It can be directly like this
+It can be directly these two l times e
+Then l times e
+Then turn it into l times e
+Then this thing will become b times l times 3
+b times n times l times 3
+Then this l is the frequency we talked about
+There are a few
+It is expressed by l in the paper
+Then we also use l here
+Then reshape this thing
+Reshape
+Reshape into
+We have b n l
+b n l c
+Then we can turn it into b times n times
+l times c
+The meaning of doing this is actually what we are talking about
+We put an original length as 3 pixels
+Then use this positional encoding to enrich its features
+Finally, it will become a total of l times c
+A pixel like this
+This is the way to imagine
+For example, I only had xyz
+Originally there were only three features
+Then after this positional encoding
+I suddenly increased a lot
+Maybe there is a feature l
+Then this l times 3
+Every hand has a feature l
+Then this l times 3 is what we just got there
+A number
+Originally there were only three
+Then through positional encoding or the ip1 here
+We magnify the number of features
+This is a way of thinking
+Variance is the same
+Variance is directly multiplied by its square
+Then we are the same here
+I also use two steps to calculate
+But that is to say, what I have done so far
+It's just to change these nuns
+Actually, I haven't found anything special
+And wait a minute, this covariance
+Is covariance like this?
+Covariance is also b times n times 3
+That's okay, this is right
+Covariance is also b times n times 3
+Then we get one more
+Then multiply by scale
+Multiply by scales
+Scale square
+Then l times 1
+Then this thing will become b times n times l times 3
+Then we finally rearrange it
+Become like this
+It's not wrong to write
+I just changed the name
+OK
+Then finally, we get these two things b times n times 3l
+L times 3
+Then the characteristics are like this
+If it's not right
+Then we have to calculate this p times mu
+Then p times sigma times p transpose
+It's not difficult to calculate
+The p here is the so-called basis
+I call it p
+Actually, it's okay
+Then it's 2i square on top of torch i
+i is the same as 3 times 3
+3 times 3 of the corner covariance
+OK, then here is
+Let's multiply this p and mu
+Covariance in non-pi
+It should be said that tensorflow is the same
+Pytorch is the same
+It should be said that most deep learning frameworks are the same
+Just an add can be done
+This method is to multiply the two coefficients
+Then we just said that this min is b times n times 3
+Then p is 3 times 3l
+So this thing will be b times n times 3l
+This is no problem
+Yvar is what we just said
+P times sigma times p transpose
+Wait a minute
+What he wants to calculate here is diagonal
+Diagonal has a simpler calculation
+Calculate this matrix
+For example, this matrix and this matrix
+Transpose of matrix
+Then add every element
+This is a little trick
+It's hard to do math here
+Just look at what he wrote here
+Just multiply this covariance and basis
+This thing will be a
+Let's summarize
+X is covariance multiplied by basis
+It will be a
+Just said b times n times 3
+b times n times 3l
+b times n times 3l
+3 times 3l
+Wait a minute
+Ovar is b times n times 3l
+P is 3 times 3l
+Can you just multiply it like this?
+Is it not okay?
+Then I will restore the shape just now
+The shape just now is the same as this
+Multiply by P
+X covariance multiplied by P
+Multiply by basis
+Multiply by P
+Let's see how he wrote
+The writing method is the same
+Can you just write it like this?
+Ovar is wrong
+Ovar is b times 3 times 3
+So it's like this
+That's right
+But can you just multiply it like this?
+I'm not sure
+The shape of this means is b times n times 3
+The shape of covariance is b times n times 3 times 3
+You have to pay attention here
+Multiply by basis
+Multiply by P is b times n times 3 times 3l
+Then we have to put the following two
+Multiply by P
+I want to rearrange here
+I personally feel like I want to
+Because we have to multiply this thing by 3 times 3l
+Actually, it shouldn't be like this
+When we are not sure
+We just open a Jupyter Notebook
+Or we can just do it here
+Just import torch
+Then our a is equal to torch.0
+For example, 10 times 20 times 3 times 30
+Then b is equal to 3 times 30 of torch.0
+The main thing I want to know is that these two things can be multiplied by each other?
+Oh yes
+If this is the case, what will be the shape of c?
+10 times 20 times 30 times 3
+So this can be directly multiplied
+Then this thing can be directly multiplied by P
+After multiplying, the shape is the same
+Then we have to calculate its corner line
+So is it going to remove every three?
+So the axis we want to add is this axis
+That is, the negative 2 axis
+So here we can also use reduce
+Then here is b times n times c times
+For example, l
+But the l here should be noted that it has become 3 times l
+Then we have to do this c axis
+Reduce
+So the result of our final reduction will be like this
+Then the result here will be b times n times 3 times 3l
+Then the way to reduce is sum
+Then I saw our friend wrote a very funny thing
+At y plus 0.5, pi equals cosine
+Chinese students must have that sentence in their minds
+I don't know this sentence
+I don't know this sentence
+I don't know this sentence
+Do you mean the change of sine and cosine?
+I just remember one
+Remember this sine is 2 pi
+X will be equal to cosine X
+The opposite is the same
+Cosine 2 pi minus X will be equal to sine X
+This is very interesting
+If you write it like this
+Are you y plus 2 pi?
+If y plus 2 pi
+Then this will be equal to cosine negative y
+Why?
+Because our 2 pi plus y
+In fact, you can imagine it as 2 pi minus negative y
+I always think like this
+Add and subtract
+Add and subtract, I imagine it as subtract
+So 2 pi minus negative y
+The y plus just became like this
+So this will become cosine negative y
+Then cosine negative y
+Because cosine is an odd number
+So this will be equal to cosine y
+But it's right to write like this
+Hello, Kondo, good night
+But we haven't found any mistakes yet
+We just put some of this
+The place where it is written
+Maybe the readability makes it better
+But you can also continue to learn this
+The method of writing a city
+Then we are
+After calculating this y and y variance
+After that, we actually calculate this
+This expectation
+Is this sine of mu gamma times exponential
+Minus one-third of the diagonal
+This thing
+it is good
+Let's see what is written here
+So this should not be
+Let's see what is written here
+Expected sine
+Is this the original one?
+He is putting two things together
+Pass to this expected sine
+Let's look at the expected sine
+It has two parameters
+One is x and the other is x variance
+I know this expected sine is sine function
+Yes, this is the sine function
+This is the expected value of this thing
+Or if it is three-dimensional, it is this thing
+In addition to the expected value
+He can also calculate his variance
+So this expected sine
+He actually passed two things
+He passed the mean and variance
+But we actually don't use variance
+We will only use expectancy
+So we don't need to calculate this thing
+We just need to calculate this mean
+The mean is what he wrote here
+Sine times exponential minus one-third of the diagonal
+This thing is sine and times minus one-third
+Minus 0.5 times diagonal
+In this case, the result will be
+B times N times three times L
+This is because there is sine and cosine
+If it is sine, there is only one
+If there is sine and cosine, it is times two
+Expect estimate the mean
+What we just did here
+What this thing is doing is
+We have to calculate the expected value of sine and cosine separately
+They are only inserted in the first place
+Sine becomes cosine
+Then use the formula we just used
+If sine and y become cosine and y
+Then y plus one-third pi
+So this y plus 0.5 pi is doing this
+Is to turn sine into cosine
+This dimension is negative one
+Then y bar
+Because sine and cosine
+Their variance is the same
+Diagonal sigma gamma
+So it is written like this
+The meaning of this times two is that the same thing has two
+Or you write it like this
+It's the same
+Then times two is the same
+Remember that a list times two is not
+Every element of this list times two
+But in this list
+Every element becomes two
+And added behind it
+Then we just removed the variance return
+So we don't use this square here
+If you have any questions
+If you don't understand what I'm doing, you can ask
+Because some of me are
+Of course do this
+If you can't keep up, you can
+Just let me stop and explain
+it is good
+Then we should have finished the most difficult part
+Is this
+Positional encoding
+Integrated positional encoding
+This bunch of formulas, we finally changed it
+OK
+Then the next step is
+The part of volume rendering
+That is how to get from these
+You get the value of this pixel
+That is actually the same
+We are every point
+We are now every one of this
+Every point becomes a
+Tracking
+After becoming a tracking station, the operation is still the same
+Is a tracking station
+We can imagine it as a positional
+A sample point of a nerf
+Then every tracking station
+We all put this positional encoding
+This IPE
+Throw it into the neural network
+Get this tracking station
+The color and density that are combined
+Finally, we put all the tracking stations
+Their color density
+Use the volume rendering
+Calculate it
+Then as the last color of this pixel
+The part of this calculation will be
+The place of volume rendering
+The place of volume rendering
+It is with the original
+There is a different thing about nerf
+Our original nerf is
+Every sample point is a value
+But we are now every tracking station
+There will be two
+Every tracking station will have two surfaces to wrap it up
+So if we originally
+NERF is
+For example, 64 sample points
+That was originally set to 64T
+Then if we are in this MIP NERF
+If you want 64 tracking stations
+Then we have to have 64 plus 1 in total
+Equal to 65
+Because every two surfaces will wrap a tracking station
+So for example, if I want three
+I want two tracking stations
+Then I have three surfaces
+T1, T0, T1, T2
+Then if I want 64 tracking stations
+Then I have to have 64 plus 1 equal to 65 surfaces
+This is a small difference
+So here
+Volume rendering
+This is the result of the neural network
+The place of this T sample
+We see that the place of this sample
+It will be
+Point plus one
+This is because two surfaces will wrap up a tracking station
+The way to calculate volume rendering
+It's actually the same
+It's the end of the calculation
+It's the center of the two surfaces
+T0 plus T1 divided by 2
+OK
+Interval
+Then I have to calculate the distance between the two surfaces
+Interval is the distance between these two surfaces
+Wait a minute, did you write this map?
+Take a look
+It doesn't seem to be written by you
+Yes, we are here
+I don't know what this means
+Delta is equal to T interval
+Delta is T interval on the layer
+Every beam
+Every beam
+Length
+So delta is T interval on the layer
+Every direction
+Its norm
+Then this norm
+Torch
+Torch.norm
+Is there such a thing?
+Torch.leanorg
+That's right
+But Torch, I remember Torch.norm
+Is there such a thing?
+Yes
+OK, that should be fine
+But it's very simple
+Torch.norm is also fine
+Then this side has to be multiplied by
+Direction
+Direction is b multiplied by 3
+This is b multiplied by n
+Actually, we don't need to do this
+We just Torch.norm
+Then every
+First
+Take the first
+Norm of the first axis
+Then we keep deems equal to true
+Then this is b multiplied by n multiplied by b multiplied by 1
+So b multiplied by n, that's right
+Then density
+OK, density like this
+Then multiply by delta
+Then use that positional
+Now
+Reflective read positional encoding
+We are using the method of volume rendering
+That
+Calculate the color
+First, alpha is 1 minus
+1 minus the density times delta
+Wait a minute
+Take a look at my original
+That
+What is the volume rendering in the original nerf
+This is alpha
+This is alpha
+Then transmittance
+Alpha multiplied by transmittance
+If so
+Then it should be right
+OK
+Alpha multiplied by transmittance is all the weight
+Then add it up here
+It's so troublesome to change each one
+Wait a minute
+You are still
+You are still using none
+But I'm a little lazy to change here
+Because it was when I was nerfing
+I also helped him change
+Just don't write it like this
+You put a pile of things together
+It's hard to understand what you are doing with none
+But the way of calculation here should be right
+So that is to say, this
+It should be right
+I haven't found out where you have written wrong
+It should be right here
+Let's continue to look
+The volume rendering is to put the color of the
+Just now
+Rendered
+All calculated
+Then use volume rendering to calculate the final pixel color
+There is no problem here
+Where else could there be a problem
+When calculating this sample point
+It's not difficult to collect samples
+Put a sample point in each place
+These two are the same
+We say that there is a total of N plus one
+The method of putting N plus one is actually the same as the nerf
+At the beginning, it is to put a total of 65
+That is N plus one
+Then there are also some random parts
+That sample point may be in a range
+Random front and back
+But this is not wrong
+I think what you wrote here is right
+So what is the difference between Jax's optimization and PyTorch
+Jax's optimization should
+They say that Jax seems to be faster on this nerf
+According to their Jax's nerf
+There is something called Jax's nerf
+They use Jax to do this nerf
+Then he said
+At least faster than tensorflow on this
+That should be faster than PyTorch
+But I think you didn't write wrong
+Resample along race
+Resample is the first time
+This MIP nerf has also done this sampling twice
+Coerce to find
+It is the first time to know where the object is
+After knowing where the object is
+Put more sample points where there are objects
+This function is resample along race
+Then
+Resample along race
+I think what you wrote here is right
+So we will have an authoritative piecewise constant PDF
+Anyway, that important sampling
+There is a function
+When there is a more distributed place
+We will pick more sample points in more places
+This function should be
+There should be no problem with the configuration
+So I still didn't find anything wrong
+Wait a minute
+Then let's take a look
+What is the actual rendering function?
+This is the rendering
+This is self.mipnerf
+Self.mipnerf is a MIP nerf
+Randomize
+Regularize
+This thing
+Now padding density activation
+This thing
+Now padding density activation
+Now padding density activation
+Now padding density activation
+I don't think there is anything wrong
+Isn't irate shape a cone?
+Or is it a frusta?
+Oh, it's a cone
+The actual rendering is using this
+Is using this MIP nerf class
+Then when it is forward
+Will call those cones, frusta
+Those追台都叫出來
+Then call it out
+Then pass it to the neural network one by one
+Then go to its
+To get its RGB and density
+Then the density will add some noise
+This should be no problem
+Then RGB will
+Be below sigmoid and make some adjustments
+This is a little trick
+There should be no big difference
+Then the density will go through a review
+It should be a soft plus here
+Go through a soft plus
+Then put these results
+To do volume rendering
+Yes
+It looks good
+Let's take a closer look
+For example, 128 points
+There are two times in total
+These two times are coerce to find
+Resample padding
+Sub resample gradient
+Disparity for cone
+Degview soft plus 0-1
+Sigmoid
+This should be exactly the same as the paper
+Stable integration for cone identity
+This should not be used
+Then there are 8 layers
+256 nerves per layer
+What is this?
+Depth condition
+What is this?
+What is depth condition?
+The depth of the second part
+This thing
+What is this?
+This should not have too much impact
+I know that
+View direction and color
+The number in the middle
+Understand understand
+Give index RGB density activation
+Is this
+Should be right
+Yes
+RGB
+XYZ in
+Then get RGB and Stigma
+This is MLP
+But I think
+Should not be self-init
+The original initialization should be fine
+But it's not bad actually
+Here is the calculation dimension
+Sigmoid soft plus
+Yes, all right
+Then why
+The nerve network of this NERF
+It looks like the definition is also right
+Then when training
+When training
+Learning rate decay
+It looks fine
+Then this data loader
+N number images
+Return the self-rate
+Train randomized
+White background
+Mask
+This is the calculation of each
+Each line of the weight of its loss
+Because now there is no
+So it's all 1
+Each line of the weight of its loss
+Then jump around like this
+Maybe the audience doesn't understand what I'm doing
+Now looking for this loss mode
+What should be the weight of each line of the shot
+Then come back and look at this
+Where training
+Where training
+RGB
+RGB is
+The final result of the NERF
+RGB and distance and
+Opacity
+Only RGB to calculate loss
+RGB is some
+Remask some
+It looks right
+Because there are two layers
+This thing will do twice because
+The return thing has two
+One is the loss of Coarse
+One is fine loss
+Then I remember this is 0.1
+Where is your definition
+Inside config
+Let's take a look at legal
+It should be 0.1 there
+0.1
+Then PSNR is the calculation
+This should be fine
+This is also
+Elidation Mask
+This looks fine
+Really
+This render image is just doing that
+Just do visualization
+Did you use this
+I used it once when Elidation
+But I still didn't find where
+There is also a major mistake
+It looks like there is no problem
+or
+Hyperparameter
+What is feature deem
+What is this feature deem
+I didn't use this
+It doesn't seem to be used
+This is not used
+Activation Relu
+None of these
+Density Noise
+Density Noise
+But there should be no problem
+Ghost Room
+Some worker
+Multi-cam
+I think it's right
+Is this seed also not used
+I think you wrote this
+In addition to copying and pasting
+Let me explain to you
+What are you doing
+I didn't find the obvious mistake
+Let me see your training result
+What is the training result
+Training loss
+I can't see if it's good or not
+But the jump is quite big
+Or is it a problem when data is generated
+Of course it looks fine
+Isn't it RGB
+Good night
+It's almost over
+It looks like
+Now I can't find the problem
+I think I still need to practice
+Practice after changing
+I will use a single scale to train
+See if it's good or not
+Otherwise, I can't see where the problem is
+I think it's okay
+Do you find any mistakes
+Or other viewers
+I think it's weird
+I didn't find it
+I will use this code to train
+To train the nerve scenes
+I will use a single scale to train
+See if it's good or not
+I will try to add different activations
+Like Gaussian and SuperGaussian
+To the nerve scenes I wrote before
+I will change the original nerve positional encoding and review
+To Gaussian Activation
+See if it's better
+That's it
+So today I didn't find any mistakes
+I explained to you some important values in the Mibnerve
+And how to implement these values
+That's it
+Sorry, Huang Jianxin can't fulfill your dream today
+I can't tell you how to make it better
+I will go back to the training
+I may have to run for a long time
+800 x 800 and Mibnerve
+Only one GPU
+Can't run too fast
+Haha
+You can also write the single scale first
+I think I will train the single scale first
+If the result is good
+And the result is similar to the paper
+I will use the multi scale
+That's it for today
+I talked about two things
+And I am a bit tired
+Do you have any questions?
+If you have any questions
+Otherwise, we will see you tomorrow
+See you tomorrow when I explain the thesis
+Yes
+There may be more pictures and videos
+Everyone will look more comfortable
+Today I am looking for bug
+I am looking for the code
+Maybe it will be a bit
+It feels like my eyes are out of the window
+Thank you Kondo
+Good night
+Today's live broadcast ends here
+If I go back, I will actually train again
+Then the high line in the afternoon will also train
+Then report the results to everyone
+Then we will see you next week tomorrow
+Thank you for your participation today
+Then we will do this first
+Thank you for your hard work, good night
+Everyone also worked hard
+Then we will do this first

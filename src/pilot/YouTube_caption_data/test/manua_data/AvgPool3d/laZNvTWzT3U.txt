@@ -1,0 +1,677 @@
+So welcome to todays lecture and this is ah
+basically on activity recognition.
+And ah um as you have done with the last 3
+ah lectures classes on.
+Which we have understood about how to deal
+with these videos in terms of a tensors.
+And then ah what will be a possible kind of
+a network.
+Which you can do when we had studied about
+2 different ways of doing it one was where
+ah you could actually take in this video as
+some sort of a 3D representation.
+Where you have the number of channels or the
+color channels has one of these axis then
+you have your time axis and then your x and
+y axis over there.
+And now ah um using a standard mode of a CNN.
+Now instead of a 2 D CNN and the CNN over
+here becomes a 3D CNN.
+Now implementing this 3D CNN you can do ah
+classification on this video volumes as well.
+Now this is one of the ways the other way
+is where you basically try to represent ah
+your image in terms of just a simple 1D tensor.
+And ah that can be done by running a simple
+ah 2D CNN has a feature extraction on top
+of it.
+And once you get this 1D tensor over there.
+Then you can do a temporal modeling with this
+1D tensor.
+Now this ah second form of it is what we are
+going to do in the next lecture.
+And todays lecture is more of to understand
+about this ah whole concept of how can be
+implement a 3D ah CNN working down on a video.
+Now first and foremost where we start is that
+there is a lot of processing stuff as such
+to be done before ah you can get really started
+onto the word because videos.
+How they are packed and available in a data
+format.
+And how these CNNS are going to take them
+is a bit different and ah um this is what
+we had discussed in the last lecture also.
+So what all axis you will have to flip and
+change and what will be the ordinality.
+In the these axis coming down in as your tensor
+that also has to keep on changing over there.
+So that is what we get started over here.
+So ah um this ah first code over here which
+is ah preproc 1, so the whole objective of
+this pre processing one is basically to extract
+out frames from a whole video.
+And now ah um these frames need to be in a
+particular order.
+So once extracted in a particular order and
+stored as a tensor that is the main job which
+we are going to do.
+So the first part is ah we just make use of
+a few of our utility files over there as ah
+our header now the whole ah um point over
+there you do not see anything coming down
+as torch and that is the reason that we are
+not get started with the training this is
+just the data pre processing part over there.
+Now the dataset which we are using is UCF
+1 o 1 you have the link given down over here.
+So this is basically a small clip videos ah
+um for 101 different types of actions over
+there you have multiple videos.
+Which ah demonstrate 1 1 action and ah um
+you have your train training set.
+And your test set over there , but it is a
+101 ah class classification problem.
+So typically there would be some small kind
+of activity say running jogging walking ah
+combing ah um your hair or or ah drinking
+tea kind of activities which are ah denoted
+over there and then ah you have to classify
+whether this small video snippet was actually
+denoting that particular activity which ah
+um is being shown ok.
+Now it is it is not a frame by frame classification
+in any way you would need to classify the
+whole volume in one single class label over
+there now ah.
+So what we do initially is ah we have this
+ah path where ah my videos are stored down
+over there.
+Now my first part is basically to find out
+and scheme all the file names of the files
+which are present over there.
+Now once you get your ah file names for all
+of these files coming down over there now
+ah what you can do is.
+You would need to ah just get down only 5
+different ah classes present oh ah oh sorry
+one thing.
+So once you scheme out all the file names
+over there the next part is basically you
+need to extract out the individual frames.
+So a typical video how it is represented is
+your first axis is basically your time your
+second axis your color channel the third axis
+is ah x and fourth axis is y.
+Now you are supposed to find out these 2D
+frames and ah extract it out and keep it over
+there.
+So that is this first part of it which is
+doing.
+So if there is a valid video which comes down
+over there then using this ffmpeg ah decoder
+unit.
+So it is it is available typically on a ah
+um mp ah mpeg decoder encoding format over
+there.
+So we use this ah um library over there in
+order to ah convert these videos onto my image
+frames and then store it down as a jpeg format
+over there.
+Now once that is done the next part is to
+look down into only a very few specific classes
+ah.
+Which we are going to make use of now we are
+going to take only ah um the first five classes.
+Which are this and for one of the very simple
+reason is that if I am taking more number
+of classes than the granularity of the network
+is going to be very large.
+And ah the time complexity taken for training
+it is also going to make it complicated.
+So we are taking a smaller subset over there
+something in line with the other problems
+which we have been dealing till now.
+So we have larger data sets in access, but
+we are just taking down a few of the classes
+only over there and this is to make it much
+more easier and conducive for it to work out
+ok.
+So I am taking down ah um 5 different classes
+and these are the 5 classes which are taken
+down ok.
+Now what I need to do is I need to ah divide
+it into my training and test sets over there.
+And ah for that I have this part of the routine
+which is going down.
+Now what essentially it does is that ah um
+you are going to scheme out a particular videos
+some of these videos are going to store down
+in your training set some of these are going
+to be part of your test set .
+But nonetheless there are no frames which
+are shared between the training set and your
+testing set.
+So whichever video is there on your training
+set remains on your training set whichever
+video is there on your testing set remains
+on your testing set over there.
+Now once that part of my ah um program is
+ready which has all of these divided into
+2 different ah sets over there.
+Then we just keep down ah these file name
+stored into 2 different ones.
+Now trainlist and testlist and this is how
+the reason that in the subsequent programs
+I am going to make use of ah these lists in
+order to fetch out those file names as well
+as the class labels over there.
+And that would help me in ah creating ah um
+a data loader kind of a mechanism in order
+for everything else to work out.
+So that sets just to make use of as much as
+intrinsics ah predefined and available ah
+for my ah um ah programs to run down in the
+minimum ah hindrance possible ok.
+So next is ah what you are going to do is
+once you have extracted out these frames.
+Now certainly in certain videos you have these
+issues of missing frames over there.
+So it might be an encoding error or or some
+sort of an error that the decoder is not able
+to read from there now if there are missing
+frames then we typically try to ah delete
+them.
+So they might be blank frames or or ah corrupted
+frames over there.
+So depict to to be deleted out over there
+and if you have a substantial number of frames
+which are missing from a video then it makes
+it problematic because the video might start
+getting skewed.
+Ah so you have some perfect part of the action
+being recorded and then in between ah some
+of these frames are missing.
+So technically what it means is that if you
+look into your time domain samples over there.
+Then there is a non uniform sampling which
+has taken place over there.
+Now that you have these missing frames, so
+it creates a lot of problems coming in.
+So we just ah remove those videos from our
+training set as such in order to keep everything
+euclidian and ah uniformly sampled out.
+So we repeat the same thing for ah um our
+test set as well.
+Over there also we are removing out videos
+which have some of these missing frames, so
+that we do not make a problem around while
+trying to infer from this 1.
+Now once ah that is done next what you do
+is you have ah this stored into a separate
+directory structure in which you have your
+train dataset one folder and your test dataset
+within your train dataset you create 1 1 folder
+for each of these videos and you store all
+the frames corresponding to that video.
+So this is what we end up doing over here
+ok.
+Now that ah creates my complete ah directory
+structure as well as that also creates my
+ah list available.
+So there is a file name list in terms of a
+small pickle file which I can use it on the
+next job over there now with that.
+We enter into the second one now what this
+ah um second code is basically all about in
+the first one we have stored everything in
+terms of images, and ah now we need to ah
+convert all of them to tensors because if
+you look into your ah um ah 3D CNN.
+So what you have essentially is the first
+channel is your ah ah the first ah tensor
+ah dimension is basically your number of channels
+the second tensor dimension is the time axis
+over there the third is x and fourth is y
+ok now my frames are not stored in the same
+format.
+Now one way I can do is within my training
+I can keep on loading everything and then
+do it, but that is going to make the whole
+ah process much more complicated.
+So instead of trying to do that and make it
+more complicated.
+We are simplifying in the whole process by
+storing each video in terms of one single
+tensor.
+If one single 4D tensor presentation such
+that you can just load this 4D tensor over
+there and then you can set your ah 3D CNN
+running in a perfect way.
+So let us get into what comes over there for
+this now says we need to make use of torch
+tensors.
+And store it as a torch tensor format for
+that reason we get ah um the torch library
+and torch vision library over there.
+So torch vision is just for your transformation
+let us to make it down into a conformal ah
+representation for standard CNNS.
+Now what we do is essentially find out first
+the ah list of all the file names over there
+which I have in my train list and test list
+available.
+So this is which frame belongs to train and
+which frame belongs to test.
+So that makes it easier for me to really scheme
+through ah the directory structure instead
+of trying to rebuild the directory every time.
+And also the other problem is that now that
+I have just a bunch of frames over there the
+sequentiality between these frames is not
+stored, but that is a critical part.
+Now this list over here in case of train list
+and test list is which has this sequentiality
+for a particular video stored.
+So like which frame is succeeding which frame
+and which precedes.
+So that when you are building up this ah um
+4D tensor you can build it up in a much conformal
+way.
+So what we do is first is ah read through
+it and find out whether my classes are present
+over there.
+So these are the five classes which we had
+stored initially and that is coming up over
+there the next part is that when we are loading
+these ones we would like to apply a certain
+kind of a transformation . So first and foremost
+I would like to ah make it conformal make.
+All the image conformal to my ah original
+size for a image net kind of a problem, so
+whether your images were of size 224 plus
+224.
+So we are just going to do a center crop of
+2 2 4 plus 2 2 4 and ah the other point is
+that all of these images which you are getting
+they are in some arbitrary size.
+Now the first point which we apply is resize
+them to 256 cross 256 and then crop out just
+the center 2 2 4 cross 2 2 4 and one of the
+reasons for doing this is quite simple that
+once you ah have this whole thing resized
+over there and you crop out the center.
+So you are going to reduce all the peripheral
+ah um ah pixels over there.
+The moment you are reducing and and chunking
+out and throwing away all of these peripheral
+pixels.
+So an advantage which you get is that you
+you do not have any of these boundary conditions
+coming into play because most of these videos
+have the activity.
+Which is more of centered over there and ah
+these extra side peripheral pixels are which
+are going to ah ah cascade down.
+When you are having a deep convolutional neural
+network and that is a useless information.
+So most of your useful information might die
+out ah by the time you are still at the final
+depth over there.
+So this helps in doing it and the other part
+is that you can because anyways you could
+have resize it to 2 2 4 cross to 2 2 4 at
+the first place, but the whole reason was
+that you wanted to keep as much as possible
+the most fruitful information which for these
+kind of activity videos is present in the
+center of the image.
+So we just keep it over here that makes it
+easier for us ok.
+The next part over here is to start ah loading
+each of these frames and then apply the transform
+over there.
+So once you have this ah transformation applied
+ah then you convert it on to a tensor.
+So after applying this transformation what
+you have basically is these ah axis ah changed
+over there.
+So your color becomes your first channel instead
+of your frame number when you are reading
+down over there and.
+And the second channel is your frame number
+and then you try to concatenate each of them
+along the dimension of the frame number and
+ah.
+So that you have your temporal domain concatenation
+coming down over there, now once that is done
+ah um what we additionally do is that some
+of these frames might be missing over there
+and ah.
+We just basically it is it is a printing of
+it that which all frames are missing that
+the transformation has not been applied on
+to those particular ah frames over there ok.
+Now the same thing is applied onto your test
+list as well in order to create a.
+Tensor ah for video in your test one
+so this is where ah we finish off with creating
+a 3D tensor out of your ah standard frames
+which have been extracted out ok.
+Now since the data handling part is over here
+is where we get into our actual ah learning
+mechanism.
+So the first part of ah um the headers is
+pretty straightforward and ah ah it said that
+there is no change as such which comes down
+from a 2D CNN to a 3D CNN most of the math
+and the linear algebra over there being the
+same the headers also which we are taking
+down are all those in ok.
+Now ah um your videos are now stored in terms
+of a tensor and they are stored inside these
+2 different directories one is for your train
+and another is for your test ok.
+Next what I am going to do is ah um we need
+to have some sort of a shuffling written down
+over here.
+Now keep in mind ah think that ah every epoch
+we are supposed to have a shuffled out variant
+coming out over here.
+And ah every say every time I do a run it
+is not supposed to be in the same order.
+So if I have my first video second video third
+video fourth video any of these then there
+is supposed to be some sort of a shuffling
+ah between their orders in which it comes
+out.
+So that is what we ah take care over here
+using this shuffling function one of the um
+problems is that you could not use.
+Our data loader in order to do this shuffle
+ah um is because you have this not in terms
+of images anymore where.
+Data loader technically works, so you have
+a separate tensor which you are pulling it
+down.
+And the next part is that ah um whatever you
+need to shuffle you will have to shuffle down
+your list as well as the training video.
+And for that reason the simple ah trick over
+here which works out is that zip both these
+folders together.
+So you have a tensor and you have another
+ah say up torch tensor which has just the
+label over there.
+So you have a scalar and a tensor something
+over there zip it together.
+So you have a zips of ah these available and
+then you can shuffle up this zip.
+And then when you unzip it out you basically
+get this as a tuple.
+So your class label and the corresponding
+video are now together in in and shuffled
+out in their order which comes in.
+So the next ah part is basically ah um prepare
+your ah test list and what this test list
+is ah actually trying to do is that ah from
+your test.
+So this was what you applied on to your train
+data over there and you have to do a similar
+thing for your test data to have this as a
+tupled out variable, but you do not need any
+kind of a shuffling anymore over here.
+So that that is not any a major issue.
+Now next we come down to the definition of
+the 3D CNN.
+Now the changes which you would see is ah
+quite evident, so instead of conv 2D which
+we were using in case of a 2D convolution,
+now we replace it down with 3D conv over here
+ok.
+Now your input number of channel still stays
+the same as the number of channels over here.
+So you have a 3 color image over there.
+So it is it is 3 the number of convolution
+kernels over here has been made 16.
+So a pretty straightforward way of doing it
+out and the convolution ah kernels are of
+size 5 cross 5 ok.
+Now instead of a 2D max pool now you will
+have a 3D max pool this 3D max pool does on
+a kernel size of 2 cross 2 with a stride of
+2.
+So it is going to do this striding and max
+pooling along the x axis y axis as well as
+along the time axis on all the 3 axis.
+So now your ah um ah max pooling volume or
+the earlier you had a on a 2D you had a max
+pooling kernel of 2 cross 2 here you are going
+to have a volume over there.
+And this is of 2 cross 2 cross 2 and that
+is going to be with a stride of 2 on each
+of these dimensions on which it will be doing
+a max pool .
+Ah following that I have my ah second 3D convolution
+layer coming down now since the number of
+channels on the output of my first convolution
+is 16 ah my ah ah max pooling does not impact
+the number of channels over there.
+So now I take down 16 channels as my input
+I generate thirty 2 channels on my output.
+And I have a kernel of size 3 cross 3 now
+after that I again do a max pooling with a
+kernel size of 2 cross 2 and as stride of
+a sorry kernel size of 2 cross 2 cross 2 and
+a stride of 2 comma 2 comma 2 then I again
+have a 3D convolution.
+And ah I convert thirty 2 channels to get
+me 3 2 channels with a kernel size of 3 cross
+3.
+And then ah after that we employ an average
+pooling instead of a max pooling and this
+average pooling is with the kernel size of
+4.
+So this will ah put me a 4 cross 4 average
+pooling, but then I do not have a stride in
+place.
+So it means that there is a stride of 1 which
+is taking place over here to basically have
+an averaging done together and finally, you
+would be getting down 32 cross thirteen cross
+thirteen ah um number of ah um ah pixel locations
+or number of volumes over here.
+and ah that has to be mapped onto five neurons.
+So that is my linear stage which applies over
+there.
+So my final classification is just a five
+classification problem and for that reason
+you just have five neutrons over here.
+So the forward pass of it is defined in a
+similar way.
+So you have your first convolution in implied
+then you have your ah max pooling the first
+pool operation then you have and ah.
+So you have your first convolution applied
+then you have your relu as a non-linear transformation
+function then you have your pooling.
+Now the output of that one is again convolved
+you have your relu in place you have another
+pooling and similarly it keeps on going till
+the last layer over there.
+So on the last layer you just have your fully
+convolutional layer coming down.
+So having done that ah we write down our training
+routine over here, so this is quite different
+from what we have been doing in the earlier
+cases in most of our earlier ah cases.
+What we have been doing is that ah we have
+been writing this training function over there
+directly inside ah my ah train routine over
+there, but here we choose to ah just ah make
+this as a separate function call ah separately
+which is outside over there ok.
+Now what we do is ah we need to convert all
+of my inputs and labels on to variables.
+So that is ah this typecasting which we are
+doing over here.
+And if we have a gpu available then there
+is going to be a ah cuda type conversion over.
+There if I do not have a gpu available and
+that is something I can skip out totally the
+next is that ah um you put your inputs onto
+the network.
+And then you are going to get your outputs
+and from there ah um you can find out what
+is your predicted class ok.
+Now once you have your predicted class found
+out and the forward pass already solved out.
+So you can zero down the gradients on your
+optimizer and ah um get your criterion function
+or the loss function calculated.
+So here ah what we do is since ah um ah like
+we are going to have a classification problem.
+And we would stick down to using the negative
+log likelihood criteria for that person ah
+purpose we are putting a log softmax on the
+output over there for it to be conformal.
+So I get my loss calculated and then I can
+do a nabla of loss or the gradient of my loss
+found out then my optimizer dot step.
+Which is an update rule over there and then
+find out ah um the total number of corrected
+ones over there or or the number of correct
+classifications ah um coming out of this network
+ok.
+So similarly I have my test routine define
+the only different difference in my test function
+over.
+Here is that I do not have this back ward
+calculation in either I just do a forward
+pass over there.
+And find out what is my loss and the total
+number of correct classifications which it
+was supposed to do.
+next ah um I initialize my network and then
+this is just a printed version of the network
+which comes over here.
+So after ah doing all of this ah we can now
+get started with our actual job.
+So given I if I have a gpu available then
+just check out if it is there.
+And then ah um you can initialize your ah
+criterion or the loss function and your optimizer
+both of them now with.
+All of these initialize you can start with
+your ah um training of the network.
+Now one extra ah parameter which we add over
+here is basically the number of frames per
+video.
+Which you are going to take down then that
+is supposed to be fixed because you have your
+x and y dimension fixed which is at 2 2 4
+cross 2 2 4 ah your number of time access
+dimensions is no more fixed ah it it wasnt
+given down for me.
+Now we are going to take down just 32 time
+frames over there and not more than that we
+we are not taking 224 time frames in any way
+ok.
+Now once we have that ah um we can actually
+find out what is the total number of batches
+which it will fit down because I have my batch
+size defined over here.
+And ah then find out what is the size of my
+last batch and the reason for doing this is
+that it might my total number of frames are
+available to me in order divide into batch
+may not be ah in some way integral multiple
+of thirty 2 or my batch size.
+So some frames will be left out I do not want
+to leave them out from my whole training over
+there.
+So this last batch is just an exception added
+to take care of all of those remaining residual
+frames over there.
+Now ah I do the same thing for my ah test
+ah dataset as well now once I have it then
+I can start my running ah um of the
+training part of the network.
+So we will start within one batch I would
+load my data I will convert it ah and apply
+whatever my transformations are supposed to
+be applied and then ah I will ah um have that
+one . As a forward pass through my network.
+Now this forward pass of through the network
+is something which is implemented on the train
+routine.
+Which we had defined earlier now once that
+is done I get down my ah losses.
+And my ah total ah actual correct version
+over there and the updated network also coming
+out of it now with that one now I can ah.
+So this is just ah for the last batch over
+there then I can run down.
+Within each epoch my testing part as well.
+Now in the test part it is ah straightforward
+that you are going to do a feed forward over
+the whole network.
+And that gives you what is the testing performance
+coming out over there.
+Similarly you have the exception added for
+the last batch in order to take care of ah
+the remaining frames.
+And then you have your routine for plotting
+all of these losses and then ah um you can
+get it started.
+So we have trained this one for ah ten epochs
+it starts with an training accuracy of about
+23 percent and a testing accuracy of 24 percent
+and then keeps on rising as it keeps on going.
+Where ah at the end of a tenth epoch you have
+a training accuracy or 75 percent and the
+test accuracy of about 57 percent.
+So these are the 2 loss curves which comes
+up and these are the accuracy curves.
+Now if you look into this training part as
+well as the testing you can pretty much see
+that ah it is not yet at the convergence part
+over there.
+So that is still dwindling if you keep on
+running this for a longer period of time that
+will definitely get over.
+And come down to a convergence the only downside
+is that ah um every iteration is going to
+take you some more amount of time than ah
+any of the other networks.
+So it takes roughly about the eleven minutes
+in order to train for ah frame.
+And and ah per like per epoch over there and
+one of the reasons for this one is that that
+ah tensor volume which you are handling down
+and the dense amount of operations in terms
+of 3D ah convolutions going is much higher.
+And for that very specific reason ah um it
+consumes a lot more or time ah um.
+When ah when you do these parameter calculations
+you would also find out ah.
+The total number of parameters is much higher
+than in case of a 2D CNN.
+The total number of a mathematical operations,
+you would do over here is also much higher.
+So under these conditions is why it takes
+more amount of time over there nonetheless
+this is video.
+So [laughter] you have to bear with ah the
+complexity ah and the challenges faced over
+here.
+So that is where we come to an end about handling
+videos for classification using a 3D CNN.
+And the next class we are going to ah um do
+our ah part with trying to use a recurrent
+neural network in order to see if this can
+be brought down.
+If the complexity can be brought down even
+further lower.
+So till then ah stay tuned and
+Thanks .

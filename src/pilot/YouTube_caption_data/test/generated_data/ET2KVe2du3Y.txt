@@ -1,0 +1,782 @@
+hello and welcome to this webinar my
+name is David Thomas I'm a software
+engineer at Amazon Web Services working
+on our deep learning team I work on
+Amazon Elastic inference in this
+presentation you will hear about how you
+can lower your deep learning inference
+costs for your PI torch models using
+elastic inference
+first I'll give an introduction to some
+of the problems you run into running
+inference applications what Amazon
+Elastic inference is and how it helps
+you solve those problems next we'll give
+a demo of how to use elastic inference
+with PI torch and Amazon Sage Maker
+we'll follow that up with a demo of
+using elastic inference with PI torch on
+ec2 instances and then we'll open it up
+for Q&A
+first let's start with the problem we're
+trying to solve the cost
+with running applications that use deep
+learning fall into these two main
+categories training models and making
+predictions with them also known as
+inference we're constantly working
+towards training models faster and more
+cheaply by offering faster processors
+and GPUs and better algorithms for
+various use cases like computer vision
+natural language processing and many
+more we're also always working on
+improving GPU utilization to reduce
+training times but training is typically
+a small part of your cost for deep
+learning
+once you remodel is trained say on a
+fleet of p3 GPU instances making use of
+the model typically requires running
+many inferences as part of applications
+that run 24/7 so in our experience
+inference is actually a larger part of
+your deep learning infrastructure
+expense than training with estimates of
+up to 90% of your deep learning costs
+you
+let's look closer at the problem of
+right sizing we see a number of
+inefficiencies in the available
+infrastructure that makes up over ninety
+percent of the costs of deep learning
+first using GPUs for inference greatly
+improves the inference latency compared
+to using CPU instances which is great
+for users of your application but
+stand-alone GPU instances are expensive
+and are typically purpose-built to train
+models quickly and efficiently but
+they're oversized for inference as
+inference happens to be a very different
+kind of workload than training while
+training jobs batch process hundreds of
+data samples in parallel on the GPU most
+inference happens on a single input in
+real time and that consumes only a small
+amount of the availa the available GPU
+computational capacity even at peak load
+we very rarely see full GPU utilization
+when running inference this is wasteful
+and costly secondly different models
+need different amounts of GPU CPU and
+memory resources selecting a GPU
+instance type that's big enough to
+satisfy the requirements of the most
+demanding resource often results in
+under utilization of the other resources
+and therefore high costs
+you
+what if you could keep your application
+on your familiar cpu instance and attach
+just the right amount of hardware
+acceleration for inference
+that's where Amazon Elastic inference
+comes in
+Amazon Elastic inference or AI helps to
+lower the cost of running deep learning
+applications by giving you the amount of
+GPU acceleration that's right sized for
+your inference application a I help sue
+size the CPU memory and GPU acceleration
+requirements of your application
+independently so for your computer
+vision NLP and other applications where
+you need smaller amounts of CPU and
+memory compared to GPU acceleration you
+can now choose a smaller CPU instance
+and attach a GPU power di accelerator
+choosing from a range of sizes that
+provides you the latency your
+application requires while helping you
+fully utilize its capacity and lower
+your costs you can attach a AI
+accelerators to ec2 instances to ecs
+tasks and sage maker to apply
+acceleration flexibly without additional
+infrastructure management when you use e
+i-- with sage maker in particular you
+can lower your costs and also have a
+fully managed experience whether you are
+using dedicated instances for inference
+or co-locating the rest of your
+application stack with the inference see
+I can help you save costs with either
+model Sage Maker fully manages the
+inference experience for you you can
+prototype your deployments with sage
+maker notebooks you can then deploy
+models on Sage maker endpoints with
+cost-effective e aí acceleration instead
+of using standalone GPU instances
+Hosting will automatically manage the
+instance fleet size for you including
+the EEI accelerators depending on your
+usage
+if you're using ec2 you can use ec2
+launched templates to configure AI
+accelerators for your instance that
+allows you to scale your instances along
+with their attached accelerators as a
+single unit with ec2 auto scaling so
+when you use auto scaling groups in ec2
+you can control your desired capacity
+for instances and their accelerators for
+your applications varying needs
+you
+EW accelerators are available today in
+multiple sizes each with different
+amounts of single precision FP 32 and
+mixed precision FP 16 compute capacity
+as well as different amounts of
+available accelerator memory you can use
+as low as 2 gigabytes of accelerator
+memory to as high as 8 gigabytes of
+accelerator memory
+these are available at prices that are
+significantly cheaper than GPU instances
+the smallest accelerator cost just 12
+cents an hour in u.s. regions VI is
+available in six different regions
+worldwide
+note that we have to e aí accelerator
+families EW I won and EIA to our latest
+family of accelerators is e I a two with
+twice the GPU memory of EIA one at a
+lower price per hour than E is moving
+forward will also extend AIA to two
+other regions as well
+you
+so how should you choose an accelerator
+tight demands on CPU compute resources
+Ram GPU based acceleration and GPU
+memory all vary significantly between
+different types of deep learning models
+the latency and throughput requirements
+of the application also factor into
+which instance type and the amount of e
+I acceleration that you need
+consider the following when you choose
+an instance an accelerator type
+combination for your model first
+determine the target latency and
+throughput needs for your overall
+application stack as well as any other
+constraints you may have for example if
+your application needs to respond within
+200 milliseconds say and data retrieval
+including authentication pre-processing
+takes 110 milliseconds then you have a
+90 millisecond window to work with for
+the inference request itself
+so using this analysis you can determine
+the lowest cost infrastructure
+combination that needs these targets
+also keep in mind that different models
+need different amounts of GPU memory
+available at runtime pick an accelerator
+size accordingly so start with a
+reasonably small combination of
+resources for instance maybe start with
+a c5 x-large instance type along with an
+EIA to medium accelerator type which has
+up to 1 teraflop of FP 32 performance
+and 2 gigabytes of GPU memory you can
+sighs that the instance or the
+accelerator type independently depending
+on your latency targets and tests some
+use cases might require memory optimized
+instances either R or M for the
+application needs if you load multiple
+models to your accelerator or the same
+model for multiple processes you may
+need a larger accelerator size for both
+the compute memory needs on the
+accelerator
+since Amazon accelerators are attached
+over the network input-output data
+transfer between instance and
+accelerator adds to the inferencing
+latency using a larger size for the
+instance or the accelerator may reduce
+the data transfer time and therefore
+reduce overall inference latency
+finally you can convert your model to
+mixed precision which utilizes the
+higher FP 16 throughput capability of e
+I for a given size to provide lower
+latency and higher performance
+so to summarize know the GPU memory
+memory requirement your target latency
+and your application requirements for
+your client instance you can then do a
+proof-of-concept to see if your latency
+requirements are met and if not you can
+size that the accelerator the instance
+or both
+let's talk about the frameworks we
+support ie I support spy torch
+tensorflow Apache MX net and onyx models
+provides AI enabled software packages
+for each of these options that let you
+deploy models on these frameworks with
+little to no code changes as you'll see
+the he I experience is very similar to
+using a GPU in your code these packages
+automatically discover the presence of
+an accelerator and efficiently offload
+operations within your model to run on
+the attached accelerator if you're using
+sage maker these packages are provided
+out of the box you can find them within
+our deep learning a.m. eyes for your ec2
+instances and and deep learning
+containers you can also download the
+appropriate pip packages via s3 to
+install on your instances in your custom
+environment now let's talk about pi
+towards the latest framework to launch
+on ai
+pythor CH is a deep learning framework
+popular with developers and researchers
+alike it's known for its imperative
+programming model which many people find
+easier to learn than the static graph
+based approach traditionally used in
+frameworks like tensor flow this means
+when you execute a line of PI torch code
+that looks like a tensor operation say
+that operation runs right then another
+way to put it is that your code is the
+model this way of doing things is easier
+for prototyping and debugging allows you
+to write code that looks very close to
+what you'd write using a library like
+numpy but with extra features like
+support for GPU acceleration and for
+automatically computing the gradients
+needed to Train deep learning models on
+the other hand though for
+high-performance production inference
+the static graph based approach is
+actually helpful for a few different
+reasons static model graphs allow for a
+Python code free declarative description
+of the model this allows the model to be
+processed optimized and run apart from
+the Python environment used to develop
+the model in the first place so PI torch
+starting with version 1.0 introduced
+torch script to provide the best of both
+worlds
+so what is tor script torch script is a
+way to create serializable and
+optimizable models from PI twitch code
+first you develop your model as a
+standard PI torch module and then
+convert it to torch script using one of
+the provided methods tracing and
+scripting both are easy to do but differ
+in how they work so let's talk about
+tracing trace
+runs your PI torch model on an example
+input and then records the operations
+that happen then it says that as a torch
+script model that performs that sequence
+of operations
+so scripting is different pi torch
+provides a script compiler which
+analyzes your Python code and translates
+it into a torch script graph
+representation unlike tracing it
+analyzes the code directly rather than
+running it
+scripting may require adding some type
+annotations to your Python code to help
+out the compiler but the upside is that
+it preserves control flow and I'll
+explain what that means you don't have
+to provide an example input and the
+produced code is as flexible as the
+original Python code for example if your
+model is intended to do one thing with
+small inputs and another thing with
+large inputs and you trace it with a
+small input the recorded sequence of
+operations that tracing records will
+only include the code path for small
+inputs since that's the input you gave
+it scripting doesn't have this problem
+as it analyzes the code directly both
+the small input and large input code
+paths would be preserved this is
+relevant for elastic inference because
+AI support for pi torch is built on top
+of torch script note that due to how AI
+currently handles control flow your
+model will most likely get the best
+performance with E is tracing
+so now let's jump in to a demo of using
+elastic inference for your PI torch
+models using Amazon Sage Maker
+Amazon sage maker has elastic inference
+support right out-of-the-box by
+specifying an AI accelerator type when
+deploying your endpoint you can launch a
+sage maker hosted endpoint with an
+attached accelerator so to set things up
+what I've done here is I've launched an
+ec2 instance with deep learning ami with
+an IM role allowing sage maker access
+and then i launched jupiter notebook on
+that instance so jupiter notebook is
+what we're looking at now it's important
+when you're using pi torch with elastic
+inference to ensure you're using a
+compatible version of pi torch AI
+currently supports pi towards version
+1.3 dot 1 so keep that in mind by the
+way if you're wondering why I'm not
+using sage maker notebook instance
+that's exactly why they're currently at
+this time at the time of this demo is
+not an AI compatible stage maker a
+notebook environment but it's in the
+works and it's coming soon and so for
+demo purposes I'm using a pre run
+notebook so all the outputs are here we
+can look at it in its entirety
+so let's walk through it first you can
+see that we're using a density net 121
+model from torch vision with pre-trained
+weights so this models already been
+trained this is a standard PI torch
+module it's not torch script yet and if
+we used our own model that we had
+trained nothing after this point should
+change it would work the same way so
+once you have your model we toggle
+inference mode by calling eval
+and now is when torch script comes into
+the picture we get a random input of the
+right size and then we pass that to
+torch it trace this traces the model on
+this input and turns it into a torch
+script model and we can actually look at
+the graph that it produced
+so you can see it produces this graph
+representation it's the details don't
+really matter there but that's just
+showing that it produces a graph so once
+we have a tour script model
+we save it using torch save to save it
+to a file and after that because we're
+using sage maker he packaged it into a
+tarball
+so we can upload it and use it to host
+to host an endpoint
+the next thing we do is we upload that
+model data to s3 using the stage maker
+SDK and just a couple of lines here
+you
+saij maker requires what's called an
+entry point script but we're okay with
+all of the default behavior so we just
+have to create an empty file here that's
+what this is called script up py but
+then we're ready to create the end point
+to actually host the model
+we set up some configuration parameters
+for the hosted endpoint including the
+region and the stage maker role as well
+as the endpoint name notice in
+particular the instance type of mlc five
+large and the accelerator type emmelda
+EIA two medium this is where we tell
+sage maker we want to use an AI
+accelerator with our hosted endpoint and
+choose the type in this case e I a 2 dot
+medium
+next we create a pipe torch model tell
+stage maker how to find our model in
+which version of the framework we want
+to use it's important here to pick an AI
+compatible version you can see we've
+picked 1.3.1 next we call deploy on this
+model specifying the configuration
+parameters we specify before we're
+running with an instance count with an
+instance count of 1 but you could use a
+larger fleet if you need it for your
+application and that's it now we have an
+endpoint so let's use it
+first we need to get an image to use so
+I have a helper function here to process
+the image into a form that the model can
+use this image may or may not be of my
+dog Yoshi so let's see if we can use it
+for inference
+you
+next we create a sage maker PI torch
+predictor giving it the name of the
+endpoint we created
+since the torch vision dense net model
+was saved with Ross core outputs we run
+the outputs through a soft next layer so
+we can get normalized probabilities so
+that's what's going on here
+then we read the classes so that we can
+interpret the results and then we print
+the top five and you can see that it
+does recognize that Yoshi is a dog
+seems to think my Shiva's a husky but
+I'll give it a pass that's pretty close
+so we verified that the endpoint seems
+to work it can do inference let's see
+how it's performing well let's run a
+hundred warm-up inferences to get it to
+steady state performance
+then the next thing we do is to run a
+thousand more and keep track of the time
+stamps before and after so we can look
+up the cloud watch metrics after the
+fact and then we do just that we have a
+helper function here it uses the photo
+three library to fetch the cloud watch
+metrics and there's a model latency
+metric provided by stage maker hosting
+automatically that we can just look up
+so then we summarize the results below
+you can see that we got a thousand data
+points just as we expected and that the
+latency is about 45 to 50 milliseconds
+so I copied this notebook with very
+minor modifications to use a CPU
+instance instead with no AI so with no
+accelerator attached and we actually
+upsized the instance type since we
+didn't have an accelerator to an ml dot
+C 5 dot X large so let's look at the
+results there just look at the end here
+you can see that we measure latency the
+same way and get much higher values
+around 115 to 125 milliseconds so you
+can see that even with better CPU
+instance because you can see that the
+accelerator was doing the heavy lifting
+let's take a closer look at some
+performance numbers we ran that same
+dense net 121 model on a few different
+CPU and GPU instance types both within
+without E I and the results are
+summarized in these two graphs here note
+that in each graph the two bars on the
+left are using E I and the two bars in
+the middle are CPU instances and the two
+on the right are GPU so first let's look
+at the latency graph on the left you can
+see that the CPU instances have the
+highest latency while they're much more
+expensive GPU instances have the lowest
+inference latency the latency when using
+AI offers an attractive middle ground
+that allows you to get your latency
+targets met while also lowering cost
+relative to running the expensive GPU
+instances
+to see that it lowers your cost look at
+the cost per our graph on the right you
+can see that the per hour cost for AI is
+93 percent lower than a p 3.2 X large
+GPU instance which is the rightmost bar
+and 61% lower than a G for DX large
+instance which is the one next to that I
+also point out that when using AI
+because we're offloading the inference
+workload to the attached di accelerator
+we were able to use a less expensive CPU
+instance type then when we were only
+using CPU instances without sacrificing
+any performance in fact the performance
+is much better than with the CPU
+instance alone with the CPU instance
+alone and the price per hour of the
+combination with the AI is actually very
+close to that of the stand standalone
+CPU instance used in the test
+if you're running just a few instances
+24/7 to handle your applications
+inference then it'll probably work best
+if you choose the option with the lowest
+cost per hour that meets your latency
+requirements depending on your
+applications traffic patterns it may be
+best to combine the two metrics shown
+here into a cost per inference metric
+for comparing the different options so
+we ran those numbers for this model as
+well an e I gave the lowest cost per
+inference of all the options shown next
+we'll do another demo second part that
+shows using elastic inference for pie
+charts models on ec2 instances directly
+elastic inference uses VPC endpoints to
+privately connect the instance in your V
+PC with the associated elastic inference
+accelerator that you attach to it so
+before you can get started you need to
+create a V PC endpoint for elastic
+inference before you can launch
+instances with accelerators this needs
+to be done just one time per V PC but
+without the setup your instances can't
+connect to elastic inference so it's
+important you first have to set up some
+security groups you can check the
+documentation for details I have a link
+in the documentation and a later slide
+but you can just look up the elastic
+inference developer guide to find it as
+well there's
+helper script linked in the
+documentation to automate some of this
+setup for you but I wanted to show you
+how it works with details so it's clear
+what's happening so we create a V PC
+endpoint by going to the V PC dashboard
+and clicking endpoints on the Left
+sidebar here and then click create
+endpoint choose AWS services
+filter elastic - inference you can see
+it right here
+so you click that and then you click all
+the support at a ZZZ
+and the next thing is you select a
+security group
+I'm gonna stop there since we already
+have an end point but you would just
+select a security group and then you
+give it a name
+select a security group and then you
+just move forward in the process you
+give it a name and that's all
+you
+so once you have an endpoint set up next
+need to configure permissions by
+creating an iamb instance role
+with a policy that allows you to connect
+to an elastic inference accelerator
+you
+so to do that you go to the
+this management dashboard click on
+policies
+create policy
+click JSON and then you if you're
+looking at the documentation you can
+copy the policy into the JSON and save
+it give it a name again we'll just
+cancel from here since we already have
+one in this demo but I wanted to show
+you where that is once you've created
+the policy you need to create a role
+that uses that policy to use for your
+instances so you go to roles create role
+choose ec2 next and then you find the
+policy that you created this is mine
+check it go to next tags you don't have
+to give it any tags unless you want to
+then review put in the name and a
+description and then you can create it
+again I'll go ahead and cancel for this
+demo since I already have one
+now we're ready to create an instance
+everything set up
+so you go to ICI to launch an instance
+and we're gonna look for a deep learning
+and I chose the Amazon Linux am I here
+you
+once you selected that for m5 large so
+the kind we're going to launch configure
+instance details
+next thing you do is you pick a subnet
+supported by elastic inference choose
+the role you created
+and then choose add an elastic inference
+accelerator at the bottom then you can
+choose the type will choose AIA two
+medium and the number of them you want
+to create
+and then from there you can add storage
+go through the rest of the process and
+you've told you've you've told ec2 that
+you want an elastic inference
+accelerator attached to your instance so
+now that we've launched an instance with
+an accelerator attached let's use it
+here we have a script that loads a res
+next model that was trained with weekly
+super supervised learning using a large
+dataset of social media images with
+hashtags we're using torch hub to fetch
+it we load it with pre trained weights
+and toggle inference mode with eval next
+we make sure to disable gradients since
+we're just running inference and then we
+trace the model on an image and in
+particular it's a random random image of
+the right shape it's just a random
+tensor so we trace that model and then
+we call torch it Save to save it to a
+file
+it's that easy now we have saved the
+torch script model now over here in the
+terminal you can see I add the script
+that we just looked at so let's run it
+you
+you
+so it traces it traces that model on the
+input and you can see now we have a file
+right here
+is the tour script model the serialized
+toward script model that we can then use
+for inference so let's look at the code
+that uses it and actually runs the
+inference using AI but before we do that
+just to avoid waiting I'll go ahead and
+run this
+so just to save some time of waiting on
+the script to run we'll go ahead and
+start it running while we go look at the
+code
+you
+so let's take a look at the script that
+runs inference which is currently
+running in the background
+first we define a function to
+pre-process the image into an epoch
+tensor of the right shape
+then we use that function to read in
+this image that is not my kitten if
+you're wondering
+you
+next we use torch jet load to load the
+model that we serialized before now
+let's run an inference first we disable
+gradient calculations so we don't need
+them for inference then we use this
+torch get optimized execution block
+function this optimizes execution here
+what this does is it tells it it tells
+torch script or it tells PI torch that
+we want it we want this model to be
+optimized for use with the e I
+accelerator identified by E is zero
+that the EIA zero here so this is the ID
+of the accelerator that we want to use
+and that's all there is to it this is
+actually the only change to get it to
+use elastic inference so we run the
+inference just by using the model right
+here inside this block after running one
+inference on the Khitan image you run
+the output raw scores through a soft max
+to get probabilities and then print the
+top five classes and their scores which
+is what this code is doing
+so after since we ran one inference the
+next thing that we do is she run 30 more
+inferences and print out the latency so
+we can measure the performance see how
+it's performing and that's all there is
+to it you can see we have the optimized
+execution call here again saying that we
+want to use VI but that's it
+that's all it takes so let's check on
+the result
+let's check on the result you can see it
+quickly settled to a steady-state
+performance of about 65 to 70
+milliseconds you can see that here oh
+and of course it correctly notice that
+the image was a cap
+to the version that doesn't use e I have
+a copy of the script that this e I
+so let's see how the latency compares
+so as you can see the seed version takes
+much longer to run each inference since
+the EEI accelerator is doing the heavy
+lifting to run the inference calculation
+so you can get much lower latency by
+attaching a TI accelerator and making
+sure to change your code to use that
+Oh II I version of the script was
+removing that optimized execution the
+part that mentions AI that's it
+get some performance numbers we ran that
+same Residex wsl model on a few
+different CPU and GPU instance types
+both with and without a I so the latency
+graph on the Left shows that a I offers
+a middle ground that allows you to meet
+your latency requirements while also
+lowering cost relative to the GPU s
+again you can see the EEI EEI as are the
+two bars on the left the cpu instances
+are the two in the middle and the GPU in
+two hundred looking at the graph on the
+right the per hour cost for AI is ninety
+three percent lower than the P three and
+sixty one percent lower than the g4 DNX
+large this is true for ec2 as well as
+stage maker when using key I we were
+able to use a less expensive CPU
+instance type an M five dot large then
+when only using CPU instances while
+achieving much better inference
+performance and with a very similar
+price per hour as the CPU instance used
+actually as you can see
+also note again depending on your
+applications traffic patterns combining
+these two metrics shown into a cost per
+inference metric may be best for
+comparing the options we also ran those
+numbers for this model and E I gave the
+lowest cost per inference of all these
+options
+in summary you can use Amazon e.i to
+lower your inference costs by up to 75%
+by attaching AI accelerators to any ec2
+instance ECS task or two-stage maker to
+right size for your application needs
+you need little to no code changes as
+you see to you Zi since the interface is
+similar to using a GPU in these
+frameworks our customers are currently
+using AI for a computer vision NLP and
+OCR use cases among others including
+image analysis for security ballistic
+identification post slit xscape churring
+handwriting on paper social media image
+recommendations and other use cases and
+now he is PI core support
+so try it on all your pie charts models
+and finally the the best way for you to
+experience it is to really it's to try
+it out do a proof of concept see how
+easy it really is to use it I've
+included a few links here to the
+documentation and to a blog post that
+talks about using it for pi torch using
+elastic inference and with that we'll
+open it up for Q&A

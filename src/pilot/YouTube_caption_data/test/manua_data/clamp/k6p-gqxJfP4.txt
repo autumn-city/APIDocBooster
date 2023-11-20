@@ -1,0 +1,163 @@
+I am your host Charles Frye, and I will be
+telling you today about how easy it is to
+instrument Weights & Biases with PyTorch.
+So this is now once we've now
+got to the training logic.
+Now this is where Weights and Biases
+really starts to come into play.
+The two functions are watch and log.
+So watch is a special function that's
+especially useful with PyTorch models.
+It will log the gradients in the
+parameters of your model, every
+certain number of steps of training.
+So you can set that number there.
+How often you want to log
+the gradients in the models.
+I tend to use something like, 10,
+a hundred, something like that.
+If it's every epoch, I
+might log it every epoch.
+So that's this first line here at
+the beginning of our train function.
+I say, Hey, yo, we're about
+to start training this model.
+wand bee, watch that model.
+This section here then runs
+training and down here, I've
+got this function train batch.
+That's what really defines
+the actual training logic.
+All this stuff around
+here is just ... okay.
+I'm counting examples and batches.
+I'm loading the images and labels.
+I'm using TQDM to give
+me a nice progress bar.
+So the two important pieces
+are train batch and train log.
+So train batch is the part where
+we actually do the training.
+This is standard PyTorch stuff, but my
+images and my labels on my device run
+a forward pass that gets me the outputs
+in the loss, run a backwards pass, and
+then take a step with my optimizer.
+So improve the performance of
+my model at the end and then
+return the loss for later use.
+So we've got this train batch
+function, that's all quite standard.
+The part that differs is the part where
+we log what's going on in training.
+And the code that I wrote before I
+discovered Weights and Biases, this
+would be something like a print statement
+maybe, or maybe saving something to a file
+locally would be this train log function.
+So this is where the difference
+comes in this wandb dot log call.
+So what this does is says "Hey, W&B,
+here is the information that I want to
+associate with this step of training.
+First, you should give a step number.
+Okay.
+What step of training is this?
+And this should be constantly
+going up as you're going.
+So it doesn't have to
+go up by one every time.
+So for example, here, I'm using
+the number of images that the
+neural network has seen as my step.
+The other thing to provide.
+Is this uhh dictionary here, a
+dictionary that says, oh, okay.
+Here's what happened on
+this step of training.
+The epoch was this number and the loss
+was this, this dictionary here, you
+can put lots of things in it, much more
+complicated things than just numbers
+using the various wandb media types,
+images, audio, video, 3d objects, things
+like that can also be logged here.
+But to keep this example simple,
+I'll just stick with these sort
+of simple scalar values here.
+So that's the main difference here.
+All of this code up here, this is stuff
+apart from this wandb dot watch here.
+All of this stuff is standard.
+So really we've only added this line.
+here and this line here.
+So now that we've defined the three
+components of our pipeline, make
+train, and test we built our pipeline
+and we've instrumented it with W&B.
+We've added those four or five lines.
+We're ready to run our
+fully tracked experiment.
+I'm going to run this cell here and
+then we're gonna see what comes out.
+When you start a run with Weights and
+Biases, we give you a couple of links
+to a project page, which is where
+you can group together a bunch of
+runs that are all on the same project
+and then to a run page which is a
+specific page for this particular run.
+It's gonna log information
+about that run here.
+Let's go and check that out
+and let's see what we logged.
+All right.
+What this thing is here.
+You might hear this called the
+workspace or the dashboard.
+This is where you can interact with
+all of your runs and the information
+that was logged from each run.
+What we've got here, because we used
+wandb.watch, we've got the values for
+all of our weights, biases, and the
+values for the gradients over time.
+So you can see some nice things like the
+gradients aren't exploding or vanishing.
+The gradients are decreasing over time.
+That's a good sign for optimization.
+This is very useful for debugging
+it's presented as a histogram at
+any given point on the x-axis there
+is a histogram, and then you can
+highlight an individual histogram.
+To see what that individual histogram
+looks like in greater detail.
+You can see a little kernel density
+estimate on top of it, if you prefer a
+kernel density estimate to a histogram.
+This also includes the things that
+we log ourselves, the things that we
+logged by hand with wandb dot log.
+So right here, we've got the loss.
+It's going down over time.
+That's good.
+There's a little, there's a
+good amount of noise here.
+Cause I think this is just the
+loss on an individual batch.
+So that can be, that can be quite noisy.
+It's only a hundred or so examples,
+it's noisy, but it's going down.
+If you want to get rid of some of
+the noise in one of your, in your
+charts, if you really actually care
+more about the trend over time uh,
+you can use this smoothing operation.
+So that looks like about the right
+amount of smoothing to capture the
+fact that we're really, you know, we're
+going down here and you can always
+include or not include the original in
+your chart when you're showing that,
+showing these smooth versions here.

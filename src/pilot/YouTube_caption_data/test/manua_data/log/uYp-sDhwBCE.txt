@@ -1,0 +1,1678 @@
+- Everyone, thank you for tuning
+in today's session,
+my name is Trace Smith
+I'm joined by my colleague
+Amirhessam Tahmassebi
+both Amir and myself are data
+scientists at ExxonMobil.
+And today we'll be speaking
+about Productionizing
+Machine Learning Pipelines
+with Databrick and Azure ML.
+Again, for the agenda,
+we'll first start off by
+providing some motivation
+and setting the stage on the material
+that we shared in the session.
+Next, we'll provide an overview
+of the use case that'll be implemented.
+Thirdly, we'll touch on
+some of the key learnings
+that we hope that you're able
+to take away from the session.
+And then finally, we'll
+jump into the tutorial.
+So it's well known that
+deploying machine learning
+applications into production,
+can take a significant amount of time,
+and also require additional
+resources and experiments,
+to design and implement.
+In order to address this,
+our team has been developing a series
+of repeatable patterns and frameworks,
+that data scientists
+across the organization,
+can leverage to jumpstart
+and accelerate prioritizing
+their AI application.
+These patterns and frameworks
+are essentially a series
+of code repositories
+that contain production ready code,
+that covers all aspects
+of the ML lifecycle.
+This process tours have been developed
+based on previous use cases,
+and learnings have been
+captured along the way.
+There are two main components,
+the repositories that we'll
+dive into more in this tutorial.
+First is the infrastructure code,
+which is code for various
+technology stacks.
+And secondly is business logic code,
+which can easily be substituted
+for the data science use case,
+such as computer vision,
+anomaly detection,
+predictive maintenance,
+just to name a few.
+But the idea here is data scientists
+will spend more time here,
+on the model development and training,
+in less than the infrastructure code.
+One of the templates we'll
+talk about in this session
+consists of integrating databricks,
+Azure Machine learning, and Azure DevOps
+for full into ML deployment pipeline.
+The visual here illustrates
+how we will use an Azure ML pipelines
+to facilitate the
+ingestion, model training,
+and model deployment using databricks
+as a compute target.
+MLflow for the Model Management.
+We'll then bring us all together
+for the full CI/CD workflow
+with Azure pipelines.
+The use case that will
+implement the session
+as a deep learning computer vision task.
+In particular, image classification.
+We'll demonstrate how the
+templates can easily be accessible
+to a deep learning library
+such as TensorFlow and Pytorch.
+The data set that we'll be
+using is an open source,
+cats and dogs, image data set.
+The idea here is that this toy data set
+can easily be substituted
+out for your actual use case.
+But nevertheless, this particular data set
+consists of 25,000 images.
+These images are currently stored
+in Azure Blob store.
+And then we'll mount the Blob
+Storage databricks workspace,
+to easily consume those images.
+And we'll step through
+configuring this step
+within the tutorial.
+So, in terms of key learnings,
+is is broken up into three
+different categories.
+So starting off on the left hand side
+with databricks.
+And we'll walk through setting
+up a Custom Docker image,
+for initializing your Spark cluster.
+Secondly, we'll demonstrate
+how to set up Databricks Connect,
+for executing your spark
+jobs from a local VM,
+on the databricks cluster.
+We'll then walk through setting up
+your deep learning models,
+how you can use spark for
+parallelized grid search,
+as an example,
+and then use an MLflow
+to log those metrics in parameters.
+In terms of the Azure machine learning,
+we'll walk through setting
+up the email workspace,
+how you can configure your email pipelines
+to facilitate the training
+and deployment steps.
+And then finally we'll deploy the models,
+as a web service with a
+custom inference script.
+Finally, in terms of the deployment,
+we'll step through setting
+up your Azure DevOps
+from the CI/CD workflow,
+for code quality checks,
+automated unit testing.
+And then finally using the pipelines
+for the release setup,
+for your test and production environments.
+But that we'll go ahead and jump
+into the tutorial.
+- To begin this tutorial,
+I'd like to first start off
+by discussing our local
+environment configuration.
+First, we'll be using
+a Linux virtual machine
+in Azure for development.
+Secondly, we'll be using Python 3.7.5.
+Lastly, we'll be working in Jupyterlab.
+This is optional as you can
+also use your favorite IDE,
+or develop within the
+databricks workspace.
+However, this setup works
+particularly well for us,
+given our codebase heavily
+uses modularization.
+Also this approach may work
+well to there's a preference
+to develop with editors like vim or Emacs.
+Next, we'll use pyenv for a
+virtual environment setup.
+There are other options
+for virtual environments
+that could be.
+(mumbles)
+Here as well.
+For more documentation
+on configuring pyenv,
+please see the provided
+link for reference.
+Within the virtual environment,
+we'll be using poetry for
+managing the Python dependencies.
+Poetry allows you to declare the libraries
+your project depends on,
+and it will manage installing it,
+updating the libraries for you.
+It's also a convenient way to organize
+and install optional dependencies.
+Finally, with poetry, packaging systems,
+and dependency management,
+the Python can be rather convoluted.
+Thus poetry makes it quite easy
+to package up your project.
+This becomes very useful
+when you're uploading
+a wheel distribution to
+the databricks cluster
+for the source code to be executed.
+We'll discuss this
+further in a few moments.
+By default, poetry creates a TAML File
+within the project directory,
+which contains the install packages.
+As you can see here,
+we have a list of required libraries,
+and several packages
+that indicate optional.
+The optional dependencies
+are only installed
+if the extras flag is passed.
+For instance, you could pass
+the extra name databricks
+to install only the databricks CLI,
+and the databricks connect packages.
+This feature becomes very useful
+when you're moving between your dev test,
+and production environments.
+One last note to make about
+the environment configuration
+is in regards to the project layout.
+As you can see here on the left hand side,
+we have a hierarchy of folders
+within that project root directory.
+The Ml pipelines directory contains
+all the infrastructure
+code for this project.
+Within each one of these files,
+we have some customized wrappers
+around the Azure ML SDK.
+These scripts handle
+setting up the ML workspace,
+compute and orchestrating
+both the model training,
+and deployment pipelines.
+Secondly, is a business logic code,
+which is contained within
+the source directory.
+Within each one of these
+directories contains starter code
+for the data ingestion, pre-processing,
+monitoring and deployment stages.
+This setup enables the data scientists
+to easily plug in their own
+code for a given use case.
+Over the course of this session,
+we'll be going more into these files,
+and walk in through the code.
+So now that we've discussed
+the project layout,
+let's now walk through
+setting up the infrastructure.
+So, the first step is to
+create our Azure ML workspace.
+And the Azure ML workspace,
+is a centralized place
+that contains experiments,
+pipelines to orchestrate model training,
+and deployment workflows,
+model registry and deploy models.
+The blue screenshot shows the landing page
+of AML workspace from
+within the Azure portal.
+In the middle of the landing page,
+you'll notice an Azure Blob Store,
+Container Registry, and Key
+Vault automatically created,
+and attached to the workspace.
+So you do have the option
+to attach an existing Key
+Vault, Container Registry,
+and Blob store if needed.
+So, let's now circle back to
+the ML pipelines directory,
+and execute the script
+to create a workspace.
+So, from within workspace.py,
+we have a helper function
+to create the workspace
+using the Azure ML SDK.
+And so within this config
+AML workspace function.
+These two main components,
+is within the training accept blob.
+First of all, we'll use
+the workspace object
+to better determine if a
+workspace already exists.
+And if so we can exit,
+but if not, we can use the
+workspace.created object,
+to create this workspace
+by passing a name,
+subscription ID, resource group,
+location, Key Vault and
+storage account name.
+So now returning back to the notebook,
+we can execute the code block
+to create this workspace.
+And as you can tell by the output here,
+we already have a workspace that exists,
+so we can skip creating a new one.
+One additional note to make here is,
+that we do pass in the environment name,
+to be appended to the workspace name.
+And this is so that we can differentiate
+between dev test and prod workspaces.
+So the next step is to authenticate
+to the Azure ML workspace.
+First, we will use az login,
+to log in to our Azure account.
+Next, we will connect to
+the Creator ML workspace
+by passing in a JSON config file.
+And this file contains
+the subscription ID,
+resource group, and the
+name of the workspace.
+This JSON file can also be downloaded
+from the AML workspace
+within the Azure portal.
+And this approach is only
+for development purposes.
+However, for production, we will actually
+use a service principle
+for authenticating.
+We can also connect to
+the Azure Key Vault,
+from this workspace object as well.
+And this works particularly well
+if you're passing in connection strings,
+or other credentials,
+in the source code or notebook.
+Now that our workspace has been created,
+let's proceed with creating
+the databricks cluster.
+So there are two ways that
+the cluster can be created.
+First, you can create a cluster
+from the data bricks workspace,
+or you can use the
+databricks REST API library,
+we will use the latter approach here.
+And so the next steps we
+will create the cluster
+and have it initialized
+using a Custom Docker Image.
+And the reason for this approach,
+it allows us to have more
+control over the environment,
+and install libraries.
+This approach integrates
+nicely with poetry,
+and helps ensure
+dependencies are correctly
+installed across the dev test,
+and production cluster.
+It should also be noted
+that the databricks container services
+will need to be enabled
+by your workspace admin,
+for the custom containerization feature.
+So in step one,
+we'll first use the base
+image provided by databricks,
+and add several additional steps
+for installing dependencies,
+and packaging the Python module.
+The base image we'll use here,
+will be the databreaks runtime dbfs fuse.
+And this image supports Python 3.5,
+and fuse mounts to the
+databricks file system.
+So, in the docker file output below,
+the first half refers to the base image.
+And then below there are additional steps
+for creating the virtual environment.
+And then poetry commands for installing,
+and building the Python distribution.
+Just as a note,
+once modifications are
+made to your source code,
+you can rerun the build step,
+so that the image contains
+the most recent wheel file,
+to be executed on the databricks cluster.
+And step two, we'll use the
+REST API to create the cluster.
+In the next steps below,
+we will create a four node
+cluster of spark runtime 6.2.
+Also put the driver worker nodes
+will each have eight cores
+and 32 gigs of memory.
+So the payload example
+shown here will be used
+for making the rest call
+to create the cluster.
+Now that the docker image
+URL and credentials,
+are also passed to authenticate
+to the Azure Container Registry.
+Next are commands to build
+tests and push the docker image
+to the Azure Container Registry,
+are shown in the following code blocks.
+Once the image is pushed to ACR,
+you can verify from the
+Azure portal that the image
+has been uploaded with the latest tax.
+So now let's run the code
+to create the cluster.
+First, we will set several
+environment variables,
+and use an internal library called DBAPI,
+that contains some helper functions
+for creating a Spark cluster.
+As a note, this step can also be executed
+without the specific library.
+Now to check that the cluster
+is initialized correctly,
+within the databricks workspace,
+you can now see the clusters initialized
+using this docker image.
+So later in the tutorial,
+we'll demonstrate how this
+step can be incorporated,
+in a CI/CD workflow with Azure DevOps.
+Now that the ML workspace
+and databricks cluster
+are both created,
+we will next attach databricks
+as a compute target,
+in the Azure ML workspace.
+So this step is necessary when running
+the Azure ML pipelines and
+executing the training,
+and model deployment steps
+with databricks as the
+assigned compute resource.
+Also, in this step, we're not specifying
+the databricks cluster ID yet,
+rather this will be set
+in the Azure ML pipeline stage later on.
+So in the ML pipelines directory,
+we will now call compute.py
+to execute this task.
+Within the script we
+have a helper function
+that first checks to see if databricks
+has already been attached
+as the compute target.
+If so, then we do not need to reattach
+and connect it.
+If not, we will use databricks
+compute.attach configuration,
+and pass the resource group name,
+databricks workspace name,
+and the databricks access token,
+that can be created from
+your databricks workspace.
+The last step is calling
+compute targets on attach
+from the Azure ML SDK,
+to attach the databricks workspace.
+So returning back to the notebook,
+and executing this code block,
+to attach our compute target.
+We will see that the compute name,
+databricks CV-def,
+has already been attached
+and then we can proceed.
+Again, you may want to provide an alias
+in your compute name,
+which indicates the
+corresponding environment.
+To verify this step,
+we were able to see now
+from the Azure ML workspace,
+then D the attachment was successful,
+given that the provision
+state has succeeded.
+So our next step will consist
+of mounting the Azure Blob Store,
+to the databricks workspace.
+So recall that our image data set,
+has been uploaded to a
+container in blob storage,
+and thus, we will need
+to mount this container
+to the databricks file system,
+to be able to access these images.
+So to get started with this task,
+and databricks is highly recommended
+to handle all the keys
+with dbutils.secrets.
+So prior to mounting the data store,
+is advised the connection
+string of your blob store,
+as a secret in existing Azure Key Vault,
+or you can also use the Key Vault
+that is attached to the AML workspace.
+Next you can also create
+a scope in databricks,
+which is a collection of secrets
+that are stored in the Key Vault,
+and accessible by the cluster.
+The scope can be created
+by replacing the URL link,
+shown here with your cluster host name,
+and organization ID.
+With the #secret/createScope appended,
+at the end of the URL.
+So upon creating the scope,
+you'll be prompted to enter the DNS name,
+and the resource ID,
+that can both be obtained
+from the Azure Key Vault
+properties in the Azure portal.
+So given that we are developing outside
+of the databricks workspace,
+you can execute this
+mounting script shown here
+by copying it over to a notebook
+within your databricks
+workspace and to execute.
+Note, this is only required to mount once,
+as all clusters in the workspace
+can consume this data,
+depending on the access
+privileges that have been set.
+So our last step before moving
+to the monitoring stage,
+we need to set up databricks connect,
+in order to execute spark jobs remotely
+on the databricks cluster,
+instead of in the local spark session.
+So for instance, this will enable us
+to convert a list of
+dictionaries containing
+hyper parameters into an RDD,
+and called the map
+partition transformation,
+to enable training several
+models in parallel,
+with different tuning parameters.
+The model training is now being conducted
+on the databrick cluster,
+rather than locally.
+And so the screenshot demonstrates
+how the spark job is invoked
+from this virtual machine,
+and is executed now on databricks.
+Now to get started with
+Databricks Connect,
+I would recommend referring
+to the documentation first.
+However, at a high level,
+the initial step is to uninstall pyspark
+if currently installed.
+Next, you'll need to ensure
+the Databricks Connect
+is installed in the virtual environment
+within the project.
+Secondly, you'll need
+to install the version
+that matches your cluster runtime.
+For example, we will be
+using Databricks Connect 6.2,
+given the databricks runtime
+when the cluster is 6.2 as well.
+Next, you will need to run
+databricks-connect configure,
+to set up the connection properties.
+You'll be prompted to enter
+the databricks host name,
+token, cluster ID,
+organization ID, and port.
+And this will create configs file
+within your home directory.
+And to check that the setup
+was properly configured,
+run databricks-connect tests,
+showed you all test have
+successfully passed.
+So, to double check that this works,
+we can initialize a spark session,
+and this will trigger
+the cluster to spin up,
+if currently terminated.
+Or we could also use
+dbutils to list the files
+in the image container that we've mounted
+in the previous step.
+So, from the output here,
+we can view that the list of
+files from the image path,
+and that's this verifies
+that it works as expected.
+And so the last comment to make here
+regarding the development environment,
+we will cover the next steps.
+We'll first test our
+pre-processing, model training,
+and model deployment stages
+using databricks connect.
+After the development
+code has been tested,
+we will then integrate with
+the Azure ML pipelines.
+This approach allows us to easily isolate
+any issues with the source code,
+and quickly resolve any bugs.
+So, I'll now hand it over to Amir
+to discuss the pre-processing stage,
+and to walk through the
+development of the CNM models.
+- In this part,
+I'm going to give you an overview
+of how we can test our
+source code in our pipeline.
+First, we need to have a data set
+to test our pipeline and our models.
+In this part, we have used
+the famous dog cat dataset
+from Microsoft, which has been used
+in Kaggle competition in 2013.
+This dataset contains 25,000
+images of dog and cat,
+which have been split into 5/ 50%.
+(clears throat)
+And we have employed this data.
+The data comes in one folder,
+however, since we want
+to perform over training
+of our models using batch
+normalization process,
+we need to split our data
+into train validation
+and test directories.
+And each directory would have
+like a two sub directories
+of dog and cat.
+In this part we have used 80% of the data,
+for the training, 10% for validation
+and 10% for the data,
+for the testing the data,
+the model sorry.
+In this part, we can see the layout
+of other directors for the train
+test and validation part,
+and each of these folder contains
+two sub directories as cat and dogs.
+This part would give us the ability,
+to apply like image pre-processing,
+including resizing, normalization
+for the pixels and augmentations.
+In this part, we have used
+the pre-processing module of Keras.
+However, you can use
+based on your use case,
+using pillow or CV two modules in Python,
+and probably the other libraries
+as well based on your use case.
+Please note that this is
+a just one time process
+for the whole training part,
+which you have to do it,
+based on your use case,
+and you do not need to
+repeat at each time.
+Here, we can take a look
+at the 10 random samples
+of each directories.
+Here we have like a dogs.
+And after that,
+we can see like the 10 random sample
+from over cat folders.
+Now it is a good idea
+to take a look at the pre-processing code
+for the image pre-processing part.
+First, we have like a train test split,
+as we discuss in the folder,
+and directories like segmentations,
+and splitting the images into test train,
+and validation sets.
+Here we have prepped
+images to have the same
+like to the proper width and height.
+And here we have chosen like 200 pixels.
+And the point here,
+is all these like a pre-processing part,
+it's been done in databricks
+and using a spark,
+and here's like we paralyze the whole.
+(clears throat)
+Image pre-processing aspect.
+This is true, it's supposed to be done
+like at just one,
+this one time process.
+However, in this case, we can use spark,
+and the whole process could be a scalable
+and we won't be worried about the size
+of the images.
+In this section, we are training
+multiple deep learning models
+to test our platform and our pipeline.
+In this part, we have used TensorFlow
+and this specifically with
+high level API Kerris,
+and we have also used Pytorch.
+The main idea here,
+would be how to demonstrate our template
+can be extensible for implementing
+other deploying libraries,
+and we can employ
+different like libraries,
+and train different models,
+and use like the databricks as a cluster
+to train these models.
+For the TensorFlow part,
+we have used like a first
+a three layer Vanilla CNN,
+as the benchmark of our model,
+and the whole idea of the
+whole implementation is like,
+if you have a parameter
+like number of rounds,
+which can be passed
+to each like the models we have trained,
+and indicating the number of models,
+we can train at the same time in parallel
+and this like a hyper
+parameters of these models,
+is a random combination of the
+hyper parameter set we have.
+And for each one, it's gonna
+be a list of dictionaries
+containing these hyper parameters,
+which can be converted
+into spark RDD format
+using map partition transformations.
+In other words,
+we would have one model
+per partition block,
+and the whole process is gonna be a dawn
+into databricks cluster,
+and we are not gonna to
+use our virtual machine.
+As we've shown here,
+the last version of the VGG16 model,
+which we have used as a second case
+of our TensorFlow platform.
+As a transfer learning model
+to see how this model can outperform
+the normal benchmark model,
+we define as a three layers
+with convolution neural network.
+This is the layout
+for all their parameters
+dictionary example,
+the values associated
+to each key technically,
+which they're like a hyper
+parameters of our models
+they're randomly selected when generating
+a set of hyper parameters.
+For instance.
+(mumbles)
+Like a normal model,
+we have a number of rounds of two,
+which means two lists of dictionaries,
+gonna be randomly selected
+based on the all combination
+of like a possible combination
+of these parameters.
+And each of those,
+like a dictionary is gonna
+be changed to RDD format,
+using a spark, using map
+partition transformations.
+And based on that these sparks
+are logged into the our ML flow,
+and then the model with
+the highest accuracy
+is gonna be selected for that run.
+And this part, I would like
+to take couple minutes,
+to talk about the code we have
+for TensorFlow and Pytorch
+as you can see in the
+source directory here,
+if you go to the train part,
+we could see like the two main file
+for the TensorFlow and Pytorch,
+if I go through the TensorFlow file,
+I can see that we have a function,
+we defined a class for
+training the models.
+And then here's a part I talked about
+how each number of rounds,
+we're just gonna talk about one dictionary
+of hyper parameters,
+which gonna be partitioned
+into each block.
+And we can paralyze that
+process through a spark.
+This is the part we can have...
+Hyper parameter tuning can be applied
+using like a sparkline paralyzation.
+And we can train multiple
+models at the same time.
+After that, so we can take a
+look for each model as well.
+So, in for instance,
+if I take a look at the CNN
+we have for the TensorFlow.
+If we have a class for data generator.
+And based on that,
+so we have a helper function
+which is gonna take care
+of the pre-processing
+and any image pre-processing,
+any kind of augmentations
+we have involved.
+And then here's the part
+that go through over
+baseline CNN, which have three layer CNN,
+and we have a transfer learning as well
+which we have used VGG,
+and three layers of VGG models.
+We have to send this similar process
+for pytorch as well, as you can see here,
+if you go back to the train
+part and for the torch part,
+you could see these file,
+which as you can see
+this is like a similar
+paralyzation applied here.
+And we have also applied here,
+the same process for the data generation,
+and pre-processing.
+And here the only difference
+would be the architecture
+of the CNN model,
+which is, instead of VGG 16 here,
+we have used a resnet 18.
+And the modified resnet,
+which it will be our batch
+normalization parameters.
+And this would like give
+us like a good opinion
+about how these like a process works.
+And then here we can see like the results
+for all the base and CNN model,
+and how when we applied
+over like image net,
+on the model, we get the result,
+and how over like a result
+based on the Pytorch
+like outperform the previous result.
+- Thanks, Amir.
+Now we discussed further,
+how we're using MLflow
+for Model Management.
+With MLflow we're able
+to track experiments
+for multiple model configurations,
+like the ones previously discussed.
+This allows us to easily
+compare parameters,
+and results across the different models.
+You may also use an MLflow
+for model deployment,
+packaging your ML source code,
+and having a centralized
+model registry store,
+to efficiently manage the
+models full lifecycle.
+So for this example,
+we'll be using the MLflow tracking server,
+hosted in the databricks workspace.
+To connect to this remote URL,
+we would first need to pip
+install databricks COI.
+Next, we will then run
+databricks configure,
+and pass the profile name
+along with the token flag.
+You'll then be prompted to
+enter the databricks hostname,
+along with the access token.
+And once installed,
+we can then set the tracking URI,
+to databricks://,
+the name of your profile.
+So moving forward, we
+will now be communicating
+with the MLflow tracking server,
+hosted remotely on databricks.
+To see how MLflow has
+implemented this use case,
+let's take a look at the source code.
+Within the train directory,
+we can step into the walk folder,
+which contains a script for
+recording the model results,
+along with saving the model artifact.
+For example, let's take a
+look at the log torch.py file.
+So in the do MLflow helper function here,
+we can pass in a list of input parameters,
+in the name of the experiment.
+Again, the setup can work for one model
+or long parameters for multiple models,
+which contain different configurations.
+Next, the history variable
+defined here is just a dictionary
+containing the loss and accuracy scores,
+for both the training
+and validation datasets,
+for each epoch.
+We will then create an
+MLflow experiment name,
+if one does not already exist.
+Next, we can iterate
+over a list of parameters
+such as the optimizer, dropout percentage,
+and the number of dense units
+for the hidden layer as an example.
+And then afterwards, we
+can loop over each epoch,
+and walk the training and validation,
+loss and accuracy score.
+The final step here,
+is to save the model by calling
+mlflow.pytorch.log model.
+We can now return to the notebook,
+and view how this looks
+from the MLflow UI,
+hosted on databricks.
+So, here we have two experiments,
+one for TensorFlow and one for Pytorch.
+From the UI, we can view
+the date of the experiment,
+and also the user who
+submitted the experiment.
+Additionally, we can
+view the log parameters
+and metrics for each run.
+Also, within the UI,
+we can easily search for
+the top performing models,
+based on a scoring metric,
+and we can also filter based on tags
+that were created in the experiment run.
+We can then step into each run,
+and explore further metadata,
+such as the plot shown here.
+We can easily plot for each epoch,
+the accuracy, and loss
+for both the training,
+and validation datasets.
+Our next task is to automatically
+obtain the best model,
+so that we can upload it
+to the Azure Container Registry.
+Given the resume team model using Pytorch,
+you're the best score,
+we'll proceed with the point in this model
+over the course of the next few steps.
+From the MLflow UI,
+we can see the model artifact
+that we wanna register in the screenshot.
+And the reason for this step,
+is so that we can deploy our model
+as a web service in Azure,
+using a customer first script.
+An alternative approach
+is to use mlflow.azureml.
+To deploy the model or
+deploy from an image.
+Please refer to the provided link here,
+for additional documentation.
+To execute this step,
+in the deploy directory
+within the source code,
+we will step into main.py.
+Here we will call the
+get best model method
+to search for the best model
+in the Pytorch experiment.
+First, we obtain the experiment ID,
+and then pass the ID
+to the search runs function.
+We will next sort the scoring
+metric in ascending order,
+and then take the first
+index of this list,
+which will contain train model,
+with the highest accuracy
+score on the test dataset.
+Returning to the notebook,
+and running this code so,
+we're able to obtain the best model.
+We can see with the
+corresponding experiment ID,
+and run ID from the
+pytorchmlflow experiment.
+We will then download the model locally,
+so that we can continue
+testing the deployment stage.
+We can download the model artifact
+from the MLflow tracking server,
+by referencing the path to the artifact.
+Here we will plug in the experiment ID,
+and run ID to the model path.
+Next, we'll call mlflow.pytorch.savemodel,
+to save the model to
+the local file system.
+We'll then register the model
+to the Azure ML model registry.
+Let's go back now to the main.py file,
+and the deploy directory.
+Here we'll use the register
+model helper function,
+which takes in the workspace
+object, model name,
+and model path as inputs.
+To register the model,
+we will now use a model class
+from the Azure ML core library,
+and pass in the respective inputs.
+So executing this code block,
+we can see that the torch cat dog model,
+has successfully been registered.
+In the AML workspace
+within the Azure portal,
+we can see that our model
+has been registered.
+And now we can proceed
+with the model deployment.
+When your model is deployed,
+you'll be able to see
+the deployed web service,
+under the assets tab deployments,
+in the left hand panel
+within the workspace.
+Now let's step into the
+code to deploy our model,
+with a custom scoring script.
+So back in main.py,
+within the deploy directory.
+We'll call the helper function,
+deploy model and passing
+the AML workspace object,
+model name, deployment name,
+path for inference script,
+and the number of CPUs,
+and memory allocated to the web service.
+Next, we'll need to define
+the dependencies required
+for the custom scoring script.
+Here we'll be using conda
+that only install a NumPy,
+Pytorch, MLflow in the
+Azure ML core library.
+Secondly, we'll also need to define
+the web service deployment configuration,
+by passing the CPUs in memory.
+For this web service,
+we'll set the number of CPUs to two,
+and memory to four gigs.
+These settings will vary
+depending on your use case.
+Afterwards, we'll need to also define
+the infra script configs
+by passing in the path
+for the scoring file,
+and also the conda environment.
+Before moving ahead to the next step,
+let's take a look at the scoring script
+that will utilize in the deployment.
+In this file, first,
+we'll initialize the model
+by getting the model path
+from the ML model registry.
+And then calling
+mlflow.pytorch.load model,
+to load in our safe model.
+In the next function below,
+this will be invoked
+when making a post call
+to the web service employed
+for a model prediction.
+And this step is serialized JSON object,
+containing the input image
+pixels will be passed,
+to the run function.
+We'll then reshape the NumPy array
+into a tensor with three channels.
+Next, we will make a prediction return
+the binary label either one or zero.
+Note the script is only
+for Pytorch and rotation.
+However, a similar script is available
+to TensorFlow as well.
+Okay, returning back to
+the deployment script.
+We'll now call model.deployment,
+and pass in the email workspace.
+The deployment config, infra script
+and the model object,
+pointed at torch model we registered
+in the previous step.
+By default, this will pull the
+most recent model registered,
+with this name.
+Last step is I'll also wait,
+until the deployment
+completes before proceeding.
+Let's now execute this code block.
+From the output a
+warning is thrown stating
+that the deployment name is not found,
+and then proceeds.
+If it exists,
+then we will pull this web service down,
+and replace it with the updated one.
+Note this step takes a
+few minutes to execute.
+Once completed, you'll also be notified
+that the operation has succeeded.
+Now let's check to see if our
+deployment worked as expected.
+Here we will randomly pull an image
+from the downloaded cat and dog
+sample test set save locally.
+In this case, the image
+we're predicting is a dog.
+Next, we'll use open
+CV to read in the image
+and resize it to 224 by 224.
+Prior to making a prediction,
+we'll need the score in
+your eye of the web service,
+when making the rest call.
+To do so, we can pass in
+the AML workspace object,
+and deployment name,
+to obtain this URI.
+Let's quickly take a look
+now at the score.py file,
+within the inference directory.
+Here we'll recall the predict method
+to make a POST request to
+the deploy web service.
+To clean up the response,
+we will return cat or dog,
+depending on the predicted label.
+As you can see the model
+correctly predicted dog.
+Now that we have tested
+our source code locally,
+and execute our spark jobs,
+remotely on databricks.
+Let's now integrate the
+training and deployment steps
+with the Azure ML pipelines.
+As a reminder, before
+testing the pipelines,
+you may need to update the
+Python wheel distribution,
+if any changes were
+made to the source code.
+We can rebuild the image and push
+to the Azure Container Registry.
+This step ensures that
+our updated source code
+is being executed now
+on the databricks cluster.
+Let's now briefly talk about
+the Azure ML pipelines,
+and how we will integrate with databricks
+before jumping into the code.
+Azure ML pipelines
+enables logical workflows,
+with an order sequences of steps
+for each task of the
+machine learning workflow.
+In other words, we could have one pipeline
+with multiple stages,
+or multiple pipelines with a single stage,
+or combination of the two.
+Depending on your use case,
+there are a number of ways that
+pipelines can be configured.
+Within the pipeline,
+we will need to find a step.
+And there are many
+built in steps available
+via the Azure ML SDK.
+For example, you can set
+up a Python script step,
+which runs a Python script,
+and specify compute target.
+For this example,
+we will use the databrick step,
+with databricks as a set compute target.
+Given our codebase is set
+up with Python modules,
+the Python script argument
+for the databricks step,
+will be set to the main.py files,
+within the business logic
+code as the entry point.
+When you submit a pipeline,
+Azure ML will first check the
+dependencies for each step,
+and upload this snapshot of
+the source directory specify.
+Once the steps in the
+pipeline are validated,
+the pipeline will then be submitted.
+Also know when you submit a pipeline,
+Azure Machine Learning
+built a Docker image
+corresponding to each
+step in the pipeline.
+And finally, writing a pipeline
+will create an experiment
+within the AML workspace.
+And from here you can refer to the output
+or logs and additional metrics,
+to monitor the pipeline run.
+So the last step after
+testing the pipeline
+are successfully completed,
+you can publish the pipeline,
+and then invoke this pipeline to run,
+either by a trigger or a scheduler.
+The pipeline we'll now submit
+will consist of two steps
+within a single pipeline.
+The first step is to
+perform model training.
+Once model training is complete,
+the second stage will be to execute,
+and deploy the best model
+from the model registry
+as a web service.
+Note to bypass a full
+training at this step,
+for demonstration purposes.
+We will reference a sample dataset,
+of 10 training validation images.
+Let's now take a look at
+the infrastructure codes,
+orchestrate this pipeline.
+Within the ML pipelines directory,
+let's step into pipeline.py.
+The first item to point out here,
+is the base DB stage class.
+This is a custom class,
+which is a template for the
+other pipelines to inherit from.
+This approach is particularly useful
+when there are multiple
+steps within the pipeline.
+And each step can inherit
+from the base setup.
+Within this class, the DB step method,
+initializes the databricks step object
+from the Azure ML SDK.
+Here we'll pass in the Python script path,
+input our arguments,
+compute target, and the cluster ID.
+The cluster ID here should point
+to the cluster and
+appropriate environment,
+dev test or prod.
+The environment name,
+can be passed as an input
+argument here as well.
+Next, we have several
+helper functions to submit
+and publish the pipeline's.
+The final method here executes
+the steps for creating,
+and running the pipelines.
+The first half of this function
+sets up the input arguments namespace,
+authenticating to the email workspace,
+and initializing the experiment object.
+Where the main components of this function
+is to iterate over a series of objects
+corresponding to the ML stage.
+And then store this steps,
+which are then passed
+to the pipeline object
+to be executed.
+In other words, this step allows
+you to have multiple objects.
+One for each training and deployment.
+The purchase presented in this example,
+we will just have one class,
+training and deploy,
+but contain two steps for this stage.
+Let's now take a look at traindeploy.py,
+and see how this is configured.
+The train deploy DB stage class
+inherits from the base DB stage
+as previously discussed.
+Within this class,
+we can set up the input arguments,
+for each step individually.
+One for training,
+and the another set of input
+arguments for deployment.
+Next, in the add method,
+we have two steps to find,
+a list of input parameters
+in the Python script path.
+Lastly, step two can only
+run after step one completes,
+meaning we cannot deploy the model
+until training has finished,
+and then metrics are
+launched with enough flow.
+So returning back to pipelines.py.
+The last few lines of code here,
+consists of validating the pipeline.
+And depending on the
+input action flag pass
+when invoking the script,
+the pipeline will either
+submit or publish.
+Returning to the notebook,
+we can now run this code block
+to submit the training
+and deployment pipeline.
+As you can see from the output,
+the first step the model
+training has completed.
+In addition, we can also
+see from the second step,
+the model deployment is
+also finished as well.
+And so, for the complete
+log of this pipeline run,
+it can be obtained from
+the Azure ML workspace,
+or it can also be
+obtained from the spark UI
+on the databricks cluster.
+The next to coop blocks here,
+are optional design patterns
+for the pipeline orchestration.
+This approach consists of
+two separate pipelines,
+each containing one step.
+Next, we can test the
+publishing of the pipelines.
+Before publishing though,
+let's disable the older pipeline,
+and then replace it with the updated one.
+And step two, this is the
+same step as a previous step.
+When we've submitted the pipeline.
+However, here we would just
+change the action flag,
+to publish instead of submit.
+Once published, the pipeline's will appear
+in the Azure ML workspace.
+Also note that the publishing
+does not run the pipeline,
+only being triggered or scheduled.
+So the next code block here demonstrates
+how you can trigger the
+pipeline to be executed.
+Our source code and dev is now complete.
+And at this point, we're ready
+to push up to the origin.
+So let's now switch gears
+and discuss the CI/CD workflow.
+I would like to preface
+that the remaining steps presented here,
+are just one approach.
+As there many variations
+that could also be implemented.
+Perhaps this steps do foster new ideas,
+or are unfamiliar with the space.
+This steps may provide an
+example to help build off.
+As referenced earlier,
+we'll be using Azure Repos,
+to host to get repository
+for this project.
+And Azure pipelines to build,
+test and deploy the CI/CD.
+Moving forward with the first step
+in the CI/CD workflow,
+the continuous integration phase.
+Each time a new feature or enhancement
+is added to the codebase,
+the data scientist will
+create a pull request
+to be reviewed before merging
+with the master branch.
+This pull request would
+trigger an Azure pipeline
+to perform an automated code quality check
+and robust unit test.
+Their policy can also be set
+to the master branch and Azure DevOps
+to ensure that build is successful
+before the merchant master can take place.
+Let's all take a closer look
+at the CI pipeline YAML file,
+that we executed once the
+integration pipeline is triggered,
+by the open pull request.
+First we'll define the
+VM image with Ubuntu.
+Next we'll define the variable group
+that will contain our
+environment variables.
+Thirdly, we will set the
+pull request trigger.
+Here we will define the
+integration test pipeline,
+to be executed only for
+our feature branches.
+Afterwards, we will define
+the Python version 3.7.
+Following this step,
+we will then log into our Azure account
+with the service principle.
+Recalling the development environment,
+we were using a config JSON
+file for authenticating.
+However, for the Azure pipelines,
+and the release pipelines,
+that we will discuss in the next section,
+only be using a service principle account.
+Afterwards, we will then
+install the dependencies
+required for the unit test poetry.
+Following this step, we will first need
+to configure our databricks profile,
+as we will be testing
+MLflow point the best model
+in the unit test up.
+Next, we will then run on a PEP-8
+to auto format the source code
+to PEP-8 standards.
+This ensures our code remains consistent,
+when multiple contributors
+are adding features
+enhancements to the source code.
+We'll also run code linting with flake8,
+to check for any syntax
+and style and errors
+within the code.
+Next, we'll run pytest for
+testing the source code.
+These unit tests are
+within the test directory
+located in the project root.
+Note the unit tests implemented here
+is for illustration purposes,
+it would need to be more
+extensive in practice.
+However, the unit tests are a
+critical part of the workflow
+to ensure the code is fully
+functioning as expected,
+before promoting an
+application into production.
+The last two steps,
+are then to publish the unit test results,
+and also the coverage of those tests.
+Next, we'll create the
+pipeline in Azure DevOps.
+When creating the pipeline,
+we would then select using the existing
+Azure pipeline YAML file,
+we would then select the CI
+pipeline file to reference.
+Once the pipeline is triggered
+and completed running,
+we can view the job results.
+Here we can step into each
+task for the output log.
+It can also be used for debugging,
+in the event one of the steps fails.
+As we can see from the screenshot,
+all steps defined in our YAML file,
+have successfully completed.
+In Azure DevOps, we can
+also view the results
+of the unit test,
+and also the coverage of those tests.
+Now to complete the pull request,
+we can see in the top right hand corner,
+that our pipeline has succeeded,
+and it's been reviewed.
+Therefore, this pull
+request cannot be merged
+with the master branch,
+and we can move into the release
+stage for our deployment.
+The final section,
+is out to discuss the
+continuous deployment
+of the release pipelines and Azure DevOps.
+When the pull request was merged,
+with the master branch
+in the previous step,
+this initialize a release pipeline
+to automate the model
+deployment into production.
+For more information or
+configuring releases,
+please see the provided link.
+But a high level to get started,
+and to create a release,
+slight releases under the pipeline's tab
+and Azure DevOps,
+as shown in the screenshot.
+And then select new release pipeline.
+To begin with the release setup,
+we will use an empty job template.
+Next we'll configure the build artifact,
+which was created from
+the master branch trigger.
+We will discuss this
+step more in a moment.
+Here we'll then enable the
+continuous deployment trigger,
+which will then kick off
+our test environment stage.
+After succeeding and approved,
+the model will be
+deployed into production.
+Within our test environment,
+we will create two stages.
+First for databricks,
+just like we did.
+(mumbles)
+We'll build the Docker image
+to contain the updated
+source code in dependencies,
+and then push the update image
+to the Azure Container Registry.
+This step is so that
+our test cluster pulls
+the most recent image when initializing.
+The second stage is related to submitting
+and publishing the Azure ML pipelines.
+We'll talk about both of these stages
+in a moment as well.
+Now let's briefly take a look
+at the Azure pipeline YAML file
+for the build artifact.
+Similar setup best before
+in the integration pipeline.
+However, this time we will set
+the branch trigger to master.
+Next, we'll log into our Azure account,
+in the final to task,
+or to create a copy of our source code,
+and finally publish the artifact,
+which we'll reference in the really setup.
+Circling back to the stage setup,
+each task within the stage,
+will consist of adding
+a command line agent job
+as shown in the screenshot.
+Also, the define stages,
+run our agent in an agent pool.
+In this example, we will run these jobs
+on Linux compute nodes.
+Next, the first task,
+is to set up the test
+stages for databricks.
+Here we have four tests for building,
+and pushing the updated image
+for the test cluster as
+we discussed earlier,
+in the development environment.
+Moreover, each code block here,
+will be its own individual stage
+with the execution of script
+for the corresponding task as shown here.
+Lastly, note that we will need
+to set the working directory
+of the bill artifact,
+so that our path to the Docker file
+is properly configured.
+Similarly, for the AzureML side,
+we will set up our environment
+using poetry install,
+and then submit the training
+and model deployment pipeline,
+followed by publishing
+the pipeline itself.
+Recall when we submit the pipeline,
+it executes the defined steps.
+While for our published
+pipeline it can be triggered,
+such as a file uploaded to a blob store,
+or scheduled or on define key dates,
+for the steps to then be executed.
+The last step here is then
+to disable the pipeline,
+as it will no longer be in use
+once the test stage is complete.
+In this scenario, one of the reasons
+that databricks and Azure
+ML stages are segmented,
+is to help isolate any
+issues that may arise.
+Finally, for the production stage,
+the same task are executed as in the test.
+However, we will consolidate these steps
+into one stage.
+And the last step to make here,
+is in regards to defining
+the environment variables.
+The variables tab within the task
+configuration window as shown here,
+allows you to easily assign the variables
+based on the environment
+it should correspond to.
+Once a release setup is configured,
+we can now save and use this release,
+for the continuous deployment phase.
+As shown here, the master branch trigger,
+execute the release phase of our workflow.
+At this point, the Azure
+pipeline YAML file,
+will be executed to build
+and publish the release artifact,
+which then kicks off
+executing the databricks
+and Azure ML test stages
+as previously discussed.
+After test succeeds,
+we then have an option
+of setting up post deployment approvals,
+such as a release gate.
+Where someone like a project owner,
+would have the final review,
+prior to promoting to production.
+I would recommend checking
+out the documentation
+for more settings to configure
+your deployment approvals.
+Finally, once the tests have passed,
+our image classification model,
+has now been been
+deployed into production.
+So in conclusion,
+we have not demonstrated
+how to develop a machine
+learning pipeline,
+which integrates both
+databricks and Azure ML,
+and walk through how to
+deploy our toy example.
+The deep learning image
+classification model,
+into production using CI/CD.
+The idea for the framework
+presented here today,
+is to be adopted as a starting point
+for other data science use cases,
+to help enable the acceleration
+of deploying ML applications
+into production.
+- All right, thank you.

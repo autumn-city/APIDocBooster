@@ -1,0 +1,616 @@
+Welcome. Today, we are going to do our exercise
+on semantic segmentation now ah the network
+which . So, we had basically ah worked out
+on two different networks one of them was
+called as U-Net, and the other one was called
+a SegNet . Now, while in U-Net ah you do recall
+that ah one of the major advantages was that
+you had ah some sort of a VGA like structure
+of ah down sampling. So, there were consecutive
+blocks of convolution, and then you had a
+max pooling block which was down sampling
+it and then this kept on repeating over the
+process.
+And then ah you could transfer ah all of these
+ah last layers of features and appended on
+the decoder pathway over there. On the other
+side, you had SegNet in which there was a
+any such sort of ah appending of these feature
+layers, but then ah it was again similar to
+a vgg like structure I said for the fact that
+in the decoder side you were ah when trying
+to do a max ah unpooling equivalent of it.
+So, it was not just a simple interpolation
+which was has in the case of a U-Net, but
+here you actually ah could do a index passing
+based interpolation or which was the location
+from where exactly you are pooling was happening
+on the encoder and that was passed down onto
+your decoder side over there in order to get
+down a much higher resolution version of the
+image so that ah on one side it helped you
+do actually we create out high frequency components
+in a much better way, then ah you would have
+otherwise done when trying to use a simple
+ah nearest neighbor or a bilinear kind of
+an interpolation .
+Now, here today what we are going to do is
+take up an ah example problem, and we are
+not taking up any of these ah key t data set
+kind of problems where you have ah ah hand
+annotated labels over ah camera images or
+there are videos over which ah say roads,
+cars, trees, footpaths, these things are annotated,
+but we are taking down the problem from ah
+something which we had solved out in the earlier
+ah lectures, and this is basically on vessel
+detection.
+So, ah there are class of images called as
+ah retinal images and these are when you use
+an ophthalmoscope. So, these are predominantly
+medical grade images . So, an ophthalmoscope
+is used by ah a retinal ah physician in order
+to look into their retina. So, which is the
+photo sensory layer and then the rear part
+of your eye. Now, over there there are multiple
+blood vessels which actually ah circulate
+blood through your retina and that that is
+the only source of your nutritioning of the
+retina going down .
+Now, in in a certain class of problems, there
+are ah new kind of diseases or a lesions or
+some sort of car kind of things which ah appear
+start appearing on the retina, and this can
+appear typically if you are diabetic or you
+are old age, and and some of these are really
+age related . Now, the distance of this location
+of this lesion from the retina is something
+which is very crucial and ah it is typically
+expected that it is really far off from the
+retina . Now, for that ah you would need these
+vessels to be ah discriminated out quite perfectly.
+And then this whole problem which we are solving
+over here today is of ah vessel segmentation
+.
+So, we are solving out vessel ah segmentation
+in these retinal images as ah sematic segmentation
+problem . The particular data set which we
+are using is called as drive ah or the digital
+retinal images for vessel extraction. Now,
+this is an openly available data set you can
+just click go over there and register ah sign
+up and you would get down the data . Now,
+what it has is ah there are two different
+sets over there; one is called as the training
+set and other is called as a testing set.
+In the training set, you have 20 images you
+have 20 images in the testing set itself . Now
+all the images be it on training set or on
+the testing set and annotated by two different
+radiologists. So, ah two different ophthalmologist
+ophthalmic ah physicians, who have actually
+marked down where these vessels are present
+down and then that acts as a ground truth
+. Now, our purpose is that ah we are trying
+to solve it as a semantic segmentation problem.
+So, given ah RGB image using a convolutional
+segmentation ah mechanism over there, we ah
+would like to find out ah the different classes
+which belong to so each pixel belongs to which
+of these classes . So, there is a pix ah there
+is a class annotation coming down for each
+of these pixels over there .
+So, let us start ah and then go through what
+what is done over there. So, the initial part
+is quite simple, you have your standard header
+which ah is similar to what we have been using;
+otherwise and then there is no extra additions
+which comes down over there.
+Now, for your ah data part over there, so
+since we have two different data sets one
+is called as the training dataset and other
+is a test dataset . So, we make ah two different
+path allocations over there. One is for your
+train ah directory when you have to all your
+training images; and the other one is for
+your testing directly when you are testing
+images are present .
+Now, ah once you have that one next what we
+end up doing is ah something like this that
+ah I am going to take ah these ah images from
+my train path ah and then ah so one simple
+way over here is just to show it to you .
+So, here what we do is say this is one of
+the sample images which you have on your training
+site . So, the RGB image standard which is
+given down then you have your ground truth.
+So, whatever is present in white is basically
+the vessels over there . Now, if you carefully
+look into this image, what you would see down
+is that ah there is a part of this image which
+is black, and the whole reason is because
+your eye circular the retina is also circular
+.
+So, whenever it images with a circular aperture,
+you are going to get down a circular zone
+over there . Whereas, your ah sensors over
+there they are typically rectangular in shape
+. So, this ah rest of these part which is
+not part of the circle is what is masked out
+as a black mask over there, so that is what
+we ah see ah in in this mask as well .
+So, what you typically get is ah this image
+plus these ground truth and the mask given
+down together ok . Now, this is from one of
+these images which is image number 21 from
+my training data set ok . Now, ah over here
+what we end up doing now is that ah we try
+to create ah 30 different manifestations of
+ah from each of these image, so that way I
+will be able to ah really ah polish up and
+get down a larger data size coming down as
+compared to just being limited to only 20
+images because that is pretty small .
+Now, ah for that the initial part is to define
+a blank tensor over there and the way we are
+defining it down as that since I am picking
+up 30 ah sample patches and ah these are not
+small size patches, but these are rather big
+big size patches over there . And I am going
+to pick down 30 sample patches per image and
+there are 20 images.
+So, in total I will be getting down 600 such
+sample patches coming to me each is an RGB
+image. So, you have three channels over here
+. And then in order to be conformal to ah
+image net like architectures, so it is not
+mandatory that you need to be conformal at
+least for semantic segmentation purposes over
+here . So, we are just taking down ah it 224
+cross 224 and then sticking down over there
+ok.
+Now, on my training labels, what I have I
+have similar ah number of ah labels . So,
+I will have 600 ah label maps ah generated
+down with ah each for each of these ah training
+images which I am taking down . Now, if you
+look down I do not actu actually have a channel
+coefficient over here . Now, looking back
+into when we were learning down about semantic
+segmentation, so the whole point was that
+given an RGB image over there on the output
+side you are going to get down one channel
+which is corresponding to each ah class over
+there .
+However, ah the mechanism of training this
+thing is either with say negative log likelihood
+loss or with a binary cross entropy kind of
+a criterias . In those cases while your network
+is still going to generate out ah these number
+of slices or the number of channels which
+correspond to each of these classes . But
+ah in your training ah in in the data ground
+truth data which you are passing down for
+training over there that data over there is
+just going to have ah these particular channel
+numbers or the class number given down.
+So, if it is class number zero that corresponds
+to channel zero and that will be of high;
+if it is class number one then it corresponds
+to ah channel number one which will have the
+highest probability over there . So, for that
+reason, we just pass down ah 3d matrix ah
+3d tenser over there where each element of
+the tensile is a ah matrix of ah 224 cross
+224 .
+Now, on my testing side over there what I
+choose to do is ah we do not ah take any more
+patching around the whole image, but we pass
+down the whole image as it is in a size of
+224 cross 224 . So, there are 20 images on
+my testing side and ah corresponding to each
+of them I have my testing labels also defined
+. This helps me in finding out my accuracy
+as well as ah my my loss calculation on the
+validation ah part of my code .
+Now, that ah we end up doing this one the
+first part is ah basically ah take ah open
+up one of these images from my training data
+set . Now, once I have this a image taken
+down over there the next part is to keep on
+generating ah these ah labels over there .
+Now, what we end up doing is ah if it is it
+belongs to the background which is ah over
+here. So, if it is in the mask zone and if
+this is black, then we just retain that as
+ah class 0. If I have ah any of these ah regions
+present over here which are my blood vessels,
+then I put them as ah class one and if I have
+this background over here then I make that
+as class 2 . So, it is 0, 1, 2 or 3 class
+classification problem which I have and that
+label is what is associated ah with each pixel
+coming down over there . So, now ah that is
+what is effectively done over here. So, you
+have your ah annotation per pixel for class
+levels also given now .
+Now, what we do is we randomly ah pull out
+certain chunks over there ah to ah get down
+some random cropped out regions ok. So, this
+is what we initiate over here . And we choose
+such thirty random locations. So, what its
+effe essentially doing is you have a large
+size image , but you want to chunk out only
+224 cross 224 sized blocks over there .
+Now, what ah we are doing is we are randomly
+generating some x and y indices size that
+I can have these as random positions over
+there, and I can chunk out 224 cross 224 sized
+blocks out of it. And this just helps me augment
+out my data set without incorporating any
+without undergoing any changes sort of a bias
+ah towards a particular ah region or location
+over there ok .
+Now, once that is done we have it packed up
+in our ah training data set format and then
+ah ah so yeah. So, we take up these ah training
+data over there, and then this is the packing
+which keeps on going down over there . Now,
+once this whole packing is done, we pack down
+both the training data which is the image
+as well as the training labels over there
+. So, each has to be in the same format ah
+packed up .
+Now, once that packing is done, so you can
+have a look into what it looks like. So, you
+have your 600 cross ah 3 cross 224 cross 224
+which is your input data tensor size you have
+600 cross 224 cross 224 which is your class
+ah tensor size, and then you have your ah
+test data over there as well .
+Now, once we have this ah we just invoke our
+ah training and testing ah data loaders over
+there, and we choose to have a batch size
+of ten . Now, keep one thing in mind that
+ah here this process is obviously, memory
+intensive because ah you are not doing ah
+you do not have a neural network which is
+just taking an an image it comes down to some
+linear neuron representation over there .
+So, in in this case because it is it is narrowing
+down in its representation form, so it is
+going to use lesser amount of operational
+memory . However, here you are almost going
+to continue in the same way or sometimes it
+goes down and then ah in the decoder part
+it again starts ah moving up in that way these
+kind of networks do require more ah amount
+of operational memory, they are more data
+intensive as such going down. So, the batch
+size is typically ah need to be brought down
+to ah a lesser number ok . Next, we check
+out our ah same old trick over there to find
+out if GPU is available, and if cuda is ready
+then we can just export out onto the GPU for
+faster execution .
+Now, here we start by defining our network
+. Now, this network which we use is ah not
+exactly the SegNet, but ah there is a model
+which is loosely inspired by SegNet and it
+is a much simpler model and it is a trivial
+model . Now, one of the reasons why ah we
+chose to go with a trivial model is that ah
+in order to one point is in order to avoid
+overfitting . If you have large number of
+parameters and lesser amount of training data,
+you are prone to overfit ah over the model
+.
+The next important aspect which comes out
+ah over here is that ah the total number of
+classes which I am taking on the output is
+3, it is it is a really less number of classes
+coming down . So, there might possibly not
+be too many ah different kind of manifestations
+which it has to learn up and that is one of
+the reasons why we are just taking down to
+this kind of a very simple ah baseline model
+of a ah segmentation convol convolutional
+semantic segmentation network . So, what we
+have in this network is pretty simple, I have
+a convolution layer ah where the kernel sizes
+are 3 cross 3, and I have 64 such ah kernels
+ah taken down for my work
+Now, I do ah convolution with the stride of
+one and a padding of one which necessarily
+means that whatever was the size of my ah
+x y dimension of my input image . After this
+convolution, I am going to retain the same
+x y dimension over there, because I am not
+changing down either the stride or the padding
+given over here . The next point is the we
+put in place a non-linearity, and this is
+a rectified ah linear unit which is ah put
+in place for a non-linearity to come down
+.
+Following this, we have a max pooling of ah
+2 cross 2 kernel size with a stride of two.
+So, this is a 2 cross 2 max pooling which
+means that the x and y dimensions are going
+to get reduced to half of it . Now, this part
+serves as the encoder part over there . Now,
+one thing which we do extra is that we set
+in this extra argument over here which is
+called as return indices equal to true. And
+one of the reasons for doing this return indices
+is equal to true is that ah we need to have
+a trace of where all these indices were present
+in order to do our unspooling. It was the
+logic for a SegNet like behavior was that
+you are not going to just ah do a bilinear
+interpolation or a nearest neighbor interpolation
+in order to scale it up during the unpooling
+there, but you will do a guided sort of a
+unpooling, so which meant that you needed
+to have an index transfer from your encoder
+to your decoder side as well .
+Now, in your decoder side what you have is,
+ah first you have a unpooling over there which
+skills it up, now once you have that unpooling
+after that you have your convolution ah a
+2D convolution coming down . So, this 2D convolutions
+job is to convert down 64 channels onto 3
+channels . Now, this is three channels is
+not corresponding to the image channels over
+there, but this is because you have 3 different
+classes .
+Now, if you took down 6 classes then you would
+have 6 channels, if you take down 10 classes,
+then you have 10 channels over here the convolutions
+are still with the kernel size of 3 plus 3
+with a stride of one and a padding of one
+which meant that the same size xy size is
+preserve. Now, if we look into this kind of
+a network, so if my input is ah 3 cross 224
+cross 224, then ah after this before this
+max pooling just after the ReLu, it is going
+to be 64 cross 224 cross 224 .
+After this max pooling, it is going to be
+64 cross ah 112 cross 112 . Now, from here
+when I do an max unpooling over there, so
+that is going to take in 64 cross 112 cross
+112, and make it up to 64 cross 224 cross
+224 . Then I have this convolution running
+down and this is going to return me a 3 cross
+224 cross 224 where each of these channel
+corresponds to one of the ah classes ah to
+which a pixel can belong to ok .
+Next, we have the forward definition for this
+network return term which is plain and straight.
+So, what you do is you take an input over
+there, you pass it through the first convolution
+layer, then pass it through the relu after
+you have passed it through the relu you are
+going to pass it through the max pooling . On
+the max pooling side, we are supposed to take
+down these indices for ah the pooling indices
+as well, so that we can pass it down to the
+unpooling layer. So, that is this id x 1 which
+is taken up
+Next when the max unpooling layer comes into
+play, you pass down the output from the previous
+layer which is x as well as these indices
+as well. Now, you have the unpooled version
+coming up over here and then you do your second
+convolution over here which is with the ah
+block called as conv 1 d so that is straightforward
+a very simple SegNet like architecture which
+has just one convolution layer one max pooling,
+one max unpooling another convolution .
+Now, you can definitely ah make these ah instead
+of one single convolution layer you can have
+a band of convolution and that depends on
+ah what is the granularity of the problem
+you are trying to look at, and what are the
+different classes ah you are trying to solve.
+If it is just a plain simple three class which
+is like apparently visually even very distinct
+from each other, then it does not make sense
+to even go down for more number of ah kernels
+or even depth encoding of these kernels you
+can pretty much do it with a very shallow
+network as we are doing over here .
+Ah The next part is to ah work on the initialization
+of this model and that is pretty straightforward.
+So, you you just define a variable over here
+called as net which is equal to SegNet, and
+SegNet is the model which is defined by this
+function created over here. And then if there
+is a GPU then con just convert it onto cuda
+. Now, the next part is to define these two
+important parts; one is your criterion function,
+another or the loss function another is your
+optimizer . So, for loss we are going to use
+ah classification loss for ah negative log
+likelihood .
+Now, one thing you need to remember is that
+ah the output which it is producing is no
+more a 1d tensor, but it is a 2d tensor . So,
+we need to use a negative log likelihood loss
+which is going to calculate itself on a per
+pixel basis or a per neuron output over this
+2 d matrix . And for that there is a separate
+kind of a function which is called as a nll
+ah loss 2d . So, this is just to give down
+that ah whatever comes out on your output
+side you are just going to operate it on the
+2d space. And it is 2d tensor and not a d
+tensor which comes out if you were using a
+classification model over there ok. Now, ah
+you have your optimizer and we choose to use
+Adam as our optimizer over here .
+Now, next comes down my training part over
+there. Now, we decided to train it just for
+100 epochs as such and then ah we have have
+our stand up routine written down for training
+. Now, what we do is ah if I have my ah GPU
+available then inputs and labels both are
+converted on to ah variables and type casted
+as cuda . So, these labels are basically ah
+the outputs over there on the training data
+and the input is this image which goes on
+the input side over there . Now, if I do not
+have a GPU available then ah the typecasting
+is not done , but you still need to convert
+it onto an auto grade variable for the auto
+grade solver to come into play .
+Next you do a feed forward and get down your
+output. So, this output is a three channel
+output over there of the same size as that
+of the input image . So, here it is going
+to stay down to 224 cross 224 . Then you have
+your loss being calculated over here. Now,
+in case of your loss what you need to do is
+the outputs over there since I am using a
+negative log likelihood lost function . So,
+I need to have a log softmax calculate it
+over the output so that is what is taken care
+and ah you also pass down your labels so which
+particular pixel is ah or which particular
+class ah um is is denoting a particular pixel
+over there .
+Next, we zero down ah our gradients in the
+optimizer and then you do a lost dot backward
+or the back propagation operation over the
+loss which is nabla of ah loss or del del
+w or gw is what is calculated over there . Now,
+ah this part is ah the first derivative of
+the loss function, then you have your rest
+of the network whose ah weights are updated,
+following the update rule and that is with
+this step ah optimizer dot step . Then you
+can find out your ah running loss or accumulate
+out loss over all the samples in a given epoch
+and then you have the same thing ah stored
+down over there.
+Now, these are pretty straightforward and
+simple. The only important change which comes
+with ah semantic segmentation or a pixel wise
+classification is that your loss function
+changes on to a 2d loss function such that
+now you can use these ah not just one single
+tensor of an output, but now you have a two
+ah 3d tensor which is coming out in the earlier
+case you would have just a 1d tensor coming
+out as your output
+So, after that ah ah this training is over,
+ah then what we do is we try to look into
+the performance over there. Now, for performance
+what we do is we just ah pass over the data
+on my testing data available to me. So, there
+were 20 images which I was using for my testing
+. Now, I do a feed forward over here then
+find out my loss using my criteria function
+and then I keep on accumulating this loss
+.
+So, this is my validation loss which is ah
+getting accumulated over there . Then I have
+my ah plotting routines and then my timekeeper
+over here .
+Now, if we go through this one we can pretty
+much see that ah it keeps on running over
+there and then ah we can find out that ah
+per iteration we calculated out separately.
+So, once you have your training loss reported,
+and then you are testing losses. So, it starts
+ah somewhere around ah a training loss of
+0.05 and then it keeps on decreasing where
+ah somewhere around the third one hundred
+epoch this training loss is something which
+goes down about 0.02 ok .
+So, this is my funk ah plot for this training
+loss as well as the testing loss now . What
+you can see is that while you are training
+loss was ah still higher, but you are testing
+loss keeps on going low which definitely is
+a good sign because this means that your model
+is now ah generalizing much faster over a
+larger corpus of images then ah . So, typically
+if your test loss is lower than your training
+loss it means that the generalization ability
+for your network is definitely good . Whereas,
+if it is the other way around where your test
+loss is above the training loss then its prone
+to over fitting and then that is not a scenario
+which you would prefer in any cases .
+Now, comes down our visualization of what
+this model has learnt out. So, what we end
+up doing over here is pretty simple. I am
+going to pick up one of these images from
+ah from my testing set over there. And then
+on the only one of these images I am going
+to actually show you what comes out ok.
+So, let us ah look into what comes out over
+here. So, we had picked up one of those images
+on which for my channel one which was basically
+my background class . So, white is the regions
+which have the highest probability. So, since
+the blank out region ah over there master
+out region was belonging to class zero, so
+that is the region which gets the highest
+probability over here and that is become one
+. Channel two was what belong to the vessel,
+so I can see my vessel probabilities coming
+up over here. Channel three is the probability
+of getting down my background tissue ah over
+here off of the retina, so that is what I
+end up ah getting in this map coming up .
+Now, if we compare that with our ground truth
+then that is also pretty much standard. So,
+this is just the pixels which belong to the
+background class, so that is marked in white.
+So, if a particular pixel belongs to a class,
+we are just going to show it up in white . When
+it belongs to my vessels and where it belongs
+to my ah background tissue over there . So,
+this ah let us ah zoom out a bit so that you
+can actually see them yeah.
+So, now, if you ah now since you can compare
+ah all of these together. So, you can see
+pretty much how accurately the semantic segmentation
+with such a lightweight network ah really
+comes up in ah segmenting out all of these
+blood vessels much more accurately then you
+could have otherwise thought of. And it does
+not actually take much of amount of time.
+So, if we get back into our ah training time
+consumed over there, so in order to finish
+off 100 epochs of training it just took me
+6 minutes and 48 seconds on ah our machine
+so that means, that this kind of a network
+is actually pretty fast to train and ah does
+not have much of a overhead incurred as such
+.
+So, this ah is one of these examples of trying
+to have a very simple semantic segmentation
+ah using a network of your own side. It is
+ah not always necessary that you will have
+to stick down to very costly networks and
+ah much deeper networks with complicated calculations.
+If the problem demands that you can actually
+ah finish it off with simpler ah networks
+over here. Then ah be it so, so this is a
+clear example of where a simpler network beats
+ah any of these more complicated networks
+in order to solve it out .
+So, that is where we come to an end on semantic
+segmentation. And this week ah lecturer ah
+series. So, in the next week we are going
+to enter into another interesting aspect about
+ah deep neural networks and that is called
+as generative modeling or ah is there some
+way that ah given some random numbers can
+we generate an image in a very simple sense.
+So, ah just stay tuned ah next week ah when
+we get back onto this interesting aspect of
+ah genetic models as well till then ah.
+Thanks.

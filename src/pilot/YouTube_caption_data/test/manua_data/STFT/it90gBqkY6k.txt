@@ -1,0 +1,126 @@
+Welcome everyone. My name is Hendrik Schroeter and today I will present
+DeepFilterNet, a low complexity speech enhancement framework based on deep filtering.
+So these are our contributions.
+We propose to use a perceptional speech enhancement approach that works with
+full band audio. We have real-time capabilities and support latencies down to
+5 milliseconds. The overall complexity is really low, with only
+0.35 giga multiply adds per second. The code is open source and
+we also have a demo, which I will show you in the end of the presentation.
+So we assume the speech model that consists of a periodic and a stochastic component.
+So what we want to do is we want to have 2 stages in our
+framework. The first one enhances only the speech envelope.
+And the second stage then focuses to enhance the periodic part of speech.
+So let's demonstrate this on this example.
+Here, we have a noisy sample with some background noise.
+Some have accepted it as a miracle without physical explanation
+And if we er look the enhanced version using only the first stage of the framework
+Now let's listen to this.
+Some have accepted it as a miracle without physical explanation
+So you can hear that
+there's a lot of noise removed.
+But you can still hear noise superimposed over the voiced parts of speech.
+So you can still barely hear the
+background noise.
+And when we zoom in we can still see these horizontal [noise] stripes
+and the speech harmonics are not very clear.
+So now let us listen to the finally enhanced version using
+also the second stage, which focuses on the periodic component of speech.
+Some have accepted it as a miracle without physical explanation
+So now the speech sounds a lot more clear.
+Now let's look at the framework.
+Starting with a noisy audio signal x:
+We transform it to frequency domain, using a short time Fourier transformation.
+Then for the first stage we compute ERB features, where we basically scale down our
+input spectrogram to ERB bands, resulting in only thirty two.
+ERB band features. These are fit into the encoder decoder structure
+where we have some convolutions and a GRU.
+And the output gains are also in ERB scale, so also only thirty two ERB
+scaled gains are then applied to the noisy spectrum by scaling them back
+to frequency domain
+and just point was multiplying. So these gains are only real valued. And here,
+given the coarse frequency resolution, we are only able to enhance
+the speech envelope. For the second stage, we compute complex features.
+Because now, we want to enhance the periodic component of speech and therefore need to modify in the face to remove all the noise around
+the speech harmonics.
+And then,
+these complex features are fit into the DeepFilterNet part, which then predicts
+complex coefficient c. These are applied on the already enhanced spectrum.
+and, finally, is transformed back to time domain using
+an inverse STFT. Now, before looking
+at deep filtering, I want to show you the network structure.
+The first stage is essentially a simple U-Net where we have some convolutions, that a scaled down, the
+frequency dimension as well as some GRUs in the bottom.
+We overall focused on implementing a very efficient DNN that has standard layers that we can also fuse together and has
+good support in inference frameworks. Finally to get
+the number of parameters, and especially multiple ad operations, low, we focussed on getting small.
+input / output. So for the first stage we only have thirty two ERB bands per time step.
+For the second stage we have, I think, ninety six frequency bins, so frequency bins up to a frequency of
+5 kHz. And this allows to only have a very
+low amount of parameters and especially multiply adds.
+And finally we also use DNN sparseness by grouping, so basically a linear or GRU layer, consists of
+multiple smaller ones, that only preserves part of the input and this greatly reduces the number of parameters and
+floating point operations. On the training details: We trained on the DNS three data set.
+We uses thirty two ERB bands, as stated before for the first stage, and finally,
+for the second stage we use an upper frequency of 5 kHz. Since since the energy or the most energy of
+periodic component is below that. We use a loss in frequency domain.
+With a magnitude part and a complex part where c is a compression parameter to model the perceived
+loudness, I think it's zero point six. And furthermore, if you experience on the gradient
+computation. we also propose a way to make the gradient more robust.
+You may have a look at the paper then.
+Now what is deep filtering?
+So what we usually do is we use a complex ratio mask where we have
+one complex efficient per time and frequency bin,
+that we just multiply with the noisy spectrum. What we use instead is
+deep filtering where we have multiple coefficients that are then multiplied
+to the corresponding time frequency bins and finally sum summed up.
+the get the current enhanced time frequency bin. So essentially, this is a
+or a complex linear combination or a complex filter of order n. And in this case n is 4.
+So essentially, a CRM
+is just a special case of deep filtering, where we have the filter order of 1.
+Now, when we compare the filtering and the complex ratio mask
+we can see in this experiment over multiple FFT sizes, so here 240 corresponds to 5 ms
+and 1440 corresponds to 30 ms.
+We can see in that deep filtering outperforms the complex ratio mask over
+all FFT sizes and also all frequency resolutions. And this is especially true for the low FFT sizes
+where we have a low frequency resolution. So for instance for two and forty samples
+FFT window size, we have a frequency resolution of 250 Hz. Assuming
+a low male a pitch of 50 Hz, we could have up to five speech harmonics
+within one frequency bin. And here, the complex ration mask really struggles to reconstruct
+the clean phase, since we have five complex pointers that rotate
+with different speeds and deep filtering on the other hand, has now the advantage to incorporate
+or to model the periodic, the underlying periodic signal.
+And thus is able to better reconstruct the original clean phase.
+And we can also see this behavior. we look at a qualitative example where we have a noisy input signal on the left hand side.
+And when we look at the first or the third harmonic, we can see that it's barely visible in the noisy signal.
+Then on the in the middle we can see an enhanced version using
+a complex ratio mask, and here we can see that it really struggles to reconstruct this harmonic.
+Finally, on the right hand side, deep filtering is able to reconstruct this harmonic
+fairly good, so, this in the end sounds more natural.
+When we compare this to related work. Here, we have percepnet, which also uses a perceptual approach.
+similar ERB band first stage and for the second stage uses a comb filter
+enhance the periodic component. Then, DCCRN
+complex U-Net like network, which operates in the complex domain. And DCCRN plus
+has some improvements also, including deep filtering so they use deep filtering in the output.
+And a finally DeepFilterNet, a compares really or provides a really good performance
+complexity trade-of given the really low amount of multiply add operations.
+We get a really good performance on pesq on the voice bank demand data set.
+We have code!
+So we provide full code for a training and evaluation of this
+framework, as well as some pretrained network weights. We also provide
+dataloading framework including: ISTFT STFT loop written in rust, which can be easily
+used from pytorch. So this
+go, chack it out on github, we have some new cool stuff.
+there as well. Also, we have some audio samples online where we compare
+first stage only than deep filterin using a first stage and a crm stage.
+As well as finnaly using the first stage and a deep filtering as second stage.
+So here, you can listen to those different outputs. Finally, I want to show you a demo.
+So, let's see how a deep filter net enhances my voice.
+Here, we can record an audio signal or a speech signal. Or also upload this different speech signal.
+This will be mixed with a noise which you can also upload your own noises.
+Then, we can run the network the hugging face hardware and
+let's see how deep filter net enhances my voice. This is the resulting
+mixed noisy signal. And when we listen to enhanced version?
+let's see how deep filter net enhances my voice.
+You can hear that most of the noise is removed.
+These are my references and thank you for your attention.
+ Feel free to reach out to me, write me an email or open a github issue.

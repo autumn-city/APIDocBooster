@@ -1,0 +1,929 @@
+yeah thanks a lot david for the
+introduction
+and uh thank you for joining this talk
+so yeah
+it's jean-claude it's a french name
+so and yeah today i'll be talking to you
+about how to
+combine tensor methods with deep
+learning
+so i guess yeah the main thing in modern
+deep learning and modern machine
+learning is that most of the data we
+manipulate is inherently
+multi-dimensional so if you think for
+example
+mri or functional mri so all this kind
+of data has a lot of spatiotemporal and
+topological structure
+and leveraging that structure is crucial
+for good learning
+and so the aim of this topic is seeing
+how we can use tensor methods to
+leverage that structure and move away
+from typical
+matrix algebraic methods and instead use
+tensor methods and so for all purposes
+of this talk by tensors i simply mean
+multi-dimensional arrays
+and the order of a tensor is this number
+of dimension
+so i really like this slide by charles
+bandung where he
+kind of illustrated the shift in the
+level of thinking
+from scalar level thinking to matrix
+level thinking in the 80s and
+today tensor level thinking and so they
+can let him to say that tensors are the
+next big thing
+and so in the context of deep learning
+why attention is the next big thing
+because they can give us several things
+including compression
+so large reduction in number of
+parameters but also speed ups through
+more efficient operations
+improved performance and generalization
+through better inductive biases
+and also better robustness whether
+that's to noise or to things like
+adversarial attacks or
+domain shifts so i'm just going to give
+a quick introduction to tensor
+decompositions to make sure we're all on
+the same page
+so the core operation of tensor methods
+is tensor contraction which kind of
+generalizes the main concept of
+matrix with matrix or matrix with vector
+product so if we contract
+a matrix of the vector we take a linear
+combination of its columns
+and we contract over one dimension so
+the result
+is a vector so the same thing can be
+done for tensors and that's called the n
+mode product where we're contracting
+a tensor with a matrix or a vector along
+its nth
+mode or dimension and in that case the
+result is a linear combination of the
+slices that compose the tensor
+and of course we can contract a tensor
+with two or more matrices of vectors so
+here we contract a third order tensor
+with two vectors so we contract over two
+dimensions
+and the results is a multi-linear
+combination
+of the fibers that compose the tensors
+and so using the sensor contraction we
+can generalize other operations
+such as matrix decomposition to higher
+orders
+so in the matrix case um if we have a
+matrix we can express it as a sum
+of rank one matrices so each rank one
+matrix is now two products of two
+vectors
+and this can be generalized to tensors
+and that's the canonical polyadic
+decomposition sometimes also called
+paraffin and then the idea is the same
+you take the original tensor and you
+express it as a sum of rank one tensors
+well now
+a rank one tensor is not a product of
+three vectors or more
+there are other kinds of tensor
+decompositions so i'm only going to
+introduce the the ones we're going to
+use so the tekker decomposition for
+example also called
+higher order svd or higher order pca
+sometimes expresses
+a source tensor as a small core tensor
+which can be thought of as spanning
+a latent subspace like for the pca in
+the matrix case
+and we have a set of factors typically
+auto-normal that can project to and from
+that subspace and back to the original
+tensor
+and finally the other most ubiquitous
+sensor decomposition is probably called
+the tensor train decomposition
+introduced by even oscillators to the
+machine learning field
+and if you come from physics you
+probably know it as the matrix product
+state and there the idea is you take
+your original tensor
+and express it as a sequence of third
+order chords
+or which kind of form a train of tensors
+hence the name
+and so just to briefly mention
+implementations
+tensor methods in general are quite
+powerful and have been widely used in
+several fields
+but there kind of has been a lag in
+their use in machine learning
+and one of the reasons is perhaps a
+steeper learning curve but also a lack
+of available implementation in python
+and difficulty of implementing some of
+these methods in practice
+and so that's why we introduced tensorly
+which is a high level api for tensor
+methods in python
+with the goal of democratizing tensors
+so it's open source and we have a large
+community of contributors from all over
+the world and we welcome
+any contributions so the idea is simply
+to
+kind of build on top of a flexible
+back-end system which allows to
+transparently run code written intensely
+with any framework such as numpy pythons
+etc
+and on top of this back end we implement
+tensor algebraic operations such as
+element product etc
+and finally tensor decompositions and
+regression
+so it essentially gives an easy and
+flexible interface
+to tensor method so you can easily form
+tensors in decomposed form
+reconstruct the fault answer do n mod
+android products and other operations
+and when you have a any tensor you can
+also easily apply a tensor decomposition
+with an api that's similar to the
+psychic length so here for example you
+can
+create a random tensor of size four by
+five by three and you create
+an instance of a cpd composition of rank
+12 and you can simply
+fit that decomposition to your tensor to
+get a cp decomposition
+and as you can see the reconstruction
+error is of course very small
+so now that we have this tool of tensor
+decomposition
+we can apply this to neural networks by
+decomposing for example the parameters
+of the model
+so probably the first use of tensor
+methods within neural networks
+was was done by alexander novikov in
+europe's
+paper where they proposed to tensorize
+the matrix parameterizing fully
+connected layers
+so if you have a fully connected layer
+parameterized by a matrix of size i1 by
+i2 by l3
+for the number of rows and j1 j2 j3 for
+number of columns
+you can tensorize it by reshaping it
+into a higher order tensor where each
+dimension or mode
+jointly parameterizes part of the input
+and part of the outputs
+you can then decompose that tensor for
+example using tensor train
+and during inference you can directly
+contract the activation tensor
+with the factors of the decomposition
+and you can also
+fine-tune or optimize directly with
+respect to the cores of the
+decomposition so that kind of results in
+large compression ratios but also
+better performance
+so that's actually also known as mpo in
+physics and we can come back later to
+this
+so another way to incorporate tensor
+operations in deep neural networks is
+actually
+take operations that natively operate on
+tensors and incorporate them as layers
+in the neural networks
+so in a traditional approach you would
+have a batch of images for example if
+you're doing computer vision
+and you would pass them through a series
+of convolutions pooling and
+non-linearities
+which would give you an activation
+tensor representing the input and its
+structure
+and typically the structure is discarded
+by passing it through a flattening
+layer and then a series of fully
+connected layers and this combination
+of flattening and fully connected layers
+not only discuss
+the topological structure it also
+results in large number of parameters
+so instead we can preserve the
+multi-linear structure by using tensor
+regression layers
+and directly predict the outputs by
+contracting
+the activation tensor with some low rank
+regression weights so here the
+regression weights are represented as a
+low rank tensor in factorized form for
+example here
+at tucker form and so in addition to
+preserving the multi-linear structure
+in the inputs tensor regression layers
+require less parameters and they can
+also
+reduce the so they can reduce number of
+parameters without hurting performance
+so here for example we took a resnet 101
+and we replaced flattening and fully
+connected layers with a
+tensor regression layer and on trend on
+imagenet as you can see there's a large
+region for which we can
+decrease the number of parameters
+without hurting accuracy
+and so so far we've seen how to
+parameterize fully connected layers or
+replace them but
+really the main success of deep
+convolutional neural networks is due to
+convolutions
+and so let's first have a quick
+refresher
+um so if a convolutional layer what
+essentially all you're doing is you take
+an image you convolve it with a feature
+and you get a feature map
+so if your input has several channels
+you will need one filter for each
+channel
+which results in a 3d kernel and so in
+practice we're learning
+a bank of filter so we now have a four
+dimensional tensor which is of size
+a number of input channels times the
+number of output channels times the
+heights times the width
+and you can also additionally have the
+time dimension
+so that's a prime candidate to apply
+tensor decomposition and there's been a
+few
+work doing exactly this so
+you can for example apply tucker
+decomposition or cp decomposition
+and in both cases you get a reduction of
+the number of parameters
+but what's really interesting is that
+there's a deep ties between
+tensor decomposition applied to a
+convolutional kernel and efficient
+convolutional blocks
+so if you play tucker decomposition to a
+convolution for example
+you can get resnet bottleneck block and
+if you apply cp
+you can get a mobilenet v2 block
+that's not only the only advantage
+so another thing you can do is once you
+have this
+cp structure on your convolution what
+you've essentially done you've
+disentangled the modes of variation of
+the
+convolution and so you get a separable
+convolution
+so you can train such a separable
+convolution so you can train a 2d
+network
+with a convolution in this factorized
+form in the 2d domain for example
+for prediction on from static images and
+then you can apply transduction
+to generalize to 3d there's a question
+by joseph in the chat i will ask him to
+unmute
+can you thanks can you explain um
+precisely what you're doing
+mathematically
+when you're saying you're doing 2d
+convolution
+or 3d separable convolution
+right so i yeah i didn't actually write
+the equations here
+um because it doesn't look great on the
+slides but essentially
+um yeah that's what i was trying to
+explain here so
+first there are discrete convolutions
+because we're doing it over images
+and so the idea is you take a filter
+which is for example a three by three
+filter and you take the inner product
+with
+each patch of the image and you kind of
+slide your filter across the image
+to get a response map and so you have as
+many filters as you have input channels
+and in practice you learn a bank of
+filters so you learn
+k convolutions so that's one
+convolutional layer
+so i'm sorry i'm a little ignorant of
+the terminology
+so what is the filter is what again
+um so if you're if you're training on
+images it's just like a matrix of size
+3x3 for example so
+it's um just as a filter essentially
+so like a simple thing would be like a
+sobel filter if you're trying to get the
+gradients of the image
+except here we're essentially learning
+the weights of the convolution
+and to it
+just yeah so how do you get these
+matrices
+that you use for your filter yeah that's
+a great question
+so they're just learned end to end as
+part of the learning process so
+we kind of initialize them randomly for
+example with a
+gaussian distribution and then we learn
+through gradient back propagation
+okay thanks i'm getting there still not
+there yet though
+yeah happy happy to chat more after
+after the talk but yeah essentially the
+goal is to
+instead of using handcrafted features
+like was done
+previously in computer vision we're now
+learning and to end these filters
+so typically before we'd have done
+something like histograms of oriented
+gradients
+all these kind of things now we're just
+learning end-to-end this convolutional
+layers
+and so yeah once we have this factorized
+form we can train on the 2d domain
+because we have this
+so we have this decomposed form and we
+can simply add a new factor to then
+generalize to
+for example the 3d domain or the spatial
+temporal domain
+and so this is particularly useful as it
+allows us to leverage representation we
+learn in the static domain
+and fine-tune to incorporate temporal
+variation and do well on for example
+video prediction tasks
+so another aspect of this is okay
+go ahead there's another question by uh
+vasilescu now um i if you raise your
+hand it's easier for me to unmute you
+but i can also read it out the question
+is what are you optimizing
+to learn the filters
+i see so yeah if you're doing image
+prediction for example we would have a
+crescent cross entropy loss or any kind
+of optimization problem so
+we're trying to for example have a bunch
+of images we're trying to predict
+uh what kind of what object is contained
+on the image that's the imagenet problem
+and we simply optimize this loss and
+then we optimize all the layers through
+grading by propagation so it depends on
+the problem but typically for vision
+there would be a
+image classification or image
+segmentation this kind of task
+great and so yeah so this this
+factorization
+results in less parameters but also um
+less number of operations so here that's
+the number
+of gigaflops so the number of
+operations and as you can see like a 3d
+convolution has much more parameters
+than
+a separable convolution even when the
+rank is high so here for example
+we selected the rank equal to six times
+the number of input channels or three
+times the number of input channels which
+is quite
+typical and we still have um less than
+half the number of
+flops of gigaflops of a regular
+convolution
+and so we applied this um to continuous
+emotion estimation from images so we try
+to predict
+levels of violence and arousal where
+valence is how positive or negative the
+state of mind is
+and arousal how exciting or calming the
+experience is so we have
+videos of people and we try to kind of
+predict their emotional state
+and so there one challenge is that there
+is quite a lot of
+annotated images but we have much less
+annotated videos because it's quite
+costly to get experts to annotate each
+frame
+so there what we did is we first trained
+the network in fact form on the 2d
+domain
+and we then applied transaction to
+generalize to videos where we have less
+annotated data
+and so using this technique we were able
+to get a model that had better
+performance but
+much less parameters
+and so i'm just want to mention briefly
+because conceptually so far we've
+leveraged redundancies
+in the parameter tensor of a single
+convolutional layer
+and this redundancy kind of arises as a
+result of over parameterization
+which was shown to be crucial for
+training deep neural networks by a
+stochastic grading descent
+in the same way we would want to
+leverage redundancies not only within
+the layer but
+within an entire network so we tried
+this
+for a task of body poise estimation
+and in that case we're able to form a
+network such that the convolutions
+all have the same size and we pack them
+all in a single tensor which we jointly
+compressed
+so in other words we can kind of pack
+all the convolutions in a single high
+order tensor and jointly compress it
+and we're able to get large compression
+ratios without any loss of performance
+on tests such as
+body pose estimation of semantic phase
+segmentation
+but really the main advantage is that we
+can then use the structure
+for things like domain adaptation and so
+there the goal is that we want to learn
+we have learnt a model on a source
+domain say imagenet classification so
+classification of
+images for given classes and as
+new data becomes incrementally available
+for other tasks we want to specialize
+the model
+to perform well on this new task without
+losing performance on the original tasks
+and so one way to do this is once we
+have this network parameterized with a
+higher order tensor if we have for
+example attacker structure on the sensor
+we can now consider the core
+of the tucker decomposition as task
+agnostic
+so shared between all the tasks which
+could represent a shared knowledge
+subspace
+and then for each new task we should
+simply learn a new set of autonomous
+factors to project from this
+shared knowledge subspace to each new
+task we're trying to learn on
+and so this we showed that this can
+perform really well
+in terms of number of parameters but
+also in terms of performance because we
+can now
+leverage knowledge we learned on
+previous tasks
+and specialize on the new tasks
+and so the last aspect i mentioned at
+the beginning of the talk is robustness
+and so there has been a lot of work to
+show that low rank tensor factorization
+acts as an implicit regularization on
+the network so there's
+a lot of work for example from nadav
+kohan on the subject
+and so that improves regional
+generalization and robustness
+but we can further leverage the low rank
+structure from these tensor
+factorizations
+by working on the latent subspace span
+by the decomposition
+so first the kind of noises we get in
+deep learning
+are typically lossy due to velocity
+transmission
+noisy capture or adversarial attack and
+so adversarial attacks consist
+of an adversary taking an image so here
+a panda and adding a small amount of
+noise typically imperceptible to the
+human eye
+but that will cause the network to
+misclassify the image with
+high confidence so here the image with
+the noise looks the same to us
+but the network misclassifies it as a
+given with high confidence
+so this has been applied to various
+fields for example you can print these
+adversarial attacks
+and cause a network for
+human detection to not detect the person
+and so one thing that's typically used
+for robustness is dropout and so the key
+idea of dropout is to drop connections
+but that induces sparsity on the
+activations and
+change the statistic so instead we could
+apply dropout in the latent subspace of
+the decomposition
+so for example for tensor dropout on a
+cp decomposition we can randomly drop
+the components of the cpd composition
+before reconstructing the full weights
+so here we have a tensor expressed as a
+cp
+in the cp form so a linear combination
+of rank one tensors
+and we can keep each rank one component
+with probability p
+and drop it with probability one minus p
+so according to a bernoulli distribution
+the same thing can be done for attacker
+form in which case now we have a
+sketching matrix which is diagonal with
+bernoulli entries
+and we can also use other kinds of um
+other probabilities
+but essentially that means that the
+network now no longer can rely on a
+single component to perform the
+decomposition
+and so that typically results in better
+performance so here again we're doing
+image classification with a tensor
+regression layer
+and we additionally added tensor
+dropouts and we saw that performance can
+increase
+when we add this tensor dropout but also
+in addition to improved generalization
+it makes the model more robust to nice
+both random
+and adversarial so here for example the
+task was to predict the brain age of a
+subject
+based on mri data and so for this task
+it's particularly important to leverage
+the topological structure
+and so trl is the tensor regression
+layer is a particularly well adapted so
+here we
+used a 3d residual network so a 3d
+resnet18
+in black it's a regular network with
+flattening and fully connected layers
+in magenta we replaced the flattening
+and fully connected layers with the
+tensor regression layer and in green we
+also applied tensor drop out to this
+tensor regression layer and we added
+noise to the input to simulate the
+reaction noise that naturally occurs
+during capture
+and as you can see if we add noise to
+the inputs
+and pass it to a regular network the
+error increases very quickly
+but the tensor regression network due to
+this regularizing effect is naturally
+more robust and if we also use tensor
+dropouts then
+there is a large region for which we can
+decrease the signal to
+noise ratio to increase the noise and
+not
+see a degradation in performance
+so i've covered a few of the techniques
+we can use to incorporate tensor methods
+within deep learning to obtain better
+methods and so i just want to talk a
+little bit about practical
+implementations
+and how we can easily deploy these
+methods using tensorly torch
+which is an open source library we
+developed in nvidia and that provides
+out-of-the-box tensor layers so tensorly
+torch builds on top of tensorly and
+provides tensor methods in the form of
+pie torch layers
+that you can directly incorporate in
+deep neural networks and that takes care
+of details such as initialization etc
+so as a case study i want to show how we
+can apply it to the to kinetics-based
+large-scale video classification
+so the kinetics data set is a
+large-scale data set of more than 300
+000 videos about 10 seconds each
+they were collected from youtube and
+annotated in terms of
+400 human action classes such as playing
+an instrument
+or here playing crickets so the goal is
+you get this video and you try to
+predict
+what action is represented in that video
+and a typical pipeline for video based
+prediction is to
+first train in the image domain so you
+try your train your model to
+classify images then you generalize that
+to
+videos for example using transduction on
+kinetics and then you fine-tune on your
+own task where you typically have less
+data so it's really useful to have
+good models trained on this kinetic data
+set
+and so here what we did is we started
+from regular pre-trained python
+models pre-trained on kinetics data set
+which consists of about
+33 million parameters it's a 3d
+resonating
+and we simply compressed the
+convolutional layers using
+tensorly torch by replacing them by
+these factorized convolutions i
+presented so here we used a tucker
+decomposition
+and we then fine-tuned the factorized
+model for just a few epochs
+and as you can see as we can actually
+get quite good compression ratios
+like more than 30 percent without having
+accuracy
+and actually for smaller compression
+ratios say about 10 percent
+we even get better performance thanks to
+the regularizing effects to the
+of these tensor factorizations
+and so we can also do the same on
+imagenet so
+here the goal is to classify images as
+one of her
+in terms of different classes and we
+trained the resnet 152 where we
+replaced again the factory the
+convolutions by factorized convolutions
+so in red it's the original network and
+in blue we d we applied layer-wise
+factorization so we factorized each
+layer separately and we also applied
+a regularization to the rank so an l1
+regularization to the rank which we call
+tensor lasso
+and we alternatively tried compressing
+jointly several layers so like the t net
+i presented
+in green as you can see again we can
+compress the network get
+small increases in performance and
+with yeah and get also better robustness
+so just to briefly show how you can do
+this in practice with code so
+in pi torch that's how you would create
+a 2d convolution you specify the number
+of input and output channels
+and the size of the kernel and so
+intensely touch is the same except
+you can do you have to specify the order
+of the convolutions
+so the order of the convo so the order
+of the convolutional kernel would
+actually be this order plus two because
+you also have output channels and input
+channels
+you specify the rank of the
+decomposition you want to apply on this
+layer and the type of factorization so
+here's cp
+so you can either get these factorized
+layers from existing layer by
+decomposing
+the pre-trained weight here rank equals
+0.5 means we want to keep
+half the number of parameters and you
+can also
+factorize multiple layers jointly
+and so this whole library kind of builds
+on the core concept of factorized
+tensors
+which we want to be able to manipulate
+like they were regular tensors so you
+can directly initialize the
+factorization
+so that the reconstruction has a normal
+distribution
+and so initialization is particularly
+important for training neural networks
+to prevent
+gradient vanishing or exploding for
+example you can reconstruct your fault
+tensor or you can directly operate
+on the five tri sensor without
+reconstructing it which would
+use a lot of memory and computation and
+so we implemented most of the layers i
+presented here including tensor
+regression layers
+tensorized linear layers etc and you can
+augment
+any layer with tensor dropouts or tensor
+lasso so tensor dropout would
+regularize and improve robustness and
+tensor lasso can help also regularize
+but also select the range
+so we've seen a wide range of
+applications of tensor methods to deep
+learning but before i conclude i just
+want to
+say a few words about an exciting
+application of tensor methods which is
+for quantum computation and quantum
+machine learning simulation
+so quantum computation is a rapidly
+growing field and that seeks to solve
+difficult problems such as optimization
+and quantum chemistry
+our condensed matter simulation by
+leveraging large state spaces
+and dynamic interactions between states
+however the field is in many ways still
+currently limited to small
+noisy devices which are very expensive
+to build so as a result
+it is believed that simulation is key to
+its development and still will be for at
+least a few years
+and the main challenge is that while
+traditional computers operate
+on bits the logical units of this
+quantum computing is the qubits
+and so while they are traditionally
+expressed in matrix formalism
+they are also naturally expressed in
+tensor structures
+so an example of a operation that can be
+efficiently represented like this
+is the partial trace over portions of
+cubic registers
+which has deep ties to study of noise
+the coherence and information metrics
+and so using tensor methods we can
+naturally speed up the simulation of
+quantum operations
+and we are interested in exploring
+decomposed tensors to simulate
+low rank quantum states and so
+and taylor patty who is currently doing
+an internship in our team has been
+working on extending tensorly for
+quantum operations
+and so in some preliminary experiments
+we found that by building on top
+potentially we're able to compute things
+like partial traces much more
+efficiently
+so compared to the leading matrix
+formalism software qtip
+we found that tensor based computation
+was between 2 and 20x more efficient
+and 3 to 4x more memory efficient when
+run on
+cpu and on gpu these speed ups can be
+even higher and between 5x and 500x
+and so generally um we found that
+optimization problems of most things we
+care about so anything classical
+have answers that lie in a simple
+product state without entanglement
+and although there's a lot of belief
+that they can and
+um be better and more rapidly explored
+with at least some entanglement states
+we want to explore the case where we
+have
+factorized tensors so where the states
+are all factorized
+so we're interested in solving uh a
+computationally challenging problems
+using factorized tensors and weights
+john
+i want to cut it short when you talk
+about time's kinda up we had a few
+questions but yeah maybe if you can come
+to the conclusions here
+yeah okay i usually that's um the last
+slide so i'll
+i'll wrap up um so yeah here basically
+we just
+applied this to a max cut problems where
+we have 20 qubits so given a graph we
+want to find the maximum cuts
+and so here each layer so here we have
+we
+explored a few directions uh one
+directional
+in blue sorry in green
+is where we have um the minimum critical
+depth
+such as um all qubits get to control
+the the lower qubits two directional is
+the same but
+um qubits influence their nearest
+neighbors on both directions
+and the deep cases we have more layers
+and so as you can see we can efficiently
+optimize hard problems um very
+efficiently
+with a relatively small number of
+parameters and still converts to good
+solutions and so
+on the two graphs below we kind of show
+the
+entanglement so that's a rough measure
+of entanglement and we take six qubits
+and measure the entanglement with the
+other 14 qubits
+and so that's really interesting because
+we see that it's helpful to start with a
+higher entanglement
+but as we train the model the
+entanglement naturally goes to zero
+which makes sense
+because the solution is not quantum we
+don't want in superposition and so the
+there is no entanglement in the answer
+and so that's kind of an interesting
+direction showing that
+some entanglement is helpful for
+optimizing this kind of problems
+but we can still leverage uh lowering
+structures
+so that's what i just mentioned we found
+that low connectivity networks
+are typically sufficient we don't need
+too much
+entanglement and so this kind of
+low rank factorized structures that are
+presented in this talk are really useful
+there
+and so yeah just to summarize um tensor
+methods are really helpful in the
+concepts of deep learning for
+compression
+speed ups generalization and robustness
+and we cannot develop this library
+tensorly torch to make this
+very easy to use and
+that's all for me i'll be very happy to
+answer any questions

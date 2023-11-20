@@ -1,0 +1,276 @@
+Welcome to GrabNGoInfo!
+User-based collaborative filtering is also
+called user-user collaborative filtering.
+It is a type of recommendation system
+algorithm that uses user similarity
+to make product recommendations.
+In this tutorial, we will talk about
+What is user-based (user-user)
+collaborative filtering?
+How to create a user-product matrix?
+How to process data for user-based
+collaborative filtering?
+How to identify similar users?
+How to narrow down the items pool?
+How to rank items for the recommendation?
+How to predict the rating score?
+Let's get started!
+Firstly, let’s understand how User-based
+collaborative filtering works.
+User-based collaborative filtering
+makes recommendations based on
+user-product interactions in the past.
+The assumption behind the algorithm is
+that similar users like similar products.
+User-based collaborative filtering
+algorithm usually has the following steps:
+1.
+Find similar users based on
+interactions with common items.
+2.
+Identify the items rated high by
+similar users but have not been
+exposed to the active user of interest.
+3.
+Calculate the weighted
+average score for each item.
+4.
+Rank items based on the score and
+pick top n items to recommend.
+This graph illustrates how
+user-based collaborative filtering
+works using a simplified example.
+Ms.
+Blond likes apples.
+Ms.
+Black likes watermelon and pineapple.
+Ms.
+Purple likes watermelon and grape.
+Because Ms.
+Black and Ms.
+Purple like the same fruit,
+they are similar users.
+Since Ms.
+Black likes pineapple and Ms.
+Purple has not been exposed to
+pineapple yet, the recommendation
+system recommends pineapple to Ms.
+purple.
+In the first step, we will import Python
+libraries pandas, numpy, and scipy.
+These three libraries are for
+data processing and calculations.
+We also imported seaborn for
+visualization and cosine_similarity
+for calculating similarity score.
+This tutorial uses the movielens dataset.
+This dataset contains actual
+user ratings of movies.
+In step 2, we will follow the
+steps below to get the datasets:
+1.
+Go to grouplens dot org slash
+datasets slash movielens.
+2.
+Download the 100k dataset with the
+file name “ml-latest-small.zip”.
+3.
+Unzip “ml-latest-small.zip”.
+4.
+Copy the “ml-latest-small”
+folder to your project folder.
+Those who are using Google Colab
+for this analysis need to mount
+Google Drive to read the dataset.
+You can ignore the code below if
+you are not using Google Colab.
+There are multiple datasets
+in the 100k movielens folder.
+For this tutorial, we will
+use ratings and movies.
+Now let’s read in the rating data.
+There are four columns in the
+ratings dataset, user ID, movie
+ID, rating, and timestamp.
+The dataset has over 100k records,
+and there is no missing data.
+The 100k ratings are from
+610 users on 9724 movies.
+The rating has ten unique
+values from 0.5 to 5.
+Next, let’s read in the movies
+data to get the movie names.
+The movies dataset has
+movie ID, title, and genres.
+Using movie ID as the matching key,
+we appended movie information to the
+rating dataset and named it ‘df’.
+So now we have the movie title and
+movie rating in the same dataset!
+In step 3, we need to filter the
+movies and keep only those with
+over 100 ratings for the analysis.
+This is to make the calculation
+manageable by the Google Colab memory.
+To do that, we first group the
+movies by title, count the number
+of ratings, and keep only the movies
+with greater than 100 ratings.
+The average ratings for the
+movies are calculated as well.
+From the .info() output, we can
+see that there are 134 movies left.
+Let’s check the most popular
+movies and their ratings.
+Next, let’s use a jointplot to check
+the correlation between the average
+rating and the number of ratings.
+We can see an upward trend from
+the scatter plot, showing that
+popular movies get higher ratings.
+The average rating distribution
+shows that most movies in the dataset
+have an average rating of around 4.
+The number of rating distribution
+shows that most movies
+have less than 150 ratings.
+To keep only the 134 movies with more than
+100 ratings, we need to join the movie
+with the user-rating level dataframe.
+After filtering the movies with
+over 100 ratings, we have 597
+users that rated 134 movies.
+In step 4, we will transform the
+dataset into a matrix format.
+The rows of the matrix are users, and
+the columns of the matrix are movies.
+The value of the matrix is the user
+rating of the movie if there is a rating.
+Otherwise, it shows ‘NaN’.
+Since some people tend to give
+a higher rating than others, we
+normalize the rating by extracting
+the average rating of each user.
+After normalization, the movies with
+a rating less than the user’s average
+rating get a negative value, and the
+movies with a rating more than the user’s
+average rating get a positive value.
+In step 6, we will identify similar users.
+There are different ways
+to measure similarities.
+Pearson correlation and cosine
+similarity are two widely used methods.
+In this tutorial, we will
+calculate the user similarity
+matrix using Pearson correlation.
+Those who are interested in using cosine
+similarity can refer to this code.
+Since cosine_similarity does not
+take missing values, we need to
+impute the missing values with
+zeros before the calculation.
+Now let’s use user ID 1 as an example
+to illustrate how to find similar users.
+We first need to exclude user ID
+1 from the similar user list and
+decide the number of similar users.
+In the user similarity matrix, the
+values range from -1 to 1, where
+-1 means opposite movie preference
+and 1 means same movie preference.
+n = 10 means we would like to pick the
+top 10 most similar users for user ID 1.
+The user-based collaborative filtering
+makes recommendations based on
+users with similar tastes, so we
+need to set a positive threshold.
+Here we set the user_similarity_threshold
+to be 0.3, meaning that a user
+must have a Pearson correlation
+coefficient of at least 0.3 to
+be considered as a similar user.
+After setting the number of similar
+users and similarity threshold,
+we sort the user similarity value
+from the highest and lowest, then
+printed out the most similar users’
+ID and the Pearson correlation value.
+In step 7, we will narrow down the
+item pool by doing the following:
+1.
+Remove the movies that have
+been watched by the target user
+(user ID 1 in this example).
+2.
+Keep only the movies that
+similar users have watched.
+To remove the movies watched by the
+target user, we keep only the row for
+userId=1 in the user-item matrix and
+remove the items with missing values.
+To keep only the similar users’
+movies, we keep the user IDs in the
+top 10 similar user lists and remove
+the film with all missing values.
+All missing value for a movie
+means that none of the similar
+users have watched the movie.
+Next, we will drop the movies
+that user ID 1 watched from
+the similar user movie list.
+errors='ignore' drops columns if they
+exist without giving an error message.
+In step 8, we will decide which movie
+to recommend to the target user.
+The recommended items are determined
+by the weighted average of user
+similarity score and movie rating.
+The movie ratings are weighted by the
+similarity scores, so the users with
+higher similarity get higher weights.
+This code loops through items and
+users to get the item score, rank the
+score from high to low and pick the top
+10 movies to recommend to user ID 1.
+If the goal is to choose the
+recommended items, having the
+rank of the items is enough.
+However, if the goal is to predict
+the user’s rating, we need to add
+the user’s average movie rating
+score back to the movie score.
+The average movie rating for
+user 1 is 4.39, so we add
+4.39 back to the movie score.
+We can see that the top 10
+recommended movies all have
+predicted ratings greater than 4.5.
+In this tutorial, we went over how
+to build a user-based collaborative
+filtering recommendation system.
+You learned
+What is user-based (user-user)
+collaborative filtering?
+How to create a user-product matrix?
+How to process data for user-based
+collaborative filtering?
+How to identify similar users?
+How to narrow down the items pool?
+How to rank items for the recommendation?
+How to predict the rating score?
+If you found the information in this
+tutorial helpful, please click the like
+button and subscribe to the channel.
+I publish tutorials on machine
+learning, deep learning, and
+big data processing every week.
+If you prefer the written version of the
+tutorial, please go to GrabNGoInfo.com.
+I will put the link in
+the video description.
+This is the blog post for this tutorial.
+It has all the code and
+explanations in the video.
+Thank you for watching.
+See you in the next video.

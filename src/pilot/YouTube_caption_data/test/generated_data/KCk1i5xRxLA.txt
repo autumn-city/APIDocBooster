@@ -1,0 +1,1870 @@
+hi there
+in this tutorial we want to walk through
+the wavenet implementation in pi torch
+and as you can see the wavelength is
+introduced by deepmind in 2016 the time
+that there was no attention and
+transformers to the use and the wavenet
+came
+when they planned to
+replace something with lstm because of
+some problem with the recall neural
+network like gated recurrent you need
+gru or the lstm
+and the problem was
+suppose that we have
+these inputs like input number 1 2 3 2 i
+guess 16
+um so we can apply each of them to lstm
+and if we say this is one lstm cell this
+is another lstm cell so we apply this
+signal or a sample of a signal here
+and it
+calculates some latent features
+and send it to the near
+cell and the information from these two
+cells one is this one one is this one is
+coming to this cell and it's going
+forward
+we have some some sort of recurrence
+information
+between time samples but the problem was
+we have a vanishing gradient so the
+effect of this cell on this cell is
+somehow
+vanished and in some signals for example
+if we suppose an ecg signal
+and
+suppose that we want to predict the next
+component and the next component we know
+that should be
+a p signal
+if you don't have a t and uh
+it should be related to
+these parts which is far away
+and usually lstm look at the nearest
+neighbors like uh the lstm look at
+these parts more
+and then when we go further the guardian
+vanish happened and we we don't have
+much information some methods came to
+introduce the escaping connection like i
+will escape this to this point i will
+skip this to this point
+and
+they were increasing the compositional
+cost the lstm was slow and it
+became slower when they have all the
+connections and they can be
+bi-directional is that not only we get
+the information from
+this way we can get the information from
+another way
+and
+yeah yeah those complex architectures
+came along for
+processing a sequence
+but the wavenet has a smart
+view to solving this problem
+not by using the
+recurrent neural network but just by
+using the convolutional layers to do a
+sequence processing
+so what they are proposing is create
+autoregressive model and autoregressive
+models means that we want to solve this
+problem then we have sample from time
+one to time t minus one and one predict
+the next sample we can extend that like
+after we predict the next sample we put
+it
+to the system again and we predict a
+next sample that can be continued
+forever the way that they are proposing
+away is
+using the causal convolutional layers
+and dilation causal term coming from the
+signal processing means that we don't
+have any information about the future of
+the signal so
+we only
+process the previous samples
+and
+so we get the sample of these two points
+apply a convolution or applies whatever
+we want to do and if you look at the
+last output which is
+uh
+the next sequence
+it
+get the information from last four
+sample and if you want to extend that
+there are there are two ways like
+increasing number of layers so if you
+have more layers
+it
+it can get like from
+six input samples or from seven input
+samples but increasing layers is not a
+good idea always because we are
+increasing the complexity
+and
+they introduce another way is a dilated
+causal convolution layers which means
+that
+we use a dilation factor and convolution
+and we ignore some points in the middle
+so for example if i use dilation
+uh 2 which means that i am applying
+convolution but not on these two but i
+ignore the middle points and i apply it
+on these two so in that case i'm
+um for for predicting this output i am
+using the for information from all 16
+inputs here the way that they assign
+dilation is they
+double for every layer up to a limit and
+then repeat it so it is like 1 2 4 2 512
+and again they have a larger receptive
+field they they call it receptive field
+in the paper so the receptive tool can
+be increased this is the visualization
+of a stack of dilated causal convolution
+layer and if we go further we see the
+figure four which is
+the whole architecture the entire
+architecture of the wavenet so we have
+input and we apply
+causal convolution on it these stacks
+here you see there are some pages
+stacked together
+they are figure three
+so
+the way that we define each circle here
+each layer here
+is defined in figure 4 like this so we
+get an input we apply the dilated
+convolution on it and we apply a tangent
+hyperbolic activation
+sigmoid activation we multiply them
+together and applied another convolution
+layer with kennel size one and after
+that we have two output one output is
+coming from these residual points and
+one is the skip connection so the
+convolution layer here can be two
+different convolution not not just one
+so we have two convolution with size one
+one for creating a skip connection one
+for going to the next layer
+so the skip connection here is like
+somehow
+we get the information from this channel
+we get the information from this channel
+we can apply like max cooling something
+like that
+for getting the information from each
+skip connection we can get the
+information from different layers to
+avoid the vanishing gradient so what we
+wanna
+implement is this part
+the main part is the the stack of
+residual
+network here
+and after that we should get the skip
+connection and apply a relu function
+and apply a one by one convolution layer
+again another relu
+to get the softmax and get the output
+which is the
+output here the last
+sample the output here or
+this one the xt so let's see some of the
+usage of wavelength so they said that
+they can use the wavenet for
+multi-speaker speed generation
+for text to a speech so we have a text
+and we want to convert it to a speech
+and it can be vice verse
+we have a speech one converted to the
+text
+and for converting two signals together
+like suppose we have a
+ecg signal and we get the ppg or
+converting methanol cg to fetal ecg
+or another example is like converting
+the t1 weighted images in mri to t2
+weighted and vice verse
+but
+as i said this is a
+a little old in 2016
+because there are lots of advanced
+methods like transformers and different
+kinds of transformers
+emerged
+after 2017 and
+they can get better accuracy than
+wavelet but
+still they have not worse to look at so
+they said also they can be used for
+text-to-speech and for music generation
+uh
+also for belongs to separation they can
+use signal classification
+like
+the gesture detection from from the emg
+signal let's dive into the
+implementation
+so i have created an empty project
+called wavenet and i will create a class
+here
+the name of wavenet
+and first thing we want to create is
+based on the block diagram
+is the causal convolution
+and because we have dilation
+implemented in pythos we can create a
+causal dilated convolution and if you
+want make dilation we can passing a
+value to it if you don't want to dilate
+it we can pass one so we can create a
+class that
+covers dilated convolution and causal
+convolution i will create a
+causal
+dilated
+convolution and it should
+inherit from an end module
+i import from torch
+i will create init method
+and i will define the forward mode
+we have conf 1d we can create
+convolutional one dimension in
+torch and it get the number of input
+channels so i can say
+in channels
+out channels
+and i pass these two variable
+to the class so these are parameters
+that we need for creating a causal
+uh dielectric convolution and we need a
+kernel size
+we pass that too
+yes right is one i suppose there is no
+padding because it makes a little more
+complicated
+and
+dilation is something that you can pass
+to the system and i say bias is equal to
+false
+i don't want to buy us
+yeah so
+we need to pass the kernel size and
+dilation what's the difference between
+the causal convolution and
+convolution that we have defined here i
+have prepared some shapes it's not
+called convolution is like this so for
+this example that can size is three
+how many samples we want to remove from
+output to have
+the causal convolution it's
+probably two
+because we don't want to have the result
+of convolution on these two it means
+that
+subtract one from it to calculate
+how many uh output should be ignored and
+if you have dilation the relation should
+be multiplied so it means that if i
+wanna calculate
+ignore
+output
+ignore out index i can call it so it is
+the kernel size minus one multiplied by
+dilation and for calculating the result
+i can say return the convolution on the
+signal
+but
+i want to get from first to minus
+ignore
+out index okay so it means that
+we ignore
+some of the last samples that calculated
+by the convolution so so far if we back
+to the diagram we have created this part
+and we want to create a residual plug so
+the residual bullet is created by a
+dilated convolution italian hyperbolic
+and sigmoid activation multiplied and
+another
+one-dimensional convolution so let's
+back to the code and let's create
+press block let's create a class called
+wave
+net we get a signal
+and
+we want to apply a causal
+in the first the first that we want to
+apply the cause of convolution we don't
+want to we don't have
+we don't have any dilation so
+i initialize
+self causal conf console
+dilated convolution one dimensional
+and i
+use this class but
+we need number of impulse number of
+outputs so everything come here number
+of input channel
+number of output channels so and what
+else we need to do is
+dilation
+so
+we use all parameters here
+what about the dilation
+i want to create causal conf that's why
+i do not pass any dilation i say
+dilation is one
+yeah and same we want to create
+dilated
+in this case we need to pass a dilation
+but as paper said we need have different
+different kind of dilations
+we suppose that each stacks have
+same number of layers so
+we need to pass number of
+stack size
+and
+layer size based on that we need to
+create a function we say
+build dilations
+so build dilation get
+stack size
+and
+layer size
+the paper said that suppose this is a
+stack
+stack one
+the dilation in each layer suppose it
+has like five layers it should be one
+two four
+in power of 2 so
+8 16 and
+until 512 here i want to say for
+stack in
+range stack size
+and also for
+layer
+in range
+layer size
+so i want to create
+dilations
+and dilations
+can
+create it by
+two in power of
+layer so for each stack i can have a
+dilation that's better
+and i can say dilation
+for all
+the stacks
+okay
+and here after we finish the loop append
+this dilation
+return
+dilation
+using numpy i can
+import numpy so we can say import
+numpy smp and i can say np vectorize
+that function that is build dilation
+vectorize and i can use that build
+dilation
+by just passing the kernel size and
+stack size
+this is function
+with calculation i just remove
+the s so we have a numpy array here and
+they have to return
+relation for all dystaxia
+and we're supposing that we are not
+exceeding the number of layers otherwise
+we have to take care of
+two start from one again after like 10
+layers
+so
+we just suppose that the size of the
+network is
+not that big now we have dilation so we
+can create different causal
+different causal diletted convolution
+layer for each stacks and for each
+layers let's back to the residual block
+so we have this dilated convolution in
+the residual block
+okay and we need to pass again
+number of input channel number of output
+channel
+the kernel size
+and the dilation
+this is just one dilation and after
+we have that we need we need to find two
+activation functions so i use tangent
+hyperbolic and also we need
+sigmoid we need also two convolutional
+layer one for this residual and one for
+skip connection
+so we will create these two
+so the channel size here is one
+so first thing we need to say i want a
+causal convolution
+okay and i want to apply an x
+and get the result back
+and i want to apply
+two
+activation function one is tangent
+hyperbolic
+we call it x1 and another is
+the sigmoid
+okay and call it x2
+and i want to multiply these two x1 and
+x2 together
+and after that
+they need to pass from a residual
+connection so i
+i
+may call them
+x again
+as we said we need a
+residual convolution layer so just to
+not remove the input so i change the
+name of the input can say this is input
+x and
+we have input x here and we have x and
+we can
+sum input x and x and put it in x again
+so we have
+this is a residual output maybe i can
+call it
+res
+output
+also we need to apply the escape
+connection so the self skip convolution
+1d should be applied on x and this is
+a skip output
+so we have implemented
+these parts we have all skip connections
+and
+residuals and we need to return both we
+need to return
+the residual outputs and escape outputs
+so one of the thing that we forgot is uh
+so here we have residual block but
+output size of the escape
+maybe is different than
+the output of the residual
+so
+it's better to have
+a different output for that
+you can say this is a skip channels how
+many channels we have
+and here
+we can use the skip channels
+the residual outputs
+come again to the input so it means for
+this
+block
+which is the residual block
+the input and output has same shape so
+we don't need to pass two different
+things instead of having two things we
+can say just residual channel because we
+have a skip channel there so you can
+remove this part and i just say residual
+channel which is
+here and also it's coming here and it's
+for residual convolution the output also
+is the same
+and for the first causal convolution we
+have
+again
+so are just making it a little
+simpler so we have residual channel
+coming
+for skipped connection for input and
+output of residual block and we need a
+stack of residual block and a stack of
+residual block
+here you will see that we have created
+ones and we have to create them in k
+layers so for creating that stack it's
+better idea to not have information here
+but
+create another class a module
+called
+uh stack
+res residual blocks so in a stack of
+residual
+what we need to get from the wavenet so
+far is the layer size and the stack size
+i think that i can put the build
+deletion
+instead of there here
+and i can say
+build deletion function
+and i can do the vectorization here
+i'm just moving everything from that
+part to here so i can
+initialize the residual block and what
+it's need
+is the residual channel so that's why i
+need
+pass a residual channel here and also
+the skip connection and kernel size
+okay and
+here we put everything there from the
+residual connection to kernel size we
+can make it more simpler because this is
+like a stack one and we have
+another stack another stack
+and we don't need to put them in
+different
+array this is just for making it more
+clear so
+in other words for each
+deletion per
+stack
+and i can say
+for
+deletion
+in deletion in per stack
+so if i do something like that i can
+create a residual block
+and what else we need to pass here is
+dilation so we can pass the dilation
+here
+and this is this is one of the residual
+blocks so i can create
+residual
+blocks
+and for making it accessible for all set
+it as a class parameter so
+what we are doing here is
+we are creating a stack we just putting
+putting them in a list
+and then we want to apply it so we have
+an output
+the residual output coming here another
+residual output coming here and it's
+start from one to five hundred twelve
+yeah
+and again i start from one and five on
+the twelve and so on so let's back to
+what we were
+doing so we have residual blocks and we
+want to do the forward
+function for
+residual block in cell
+breast blocks
+and we get
+two output because this is the residual
+block one is
+the output and another is the skip
+connection but the first visual output
+is x this is more clear when we wanna
+see what's output of this and also we
+need to stack the skip connection so we
+can say skip outputs
+and
+we add them to
+to a list and what we want to return
+from this is
+the residual
+output and
+the escape output but we wanna
+have
+a stack
+the stack of
+skip outputs
+okay so this is a stack of tensors we
+can go here and create
+and a stack of residual block
+and we name it
+stack residual
+block
+the input is the stack size
+so we get it from the
+input we want to get the layer size
+the residual
+channels which is as input channel
+and
+the skip channel number of skip channel
+so we need pass and skip channel how
+many skip channels we want and we have
+the kernel size the skip channel coming
+here and apply on the
+one-dimensional convolution so
+uh the output size is equal to the skip
+skip connections let's keep channel so
+that's why
+i can say this keep channel and output
+are same
+from this figure you can see that there
+is a causal convolution and there is a
+layer here i call it like
+a dense layer so let's create that
+dense layer
+i i'm gonna create it here
+so a class
+dense layer
+so here we are getting the skip
+connection
+you're getting the skip connection
+and what we want to do with this keep
+connection is using the torch sum
+to add escape connections together
+our assumption is the escape connection
+that we are passing to the system is
+created of number of batches
+uh the number of channels
+and the number of time samples but
+because usually we have number of
+channels in the last so we have number
+of
+time samples here or samples here number
+of channels here
+so i want to reduce it over which
+dimension
+one reduces on dimension
+two okay and i want to get the output
+here
+and we want to define
+the relu and what else we need we need
+to define a convolution
+and
+we need we need to have the input
+channel output channel
+and i know that the
+the output channels it's not important
+for us we have on the input channel we
+can pass
+only the input channel and the kernel
+size is one
+and dilation we don't have any dilation
+but it is false now can remember which
+is not right is this one and this one
+that we don't want to have a causal
+convolution there that's why
+instead of causal convolution maybe it's
+better for for these two i
+change them after the output we need to
+pass it from rouleu and to convolution
+in other ruling convolution
+so it would be
+self that relu
+out
+and self that
+this is another out
+and we will have
+self that
+convolution
+when we get out
+so i want to do it twice so i can say
+for i in
+range
+to
+do this
+so
+this will be applied twice
+and and what else we will have a soft
+max and the output
+i can say out dot
+softmax
+and we can
+return it back
+and instead of having this function
+maybe it's better to have
+like relu we have self dot soft max
+and
+n n dot
+soft max
+with peak s and
+here i can pass the dimension on t so
+that's why i select
+dimension one
+here rest of that we can say
+return
+to self soft max
+after applying the out
+okay
+so we have the dense layer we can
+use this dense layer
+initialize it
+and the dense layer get the number of
+input channels which is equal to number
+of
+our channels here
+okay what else we need
+so we have everything so we have only
+we only need the causal convolution so i
+can define the causal convolution we
+have and
+definition here causal convolution and
+we don't we don't want to have a
+dilation
+so
+it would be causal
+convolution
+and
+the input channel
+and the output channel of that
+it's equal to the input channel
+and we don't have any direction as i
+said
+yes and let's
+finish
+the whole process so first we apply
+the causal convolution on x
+and we get another x
+then we apply
+a stack
+of
+stack residual block
+and we apply x to it
+and we will return two things the
+residual output
+and
+the torch stack for skip
+connections
+we don't need the residual outputs
+because we are using the skip connection
+we have the last last layer here
+from the last residual connection so we
+don't need it but
+if we need it we can use it for
+something else
+like predicting two different things in
+the same time
+after they have dense layer which get
+the skip connections
+and return the output tool
+so seems that we have implemented
+everything
+and it's time to
+test up here we can
+create a new test and go to
+the project folder and create another
+folder called the tests
+and
+hit ok and create
+test wavenet so we have test pigments
+first we want to call the wavenet just
+by
+some random values and see if we return
+something back and we can have a real
+example then
+for this purpose i only need the
+wavenet so i
+just call wavenet
+and wavenet is uppercase and what we
+need for
+wavelet is number of input channels so i
+can say
+my
+input
+channels one i i don't need to define
+itself because everything can be defined
+here so i i only have input channels and
+i need
+output channels how many channels we
+have in output so we have output
+channels i think maybe one so we are
+converting one channel to another
+channel what else we need a kernel size
+i suppose that kind of size maybe
+just for example it can be three
+and what is the stack size it's as essex
+as you remember it it's how many stacks
+we put together i just set two and how
+many layers we have i just set it to
+like five okay
+so we have our wavelets and i can
+run test run
+wavenet just to see that it is working
+or not so
+we need wavenet
+and we need pass
+and input so we need an we need an input
+what is input
+the input can be defined using the
+parameters in
+pi torch so i can
+say
+from torch
+import nnn
+and here we need an end that
+parameter can use import numpy as np
+and you can use
+np that
+random
+random
+and the size is
+i set the number of channel the input
+channel
+and how many items is in is in that
+signal
+so i'm supposing that i have a windows
+like
+i'm not feeding a whole long signal i'm
+just feeding like
+200 samples maybe so
+sample size
+is like 200
+it can be more like 2 000
+so i am
+using a 2000
+so this is my
+input
+but
+we need to make a batch so what is a
+batch size
+batch size is
+suppose the battery is eight and for
+that
+repeating we can use from inops i can
+import
+repeat
+so you can say repeat
+the self input i want to say we have
+number of channel number of times sample
+size and we want to
+change it to number of batch number of
+channel number of time
+yeah and we need b which is
+the batch size
+okay that's it
+and we need to
+assign it to self input everything
+should be okay
+this is our output
+and if i just want to see
+the output i'm not sure that we will get
+the correct result but one of the other
+things is here we say number of channel
+number of t but
+it's not right so usually we should have
+vice versa you should have number of
+sample size and after that number of
+charms that's why we'll change
+these two for readability
+this is this is exactly the same thing
+that
+we discussed that here
+that we need sample
+with patch size time and number of chat
+so let's run this data position to must
+be 10 so not numpy array so here i can
+say torch
+i can import torch that rand n
+so let's see
+what is there it said
+giving groups weight of size one one one
+by one by three expected input
+these size to have one channel but got
+two thousand channels instead so it's it
+means that the convolution is supposing
+that
+uh the channels is here in pytorch we
+need to have a number of channels in the
+middle so we have number of times here
+number of channels in first
+we have something like this so we need
+to
+change the wavenet
+because
+what we were supposing is different
+we are
+getting the c and after the t
+so when we want to do skip connection we
+have to
+run it on channels and we want to when
+you want to do soft max we need to
+apply dimension
+i'm i'm not sure about these two
+parameters still so it said that
+got three dimension
+expected four dimension input for four
+dimensional weights so because we have
+dilation here
+and
+we are this is this size is same we have
+a dilation here and then we want to
+add this signal
+to to the signal one because this is
+causal we are removing some of the
+part of the
+removing some some of the part of the
+residual output because of causality and
+we have to do the same for input but for
+input we are more interested to the
+latest
+samples this is not in the future but it
+is in the current stuff so we ignore
+some of the sample from the first just
+to
+solve this issue so this is one of the
+things that we have to
+take care about we can write something
+here like calculate in the paper i
+didn't mention it as feel of you said
+receptive so we can say receptive
+field okay and
+it it needs the stack size and layer
+size so we have stack size so we have
+for
+each layer in
+layer size
+so we are doing
+this okay
+so this is
+uh
+the dilation of each layer but when we
+have a stack size so we are multiplying
+the receptive fields by the stack size
+so if i apply
+mp that sum
+on it
+i am calculating the
+receptive field
+so why i'm doing that because i can
+create another test calculate receptive
+field so when i want to calculate
+receptive fields it means that i want to
+have a self wavenet they can have a
+stack size as in parameter and
+self.layer size is equal to
+layer size
+and here we're not going to pass them i
+can
+pass the stack size and pass the
+layer size okay
+and here also i don't need to pass them
+to a function we can say this is a layer
+size
+and this is a stack size okay
+in that case if i wanna show you
+the receptive field of this network
+you can say self.wavenet
+calculate receptive field
+and print it
+i just want to print it's not the unit
+test i just want to show you that so it
+said it is 62. so with two stack and
+layer size five the receptive field is
+62. so we can also calculate the
+uh output size so we can say
+calculate output size
+and output size if we get an input
+and we know the receptive fields we can
+calculate it easily so we can say
+x that size 2
+minus the
+self calculate receptive fields is the
+output size so it is output size and
+just to be sure that this is not
+a fallout so we do something like that
+yeah we need to do some same thing but
+we applied to
+input so we can say skip output is skip
+output and
+this but difference here is
+we need to have the same size and every
+time it's changing size so we need to
+say
+what is the skip size we want to
+pick then we can pass that escape size
+to the input here we can say
+what is the skip size
+and every time we just
+get the latest of the skip size
+and it means that when we want to run
+the residual block in forward function
+here you know
+we need to pass the escape size and that
+skip size again can come here
+and go to
+and come here that when we want to
+stack residual block
+we want to forward something we need the
+escape size
+so instead of passing the escape size
+one of the things that we can do is we
+can calculate the output size based on
+the input and we say skip size
+is equal to
+output size so it's exactly the same
+way that we can
+keep as much as information that we need
+i can't do something smaller than a skip
+size but i cannot do
+something bigger than the same size so
+that's the best way that we can do so
+another problem that i found is when you
+want to remove the last
+ignore out index from the output of the
+convolution
+for creating a causal convolution
+let's see the images again so we have
+this dilated convolution and every time
+it's come here
+we are removing some some samples
+because of the dilations
+and because we have different value for
+dilation the output of each layer has
+different shape and different lengths
+that's why i said you want to have a
+padding same to have the same output as
+number of inputs so the time sample
+should be the same
+in that case we can use our self ignore
+out index
+otherwise if you don't want to use that
+i've seen in a stack overflow through
+causal convolution they just ignore the
+last index and that's okay if you have a
+kernel size 2 and padding 1 but if you
+want to have a
+more general
+causal convolution it's better to have
+this
+if you see the figure it said that here
+we have dilated convolution it didn't
+say about the
+causal convolution instead of causal
+dilated convolution here we can have
+just the
+dilated convolution
+so
+we can pass like a variable here that do
+we want to have a causal or not then if
+we want to have a causal so we can
+return these otherwise we can return
+everything from the convolution
+so these two parts can be changed to
+make the code
+works so in that case if you
+run so you will see that we have the
+output and this means that the code is
+working
+and this is just a unit test we want to
+train the model on
+some data and to see if it is converging
+and everything is fine or not
+so i think now it's time to have a
+real real example using
+real data
+and for that i have opened the visual
+studio code just to create a jupiter
+notebook and i have a file here
+a csv file which is
+included from
+different times and there is a signal
+this is a
+physiological signal and there is open
+channel
+number of open channels i don't know
+what is the
+uh channel
+here but it was
+uh in the kaggle
+we have different open channels like two
+here one two two here so what you wanna
+do is
+you wanna create a time series
+prediction
+you wanna have these signals
+like supposedly have
+different time sample of signal so this
+is this is our signal here
+like this is in time
+t
+and this is in time t plus
+don't know n okay
+and we have
+our
+signal as open channel the last column
+here
+and every time
+that we have a signal we have a status
+of number of open channels
+and what you want to do is you want to
+have like
+this signal and predict that is this
+open or not
+and then another
+another window we can have
+these three and we can't say is this
+open or not
+okay
+so this can be
+so instead of
+auto regressive it is somehow a
+regressive model so we have
+these inputs as a time series they have
+dependency in time but you want to
+predict another signal
+or another set of space of that the
+other other application is like we have
+whole sequence here and based on this
+sequence here we want to predict
+like these two sequence it can
+be more than one prediction it can be
+multiple prediction because we are we
+are doing a sequence of sequence
+conversion
+okay let's create a file here and call
+it dmo.ipymd
+so the first thing we need
+we need to load the data so you can use
+pandas
+and if you haven't seen on those series
+i recommend you see the
+series we have provided
+and we can use read csv and we load the
+train command filter here
+so this is a data frame and what you
+want to do is you want to get
+signal
+and also you want to get open channels
+and you want to convert these two to
+tensor
+but
+for now i think the better way is to
+create a data set and then data loader
+and use a main loop for training the
+network let's
+do this so i will create a class
+called
+time series
+data set this data set should inherit
+from
+torch
+utils
+data and data set
+so we need
+a function
+defined as length
+and we want to get the length of data
+sets
+and also we need
+another function another
+method for get item
+and that gate item
+get an index
+okay we have a self here
+and also we need init function we can
+pass
+an x and y which we are supposed there
+are data frames so we can say they are
+pd.
+data frame or maybe pd.series
+they are series
+so we only need these two and also we
+need another thing we need
+maybe i can just pass the df to make it
+more simpler and uh what else we need is
+so as i said we have a window we need
+that we need to find out what is the
+sequence length what's what is the
+sliding window lens so you can call it
+sequence lens
+and i'm supposing this is like 10
+okay
+and what we are going to do here is
+when we want to get
+item we want to return
+self.
+so for signal
+so we have
+df here so we can say self.df is equal
+to df
+and here we can say
+df
+if the data is too weak we have to
+just pass
+past the path of the data and here we
+load it section by section or in other
+approach that
+hand does allow us to load the big data
+in some chunks
+but
+for this problem we don't have an issue
+with that and
+we do not bother ourselves to
+do some advanced loading mechanism
+so we need to
+get the signals
+but most of this we can say i want to
+get
+from which
+rows from first column and for y i can
+say
+something
+similar but
+for
+second column so we have data frame
+loaded and if you if you just want to
+see the df that shape just
+showing you
+we have about five million records i
+wanna
+pass based on the sequence when i say
+give me the index
+for example index zero i'm saying give
+me from index to
+index plus sequence length
+so the sequence length should also
+be a parameter
+and i like to have a super in top and we
+can have sequence length is equal to
+sequence
+length
+and here sequence lengths can be
+used here and
+for y we don't want to pass the series
+like this you want to just pass one
+value
+and
+for that case
+so let me
+make it a little more clear so we have x
+and we have y and for y
+we want to get the latest value the
+latest value is index
+plus
+self.sequence minus one
+okay
+and we want to return x and y
+that's it now we want to instantiate
+that datasets i can do the instantiation
+here and because this is a class i can
+name it by
+uppercase i can name it uppercase and
+here i have
+my class i can pass df and i want to say
+every thousand any value can be used
+here and we have time series
+data set so we have time series loaded
+so we have our data set now we need to
+exploit it to train and test and create
+data loader for training and test
+purposes
+for doing that we can use torch that
+utils
+that data that
+there is a random split we can use that
+it said which data said you want to do a
+random split time series
+data sets
+and
+what are the lengths that you want to
+split it
+let me show you something so if i say
+length of the data sets we we haven't
+returned any length that's why it's
+i return as an
+non-type so the way to return
+the length is you say return we need a
+data frame so data frame and the first
+shape which means number of rows minus
+sequence lengths
+so if i do it again
+and run it so it will return us the lens
+because we have implemented the length
+method
+and
+here we can use this lens and we say
+i wanna seventy percent of the data
+to be a train and 30 percent to the test
+so i can say maybe this is cleaner so i
+can say turning numbers
+which is this one
+okay and
+here i can't say
+the whole lens minus
+train numbers
+i can replace this
+with train numbers too
+you can say torch
+utils
+data
+data loader okay and for data loader we
+need to pass the data sets the output
+here is
+two things because we have split the
+data
+first is
+train data set
+and second is test status for validation
+data
+so for training data sets we are loading
+data loader on it
+and data loader also need a batch size
+and we can do shuffling uh the batch
+size
+i said like eight
+it can be bigger but currently i'm not
+on
+a gpu i'm not working on gpu and
+next thing i said is the shuffling so
+shuffling can be true
+same things
+for
+test datasets
+and here we can say
+train data loader
+and here test data
+so we will create a generator for
+and loading our data if we run this
+so it will be run without any issue now
+we can go to our main loop so we can now
+load our models we have wavenet and
+wavenet needs number of input channel
+which is one number of output channels
+which is one number of kernel size i
+suppose it's three
+can be two also
+and
+stack size i suppose it is
+like let's make it a smaller so one
+and
+layer size is like three
+can be
+more than that like five
+and what else
+so i just put them out size so we can
+define
+what is our outsides let's let's look at
+the code there are some small changes
+we've applied first is
+here so we
+we get the outsize and that outsides can
+come here if our outsize
+is bigger than the skip size the skip
+size we calculated from the
+model
+if it is bigger than the camera is an
+exception that cannot be happened we can
+also can show some error message but
+if it is not bigger than a skip size you
+can use it
+for a stack residual block
+so
+in that case you will we can control the
+output size another change i've done is
+here
+so the input of the model is batch
+channel and t but there is a point that
+i
+forgot to mention here is
+the dense layer the final things are
+if you see the blue diagram
+the things that coming to the dance
+layer is a stack of escape connections
+so
+it is
+a stack of
+skip connection because append that i
+call it appended stack
+we append them and then we have the
+batch then we have the channel and we
+have the output size because
+we
+we cut the
+skip connections lens based on the
+skip size so this is the lens and if we
+have this lens and we want to apply some
+we have to apply some
+on the
+appended skip connection this should be
+fixed in your code and also
+another change is the softmax so you
+want to apply softmax
+not on the batches after applying this
+sum
+you're removing this
+appended escape connections
+therefore we have these sites and when i
+say one it means number of channels
+and we want to apply
+softmax
+not on the
+channels different channels you want to
+apply softmax on output size so this
+should be two okay these are fixes that
+we need to take care of i wanna solve
+this issue
+using
+the categorical cross
+entropy
+what what do i mean by that is
+so we have an output which can be any
+integer number after softmax
+and
+the number of outsides that we have
+defined here can be like a number of
+classes that we have so i'm i'm using
+the last layer instead of sequence the
+sequence modeling using as a classifier
+but if we don't want to do that you can
+just have our skip channels
+and after that we can connect our
+wavenet to another linear layer
+and create a new model
+called
+like classifiers based on wavenet so we
+can we can have different approach
+if you want to do that we want to have
+the output size here for that i can say
+calculate the max on this column
+the max is 10 so we have 10 different
+number of classes so here we can use
+this
+and i say
+i want to have output size in size 10.
+the next step let's define
+optimization from torch we can use
+adam
+you can use different like adam weighted
+or different algorithm i just want to
+use a simple
+so on the parameters of the model
+i don't want to change default values
+and our last function
+these
+torches
+and and that cross entrophylas
+now we can say number of epochs
+i set it to
+for now just for one
+and we save for epoch in range
+box
+so we wanna
+what you wanna do is
+load the data loader for train
+data so we can say
+for
+a step and
+x data y data
+i say train data
+in y terrain
+in
+train data loader but i want to have
+enumerate on that and also tqdm i want
+to use tqdm to make it tractable for
+loop and for that we can say from tqdm
+import tqdm
+so we have our training data we need to
+pass the training data
+to the wavenet model there are some
+issues i will i will talk about that
+because
+we have here the series but we want to
+tensor
+but i will i will talk about it
+and
+this is our output
+and we need to say optimizer
+zero graph
+we want to make the gradient zero and we
+calculate the loss using our loss
+function
+between our output and y
+three and we say last should be backward
+and after that
+optimizer should go one step
+so
+the x terrain is
+as as we defined here
+and as we defined number of batch size
+it is like
+eight by number of samples but we need
+number of channels too and we have only
+one channel that's why
+we need to
+unexcuse
+x terrain
+on skus
+and on xtrain
+do an excuse on the first the zero is
+the batch the first is the channel as i
+said here
+zero is batch first is channel and the
+last is the time
+so we need to do that and we have x
+strain here
+just to be sure that extreme is followed
+not double
+we can also say
+fallout okay we can also show
+this is
+epoch but a book number
+can be here i want to see the loss so i
+can say print
+loss
+for a step
+so here i want to
+show the last which is last item and
+here i want to show this stuff
+and this is
+f so if i run this let's let's see some
+errors and fix those okay
+it said batch must contain standstill
+numpy arrows numbers these at least
+found honda series
+the things that we can do here is we
+return values we're moving from pandas
+to numpy
+so let's have a data set again load it
+and let's run this what else
+9.64 object has no attribute values so
+uh the thing here is the
+the y is just one number and doesn't
+doesn't need to have values do this
+around this
+so we will have another expected target
+size 8 by 10 but got eight
+is happening here we have y output and
+y3 one of the other things that we need
+to take care of is
+the size here the output size should be
+maximum plus one because suppose if you
+have zero and one and we say what is the
+maximum it is one and in that case we
+are just setting the size output as one
+which is just one neuron
+and
+the classes were two it means that we we
+need two neurons but we only selected
+one
+so uh by checking the output size and
+white string size
+we can find out that the first input of
+the loss function which is the output of
+the wavelet model should be in size of
+batches and
+size of classes so it is it is correct
+and
+for white train we have also
+um
+it is not one hot coded it is just the
+number of the based on the number of
+item we have class number
+and loss function can handle that if i
+run this so i i can just remove these
+because there's no change they
+are i just unexcused
+the train data
+and after that i excused the output
+because we don't we don't need the
+channels we don't need
+the information in the channel that's
+why
+i think you can start training but for
+each loop i don't want to show a result
+i can't say gullible
+a step like
+100 or maybe thousand
+and
+every thousand so if a step
+the mode of a step to global step is
+going to zero
+i can print
+the loss
+so if i do it
+now let's let's stop it again and
+i just wanna
+remove these two lines too
+so we it is training it's
+in 2.3
+the loss is 2.3 the losses cross entropy
+loss you can also add the accuracy it's
+the loss didn't change as you see here
+but we should wait until we see any
+convergence
+so the system is turning and still there
+is no there is no effect on the loss
+another thing we can do is
+besides of having the loss
+we can have the accuracy because this is
+a classification
+and for accuracy we can find the maximum
+of the
+maximum element of the output
+for each rows
+and after that we can calculate the
+accuracy and in that case we will have
+accuracy but still the model is not is
+not practical and we have to change some
+parameters and find unit
+to
+make it work you can say that accuracy
+is dropped even for after training so uh
+now i'm thinking that maybe
+um having limited size of the stack
+maybe is not a good idea for this
+problem
+so it's better to get the
+maximum
+number of features from the
+escape connections but after
+having
+a dense layer i'm thinking that maybe
+it's better to have
+a linear layer
+because in this problem we
+we are working on a classification issue
+you can create another class
+like wavenet classifier
+like this so we can say
+they've net classifier for
+classification we are saying that
+number of input channel number of
+output channel the kernel size the stack
+size layer size
+and the output size here
+i don't wanna
+i don't wanna use this output size as
+the output of the model that's why
+i can remove these parts but here
+we can have a wavenet classifier
+and for wavenet classifier we can have
+output size okay
+and like before we will
+put anything here like
+the stack size the layer size the kernel
+size
+but this time we are creating a wavenet
+so this is a
+wavenet
+and we know that wavenet get all these
+parameters
+except
+the last one
+the output size
+but we also need have
+a linear layer it needs number of input
+features a number of output features
+so the number of input features can also
+be
+defined like
+uh based on the wavenet and based on the
+input to the wavenet we can
+define the
+skip connections
+so the escape size calculate output size
+this function which needs the input and
+we know the number of output layers
+which is this
+okay
+and here we just say
+self.
+wavenet
+and we get the x back and we have our
+linear layer
+and maybe the soft max on the linear
+layer is good so
+let's define a soft max 2 so
+that's soft max
+and we have it in
+some of max
+we want to do it on last dimension and
+we can say self.softmax
+on the result and
+self.linear
+on
+x we can return this as a classifier
+output
+but this should be defined by the
+wavelet so that's why maybe it's better
+to pass the wave network instead of
+having
+all these parameters so i don't need a
+stack size stuff like that here i can
+remove them
+and i just
+need to pass
+i don't need a stackstar layer size i
+just need to pass wavelet
+this way
+which we know this wavenet is from class
+favorite
+in here i can't say wavenet
+calculate that output size
+and this wavenet can go to the wavenet
+and we can say
+self.wavenet calculate
+output sizex
+one of the things we can do is you can
+get the sequence length
+sequence
+length
+maybe it's better to be before
+output size the sequence length
+like this formulation
+can be used for calculating the output
+size
+of the wavenet
+so if we calculate the receptive fields
+we are like this
+and we have a sequence length so
+you're exactly
+on the right place to calculate the
+output size of the
+escape connections
+so this should work so if i use wavenet
+classifier
+so here
+i will say
+wavenet classifier wavenet
+classifier
+now use this level classifier whenever
+i'm using
+wavemap okay
+and i'm just passing
+if we
+see
+what parameters need the wavenet and
+sequence length
+the sequence length is defined here when
+we are
+defining the times so i can say sequence
+length here
+which is like 100 i can say maybe
+thousand
+so this is sequence length can be used
+for
+next parameter
+and you want to have output size which
+is this
+we don't have it here anymore
+so if i restart the kernel i have to
+resolve kernel to
+load everything
+cannot assign module before module in it
+i forgot to say
+super init because this is
+inheriting from
+an end module so i have to use this
+let's do
+everything again okay
+now we have a classification based on
+wavenet and let's see how
+these outputs can change during the
+iteration the last is this one you see
+the loss is reduced and from zero now we
+get 37 percent accuracy i hope it can be
+continued if i didn't have any problem
+again a little improvement with us
+it's a good sign we have a wrapper on
+the wavenet sequence of sequence
+modeling for classification
+we can see that there is a try to
+decreasing loss and
+seems it's working
+fine
+so i made some changes um
+for
+training loops so we have
+the bigger learning rate here and also
+uh remember that we had the wavenet
+outside here i just
+bring it back so we have a wavenet
+initialized here uh just for having it
+more killing our core so we have just
+wavenet classifier
+and i also tried the scheduler so every
+500 iteration i will
+apply the scheduler
+exponential lr to the optimizer
+and
+i i didn't receive any
+uh improvement in performance with the
+schedule that i i was just putting here
+to show you that i have tried these and
+that other parts that i have changes
+this so after each 500 iteration
+we come here and apply
+the validation data set on the model and
+for for that we use no graph because we
+don't want to use the graph gradient
+descent here
+and
+we apply
+the model
+we apply the data to the model and
+calculate the accuracy
+and calculate the average of accuracy
+for 200 sample of data
+the reason i'm just putting this is
+because my
+cpu and my gpu has some limitation and
+data is really big about
+5 millions records so um
+you can remove these parts and also
+you can make the bigger batch size here
+and try different
+sequence lengths here and i put this for
+training so remember that the loss here
+is loss for validation after some
+after each 500
+we
+do a validation
+you can see it's it has started from 11
+and it is increased for each 500
+iteration i put it a lot i put it a lot
+on running so it seems that it can even
+be improved more but i stopped it here
+this is the way this is just i stopped
+the cell
+and keyboard interrupt and
+you can see that we could get about
+74 percent accuracy i think we can get
+more if
+we
+let it to be trained for at least one
+approach it is not even one of it is
+half of a book and
+you can increase the epoch number here
+and also change the
+the kernel size number of second number
+of layers
+also one of the things that i've noticed
+is if we have some sort of
+normalization layer in between so we
+don't we didn't have used any
+normalization like patch normalization
+the layer normalization i think that
+would be helpful because i've seen
+sometimes
+the soft max is just showing one value
+it means the output of the previous
+layer is
+saturated so
+for getting better and better
+performance we can work with this model
+but as you as you can see with this data
+we could uh convert the model to like 75
+percent i don't know the goal of this
+but
+um
+different different parameters like the
+sequence lens and
+the number of batches
+led it to be trained for more than
+at least one epoch and
+yeah
+so thank you for watching this tutorial
+and have fun
+you

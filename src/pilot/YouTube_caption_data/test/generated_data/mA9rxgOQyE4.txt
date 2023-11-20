@@ -1,0 +1,748 @@
+welcome back everybody in today's
+tutorial you are going to learn how to
+code the policy gradient algorithm in
+tensorflow 2.
+you don't need any prior exposure to
+reinforcement learning you just have to
+follow along
+let's get started
+before we begin a word from our sponsor
+this video is of course sponsored by my
+udemy courses where i show you how to
+turn deep reinforcement learning
+research papers
+into pytorch code we cover actor critic
+methods and deep q learning the sale is
+going on now and the links are in the
+description
+let's go ahead and get started with our
+networks
+we only need a couple imports for this
+we will need um
+keras this will be for the
+derivation of the class
+we will also need our layers which in
+this case will be a simple dense
+neural network we're not going to deal
+with convolutions because
+the lunar lander environment is
+one-dimensional so we don't need a
+convolution to handle any screen images
+so our policy gradient network will
+encapsulate the functionality of our
+deep neural network
+and that derives from keras.model our
+initializer is pretty straightforward
+we'll need a number of actions
+and a number of dimensions for the first
+fully connected layer
+as well as the second fully connected
+layer
+we will call our super constructor
+and then we go ahead and save our member
+variables
+and here an actions is an integer
+because we're dealing with an
+environment with a discrete action space
+that is what policy gradient methods are
+most
+well suited for then we have our first
+fully connected layer
+and that outputs self.fc1 dims
+with a relu activation now one really
+cool thing about tensorflow 2
+is that the input dimensions are
+inferred we don't have to specify them
+that is kind of handy it's useful
+especially if you don't know the exact
+size
+of the inputs if let's say you're
+dealing with a batch of convolutions
+if you're dealing with an environment in
+which you're interested in the screen
+images like say atari games
+that's very useful our second fully
+connected layer
+outputs fc2 dimms with a
+value activation and pi
+we will call our output layer and that
+outputs self.n
+actions with a softmax
+activation so the policy gradient
+algorithm
+basically seeks to approximate the
+agent's policy
+the policy is the mathematical function
+that determines how the agent will act
+it is a probability distribution so it
+assigns some prob
+some probability to each action in the
+agent's action space
+given some state or set of states
+and so it's a um it's a mathematical
+function we're going to take its
+gradient later
+in the um and the learn function for our
+agent hence the name policy gradients
+and our call function this allows us to
+actually perform the feed forward of our
+deep neural network takes the state of
+the environment as input
+and you just pass that state through the
+first fully connected layer
+and then pass that output through the
+second fully connected layer
+and then pass that through the final
+layer pi
+and of course return pi
+we don't have to worry about the
+activations like say with
+torch you have to say torch.relu for
+instance because the activation is
+handled
+right here when we specify our layer
+so that is it for our network file now
+let's move on to the agent's
+functionality
+so here we will have a significant
+number of imports
+we will need tensorflow
+we will need the tensorflow probability
+package
+you may have to do a pip install on that
+i'll double check before we run the code
+you will need the
+optimizer from tensorflow
+optimizers import atom
+you'll need numpy
+and from networks we will need our
+policy
+gradient network now we are not
+uh deriving excuse me we're not using a
+memory class we're just going to keep
+track of the previous episode
+using a list and then convert the states
+and such
+to uh tensorflow tensors so we don't
+have a separate memory class
+because we're not keeping track of
+anything more than one single episode of
+memory
+so there's no real point in making an
+entire class for the agent's memory
+so our agent class
+takes a number of parameters as input
+alpha will be our learning rate
+uh give it a default of zero zero three
+a gamma is zero point nine
+nine we'll just use the default end
+actions of four
+we will default fc1 dimms to 256.
+and then go ahead and save our
+parameters
+as i said our memory will be handled by
+a series of lists
+we will need to keep track of the states
+actions and rewards
+the agent received we will need a policy
+and that is just a policy gradient
+network
+and we will need to compile our policy
+with our atom optimizer
+and learning rate defined by alpha
+next we'll need a function to handle
+choosing an action
+and that takes an observation of the
+current state of the environment
+as input the first thing we want to do
+is convert that numpy array to
+a tensorflow tensor so tf convert
+to tensor and we have to wrap the
+observation in a list
+to add a batch dimension all of the
+dense layers from
+uh keras expect the the input to be two
+dimensional so we have to add an extra
+dimension to it
+and i'm going to specify a d type of tf
+float
+32 just to make sure our data types
+are nice and self-consistent and then we
+want to go ahead and pass
+that state through the policy network
+and that gives us the probability
+distribution for choosing each action
+recall that there's a soft max
+activation if you're not familiar with
+the soft max it's just
+an exponential of something divided by
+the sum of the exponentials of the
+set of somethings so it'll give you the
+relative probability of selecting each
+action in this case and we can use that
+to define
+a categorical distribution called the
+action problems or action probabilities
+tfp
+distributions categorical the
+categorical distribution is what you use
+when you have a set of discrete classes
+and you want to choose
+one of those classes with some
+probability
+defined by probs in this case the output
+of our deep neural network
+and then we want to sample that
+and then we return the numpy arrays
+zeroth element we have to convert
+action to a numpy array because it is a
+tensorflow tensor which
+will not fly with the open ai gym
+and we take the zeroth element because
+we have a two dimensional output because
+we had a two dimensional input
+then we need a function to store a
+transition in the agent's memory
+of the current episode
+and this is just in a simple append
+operation
+and that is it for our simple memory
+function now we need our function
+to perform the agent's learning so the
+first thing i want to do is convert
+the actions and rewards to
+a numpa excuse me to a tensorflow tensor
+much like we did up here
+then we have the rewards
+and then the next thing we want to do is
+calculate the discounted sum of future
+rewards that follow
+each time step so what that means is we
+have a memory of
+the actions the agent took and the
+states it encountered and the rewards it
+received
+so at each time step there is
+some number of time steps until the end
+of the episode
+and the agent receives some sequence of
+rewards
+following the current time step right
+in reinforcement learning we typically
+discount future rewards for a number of
+reasons
+it can be done to ensure that the sum
+over a future reward stays finite when
+you have a continuing task because
+because if you sum up rewards for a task
+that never ends you get an infinite
+number right and that's not typically
+good for deep neural networks
+it also helps to account for the fact
+that the agent has some uncertainty
+in the probability it will receive those
+rewards again in the future so
+it received those rewards as a
+consequence of the trajectory it took
+through the episode
+and that was defined by some probability
+function
+that means it could take different
+actions given the same states in the
+future because it's probabilistic
+and so it doesn't know the sequence of
+rewards is guaranteed so it discounts
+them
+to some degree by the factor gamma which
+is less than one which ensures that we
+get a
+decreasing contribution over time
+and so we have to calculate the
+discounted sum of future rewards that
+follow each step of
+the current step that follow each
+present step in the episode so we're
+going to iterate over the agent's memory
+and calculate a discounted sum
+and so we'll have a
+an array and
+called g t and range blend rewards so
+we're going to iterate
+over the agent's memory and for each
+step
+we set the sum of the future rewards to
+zero
+and a discount factor to one because
+it's the present step gamma
+to the zeroth power so for k
+in range t len of rewards
+so this will go from the current time
+step all the way to the end of the
+episode
+so the sum is going to be the rewards
+at that time step multiplied by our
+discount factor
+and then we have to multiply our
+discount factor
+by gamma so we're increasing the
+discount factor by a power of gamma at
+each time step
+and then the sum of the rewards that
+follow the teeth time step is just given
+by
+g underscore sum now i go over this in
+more detail in the course this is just
+a python implementation of a
+mathematical formula
+if you see the formula it makes a little
+bit more sense
+but this is kind of what it looks like
+in code and again i explain it more
+in the course but the long and short of
+it is it's just the
+discounted feature reward that follows
+each time step
+next we have to handle the calculation
+of our gradients
+so tensorflow has this neat construct
+called the gradient tape
+that allows us to calculate the gradient
+at this in this case at each time step
+of the episode
+and this is new to tensorflow 2. uh in
+previous videos i had attempted to
+do the lunar landing environment using
+deep q learning
+and basically the same way you would do
+it in tensorflow one dot something
+and it was very slow very clunky didn't
+work very well
+and it's because i did not use the
+gradient tape that is the way to do it
+in tensorflow 2 it is operator error of
+course
+so what we have to do is go back through
+the memory
+so we'll say idx
+g the reward and the state and enumerate
+so we're going to get the
+integer um in integer index
+the discounted sum of future rewards g
+and the state
+in the agent's memory we're going to
+enumerate the zip
+of g and the state memory
+so then we're going to say that we want
+to convert the state
+to a tensor again we have to add a batch
+dimension
+and then we're going to feed it through
+our network
+calculate our action and probabilities
+and then calculate our log problem so
+the gradient function is proportional to
+the log of the probability the log of pi
+uh the derivation to that is given by
+the textbook
+and bartow it's free you can look that
+up online i covered in the course but if
+you want a free resource
+check out the sutton bardo textbook
+sutton and bartow are the authors
+they're kind of the ogs of reinforcement
+learning
+and they talk about the policy gradient
+theorem uh where
+all of this is derived but you want the
+log of the probability
+and that is related to the gradient the
+gradient calculation involves a log over
+the probability
+and that's given my action probs.log
+prob of the action the agent
+actually took at that time step
+now you may wonder why are we doing this
+computation twice right we're doing
+the fee the calculation of the
+distribution here
+as well as up here in the choose action
+function
+why not save the log prob up here
+and you can do that in pi torch but in
+tensorflow 2 it doesn't work because
+then the log prob doesn't get added to
+the graph
+you see only the operations in the
+gradient tape
+context manager get added to the graph
+for calculation
+my nomenclature may be a little bit
+loose here what i mean is
+that only the things within this scope
+are
+used for the calculation of the
+gradients these calculations up here in
+the choose action do not go into the
+calculation of the gradients
+and so saving that value there is just
+the same as saving any other scalar
+value its
+gradient will be zero down here
+it actually takes the derivative with
+respect to the
+parameters of the deep neural network
+and so we have to calculate it again
+basically so then our loss is given by
+minus g times uh the log
+probability but remember we have that
+batch dimension
+so we have to squeeze it to get it down
+to a scalar quantity
+and so this may seem mysterious so
+why do we have the minus there in our
+loss
+this is what is called a gradient ascent
+algorithm so by default deep neural
+networks
+optimizers will use gradient descent but
+we don't want to minimize
+this here what we want to do is maximize
+its total score
+and so this parameter g is the
+discounted sum of future rewards
+and so we want to maximize that right
+and you want to maximize
+the actions that have the highest
+probability of giving
+the highest possible rewards that
+suggested the policy grading algorithm
+is that it maximizes the probability of
+selecting profitable actions
+while still assuring some some
+non-zero probability of selecting other
+actions which is how it deals with the
+explore exploit dilemma because it's
+right a probability distribution a
+probabilistic function
+as long as the probability of all
+actions is non-zero for all states
+you have dealt with the explore exploit
+dilemma
+which if you're not familiar with it the
+explore exploit dilemma refers to the
+dilemma every agent faces the agent is
+tasked with maximizing its total score
+over time
+but it does not have a complete model of
+the environment if you had a complete
+model of the environment
+you could just plug that in and solve a
+set of equations
+you wouldn't need reinforcement learning
+so the agent has some uncertainty around
+what it thinks the future rewards will
+be and it's never certain that it knows
+the best
+possible strategy so it has to spend
+some amount of time
+uh taking exploratory actions versus
+taking
+greedy actions those that it thinks are
+best and the extent to which it engages
+in either those two activities is called
+the explore exploit dilemma
+so outside of the context manager we can
+go ahead and wrap up our gradients so we
+say gradient
+equals tape dot gradient loss
+loss with respect to what policy
+trainable
+variables uh if you don't know where
+that trainable variables comes from it
+comes from the derivation from
+keras.model
+and then we can apply those gradients so
+we say self
+policy optimizer apply gradients
+and this expects a zip as input
+zip up the gradient and the trainable
+variables
+and then at the end of every episode
+we're going to go ahead
+and zero out our memories
+okay that wraps up our agent class now
+we're ready to code up the main loop and
+see how it performs
+okay so we begin with our imports so we
+will need
+jim numpy
+uh we will need our agent
+and we will need a simple um
+plot learning function you can do a get
+clone of my github repo
+it's just a matte plot live pie plot
+with labeled axes
+it's nothing mysterious you can just do
+a pie plot
+of the scores versus time if you wish
+you don't really need this this is just
+a utility function i've written
+it's available on the github but it
+doesn't do anything magical
+it's just a plot so
+our main loop will start
+by instantiating our agent
+with a learning rate of 5 by 10 to the
+minus 4
+a gamma 0.99
+four actions for our lunar lander
+environment and i'll use the defaults
+from our first and second fully
+connected layers
+then we make our environment lunar
+lander
+v2 and we instantiate
+an empty score history this is how we
+will keep track
+of our scores
+we will let this play 2 000 games i've
+already finished running on the 2000
+games i've got another one going for 3
+000 right now
+i'll show you the outputs of both when
+we get to the terminal
+i'm not going to wait for it to finish
+another 2000 games it takes a little bit
+of time
+uh and there's significant run to run
+variation anyway so you're not going to
+reproduce my results
+exactly unless we use the same random
+seeds which we could do
+but are not for this particular tutorial
+so we're going to play our episodes by
+resetting our terminal flag score
+and environment at the top of each
+episode
+and for each step of the episode we want
+to choose an action
+based on the observation we want to get
+the new state
+reward terminal flag
+and
+debug information from the environment
+we're going to store the trans
+transition in memory
+it's observation action and reward
+then very important you want to set the
+current state to the new state after
+you've taken your action
+increment your score and at the end of
+every episode
+append that score to the agent's score
+history
+and we want to learn now one important
+distinction here
+is that this is what is called a monte
+carlo method
+so if you're not familiar with monte
+carlo methods the basic idea is that we
+have to learn
+how to play the game by playing the game
+the agent starts out not knowing
+anything about how the environment works
+and then discovers the rules just by
+interacting with it
+and the learning is connected at the end
+of every episode
+right you saw the calculation and learn
+function iterates over the whole state
+memory
+and so the learning takes place once at
+the end of every episode
+this is in contrast to temporal
+difference learning methods
+that also learn by interacting with the
+environment it's also model free
+but it learns at every single time step
+or
+end time steps in the case of n-step
+temporal difference learning but in
+general every time step
+that would include algorithms like
+q-learning actor critic is also
+a monte carlo method but it's temporal
+difference based so it's learning
+every single time step
+so then we calculate our average score
+and i might have misspoken there
+i don't think actor critic is generally
+considered a monte carlo method
+i'm being a little bit loose with my
+terminology specifically it is
+a temporal difference learning method
+i mean it's monte carlo in the sense
+that we're just learning from the
+environment by interacting with it more
+precisely it is model free
+so we take the average score of the
+previous 100 games
+and then we want to print some debug
+information to our terminal
+that is the episode number
+the score for the prior episode
+and the average score
+uh and then at the end of all the
+episodes
+we'll declare a file name
+lunarlander.png plot learning
+of course passing the score history
+the window of 100 games again this is
+just
+a simple plot function uh with some axes
+labeled you don't need to do it you
+don't really need it you can just call
+matplotlib.pyplot here
+all right let's go ahead and
+run this and see if i made any typos
+i do not have the plot learning function
+allow me to
+import that so i will say copy
+this is on my local machine so this
+doesn't apply to you guys
+youtube reinforcement learning policy
+gradient
+reinforce tensorflow 2
+uh utils dot pi copy it here
+and then try it oh i also said i would
+do pip install
+i think this is a separate module i
+could be
+wrong no it is within the um
+it is within the main tensorflow library
+okay that's good
+so let's try it again
+policy gradient network is not defined
+that is because
+i misspelled it that is in
+line 16
+policy gradients network
+has no attribute and actions i must have
+forgotten to save it
+no it must be a typo then
+policy grading object has no attribute
+oh of course
+i see there is no an action that is the
+downside of
+talking and typing at the same time
+name action is not defined that is
+because it is actions
+okay so that is
+uh here
+okay so now we are running and i'm not
+gonna let this finish i'm going to go
+ahead and switch over to a separate
+terminal where i have
+more than one game going sorry more than
+one set of episodes going
+one second as i
+was editing this it finished its run and
+i saw that it didn't actually learn
+and so i know what went wrong it is a
+very simple mistake
+so let's take a look at reinforced tf2
+and you can see right here i've appended
+observation
+everywhere so that should obviously be
+action and reward
+otherwise it does not work
+so now that is fixed and this will of
+course be correct on my github
+sometimes when i'm recording a youtube
+video i make mistakes
+i always fix it before uploading to
+youtube and i'll go ahead and notate
+this
+in the video in post-production but
+other than that it's fully functional
+the
+version that's uploaded to github is
+what i used to produce
+the uh high scores of 200 something odd
+for the agent so just a really quick
+correction here
+in the interest of being completely
+transparent
+all right so here is one such session
+where i ran it for 2 000 games
+and you can see in this case it does
+manage to beat the environment handily
+and i will show you the plot from that
+as well
+it has a really sharp increase there at
+the end with an
+otherwise linear increase over the vast
+majority of the games
+on this other window is the 000 games
+i'm running
+and you see it is achieving a decent
+score but it's kind of oscillating
+around
+uh with a general overall upward trend
+if you scroll down to 2000 games you see
+it only has a score around 100
+but it's kind of oscillating around a
+set point of around 130 or so
+points so this may very well go ahead
+and break out and achieve a
+high score of 200 or it may not so it's
+obviously
+very sensitive to initial conditions uh
+as is pretty much all of these
+algorithms when you read the literature
+they'll typically average over five
+games and give you the mean or excuse me
+the median plus uh you know standard
+deviation type range
+uh and they will also if they're really
+interested in reproducibility supply a
+series of random seeds that they used
+for the generation of those episodes and
+you can see here it's kind of uh
+hitting 200 177 so it's getting close to
+beating the environment here so it'll
+probably trend up in the last several
+hundred
+so i hope that has been helpful just to
+recap policy gradient methods are
+a a model free uh
+monte carlo method that seeks to
+approximate the agent's policy by
+interacting with the environment
+again the policy is a probability
+distribution uh that tells you the
+probability of selecting each of your
+actions
+given some state of the environment it's
+relatively straightforward
+doesn't take much more than 100 lines of
+code to implement
+uh it's all going to be on my github
+link in the description
+also if you want to learn the how on the
+why behind all of this where i go
+through
+the papers on ddpg uh
+twin delay deep deterministic policy
+grading soft actor critic
+i cover that on my actor critic course
+as well as a deep q learning course
+where i cover three papers in there as
+well
+those are linked in the description and
+they're on sale right now
+on udemy if you've made it this far
+please consider
+subscribing hit the like leave a comment
+down below
+and i'll see you in the next video

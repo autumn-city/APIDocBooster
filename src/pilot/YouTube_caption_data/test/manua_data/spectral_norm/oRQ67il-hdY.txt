@@ -1,0 +1,590 @@
+Having seen various kinds 
+of Deep Generative Models  
+like GANs, VAEs, Normalizing Flows, 
+Autoregressive Flows, last week.  
+We will now move on to the various ways in which 
+GANs have been improvised over the last few years.  
+Talk a little bit about disentangling of 
+VAEs, and then move on to applications of GANs  
+to images and videos. Let us start with 
+a few improvements over Vanilla GANs.
+ 
+The first method that we will talk about is 
+known as Stack GAN. This was published in  
+ICCV of 2017 and the goal of this work was to 
+generate reasonably good resolution 256 x 256  
+photorealistic images, that are conditioned on 
+Text descriptions. So here is a high-level flow.  
+The entire GAN model is conditioned on a Text 
+description. It could be a caption, for instance,  
+and standard NLP methods such as Word2Vec, 
+GloVe, BERT so on and so forth, are used to  
+get an embedding of this Text description, 
+which is provided as input to the GAN.
+ 
+With that input in the first stage, the 
+GAN generates 64 x 64 images, but perhaps  
+a few high level details or low frequency 
+details. These images are then provided as  
+input to the next stage of the Stack GAN, which 
+generates 256 x 256 reasonably high detail  
+photorealistic images and both these stages 
+are conditioned on the same text input.
+ 
+Let us see the entire 
+architecture now. So you have  
+the Text description, which is given as input to 
+the entire Stack GAN. In this particular example,  
+the text description reads "This bird is gray with 
+white on its chest and has a very short beak".  
+So you obtain an embedding of this text, as I 
+just mentioned, using say, Word2Vec or GloVe or  
+BERT or any other embedding of your choice and 
+this embedding is then added to the standard  
+Gaussian noise that is given to a GAN.
+So, you can see that you get a mean  
+and standard deviation from this embedding. And 
+this mean and standard deviation is used to obtain  
+a sample. And that sample is concatenated 
+with a sample from the standard normal,  
+so that becomes the entire input to the first 
+stage generator. So the first stage generator then  
+goes through an Upsampling Generator Module, which 
+generates a 64 x 64 image that you see here.
+ 
+Now, the generated image, and a set of real 
+images in a given minibatch are provided to the  
+discriminator, which downsamples these images. And 
+before the final step of classifying this input  
+as real or fake, you also include the embedding 
+phi_t, again here. So you see here that there is  
+an arrow that comes all the way and gets combined 
+to this output of the Downsampling Module.
+ 
+And the job of this Discriminator now is 
+to classify this tuple of generated image  
+whose representation we are considering, which 
+is this blue block here, and the text embedding  
+together to be real or fake. This is the first 
+stage. In the second stage, the results of the  
+first stage is given as input along with the 
+embedding of the text again, both of these  
+then go through the second generator stage.
+So, you can see here that the image goes through  
+a Downsampling then the text embedding is then 
+concatenated to the downsampled representation.  
+This then goes through a set of residual blocks, 
+which is then upsampled to get the final output  
+256 x 256 image, which is what you see here. 
+Now, that goes now to the second discriminator,  
+where you give the generated 256 x 256 
+image, and one of the real 256 x 256 images.  
+Once again, the output of the downsampled 
+representation is concatenated with the  
+text embedding, and the Discriminator has to 
+classify each such tuple as real or fake.
+ 
+Now, let us understand how the Discriminator 
+can look at the tuple and classify Real or Fake.  
+So, in this case, there are three kinds of Scores 
+the Discriminator has to obtain, has to provide.  
+So, first one is when the real image is 
+provided with the correct text. Obviously,  
+the discriminator would want the score of such 
+an input to be one, because both are correct,  
+there is a real image and the 
+corresponding correct text.  
+There is also another setting where you 
+have a real image and an incorrect text.
+ 
+In this case, the discriminator should 
+ideally give a low score. Similarly,  
+you have a fake image with the correct text, which 
+the discriminator should give a low score, but the  
+generator should try to increase this particular 
+score. These are denoted as s_r, s_w and s_f.  
+Now, let us try to understand how the 
+optimization actually works. So, the Stack GAN  
+alternately maximizes the discriminator 
+loss and minimizes the generator loss.
+ 
+Similar to what we saw with a GAN. In this 
+case, the Discriminator, as we just saw,  
+would try to maximize the log likelihood of the 
+first score and minimize the log likelihood of  
+the second and third scores, which is what 
+is given by the second and third terms here.  
+We just saw that when we understood the 
+Scores. Similarly, the generator tries to  
+maximize log of 1 minus s_f, because that is the 
+job of the generator. It also tries to minimize  
+the KL divergence between the output of the 
+mu s and sigma s that you see in the initial  
+layer at the end of the text embedding 
+with the standard normal distribution.
+ 
+Here are some results that are obtained 
+from Stack GAN. What you see on the top row  
+is a baseline method called GAN-INT-CLS that 
+was published in 2016 and the bottom row shows  
+the results of the Stack GAN. So you can see 
+here in the first column, the caption says,  
+this flower has petals that are white 
+and has pink shading. You can see here  
+that the quality obtained by the Stack 
+GAN is far more photorealistic than of  
+earlier methods and this holds for all these 
+images that you see at the bottom row.
+ 
+Another popular method that came in 
+2018 is known as the Progressive GAN.  
+The Progressive GAN is designed for generating 
+high resolution images up to 1024 x 1024  
+and the key idea is in the name 
+of the method itself is the method  
+progressively grows, the generator and the 
+discriminator. We will soon try to decipher  
+what this means. This work was published in ICLR 
+of 2018. It also had a few other design decisions,  
+such as using a standard deviation in a given 
+Minibatch, a concept of an equalized learning rate  
+and a pixel-wise feature vector normalization in 
+the generator, which we will also see soon.
+ 
+So, the Progressive GAN has an overall idea as 
+what is shown in this image on the left here.  
+So, the generator first produces a 4 x 4 
+image, which is what is shown in the left most  
+part of this image here. So, you have the 
+latent vector that comes from a standard normal,  
+a very simple network, which generates a 4 x 4 
+image and this is provided to a Discriminator D,  
+along with a real sample, to be able 
+to judge whether it is real or fake.
+ 
+This then increases to 8 x 8 in the next 
+iterations of training. You can see here,  
+that compared to the image generated in the 4 
+x 4 setting, the 8 x 8 setting is still blurry,  
+but has some more details when compared to 
+the 4 x 4 setting. You can also notice here  
+that there are some layers added in the 
+generator as well as the discriminator  
+when the next higher resolution is generated.
+And this is repeated over and over again,  
+until we get the final generation of 1024 
+x 1024 image. The key idea that this allows  
+is for stable training of GANs for 
+generating high resolution images.
+ 
+Whenever the Progressive GAN goes from generating  
+a certain resolution to 
+the next higher resolution,  
+as I just mentioned, there are new layers 
+introduced. How are these layers introduced? This  
+procedure is very similar to ResNets. So, you can 
+see that in this subfigure b here in the image.  
+You see now that while you had an initial 
+resolution 16 x 16 when you step up to 32 x 32.
+ 
+The nearest neighbor interpolated version of 
+the 16 x 16 layers output, when you interpolate,  
+you get a 32 x 32 output. That is added to the 
+32 x 32 layer through a skip connection. How is  
+that added? You can see an alpha and 1 minus 
+alpha here. So, the new output layer is the  
+final output is given by alpha into the new output 
+layer plus 1 minus alpha into the projected layer.  
+By projected layer, we mean the output of the 
+nearest neighbor interpolation. This allows  
+Progressive GAN to fade in new layers in a organic 
+manner to be able to generate better images.
+ 
+As I mentioned, Progressive GAN also 
+introduces a few other design decisions.  
+One such contribution is known as 
+Minibatch standard deviation. In this step,  
+the standard deviation for each feature in each 
+spatial location over a Minibatch is computed  
+and averaged. So, you can imagine now, that when 
+the generator generates a particular feature map,  
+you take every spatial location, which is every 
+pixel, you compute its average, across the  
+entire Minibatch, you will get a certain standard 
+deviation for that value across the Minibatch.
+ 
+That is concatenated to all spatial locations 
+at a later layer of a discriminator.  
+Why do you think this is done? Think about it. It 
+will be your homework for this lecture. Another  
+contribution that Progressive GAN brings to 
+the table is known as Equalized learning rate.  
+In this case, the weights in each layer of the 
+generator network are normalized by a constant c,  
+which is specified per-layer.
+So, this constant c is a per-layer normalization  
+constant. Why is this done? This allows us to vary 
+c in every layer, and thus help keep the weights  
+at a similar scale during training. So, why is 
+this called Equalized learning rate? Because  
+the value of the weight effectively affects 
+the gradient and hence the learning rate.  
+While methods such as Adam, AdaGrad so 
+on and so forth, adapt the learning rate,  
+they may end up having low values with the 
+weights themselves are very low or very high.
+ 
+Normalizing by a constant allows 
+these weights to be of a similar scale  
+during training across all of the layers. This 
+allows better learning. Another contribution  
+that Progressive GAN makes is a Pixelwise feature 
+vector normalization in the generator, where for  
+each convolutional layer in the generator, the 
+normalization is defined as a_xy, which is the  
+xy pixel in the a_th feature map, divided by 
+1 by N, where N is the number of feature maps,  
+summation j going from 0 to N minus 1 
+that is across the N feature maps a_xy  
+superscript j whole square plus epsilon.
+The denominator here considers  
+the pixel value at the same location across all 
+of the feature maps and normalizes the value at  
+the a_th feature map with this denominator. 
+The epsilon here is for numerical stability,  
+to avoid a divide by zero error. And the output is 
+denoted as b_xy, which is the normalized value.
+ 
+With these contributions, Progressive 
+GAN reports impressive results.  
+The results are compared with earlier work such as 
+Mao et al. and Gulrajani et al., and one can see  
+that with the Progressive GAN approach, 
+the result is fairly photorealistic  
+and high resolution with more details 
+when compared to earlier methods.
+ 
+A third more recent improvement of GAN is 
+known as StyleGAN published in CVPR of 2019.  
+This looks at Progressive GAN, which is also known 
+as ProGAN which generates high quality images,  
+but does not give the capability to control 
+specific features in the generation.  
+For example, it is difficult to use a Progressive 
+GAN and say that you would like to take an image  
+and add a certain color or change a 
+particular attribute in the image.
+ 
+StyleGANs objective is to be able to 
+control the generation of an image  
+using a particular predefined style. How 
+does this do it? It automatically learns  
+unsupervised separation of high 
+level attributes, could be like,  
+could be examples could be pose and identity 
+for face images. Stochastic variation such as  
+hair, which could have a lot of randomness, 
+and scale specific control of attributes.
+ 
+The intuition for StyleGAN is that a Coarse 
+resolution in an image if we consider face images,  
+could affect attributes such as pose, a general 
+hairstyle, face shape, etc. If you go to the next  
+level of resolution, anywhere between 162 and 
+322, this resolution throws in final attributes  
+such as facial features, more specific hairstyle, 
+eyes being open or closed, so on and so forth. 
+ 
+At the highest resolution a Fine resolution 
+anywhere between 642 and 10242 affects the  
+color scheme, both for eye hair and skin, as 
+well as introduces micro features on the face.  
+StyleGAN, tries to address and introduce some 
+style specific components at each of these  
+resolutions to attain its desired effect.
+How does it do this?  
+Given an input Random vector, the same 
+as in the Vanilla GAN. StyleGAN first  
+normalizes this vector, and then sends this 
+through eight fully connected layers without  
+changing the dimension of the input and obtains 
+a 512 x 1 vector. Remember, the input latent was  
+also 512 x 1. So, these eight fully connected 
+layers do not change the dimension of the input.  
+And this transformed vector which we call w is 
+given as input to the generator or the Synthesis  
+Network. Now, let us see how this vector w affects 
+different resolutions in the generation.
+ 
+This is achieved by introducing a matrix A which 
+learns an affine transformation at different  
+resolutions. So, you can see here that the 
+Synthesis Network or the generator in StyleGAN  
+has an Upsampling module and then has something 
+called as Adaptive Instance Normalization,  
+which we will see in a minute. Which is 
+followed by convolution layer, and then an  
+another Adaptive Instance Normalization Layer.
+And then this is then repeated over multiple  
+blocks. Let us take a look at one of 
+these combinations of convolutional  
+and Adaptive Instance Normalization layer. So, 
+if you have a convolutional layer here, as what  
+you see on the top here, a specific channel of 
+the feature maps in that convolutional layer  
+is normalized by its mean and variance to 
+get an Adaptive Instance Normalization.
+ 
+Before that is concluded, the 
+weight vector w, which was  
+obtained here, which is given as input to each 
+of these blocks is transformed by an affine  
+map, which gives us a set of values Y_si and 
+Y_bi, which is used to change the scale and bias  
+of the output of the convolutional layer. This is 
+where the Adaptive Normalization comes into play.  
+So, you can see here that this now becomes 
+x_i minus mu of x_i, which is normalization  
+with respect to mean and variance.
+So, this quantity here in the inside corresponds  
+to subtraction by mean and division by 
+variance. It is multiply then by y_si,  
+which is a scaling value obtained as an 
+output of the affine transformation A and then  
+biased by y_bi, which is also the output of the 
+affine transformation. Note that these values,  
+y_si and y_bi could be different in different 
+blocks of the Synthesis Network and each such  
+transformation thus defines the visual expression 
+of features in that level. And that allows  
+the input latent to have a different influence 
+at different resolutions of generation. 
+ 
+Another method, the recent one, which is 
+published in CVPR of 2019, again, is known  
+as SPADE, we will see it expansion soon. And 
+the key idea of SPADE is that previous methods  
+directly feed the semantic layout as input 
+to the network, you have a certain image and  
+the entire semantic layout is known with the pixel 
+configuration of the image. And in SPADE, which is  
+given by Spatially Adaptive Normalization. 
+The input layout for modulating activations  
+in normalization layers happens through this 
+spatially Adaptive Learned Transformation.
+ 
+Let us see how this happens. In the standard Batch 
+Normalization layer, you could look at the output  
+as going through an affine transformation. You 
+scale up the value and you add a constant, which  
+is an affine transformation. Which is the standard 
+batch norm operation, where you have a value,  
+you multiply it by gamma and add a 
+beta which together defines an affine  
+transformation. However, in SPADE, what is done is 
+a semantic segmentation map is given as input.
+ 
+And this semantic segmentation map goes through 
+a convolutional layer and the convolutional layer  
+outputs a gamma and a beta which is used to 
+normalize the previous layer of the generator.  
+So, as you can see here, unlike blindly 
+normalizing the output feature map in a specific  
+layer. In this case, the normalization is done in 
+a spatially adaptive manner, where the gamma and  
+beta come from the spatial relationships 
+in this Semantic Segmentation Map.
+ 
+What is this Semantic Segmentation Map? 
+Recall that a Semantic Segmentation Map has  
+a pixel wise association of a class label. So, 
+you can see here in the sample, you have a tree,  
+you have a sky, you have a mountain, you have 
+grass, and you have a road perhaps. That is used  
+to define the gamma and beta for normalization. 
+A random latent vector can also be used to  
+manipulate the style of generated images.
+But the semantic segmentation map gives a way of  
+normalizing using spatial content at each pixel. 
+So, you can notice here that the normalization now  
+is defined at each pixel. These gammas and 
+betas are defined at the pixel wise level,  
+which is what is denoted by the cross here and 
+plus here which are done element wise, which can  
+allow each pixel to be normalized in a different 
+way, based on the Semantic Segmentation mask.
+ 
+Here are some interesting results. So, you 
+can see here that the Semantic Segmentation  
+output is given as the input to SPADE. So, 
+these are masks of Semantic Segmentation,  
+Pixel wise Class Labeling and this is the actual 
+ground truth image corresponding to these Semantic  
+Segmentation masks. You can see here, while the 
+third and fourth columns correspond to other  
+methods, SPADE gives a fairly photorealistic 
+output close to the ground truth.
+ 
+And what you see here is the architecture  
+of the generator in SPADE, which is 
+similar to many other GAN architectures,  
+but for the input of the semantic 
+segmentation mask coming in at each layer.
+ 
+Finally, the last method we will discuss in this 
+lecture is a very popularly used one these days,  
+known as BigGAN, which was 
+published in ICLR of 2019.  
+The focus of BigGAN was to scale up GANs for 
+better high resolution generation. It was designed  
+for class conditional image generation, which 
+means the input is both a noise vector, similar  
+to a Vanilla GAN and some class information.
+It could be one hot vector, for instance,  
+which together are given to the GAN to generate 
+an image corresponding to that class. BigGAN also  
+introduces a few different design decisions 
+as we will see in the next few slides.
+ 
+An important design decision in BigGAN is to 
+use the idea of a Self-Attention GAN or a SAGAN,  
+which is actually an earlier work that was 
+introduced in late 2018 and published in ICML of  
+2019 which introduces the idea of Self-Attention. 
+We already saw Self-Attention in Transformers a  
+week ago. It is the same idea here, where you 
+have a set of convolutional maps in as the  
+output of a particular layer in the generator.
+This goes through multiple 1 x 1 convolutionals.  
+Certain 1 x 1 convolutionals undergo 
+transformations and a transpose to obtain  
+an Attention map. These three branches are very 
+similar to the query, key, and value of the  
+transformer architecture. You could consider them 
+to be similar at least. So, two of those branches  
+generate an Attention map, which is used to focus 
+on a specific part of the convolutional map to  
+then generate that component of the image 
+in the next layer. Why is this required?
+ 
+Self-Attention GANs were introduced, because 
+often GANs while they generated crisp images,  
+they would miss out finer details. For example, 
+in a Dog's image, they may generate the Fur on  
+the dog, but miss out the legs of a dog. So, 
+the idea of using Self-Attention is to focus  
+on specific parts of the image and generate 
+every local detail more properly. In BigGAN,  
+along with Self-Attention GAN the 
+loss that is used is Hinge Loss.
+ 
+This Hinge Loss is similar to 
+the Hinge Loss that is used in  
+support vector machines, which is given by max of 
+0, comma 1 minus t y where t is the target output  
+and y is the predicted output. This is because 
+BigGAN his class conditional. So, you also want  
+the output image to belong to a particular class, 
+which is then used at the discriminator stage.  
+Because the discriminator now no more only 
+says real or fake, but can give a class label  
+whose loss in this case is given by Hinge Loss.
+In addition, BigGAN also introduces  
+Class-conditional Latents in a slightly different 
+way. Instead of a Class-conditional Latent,  
+which could be a one hot vector. Instead of giving 
+that directly to the input of the generator,  
+the Class-conditional Latent is given as a 
+separate input at multiple stages of generation,  
+where it is concatenated with certain input, and 
+then given to each of these Residual blocks. What  
+is done inside each of these Residual blocks?
+The concatenated class label  
+vector passes through a linear transformation, 
+two different linear transformations in fact,  
+which is given to the two batch norm layers 
+in inside each of these Residual blocks.
+ 
+BigGAN, also had Other Design Decisions, 
+which helped its performance. One such  
+was Spectral Normalization, where the 
+weight matrix in each layer was normalized  
+to ensure that its spectral norm was maintained. 
+And it also satisfied the Lipschitz constraint  
+sigma of w is equal to 1. You can see this 
+paper called Spectral Normalization for GANs,  
+ICLR 2018 for more details. The broad idea of 
+such a step is similar to Batch normalization to  
+constrain the weights with certain properties that 
+ensure that learning can be better and faster.
+ 
+In this case, we try to constrain the 
+highest singular value of the weight matrix.  
+A second idea is Orthogonal Weight Initialization, 
+which is a well known weight initialization  
+method, where each layers weights are initialized 
+to ensure the W transpose W is equal to I  
+or the weight matrix is Orthogonal. It also 
+introduced Skip-z Connections, which we already  
+saw, where the input latent z is connected 
+to specific layers deep in the network.
+ 
+It also introduces another method 
+known as Orthogonal Regularization,  
+which encourages the weights to be orthogonal 
+in each iteration of training. How is this done?  
+Using a regularizer R subscript by beta where beta 
+is a coefficient, where the regularizer tries to  
+ensure that the Frobenius norm between W transpose 
+W and identity is minimized. So, this would be a  
+way to ensure the W transpose W is close to 
+identity and hence the matrix is Orthogonal.  
+Why? Why would we want Orthogonal 
+Regularization? Think about it, this  
+is another homework for you for this lecture.
+Other Hacks that were employed in BigGAN where  
+the Discriminator model was updated twice before 
+updating the Generator model in each iteration.  
+The model weights were finally averaged 
+across a few training iterations using  
+a moving average approach which was used 
+finally. This was also done in Progressive GAN.  
+BigGAN also observed that using very large batch 
+sizes, such as 256, 512, 1024, and 2048.
+ 
+When we say batch sizes, we mean Minibatch 
+sizes while performing Minibatch SGD. In fact,  
+they observed best performance with 
+the highest Minibatch size of 2048.  
+They also doubled the model parameters 
+or the number of channels in each layer  
+and they employed a Trick 
+known as the Truncation Trick,  
+where the generator initially receives a latent 
+vector from a Gaussian during training time.
+ 
+At test time, you sample a latent from a Gaussian 
+and if that value is less than a threshold,  
+you discard it and sample another value. So, this 
+is called a Truncated Gaussian. You could now  
+imagine that this Gaussian, this Truncated 
+Gaussian, is something like this, where  
+you are ensuring that something sampled 
+below a threshold is not considered  
+as input to the GAN. So, that way, all inputs 
+to the GAN come from this part of the PDF which  
+the main idea being is that you would not get 
+anomalous generations using these latent vectors.  
+But you get generations that belong to the 
+core part of the PDF of that Gaussian.
+ 
+Your homework for this lecture is 
+go through this excellent survey  
+of GANs that was recently released, Chapter 20 of 
+the Deep Learning book and here are the code links  
+for most of the GANs discussed in this lecture. If 
+you would like to see them and try them out. The  
+questions that we left behind are why is Minibatch 
+standard deviation used in Progressive GAN and why  
+is Orthogonal Regularization used in BigGAN? 
+Think about it and we will discuss the next time.

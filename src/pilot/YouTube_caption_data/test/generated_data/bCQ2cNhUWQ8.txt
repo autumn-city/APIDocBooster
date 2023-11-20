@@ -1,0 +1,446 @@
+welcome to deep blizzard my name is
+Chris in this episode we're gonna see
+how we can implement batch norm in our
+convolutional neural network using PI
+George alright so I want to implement
+batch norm in the neural network that
+we've been using throughout this course
+now if you saw or if you're following
+the course and you saw the last couple
+of videos they're kind of prerequisites
+to this so the two videos ago we did
+data normalization and we saw that in
+order to normalize our data before
+passing it to the network that we need
+to first calculate the standard
+deviation and then we calculate or first
+we calculate the mean then we calculate
+the standard deviation and this allows
+us to normalize our dataset using those
+two values and a process known as
+standardization this is where we
+calculate a z value or a z score by
+taking each pixel and subtracting the
+mean from it and then taking that result
+and dividing by the standard deviation
+so at the end of the video on
+normalization I mentioned that the
+standardization process that we went
+through to normalize our data as input
+is also the same process that's used in
+batch norm where we normalize not the
+data that's coming in or the input data
+but we normalize the activations after a
+particular layer so what the idea is
+that we want to normalize the data
+coming from one layer that way it's
+normalized when it goes into the next
+layer so those processes are very
+similar so I'm here in The Bachelor on
+paper where when bassdrum was created as
+a method this is a particular particular
+paper for that and I just want to show
+you the calculation that they cite which
+is the calculation that we implemented
+before when we normalize our data using
+standardization so they have
+of a little kind of sequence of formulas
+here the first one is calculating the
+mean and so what we can see here this is
+what we did the sum of every pixel
+divided by the total number of pixels
+that gives you the mean and they're
+calling this mu mu sub B or beta I think
+that's a looks like a B or beta but mu
+sub B and we take that and we use that
+in the calculation of the what they're
+calling they're calling it the variance
+I call this the mean squared error so we
+what we do is we sum the square of the
+difference between the each value each
+pixel value and the mean that was
+calculated before then we divide that
+all by the total number of pixels then
+finally what we end up with is what
+they're calling to normalize and this is
+the value X for each pixel X and we
+subtract the mean and then we divide by
+this is the standard deviation and then
+the difference between between normalize
+the normalization that we saw before and
+Bachelor arm is that there's also these
+parameters so there's scale and shift
+parameters and these are learn about
+parameters that exist inside a batch
+norm layer so if you want to learn more
+about these particular parameters and
+the Batchelor process be sure to see the
+Batchelor video and the deep learning
+fundamentals course where we've created
+a dedicated video that goes into
+discussion of that in this video we're
+gonna focus on getting batch norm added
+to our convolutional neural network that
+we've been working with throughout this
+course so let's do that now so as we've
+been doing each time we kind of create
+new variations in our process we are
+testing the previous version of our
+network or whatever parameters we have
+set with the new version so in this case
+I want to create two networks that one
+with the old way and then
+second one I wanted to have bachelor
+matted and then we'll run both of these
+to the training process and see what the
+difference is all right so what we're
+gonna be doing here if you haven't seen
+the previous video we are no longer
+using the class definition of our
+network we're going to be using the
+sequential way of defining our network
+so we discussed everything about the how
+to use the the sequential class to build
+models rapidly and on the fly in the
+last video of the course so now we're
+gonna use the the sequential model
+module to do just that so we can test
+two variations of our network one with
+bit batch norm and one without alright
+so let's just take a quick look at our
+network this network is gonna be defined
+sequentially the first layer is a conf
+layer then we have a rel u then we have
+a max pool then we have our second conf
+layer another value IMAX pool then we're
+gonna flatten the output coming from the
+last kind of comm block with a max pool
+and then we're starting the the flatten
+operation we're gonna start at the first
+dimension and this is because we don't
+want to flatten our batch we want to
+flatten each image within the batch
+so if our batch layer or a batch access
+is here then we're gonna flatten every
+image in the batch but we won't change
+our batch size and that's what this
+start dims dim function indicates then
+we have a linear layer followed by our
+Lu followed by another linear followed
+by value and then finally our output
+layer which is gonna output 10
+predictions because we're using the
+fashion in this data set that has ten
+prediction classes so let's run this and
+initialize this network all right and
+then actually something that I noticed
+was that we should what in the world all
+right something that notice is that we
+should set the seed so I'm gonna do
+torch dot manual seed and we'll go with
+50 that's just arbitrary well this is
+going to do is make sure that the the
+weights that are created randomly for
+both of these networks
+should be the same I think it'll still
+work even though even though these have
+additional this one's gonna have batch
+norm I think the weight should still be
+the same but either way this won't hurt
+what this is gonna do is make sure that
+the random numbers that are generated
+for the weights are gonna be the same so
+then down here for our second network
+second network which I've already I've
+already ran the cell but the difference
+is is that we're adding batch alarms so
+we're adding Bashan alarm here and then
+we're adding batch norm down here so
+we're gonna add 1 1 batch norm right
+after the first con flayer so when our
+network when our when our data comes in
+it's normalized and so it's gonna hit
+the first con flayer as normalized data
+then it's gonna be transformed through
+this column value max pool so then we're
+gonna normalize it again using bash norm
+and so at this point the this is how we
+use bash norm all we do is we we access
+the Batchelor arm 2d because we're
+dealing with images and we just say so
+notice the 2d there and then we say the
+only thing that we need to say here is
+how many input features are coming in so
+the number of input features to a 2d
+batch norm is gonna be the number of out
+features or out channels in this case
+which would be 6 coming from the conf
+layer so we have 6 in features coming in
+to this bash norm layer and so what
+that's gonna do is normalize the data
+and then those 6 normalized channels are
+gonna come out and come into this
+conflate as normalized data and then
+those to the scale and what was that
+scale and shift parameters are also
+going to be inside the batch norm layer
+and they're gonna be being updated
+throughout the learning process so we do
+a batch norm then we do our column rel
+you max pool then we're ready to flatten
+and then we can do a linear layer and
+then a rail U and then we can do our
+other batch norm so it's kind of like
+you can put you can do batch norm after
+every single layer or you
+kind of sprinkle it throughout so in
+this case we're gonna sprinkle it
+throughout if you want to try it adding
+more batch norm into the network then
+then give it a shot but for now we're
+just gonna add in two places so then
+here the this is a 1d because we're
+dealing with one-dimensional tensors at
+this point because we've flattened out
+our channels and we're gonna pass in the
+120 features that are coming from the
+previous layer so that's here this 120
+is gonna get passed into here which then
+feeds through to the next linear layer
+we come in with 120 we come out with 60
+and then we go into the output layer
+passing those 60 features in and then we
+finish up with our 10 predictions so
+this has already been ran the cell so
+we're ready to just jump down and start
+working with this thing both of these
+models
+alright so to get set up for training
+we're going to create a train set and
+let's see that I want to yeah I didn't
+want to go ahead so we're gonna create
+this train set here this is a non
+normalized train set the only reason
+we're doing this is so that we can
+recalculate our mean and standard
+deviation values so that's what we'll do
+here if you want to know more about this
+process be sure to see the previous
+episode in this course to create a train
+set normal and this is gonna be a
+normalized train set with because we're
+gonna pass the mean and standard
+deviation into the normalize function or
+the the normalized transformation which
+we've seen in a past video when we
+debugged we saw that basically this and
+normalized transformation all boils down
+to taking those values there for every
+pixel in the data set and subtracting
+the mean and divided by the standard
+deviation so that will happen indeed it
+will happen all right
+so now as we saw before to hook into our
+testing framework that we've built
+throughout the course or that we've been
+developing we need dictionaries so here
+I've got two dictionaries one dictionary
+of train sets which we've already seen
+this you this
+particular dictionary in action and then
+we have a new one so this is cool I
+don't know you might have noticed this
+in the last episode where when we
+actually set up the trainsets dictionary
+let me know if you came on to this in
+that episode but essentially it's this
+same process is gonna allow us to work
+with networks so we we created a
+trainset dictionary well we can also
+create same thing same process with
+networks so we can run multiple networks
+through our testing framework so here we
+have network 1 which is here this is
+just the name of it that we're gonna use
+to access it and then here's the
+instance again the name and the instance
+alright so let me show you how we
+actually get this to work so up here we
+set up our run configurations now this
+allows us to test all different
+configurations and if there's just one
+value then for every run then that's
+just gonna be the value that will be
+used but if there's more than one value
+so say like we wanted to do two learning
+rates then we could do like zero zero
+one and what this would do it would run
+every possible combination of runs first
+with the first learning rate and then
+with the second learning rate one of the
+things about batch norm that allows us
+to do is to train with larger learning
+rates so we could test with a larger
+learning rate to see the effect but here
+we're just gonna keep it at 0.1 all
+right
+so down here is something else that's
+cool is that we can just say what I want
+to do is I'm going to get the keys
+inside this dictionary this network's
+dictionary and I want to try all the all
+those values so what that means is that
+we can keep putting networks up here all
+day long and then they will be injected
+into this run this testing framework so
+we have two two keys network one that
+work two and then now they're gonna be
+made available inside of our runs so now
+the only thing we have to do to make
+this process work is come down here and
+redefine our network so before we just
+were creating the same
+work every time every run we create the
+same network using a network class well
+now we have various networks that we're
+going to try coming from this dictionary
+so what happens is we get a run and then
+that run comes in and it's going to be
+the active run or the current run and
+that run is gonna have an Associated
+network with it and that network is a
+name this name here one of the names
+coming from this list and so depending
+on what run we're on we will be using
+network 1 or network 2 and then we put
+that network on the target device which
+is gonna be CUDA for all runs and that's
+it now we have injected networks or the
+ability to test multiple networks into
+this framework cool all right
+so actually yeah let's just change that
+let's say no match norm and then for
+this one we'll call it national arm ok
+so then that'll make it clear for us in
+the in the output so ok let me re reset
+that and then on this code and all right
+so I've got an error here and the error
+is size mismatch and so I'm gonna go and
+just look at my network definitions and
+something that jumps out to me right
+away is I see 12 by 4 by 4 then I see 12
+by 20 by 20 here so this needs to be 4
+this was left over from an experiment
+that I was doing before recording and so
+we just need to reinitialize the two
+networks the training set will just
+rerun all this and we'll rerun this code
+all right so we just finished and here
+are all the results in order to see
+these results I want to go grab this
+line from a previous you know this one
+here didn't have to retype this but
+basically this is gonna sort the results
+by accuracy so here let's do that so
+we're going to get the run data from the
+run manager and then we're gonna sort
+the values by accuracy and descending
+okay so basically they're kind of what
+you can see here is that the batch norm
+network had gotten as high by the 20th
+epoch of 93.7% and pretty much smoke the
+no batch norm network so the no batch
+norm network got up to 91% and that was
+by epoch 20 so we see the bachelor arm
+was already higher than that at epoch
+tin so we typically refer to this as
+much faster convergence so the model or
+the network converged on its minimum
+much faster than when it had batch norm
+versus when it did not have batch norm
+so this is something that batch norm can
+give us and why it's powerful plus it
+got us all the way up to 93% after
+pretty much 94% after 20 bucks now there
+was one thing that I had to do I got an
+error when I first tried to run this I
+got two errors the firt the second one I
+showed you the first one I had to go
+debug and it was because I changed these
+names and these names here are longer
+than the previous name that I had and
+what that did was it caused problems in
+the in the in the program or in the
+class that in our run manager class so
+essentially it was with the tensor board
+portion of this particular class I had
+to in the went instant when the tensor
+board instance is created we pass a comp
+ass a comment to its constructor and
+that comment is used to name the file
+the 10 suppor file and the issue with is
+is that it uses all these names to
+construct it's it's a file name and this
+this particular name made it too long of
+a file name and so essentially what I
+did was I removed that comment because
+I'm not using tensor board anyways
+whenever we did the tensor board lessons
+I mentioned that tensor board is kind of
+weak in regards to querying the
+information
+and that it would break down at some
+point as a viable solution to really
+query all the information that's
+possible and so at this point we have
+quite a bit of info here we're changing
+networks and we can really build on top
+of this test framework quite a bit more
+and so really I'm not gonna try to find
+a solution to the tensor board issue if
+you want to and you find an issue or
+find a solution to it then put your
+solution in the comments for what could
+be done there but I'm not going to do it
+because I'm not using tensor board I
+would just query that basically query
+this table like we have to just get a
+bird's-eye view of like we could do
+probably I don't know thousands really
+any number of tests and then just query
+through the information tensor boards
+just not going to do much for us there
+so anyway if you run this code and you
+get an error then go up into the run
+manager and remove the comment from the
+tensor board constructor and then so
+what that'll do is that will instead of
+manually setting the filename tester
+board we'll just name the file based on
+based on the time and date I believe so
+it's not like the tenant you can still
+go into tents aboard and look at the run
+you're just not gonna have all of the
+run information like in the file name
+like we had before so keep that in mind
+now if you didn't know we're actually
+filming this video from Vietnam and we
+have another channel called deep lizard
+vlog where we connect with you guys in a
+new way and we document all of our
+travels so go over to deep lizard vlog
+on YouTube and check it out
+right now we're in Vietnam the videos
+that are coming out on that channel are
+right now are from when we were
+previously in Thailand before coming to
+Vietnam so the Vietnam videos will come
+out sometime in the future but also if
+you haven't already be sure to check out
+the deep lizard hog mind where you can
+get exclusive perks and rewards thanks
+for contributing to collective
+intelligence I'll see you in the next
+one
+[Music]
+[Music]

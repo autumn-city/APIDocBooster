@@ -1,0 +1,781 @@
+hey guys in this video we are going to
+find you
+bird to classify toxic comments
+and to do that we are going to use the
+transformers library by having face
+the version 4.0 which is has been newly
+released and we are going to use the
+pytorch whitening library to fine-tune
+the model
+and the end result will be a model that
+can do
+something like this so if you have this
+comment
+and call a function classify comment and
+pass in the route text to it
+this will basically output a set of tags
+that classify
+this comment as toxic and a threat
+so let's get started the transformers
+library by cooking face
+just hit version 4.0 a couple of days
+ago
+so i thought it is a great time to have
+a look at it once again
+and the library is better than ever and
+it's
+easier to use it to fine tune some of
+your favorite hopefully transformers
+models
+as you can see the library contains
+a lot of implementations something like
+albert bart which is of course created
+by facebook
+and it's a really interesting version of
+birth or
+change from birth of course the original
+birth
+model we have some other
+favorite mentions like the stew bird
+which is a very slimmed down
+version of bird as well and the cool
+thing about
+the face library transformers is that
+it is very generic and you can use it to
+train
+let's say bird and with a minimal change
+of your code you can use
+say albert or roberto or some other
+version of that
+as long as you want the pre-trained
+the correct pre-trained tokenizer and
+the correct pre-trained model
+so this will be the thing that we are
+going to do right here we are going to
+just
+what a pre-trained birth organizer and
+the birth model
+then we are going to fine-tune that for
+detecting toxic comments and i am going
+to fine-tune
+the birth model using the python
+lightning library
+recently in my work i've been using
+pytorch writing for let's say the couple
+of
+weeks to a month and i think that it is
+a great library it's very similar to
+what
+keras is to tensorflow
+so we are going to have a look at it and
+how you can use it to fine-tune birth
+right here all right so let's get
+started
+i'm going to open a fresh notebook on
+google co-op
+and right here i'm going to go to
+runtime change the runtime type
+to gpu and i'm going to
+run this and let the machine connect
+and let's see what kind of gpu we have
+here so we have a t4 with
+uh 15 gigabytes of vram so this is great
+and it should work uh great for our
+purpose
+so after that i am going to install the
+transformers library
+and if you go to the github repo of the
+transformers library
+you can basically see that there is a
+patch release which is
+uh two days old
+so i'm going to pip install the
+transformers library
+transformers
+i'm going to install the specific
+[Music]
+version
+which is 4.01
+and after that i'm going to do the same
+thing
+for the pi torch lightning library
+and the latest version is 1.1
+so you can see this right here
+all right so basically the same thing
+and you can use the quiet plug if you
+don't want to get all of this
+output right here but this should
+essentially install both libraries that
+we need right here
+so next i'm going to just import
+some libraries i'm basically
+going to copy and paste all of my
+imports that we are going to use right
+here so you can see we are
+doing the standard stuff importing
+pandas numpy torch
+then i'm going to import the date set in
+the data order
+for the date set creation then we are
+importing the birth organizer the birth
+model
+and adam with weight dk fix optimizer
+that is transfer that is provided by the
+transformers library
+and we are going to use the pretty much
+standard
+linear schedule optimizer so
+after that we are basically importing
+the main module of python whitening and
+we are going to use
+the receiver operation curve for
+basically evaluating how each of the
+possible classes
+are getting predicted for our toxic
+comments after that i'm doing
+some twating setup
+and i'm going to copy and paste the
+seeding
+and the potting colors and palettes
+right here
+and you can see that i'm seeding the
+numpy random generator
+and the torch random generator which
+might not be
+the best way to do it but for our
+purposes
+it's going to be great
+next we are going to have a look at the
+data
+and the data is provided by kego and
+it's
+called the toxic comment classification
+challenge
+and you can see that this challenge was
+set up by google
+and in it you have to basically predict
+how likely is that a given text contains
+any of those tags
+so whether it is toxic severe toxic is
+it a threat insult and others
+so there are basically six stacks that
+you can apply to each
+text or each comment and in here
+we have to do basically multi-label
+text classification so the data is
+actually quite uh watch it contains
+a lot of uh comments
+and you can see that pretty much this
+challenge is uh wonk over
+and there is a lot of entries right here
+you can see the different notebooks and
+some of those are
+really good and i suggest you you go
+over those if you are interested in
+similar problems and you can see
+the rock area under the curve
+is the metric that is used to
+basically evaluate how good your
+predictions are of course the mean value
+by
+of each of those possible tags
+right here so let's get
+this data downloaded in our notebook and
+i'm going to do that
+by using a file that i've already
+uploaded to my google drive which is
+available for you as well
+and you can use that g down to download
+the file
+and the file is basically the training
+comments
+in a csv format so i've
+unzipped the comments
+and next we are going to use
+pandas to
+what the comments themselves
+all right so i'm going to have a look at
+the format of the data
+so here we have the comment x id of the
+comment
+and we have each of the
+six possible tags and zero means that
+this comment is
+not toxic or not any of those
+and if you see a position that we have
+like
+10 so let's do let's say
+20 examples so you can see
+a quite wordy
+example of what a toxic comment might be
+so there are a lot of examples of that
+and there are
+a lot of examples which where each
+comment is
+you can say next we are going
+to split the available comments into a
+training and validation date set
+and i'm going to use the train to split
+function from sk1
+and i'm going to reserve around five
+percent of the data for
+validation and testing
+i'm going to check the new shapes of
+those
+data frames
+and you can see that we have quite a lot
+of examples for training and
+around 8k examples for testing game
+validation which is
+quite good i guess and after that i am
+going to basically
+lay uh show eve
+every and each possible attack
+or possible label that we have
+so i am going to create a constant
+which contains the word toxic severe
+toxic
+scene
+threats and these are these ones
+of course so i can just copy and paste
+those
+there might be a better way to do this
+but yeah
+all right so we have a human readable
+form
+of what the possible columns are and
+then i am going to
+have a look at the distribution
+of the possible parts or columns
+so you can see that the toxic tag is
+used very very often and then we have
+the second place the ins
+obscene and insult i guess so after that
+i'm going to get a sample
+of the training data and this is
+something that we do because
+training birth is quite slow
+with so many examples and you can see
+that we have the t4 and even that
+even though this gpu is very powerful
+still training this model takes a lot of
+time
+and you can see how much or exactly how
+much later on when we start the training
+so i'm going to assign a sample
+to the training data frame and i'm going
+to sample 100k
+examples right here training
+and then i'm going to check the new
+distribution
+of the labels and you can see that
+pretty much
+it repre it is a very representative
+sample
+of the original data that we had
+so let's continue with a sample of
+a comment and to do that i'm going to
+take a row and i'm going to
+take a row at index 16. and you'll see
+why in a second
+i'm going to take the comment from that
+and i'm using the comment text column if
+you go
+right here you see that we have this
+column
+so after that i am going to
+get the labels for this one
+and i'm going to use the label comms
+right here
+i'm going to print the sample comment
+the text for the comment that this and
+then
+i'm going to
+represent a dictionary of what we have
+in our labels so by don't look back come
+or think of coming back
+toaster so this is a toxic comment at
+least
+from the point of view of our labels
+and you can hopefully agree with that
+after that i'm going to get
+a pre-trained tokenizer and i'm going to
+use the
+bird base cased model why because
+mostly i believe and that's a purely
+intuitive or personal opinion
+i think that when people are hating or
+internet and
+they write some interesting stuff you
+can
+sometimes see that they're using all
+uppercases
+so this might be um let's say
+an um feature or a
+signal that this what they're talking
+about
+it might be of nice or toxic behavior so
+i'm going to take the base version of
+both the cased version
+of the paste version and then i'm going
+to
+what the birth organizer from
+pre-trained and i'm going to pass in the
+birth
+model name right here
+so if we do that you'll see that
+this goes out and downloads
+the tokenizer
+so i'm going to use the tokenizer to
+encode the sample comment right here
+and i'm going to use the encode plus
+method
+so this method accepts a bunch of
+parameters but it is not that scary as
+it might look at the first
+glance so the first parameter is going
+to be the text
+of the comments in a row format
+after that we are want to add the
+special tokens
+which are the tokens that are required
+by birth
+we would say that we want a max length
+of
+let's say
+512 tokens
+we don't want this tokenizer to return
+the token type like this
+because we don't need those
+and we want to apply a padding
+according to the max length parameter so
+basically each
+encoding will contain 5-12
+examples or tokens we want the attention
+mask
+and finally we want to return the result
+as tensors
+in a python format so
+basically this is the encoding right
+here
+and after the encoding is complete you
+can see that
+this encoding contains only two things
+the input ids for each token
+and then the attention mask that is
+required
+by the birth model which are going we
+are going to train later on
+so let's check the shapes of the input
+ids
+and the attention mask that we have
+right now
+and as expected this is the same number
+that we passed in as the max length
+for the token tokenized example
+so this is something that we are going
+to input into the
+birth model that we are going to find
+you later on and if you are curious
+about what the
+input ids actually contain
+here are the ids of the first 20 tokens
+and we can basically do the same thing
+for the attention mask
+and this should contains only once
+because
+yeah the text contains a lot of tokens
+and the first at least at first 20
+examples are not
+missing or are actual words or tokens
+so okay so one interesting thing that
+you can do right now is to convert
+the input ids to actual tokens which
+bird is using under the hood
+so i'm going to call the tokenizer dot
+convert ids to tokens and i'm going to
+pass in the
+input ids
+and if you do that you're going to get
+this error
+only one element tensor can be converted
+to python's covers
+so to fix this i'm going to look
+at the shape of the input ladies
+which is which includes this dimension
+right here
+and if i squeeze this dimension
+we are going to get rid of it and if we
+pass in
+this instead right here
+you get a list of tokens with a lot of
+parts
+but i'm going to take just the first 20
+examples right here
+so to get this a bit prettier
+i guess you can just use the print
+and you can see that we are getting
+some very interesting results that don't
+is split into three tokens and
+the coming word is split into
+com and then something that is probably
+very very often found in text
+again for the tosser we have this
+right here again something very
+interesting
+and of course those are one from the
+pre-training of the bird model
+okay so let's continue with creating a
+data set
+which represents a toxic comments
+and in this data set we are going to
+basically extend
+the data set quest that is provided by
+the standard
+python library and i'm going to call
+this quas toxic comment state set
+and in here we are going to define a
+constructor
+which accepts a data for from a data
+frame
+and i'm going to type in this
+it's gonna accept a tokenizer
+which is going to be the birth total
+and we are going to accept another
+parameter which is going to
+tell us how much what the length of the
+tokens
+is going to be
+and this is going to be an integer with
+the default value of
+128.
+so let's assign a fields for each of
+those
+examples
+and we basically have to override
+two methods in here the first is going
+to be
+the method len which tells the
+size of the date set
+and we are going to return the length of
+the data frame
+the next method is the get item method
+and this one accepts an index of the
+item that we want
+to return right here so
+from this i'm going to take the data row
+from the
+data frame that we have as a data
+and i'm going to use the iwok method
+from pandas
+now that we have a single row and once
+again a single row
+represents something like this so this
+is a single row it contains the common
+text
+and each of the tags that we hear that
+we have here as
+as well as the id of the comment which
+we are not using
+so i'm going to take the text
+then i'm going to take the labels which
+are basically all the columns
+that contain tags for the comment
+and we have those stored into
+label columns
+and it appears that my
+runtime has disconnected and i
+don't currently have a gpu that's fine
+so after that we are going to
+create an encoding
+which is going to use the tokenizer
+and right here i'm going to basically
+use
+the same parameters that we used before
+i want to add the special tokens
+set a max length which is going to be
+the max token length i
+also want to return to not return the
+token type by this
+we are not using those i want to apply
+the max length padding
+we want to do a truncation
+so this will basically make sure that
+each sequence is as much as 128
+tokens long
+i want to return the attention mask
+and finally we want to return the
+pencils as
+i touch answers
+so now that we have the encoding we can
+return
+the item which is going to be a
+dictionary
+which contains the original or
+route text of the comment it's going to
+contain the input ids the attention mask
+and the labels as tensors of course
+the normal text is going to be returned
+just as a string
+so i'm going to return the comment text
+then the input ids
+and i'm going to flatten those
+so this will remove the the access
+dimension
+which we observed when using the
+convert ids to tokens
+i'm going to do basically the same thing
+for the attention mask
+and for the labels i'm going to convert
+the integers that represent whether
+or not represent the flux of whether or
+not
+a comment belongs to a certain category
+i'm going to convert those to a full
+tensor
+this is basically required by the
+loss function that we are going to use
+later on
+and now that our date set is complete
+i'm going to execute the cell
+and let's have a look at what we can do
+with it
+i'm going to pass in the train here
+and the tokenizer that we have thus far
+so i'm going to create an instance of
+that
+and we are going to take a
+item from it we
+are going to take the first item and you
+can use a basic
+array array like access right here
+so this will give us an item
+in this format this dictionary that we
+created right here
+so i'm going to check
+the keys of this item
+dictionary and you can see that those
+are exactly the same
+so we can have a look at the comment
+text for example
+and you can see that this is the text
+in a row format you can
+check the labels
+which should be a tensor and there are
+and
+note that this is a float tensor
+of course we can check
+the input ids and i'm going to take
+the shape of those simple
+item and
+you can verify that this is 128
+tokens long so this is perfect for us
+now that we have our data set we can use
+a birth model to do a sample prediction
+based on the single item that we have
+right here
+and to do that i am going to watch
+a bird model from pre-trained
+and i'm going to use the bird model name
+constant that we've created
+and i'm going to pass in return
+it which is basically going
+to give us a dictionary
+or in this case rather a data class
+which we are going to use in a second
+and i'm going to run this this will go
+ahead and download the birth model
+itself
+you can see that it's quite a large
+model actually
+so after that we can
+do a prediction
+and i'm going to pass in sample
+item input ids
+and i'm going to unsqueeze those so
+this will basically create this
+let me show you
+so currently we have the input ids which
+is
+basically a flattened tensor which
+contains
+the 128 ids of the tokens that we have
+and if i unsqueeze this
+and squeeze and unsqueeze it at
+dimension
+zero this will basically add another
+dimension right here
+why we need to do this well basically
+the birth model is
+uh expecting a batch which
+needs to be passed in and we
+are going to pass in a batch of size 1
+and i'm going to do the same thing for
+the attention mask
+so we can get the prediction from here
+and check it so this prediction is
+quite uh big
+it's a quite large um
+couple of tensors so we what we are
+going to do
+is to call for example the last
+hidden state which is a property because
+actually this returns a python data
+class
+and i can check the shape of this
+and you can see that the worst hidden
+states
+state contains uh the
+number of hidden dimensions in the
+birth model which is this number right
+here and then we have
+the number of tokens that we have so
+for each token basically we have the
+full
+hidden state of the birth model
+and we can basically go ahead
+and pull this output
+or this is already done for us
+using the power output
+and as you can see this basically
+flattens this
+and pulls the output and if you want to
+want to have a look at how this
+is done you can go through the source
+code from the healing phase transformers
+library
+and it's basically a simple pulling
+operation not
+anything that particular or interesting
+some people do have better results
+with getting the worst hidden states
+from here and applying some form of
+pulling that is different compared to
+the poor output right here
+so you might want to check actually how
+the pulling is done
+and can you do better of course
+that might result in better results or
+it might
+just get worse almost
+the final step of our data preparation
+is going to be to create
+a data module that is provided that
+extends
+from python writing whitening data
+module and
+this needs to be of course a class
+and we are going to extend from the
+lightning date module
+here we need the constructor
+that will accept the training and the
+testing set
+in a form of bundle slate frames
+we need a tokenizer and here we are
+going to choose a batch size
+and the maximum token length is going to
+pass it
+again so this is
+a constructor with a lot of parameters
+and here
+i'm going to call the superconstructor
+then we need to assign the
+training data
+space data
+tokenizer
+the patch size
+and the max token length
+next i'm going to create a method called
+setup
+which is going to basically create a
+data set for each of the training and
+the test sets
+and we're going to use the quas that
+we've already defined
+toxic comments and in here i'm going to
+pass in the training data
+the tokenizer and the max
+token
+next i need to create the test data set
+i'm going to again pass in the tokenizer
+and the max
+token length right here
+so now that we have those two methods we
+are going to define
+data waters for the train validation
+and test sets and here i'm going to use
+the tested as a validation and test it
+you can of course define another set
+which is going to be used strictly for
+validation or strictly for testing
+however you choose
+but here i'm going to take this shortcut
+which of course might not be advisable
+to do in practice
+but for the sake of this video we're
+going to speed up things
+quite a bit so i'm going to continue
+with the train
+data water and this method is actually
+required
+by the whitening data module so we are
+basically
+overriding this method and here i'm
+going to return
+a data water that
+uses the training data set i'm going to
+specify
+the bar size which is going to be the
+path size
+that we passed in into our constructor
+i want this to be shuffled just in case
+and i want to pass in the number of
+workers which is going to
+fit the our model with
+four workers so we won't have to wait
+for each
+individual uh example to be feeding
+we are going to feed in a lot more
+examples
+than one at a time
+or one batch of the time all right so
+next
+i'm going to do
+the validation date waller
+and this is pretty much the same thing
+we are going to again use the same
+number of
+workers but i'm going to use the test
+date set
+and i don't want this to be shuffled
+and the batch size is going to be
+actually one
+so during validation and testing i'm
+going to
+stay as close as possible to production
+environment where
+more likely than not you
+will just make predictions on a single
+example
+so we can reformat this
+and then define the same thing
+for the test data water
+so this is exactly the same so after all
+this is complete
+you can run this and create
+a data module right here
+and i'm going to pass in the train data
+frame
+the validation date frame and the
+tokenizer
+i'm going to keep the
+bar size at 8 and the number of tokens
+at
+128 and i'm going to
+run the setup method
+so this basically now has these two
+properties and we are
+ready from here to define our mod
+model using pytorch whitening and after
+that is complete we are going to train
+the model into the next part

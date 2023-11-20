@@ -1,0 +1,725 @@
+[Music]
+hey everybody today we are going to have
+a look at haiku which is a deep learning
+framework that is built upon jax what
+you see on the screen is the official
+github repo
+and there is also an official
+documentation created with sphinx and
+what we're going to do in this video is
+to cover a couple of uh interesting
+topics and by no means it's going to be
+a comprehensive introduction to haiku
+and i would always refer you to this
+official documentation that is very
+comprehensive anyway
+let's start by cloning the repo
+because we will be working with the
+source code quite a bit
+and
+let me clone it locally
+so let me show you the latest comment
+for those of you who are looking at this
+in the future
+and maybe to comment on the setup of my
+tmax so in this pane the upper right
+pane we will have the source code of
+haiku on the left we will have our
+experiments where we will write our
+custom python scripts and finally here
+at the bottom of the screen we will be
+launching our script all right so first
+of all let me
+let me show you what i have already in
+this folder we have the cloned
+repository and also a virtual
+environment that i already activated and
+let me install haiku inside of this
+virtual environment i did it before
+already but let's just do it again
+also let me point out that i already
+installed jacks
+yeah
+so we have everything we need anyway let
+us start talking about haiku and we have
+to start with a concept of a parameter
+as in other deep learning frameworks it
+is basically a tensor or an array whose
+values we will try to learn from the
+data
+all right let's just write some basic
+imports
+all right so let us try to define a
+parameter the way one does this in haiku
+is by using a function called get
+parameter let's try to find it in the
+source code
+we found it
+and let's open it
+so as you can see to create a parameter
+one needs to provide its name it's shape
+d type and some initializer function
+here you can see a bunch of examples um
+so let's try to actually create a
+parameter ourselves let's call it a c
+um let's say the shape
+is going to be
+five times two
+no specialty type and the initializer
+let's see whether we can run this script
+i'm gonna ignore warnings that are
+related to my computer but don't worry
+about it
+and as you can see we get a value error
+and haiku is telling us that we cannot
+use this get parameter function and it
+needs to be a part of this hk transform
+what if we try to trick haiku and
+instead of defining our parameter in the
+main scope we define it in a function
+and let's call this function
+okay so we were not able to trig haiku
+and let's try to understand what this hk
+transform actually is and what it's
+doing
+so
+the definition seems to be here let's go
+there
+and let me again make it full screen the
+doctoring is really nice but maybe
+before you even start reading it let me
+just point out that transform will take
+a function and it will spit out this
+transformed object let's just verify
+this
+let's call our transform function
+transformed
+and
+apply the
+transform
+and let's just print
+so as you can see we don't get the error
+and
+as expected what is return is this
+transform or an instance of this
+transformed class let's see how it's
+implemented and i believe it's in this
+very same module so let's go to let's
+try to find it
+there we go
+as you can see the transformed is
+nothing else than a name tuple of two
+elements the first element is a function
+and the second element is again a
+function or a callable so what this
+transform basically does is to take a
+single let's say impure function and it
+gives you two functions created out of
+the original function and as you can see
+here the initialization function seems
+to gather all the parameters that were
+defined inside of our function and
+return them whereas the apply function
+expects these parameters and it
+basically runs our function
+so let us try to focus on the init
+function
+first of all we need to create a key
+which is just a random state and we use
+checks random
+some random state
+and we provide our random key and
+since our function doesn't have any
+argument so as you can see here we can
+pass arguments and keyword arguments we
+don't have any um so we should be able
+to call it like this and let us try to
+inspect i'm gonna put a break point here
+how the parameters output value looks
+like
+let's see
+so as you can see it seems to be a
+nested dictionary where the first level
+of nesting is the still the symbol and
+the second level nesting seems to be the
+name of the parameter and actually haiku
+will always use this two level hierarchy
+to represent every single parameter
+let's say the first nesting represents
+the exact name space of our parameter
+whereas the second nesting represents
+its name the first level of nesting is
+very reminiscent of paths in file
+systems but i'm going to show you more
+details
+yeah also i'm annoyed by this no tpu
+warning so let me try to get rid of it
+i believe there was this environment
+variable yeah i believe it's this one
+um
+so as we saw this init callable returned
+to level nested dictionary and we can
+see that they actually have a type for
+it called haiku params so let's check
+out its definition
+params
+and i believe it's here
+i mean we already see it but let's open
+the file
+it's a mapping and the reason why it's
+mapping is to kind of stress the
+immutability and make sure that during
+the static analysis there is no mutation
+detected and also note that jax arrays
+are immutable so this entire params
+mapping is immutable which goes hand in
+hand with the functional style of jax
+anyway let's try to add another
+parameter
+let's call it d
+and
+let's set it to 8.
+the same shape and let's just inspect
+what happens to our parents how it's
+going to look like
+but i guess
+there will be nothing surprising there
+what we want to understand better now is
+how can we perform nesting because it's
+very common in deep learning when we
+have neural networks for let's say one
+layer to have multiple sub layers and
+for those sub layers to have sub sub
+layers and only these let's say nodes
+sub sub layers have some parameters
+and we just wonder how to kind of
+achieve this in haiku
+so let's try to do it the stupid way and
+just put a
+dictionary inside of our function foo
+right and
+let's call it m
+and let's set the
+initialization to seven and let's see
+whether this actually
+made things work
+yeah there's a problem
+and as you can see it basically had no
+effect hike was able to detect that
+there was this extra parameter being
+defined but did not introduce a new
+layer of nesting and the way this needs
+to be done is through modules
+so the definition is here i think
+there's a lot of magic happening in the
+background
+so
+um there's metaclass
+this is basically how one uses it and
+it's very simple we just define a
+constructor and then some kind of a
+method that will serve as our forward
+all right so in the constructor we
+literally just call the parent
+in reality we would pass some let's say
+hyper parameters but we don't have any
+in this example
+and let's define a method call uh it can
+be actually any other method but let's
+use call where we're going to define our
+parameter um
+m so let's
+do this
+and what we can do now instead of using
+this dictionary we can create the
+container inside
+our foo function
+to be instantiated and what's important
+is that we also call it at the same time
+right or maybe i can do it like this and
+let's see what effect this has on our
+parameters
+and as you can see this is exactly what
+we wanted it seems like haiku lowercase
+the name of the class and it's using it
+as a scope and inside of this code we
+have the parameter m and then the other
+two parameters don't have any scope so
+they are let's say in the root of the
+parameter tree so if we don't like the
+default behavior of the class name being
+lowercase we can literally just provide
+any name we want
+so
+let's see
+my great
+layer
+might be a decent name let's see
+and as you can see we got the name
+and let me also quickly show you that
+actually this can be done as many times
+as you want and that here we would have
+something like paths in file systems
+so we will have a smaller container and
+let's say it does exactly the same thing
+it even uses m as the variable name and
+inside of this
+um bigger container or big container we
+will just call our small container
+instantiate it with no special name and
+then we just call it
+and let's see how our parameters will
+look like
+this was not good
+it's called smaller
+and uh it seems like we forgot to
+provide a name let's say there is a
+default
+which is none
+and let's see params
+and um as expected you can see that by
+nesting haiku modules we actually get a
+nested path and this way we kind of
+disambiguate between different
+parameters because if we did not do this
+if we kind of had a flat hierarchy
+then there would be collisions right
+like there would be an m parameter twice
+and that's something
+that would lead to confusion anyway so
+nesting is clear i guess
+and let's just
+uh look into something different let's
+remove all these experiments that we did
+though so we so that we keep it simple
+and let's only
+keep our
+c parameter all right maybe one last
+thing that we want to do is introduce
+randomness in our initialization
+so we just can use random normal um this
+i believe should be the standard
+deviation and let's see what will happen
+maybe we can literally just print the
+params
+so
+for
+a fixed key
+we always get the same result which is
+expected
+but
+if we change the key
+right we get a different result and
+basically the key guarantees
+reproducibility
+so let us now move to the apply method
+let me just remind you that the other
+function that the transform stores is
+apply and this apply method is actually
+going to run our function
+so let's just give it a try
+so we give it our parameters right then
+we
+provide a random key since there is no
+randomness we actually can just provide
+none which is fine and
+potentially extra arguments and keyword
+arguments and that actually reminds me
+our function is stupid because it
+literally does not accept any arguments
+and it returns none let's make it more
+similar to
+neural network layers
+so here it accepts numpy array
+and it returns another numpy array
+and what we can do we can here just
+deduce the shape um
+from
+the input
+and we can just literally take our
+randomly generated c and add it to
+the input
+vector or sorry tensor
+if we do it this way let's also
+initialize it so
+we initialize it with once and what's
+important now we also need to give it to
+the initialization right because the
+initialization will need to kind of
+generate this or instantiate the c
+parameter and it needs to have a shape
+and finally we also provide it in the
+apply method
+let's maybe see what we get results and
+the parameters
+all right so it did something uh i
+assume it did it correctly uh and yeah
+that is basically how one runs a
+function that has
+parameters in it inside of haiku by the
+way one thing that's pretty ugly um is
+this none so if we kind of in advance
+know that our apply is not going to have
+any
+randomness if we disregard the
+initialization then we can use this
+helper transform called without apply
+rng
+let's look at the implementation
+and there it is and as you can see it
+basically just takes a transformed which
+is one of these and it returns a new
+transformed and
+it
+is doing exactly
+what you would expect it to do so if the
+input is a transform then it defines a
+new apply function
+that just
+automatically inserts none for the
+random key so let's do it
+and here we can get rid of it
+let's see whether it still works yeah
+sorry this is about our
+apply rng
+yeah it still works
+so if you wonder why this is not the
+default the problem is that in deep
+learning there are often layers that are
+inherently random the best example is
+probably dropout but you can think of
+also let's say just sampling from some
+distributions for example when using
+variational encoders and so on and so on
+so let's actually try to implement
+the dropout
+so
+we store the result in a separate
+variable
+and here uh we will use the special
+haiku helper function that gives us a
+next state of the random number
+generator
+and what we are going to do here is
+basically using this stage we are going
+to sample from the bernoulli
+distribution with the probability of
+0.5 which means that there's a 50 chance
+that we will get a 0 and a 50 chance we
+will get a 1. and we take this mask
+array and we are going to multiply our
+result with it
+and also we should multiply by two which
+is one over the probability of a dropout
+just to make sure that uh we kind of
+make up for the masking and now since we
+have randomness in our function uh we
+should not be able to use this helper
+transform without applying rng let's try
+it out
+yeah so as you can see it did not like
+it so let's go back to
+not using this
+at all
+and what we also want is for each
+forward pass to do the dropout
+difference but we want to keep things
+deterministic and the recommended way of
+doing this and haiku is to create a key
+sequence
+so let's call this the initialization
+key and then we will kind of use this
+initialization key to generate a bunch
+of new keys
+and let's run this apply in a for loop
+and what do we need to provide here is
+our next random keynote sequence
+so let's give it a try
+i forgot this
+all right so it seems like the dropout
+did work differently in both of the
+iterations however if we rerun the same
+script
+you can see that you get exactly the
+same result and that's the behavior we
+actually are interested in all right so
+those are the most important things when
+it comes to parameters and when it comes
+to let's say this transformed class and
+now we want to move to another topic
+which is dealing with the state
+and let me just say before we even start
+writing some haiku code that the concept
+of a state is identical to the concept
+of buffers and pi torch so let me show
+you what i mean by it
+okay so here we instantiate a 1d batch
+normalization where the number of input
+features is 5. and let's look at the
+state dictionary of this module
+and if you don't know the state
+dictionary is basically storing all the
+tensors that are kind of necessary for
+the forward pass and we see that we
+basically have the weight and bias which
+actually are trainable parameters and
+then we also have these three let's say
+statistics sensors
+um that are not trainable that are
+literally just updated manually and in
+torch these two are called parameters
+whereas the remaining three are called
+buffers let me verify
+when we look at the actual buffers it's
+going to be these three as mentioned and
+the main difference between parameters
+and buffers is that they are not
+trainable so they don't require the
+gradient
+whereas parameters in our case it's the
+weight and the bias our tensors that do
+require the gradient and that will be
+updated during our optimization process
+in haiku the term buffer does not exist
+and
+instead they use the term state
+so let's play around with it a little
+bit
+so let us basically use the same
+function that we had in the params but
+let's introduce state to it
+okay so this is what we had before to
+make things simpler i removed the
+randomness but what i'm going to do is
+to introduce a so-called counter
+variable which is going to be a state
+and the idea is that we will basically
+increment it each time we run our foo
+and
+we just add it element wise to our
+result
+as you can see we are using this
+function called getstate
+that is defined here and it has exactly
+the same signature as the get parameter
+method however not only we want to get
+the state at each let's say iteration
+but we also want to modify or mutate the
+state and we can do this by using the
+set state function
+yeah as you can see it's very
+straightforward we just provide the name
+of the state that we want to modify and
+its new value let us inspect what type
+is our full transform going to be
+okay so it seems to be the same but
+actually one thing i forgot about is
+that since we have a state now uh we
+cannot use the standard transformer you
+need to use transform with state so
+let's do it again
+and as you can see we have this
+transform of state
+um
+class
+and as you can see it's actually defined
+right below our transformed that was
+applicable when we had only parameters
+and it's more or less the same thing
+it's a name tuple that stores two
+functions internally but now the
+signature of these functions is
+different now the init function is going
+to return both the parameters and the
+state and the apply method will not only
+need the parameters but also the state
+and what's super important is that it
+will also return let's say our new
+modified state in case we need it and
+yeah if you're wondering about this type
+let's
+check how it's defined
+and we can already see it here it
+basically has the same
+type as our parameters so again it's
+immutable but conceptually as i
+mentioned parameters are learnable
+whereas the state isn't
+let me maybe go back to our transform
+and as you can see we need to provide a
+random key
+and it will return both the state and
+our parameters let's just print them
+or maybe let's put a breakpoint here
+here we forgot to pass our input answer
+and the initialization we don't call
+this
+anyway so
+our parameters look like this and our
+state looks like this
+it has exactly the same structure as the
+parameters which is very convenient but
+it is clearly logically separated
+now let us focus on the apply function
+and we need to pass the parameters we
+need to pass the state and we also need
+to pass our random state but
+in our case we can just provide none or
+we can wrap the function with
+the transform we saw before let's just
+provide none and finally let's provide
+our input x
+and as you can see the state gets
+correctly updated
+and let's maybe also print out the
+result
+and here sorry i did not use our state
+at all
+um let me actually add it to the output
+and it's interesting because you don't
+have to use it right however as soon as
+we kind of use this getstate function it
+will tell haiku that
+this is a state but whether we include
+it in the forward calculation or let's
+say the full calculation or not it's us
+who decide
+yeah now this looks nicer
+all right so that's how you deal with
+the state and in my opinion knowing how
+parameters work and knowing how state
+works in haiku is the most important
+thing because neural networks are
+composed of learnable parameters and
+non-learnable state and finally let me
+quickly talk about going back to checks
+and
+let's say training neural networks how
+does one take these in it and apply
+functions and use it with injects where
+exactly does this fit in i'm not going
+to go into detail here uh just some
+basic intuition but first of all let me
+mention that what we did was very let's
+say low level but in reality haiku
+already has a lot of implemented layers
+and even entire networks and the only
+thing you need to do is to kind of put
+them together and define a forward pass
+and you don't need to worry about
+implementing custom things most of the
+time
+so as you can see there are a lot of
+different python modules implementing
+multiple different let's say deep
+learning modules just for the sake of
+illustration let me use an existing
+multi-layer perceptron implementation
+which is implemented here
+yeah so as you can see we have our
+multi-layer perceptron here it's a haiku
+module and we are going to use it we are
+going to define a forward pass and
+kind of use all the things that we
+learned and try to see how we can go
+back to jacks using transformations like
+grady and v map and
+jitting
+so here we will just use the existing
+implementation of multi-layer perceptron
+but let's just make sure that our foo is
+able to accept any array and it spits
+out a single number
+like this specific loss doesn't make any
+sense but again what's important is that
+this function spits out a single scalar
+so imagine this is our forward pass and
+as we saw we now need to transform it
+and the reason is because this mlp
+inside will actually define a lot of
+parameters
+or kind of use other layers so as you
+can see here we are
+using haiku linear
+which
+inside of it has
+custom parameters
+there is no randomness so we can also
+use the without apply rng transform
+let us create a random key
+here we have a batch of examples let's
+say what's interesting uh here the batch
+dimension or the batch size is two and
+we have 3 input features
+as you know the initialization function
+needs to take in a random state and the
+input and what's cool is that by giving
+it this dummy input and by the way the
+actual elements of our array don't
+matter it's the shapes haiku is going to
+do the shape inference automatically
+which is different to let's say pytorch
+where when creating our multi-layer
+perceptron we would also need to provide
+the input features size if that makes
+sense
+let's see what we get
+so as you can see we have this namespace
+multi-layer perceptron and inside of it
+we have multiple linear layers and it's
+only inside of these linear layers that
+we have parameters and now the only
+thing left is to actually run the apply
+pure function and what's important is
+that you can take this apply pure
+function and you can wrap it in any jax
+transformation that you like so for
+example let's compute the gradient right
+let me just stress but that by default
+if you transform a function with
+gradient then automatically checks will
+compute gradient with respect to the
+first parameter which in our case are
+the parameters which is exactly what you
+want when training neural networks and
+our parameters are nothing else than a
+nested dictionary which is a special
+case of a pie tree and checks can take
+derivatives with respect to any pie tree
+whatsoever so things are going to work
+out of the box
+and as you can see for each parameter we
+have the gradient which is very
+convenient
+it's exactly the same tree as the
+parameter tree
+you can also do more transformations
+you can wrap everything in jit and
+have it traced
+and of course the result is not going to
+change but
+when called twice or more times this
+should actually be way faster and this
+is basically how you integrate haiku
+with jax it's extremely simple because
+haiku creates pure functions in real
+training you would take these gradients
+and use them in some kind of an
+optimizer but this is not what haiku
+does right like you can either write the
+optimization or the update step yourself
+use some
+other tools from the jax ecosystem like
+optics but this is all you need to know
+when it comes to like the most
+straightforward integration of haiku
+with jax and yeah i think that's it for
+this quick tutorial let me just stress
+that i basically just decided to talk
+about things that i found interesting
+this is definitely not a comprehensive
+overview or tutorial of what haiku can
+do
+but yeah i hope some of you found it
+helpful anyway i'll catch you next time
+bye

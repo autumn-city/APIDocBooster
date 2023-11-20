@@ -1,0 +1,963 @@
+hello
+okay thanks okay hi i'm fred sobermeyer
+this is jp chen we're on the pyro team
+in uber ai labs
+and uh we're going to tell you about
+pyro our open source deep universal
+probabilistic programming language
+uh
+i'm going to start out with an overview
+of the pyro language
+and tell you about a couple applications
+of pyro here at uber and then jp is
+going to tell you about our
+some of our engineering practices and
+our uh open source community
+so this is our team we have five
+uh core team members and then we're led
+by stanford professor noah goodwin we
+also have uh ufan is uh our biggest open
+source contributor he's visiting us
+today
+uh
+jp and i are here and you fans are here
+so you're welcome to chat us up later in
+the day
+um
+so let me let me describe
+uh why we built iro and why
+probabilistic programming languages are
+interesting so i've spent most of my
+career
+building bespoke inference algorithms
+for different probabilistic models
+probabilistic models are great because
+they help you model uh uncertainty
+in artificial intelligence
+um but we really wanted something where
+we didn't have to build custom inference
+algorithms over and over again each of
+these each time we build a you know i
+used to build a model we used to spend
+months implementing some inference
+algorithm to get this uh
+to get inferences working in this model
+in pyro we wanted to build a you know
+and in probabilistic programming
+languages in general the goal is to
+build a very general modeling language
+and then have somewhat automated
+inference
+so that so that we don't have to spend
+months every time we change the model to
+to build new inference algorithms
+so in pyro we
+in probabilistic programming languages
+we want to leverage high-level
+programming languages to describe very
+complex probabilistic models and have
+somewhat automated inference
+the deep part of deep probabilistic
+programming is is also integrating
+neural networks into these models
+um
+that allows us to scale to larger data
+sets
+ah
+okay
+so some of the
+uh parallel is built as a research
+platform mostly inside ai labs and it
+allows us to
+work on modern
+probabilistic
+ai for example um
+we can do architecture some architecture
+search or structure search
+um inverse graphics
+um
+and and
+that's much easier to do with a with a
+deep probabilistic programming language
+whereas each of these papers that do
+similar things have had to write a lot
+of custom code
+for each new paper
+our design goals once we decided to
+build pyro as a deep probabilistic
+programming language our design goals we
+were
+we chose ford for design goals to focus
+our efforts so
+we tried to make pyro universal scalable
+flexible and and minimal and it turns
+out that just by building on top of pi
+torch so pi torch is is a one of the
+most popular
+deep learning frameworks maybe
+um arguably
+arguably second to tensorflow in the
+research community so just by building
+on top of pi torch we were able to
+um
+satisfy this these design goals of
+universality and scalability it's
+universe building on top of pi torch
+allows us to be universal in that high
+torches
+uh compute graphs it's it's it's
+computations can be dynamic so they can
+have control flow and pi torch builds
+right on top of of python
+um rather than so in contrast to say
+tensorflow where you write code that
+defines a compute graph and then execute
+this high charge code executes
+basically line by line it's closer to
+what tensorflow is releasing as
+tensorflow eager
+so we're allowed so by universality
+i mean that we can we can allow programs
+with control flow basically loops
+conditionals
+uh building on pytorch also allows us to
+to write
+scalable machine learning algorithms
+because we can leverage gpu or multiple
+cpus
+and we can
+build
+build on top of neural networks that
+whose training involves stochastic
+gradients so that we can use uh
+subsample training we can train on mini
+batches of very very large data sets
+to achieve these other two goals of
+flexibility and minimality
+we've created a three level
+architecture
+of
+a user-facing language
+a
+low-level effects library
+and then a set of high-level inference
+algorithms
+that you can use to train models
+the language is is very lightweight it
+just consists of a few primitives on top
+of python and pi torch these are the
+sample plate and param primitives that
+i'll talk about later
+then we have a low level effects library
+this is a library of algebraic effects
+that's a programming language
+concept so this is it's mostly for
+internal use but this will this is a
+a really powerful pattern that's since
+been adopted by
+the tensorflow folks um
+and then using these low level effects
+we build higher level inference
+algorithms combining them in different
+ways
+so i'm going to get down to some details
+about the way our particular language is
+shaped what are what our
+modeling language looks like and we
+spend a lot of time in pyro to make the
+modeling language as
+sleek and usable and intuitive as
+possible
+so the first the first uh first i'll go
+into primitives so these these basic
+pyro sample statements that
+um are the
+the
+tiny bit of dsl that we add to uh
+python and pytorch so the first
+statement here is the pyro sample
+statement
+uh that's that's just a recording in
+pyro of some uh random number generator
+sampling okay so a bernoulli
+distribution that's just a coin flip
+distribution right so here we're simply
+sampling we're basically flipping a coin
+we use a pyro dot sample statement to
+register that coin flip in pyro so that
+pyro can do things with it it can
+record its probability things like that
+this is notice the bernoulli object here
+is a that's that's just a pie torch
+distribution object so that that's
+basically something that lives upstream
+in in the pi torch library
+not in not in pyro
+and we name this sample statement by a
+name so that we can do things with it
+later we can write inference algorithms
+that look at all the different names in
+a program these named statements and do
+things with them
+one interesting thing to note is that
+the result of this sample statement is
+an actual tensor it's an actual uh just
+like a pie torch tensor it's a tensor
+object
+in many other probabilistic programming
+languages the result of a sample
+statement is some symbolic distribution
+object
+okay
+um in pyro by by
+having a very uh
+concrete result of this a tensor just
+like you would output in a
+non-probabilistic program
+that makes it really easy to program
+with pyro because you can do the same
+things you could in a pyro program as
+you could do in a normal pi torch
+program
+um
+yeah in particular it makes it really
+easy to debug and and print things out
+just like just like the advantages of
+high torch or tensorflow eager over over
+more symbolic
+graph frameworks
+the next sample statement is actually an
+observed statement it looks like a
+sample statement but we have an abs
+there so we're pinning this particular
+result of a distribution to some
+observed data this isn't very
+interesting because it's it's a normal
+distribution but if i if i had had
+learnable parameters trainable
+parameters in that distribution i could
+then
+fit those parameters
+to match the observed data
+if i have multiple
+uh observed statements then i can fit
+those parameters to match multiple data
+and the way we the third uh statement is
+a param statement and that's how we
+register a parameter as learnable in
+pyro
+here we
+register it with a name
+an initial value and that initial value
+is only used the first time usually it's
+discarded
+once we once we start to learn a better
+value and then we can optionally uh
+constrain this parameter to do
+constrained optimizations here i'm
+constraining with a a positive object
+and that's that object is actually
+a pytorch distributions constraint
+object something that lives in the pie
+torch constraints library upstream
+the other
+primitive we have is a plate primitive
+and this is interesting this this is
+used to declare statistical independence
+something you might know of or
+conditional independence also known as
+exchangeability
+so this is a little interesting we found
+in pyro because we're building on a
+tensor library uh we've had to do a lot
+of new we've had to develop a lot of new
+techniques to deal with tensors that
+past probabilistic programming languages
+haven't had to deal with
+the interesting thing about plate is
+that we have we've had to implement two
+different versions of this that that can
+trade off
+uh
+flexibility or universality with
+scalability so in the first version it's
+it's a tensorized version or a
+vectorized version where we can draw
+multiple samples in parallel or execute
+multiple
+um across
+say multiple data in a mini batch in
+parallel we could have big big batches
+of data and operate in parallel across
+each of those and declare to pyro
+that there's a particular tensor
+dimension
+that is the batch dimension okay but
+that requires that
+you know as all vectorized code requires
+it requires that the control flow is the
+same along all paths
+but sometimes we want to have a dynamic
+dynamic structure in our program so that
+for different
+uh batch elements
+we have different control flow and for
+that we use the second version of the
+the pyro plate and that version
+um we sequentially run through each item
+in the batch and we can have different
+programs that operate on on different uh
+batch elements
+also it's nice because these two these
+two patterns are are uh
+we can interleave them we can use
+multiple we can nest multiple
+patterns we can batch along two
+different dimensions and we can have one
+of those batch dimensions be static and
+another be dynamic so it allows a lot of
+nice trade off often sometimes i'll i'll
+uh
+i'll be writing a pyro model
+and
+i'll uh
+write a vectorized version but then
+realize i want to change something and
+it's really easy to switch between the
+vectorize and uh not the sequential
+version
+and then maybe i'll figure out how to
+speed it up writing some extra
+vectorized code
+so it's really nice to switch between
+these two
+so now that we've seen the the little
+bit of
+extra
+probabilistic syntax on top of python
+that pyro adds we can build entire pyro
+models so pyro models are simply python
+functions
+idiomatically we usually have those
+functions input data but they don't need
+to input anything all or you can input
+multiple pieces of data
+so here's a here's a simple
+example
+pyro model in the first line we have a
+param statement so we declare something
+as trainable you can think of that as a
+you know programming with holes there's
+a hole in your program you sketch out
+part of a program but you don't know
+what to put somewhere so you say pyro
+pram just fill that in you know figure
+out what it is based on data
+in the second line here we have a sample
+statement so that sample is a
+categorical
+based on the probability
+that this parametrized probability
+tensor that we've declared on the first
+line next we have some control flow if
+we if we restricted to programs without
+any control flow then
+these these pyro models would just be
+graphical models probabilistic graphical
+models you can think of pyro programs as
+exactly probabilistic graphical models
+plus control flow plus loops and
+recursion and um
+yeah dynamic control flow
+in the next line you see we have an
+observed statement that conditions
+um that conditions this distribution
+based on data notice also that it has a
+helper function so because we're just
+using python we can write complex models
+that are split between health helper
+functions and we can split complex
+models among different files or even
+different teams often we'll like jp and
+i will be writing complex models for for
+some team at uber and we'll realize that
+some reusable
+um some part is reusable and so we'll
+factor that out and then push it into
+our upstream uh
+you know our open source repo so we'll
+have a part of our models be closed
+source and then be able to publish some
+of them as as
+open source models to pyro.contrib
+next i want to go into a more detailed
+model that's a little more realistic so
+one of the things we use pyro4 is
+semi-supervised learning machine
+learning is often characterized along a
+spectrum from supervised learning where
+you train on a lot of input output pairs
+that's how neural networks are usually
+trained
+at the other end of the spectrum is
+unsupervised learning for example
+clustering algorithms or training
+embeddings
+in the middle is semi-supervised
+learning where you have some unlabeled
+data
+and then a little bit of labeled data
+usually okay so here's a model
+that's similar to a vae bie is a one is
+a probabilistic way of training an
+embedding model this is a semi
+supervised vie and this is for example
+looking a model of uh
+mnist digits the handwritten digits data
+set so let's pretend we have
+a data set that consists of a bunch of
+images of handwritten digits and then a
+few of those have digit labels
+there's an additional piece of uh
+unknown hidden hidden variable here that
+represents the style and we never
+observe the style that's just like this
+um
+uninterpretable embedding okay so in
+contrast to
+va models with completely entangled
+entangled uninterpretable embedding
+latent variables this is a partially
+detangled or disentangled
+latent
+where we've split the latent variables
+into style and digit okay so let's let's
+look at this model in detail
+first we declare we define some neural
+network that's going to be a decoder
+network that's going to
+sample a random picture
+based on an embedding okay this is this
+is a typical way to set up an embedding
+network later we'll we'll also define an
+encoder network that's kind of an
+inverse to this
+but let's let's just first pretend we've
+defined some decoder network and that's
+just pure pi torch code okay just
+standard neural network code
+next we'll define a model and it
+optionally takes an image okay
+i'll get to that later but the first
+thing we do is call pyro.module and that
+declares that's basically a fancy param
+statement
+the decoder is just a pi torch module so
+the pyrodot module statement just goes
+through
+the neural network and
+declares pyro.param on each of the
+network's parameters so it's just like a
+recursive
+pyro.param statement so that says here's
+a decoder network and it's learnable
+the next statement is to sample a random
+style and not just samples like an
+embedding vector that says i want my
+embedding vectors to be
+kind of uniform gaussian embedding
+vectors
+then we sample a random digit from zero
+to one and then conditioned on the style
+and digit we decode those together
+and then sample a binarized image that's
+this bernoulli distribution we sample a
+binarized image from that
+and then condition on that in this
+observed statement
+if the image is none so notice notice
+that there's
+if you're familiar with python image can
+be either provided or not provided on
+the first line if the image is not
+provided then this is a purely
+generative model you can run it and
+simply generate images
+if you provide an image then that's
+interpreted as conditioning this model
+to an image okay so we can then try to
+figure out what the conditional
+distribution of the digit is
+given an image that's a classification
+problem
+to solve that classification problem we
+then define an inverse model so whereas
+the model where's the forward model see
+the
+the way the
+dependencies work here whereas the
+forward model samples an image given a
+style and a digit the inverse model you
+can think of as the
+as inverting the original model it's
+given an image
+and then runs a classifier network to
+figure out what the digit is and then
+runs a an encoding network to figure out
+what the style is in some notion of
+style okay
+so this this is also a
+pyro program
+uh which we call a guide
+and here we have two models or two
+modules two neural networks that are
+encoders one for the digit and one for
+the style
+those are these two pyro dot module
+statements
+uh
+to run this program we we declare the
+two
+modules we run the sampler forward
+um
+sorry we we run the the digit encoder
+which is like a
+which is like a classifier and then
+we can run the style encoder conditioned
+on the the the image and the digit that
+we know that image corresponds to
+and then finally we sample uh the style
+um based on the
+encoder encoder outputs
+okay so finally once we once we've
+defined these forward and backward
+models we can train these we can train
+them jointly using stochastic
+variational inference or uh yeah
+stochastic variational inference in pyro
+we do that by creating an svi object
+based on the model the guide some sort
+of deep learning optimizer here i'm
+using the atom optimizer which is a
+popular optimizer for deep learning
+models
+and then a loss function here i'm using
+the pyro's elbow loss function that's
+the evidence lower bound loss function
+which is common in variational inference
+and then then if you're familiar with uh
+deep neural networks the rest of it is
+pretty standard neural network stuff
+i'll train on multiple passes through
+the data multiple epics and in each epic
+i'll partition the data up into mini
+batches and then train on small mini
+batches so that allows us to work with
+really large data sets but train on
+looking at just a few images at a time
+so once we've trained we've defined our
+two models we've trained the models
+uh together then we can use the guide
+that's this inverse model
+to
+take an image
+and predict
+a digit and a style okay you can think
+of that as as a classifier
+so we've trained a classifier now
+another thing you can do is remember in
+that in that guide we had an encoder
+network we had two encoder networks
+uh one for encoding the digit and one
+for encoding the style so we can pull
+that encoder
+the digit encoder out just as a pure pi
+torch classifier right and that doesn't
+use any pyro at all that makes it easier
+to productionize these models by
+completely pulling out the uh
+the pure pie torch parts and then
+pytorch has has ways of uh writing those
+out to onyx or other other formats and
+then then deploying those even without
+python
+so in this example
+um
+we ran this and and these are results
+from back in 2014 i think this this
+this paper was originally published by
+uh
+and some other authors
+but with using less than uh 10 with
+labeling you know with labels on less
+than 10 uh sorry one percent of the data
+you can already get 90 accuracy on the
+on the classifier
+um another cool thing about these
+disentangle latent structures is that
+you can sample random digits of a
+particular class so you can fix the
+digit
+right to say an eight and then sample
+random eights or sample random nines so
+here we're sampling a style vector but
+fixing the digit okay
+another cool thing is that here's a
+t-sne plot a way of visualizing the the
+embedding vector that's this remember we
+broke up the latent structure into
+the digit and then everything else like
+this kind of embedding so you notice
+that for the our semi-supervised
+embeddings it's all kind of a jumble
+that means we've pulled out all of the
+interpretable i've colored this by uh by
+digit so we've pulled out all of the
+interpretable stuff and everything else
+is pure style and the style is this is
+this vector that's kind of shared among
+all the uh all the digits
+the little plot on the bottom shows what
+happens in a purely unsupervised case in
+this in the purely unsupervised va
+you just have a single latent variable
+okay the single embedding vector that
+encodes both the digit and the style
+and when we do that we notice that
+the uh that embedding vector has to use
+most of its capacity to encode the digit
+and there's not much sharing of style
+across digits
+okay
+so it's so so one advantage of these
+semi-supervised models is that the
+embedding vectors that you have can
+share their their capacity across the
+different classes
+okay now i'm going to move on to a
+couple applications we've we've
+we've done it
+yeah okay a couple applications what's
+that
+yeah
+okay a couple applications we've done it
+at uber
+um
+so one is in time series forecasting
+uh this is this is a plot generated by
+suavex meal he he does neural network
+time series forecasting here at uber and
+we've worked with him a little bit to
+develop
+variational inference models for time
+series forecasting
+uh one thing we found in developing
+these these time series models is that
+whereas variational methods have often
+failed in the past we've we've found
+that one thing that helps is to to
+define more complex
+variational distributions so you see
+these of these two plots
+um
+one of them was he's using uh what's
+called a
+the uh
+sorry
+the fire plot there is is using the
+um a mean field variational model so
+that doesn't model any uh correlation
+between random variables and we found
+that um by using a multivariate normal
+or a low rank multivariate normal model
+we could we could better model time
+series
+and i think we have one of the best
+variational
+inference packages for for doing that in
+pyro
+okay another another application that jp
+and i work on is
+image sensor fusion and that's the idea
+of
+taking multiple like street level
+photographs and then combining those
+into an unknown number of objects
+so we've built a pyro model to do that
+and
+one way one way we've done that is to
+sample
+uh objects from a random distribution
+sample where objects might exist and
+then to sample from a
+an assignment distribution that's that's
+kind of solving an assignment problem of
+detections to objects
+and then
+observing the
+[Music]
+detections given the objects
+so the assignment distribution just
+matches these these objects to
+detections
+and we can use a like modern loopy
+belief propagation solver to do that
+and we've actually implemented that in
+our in our in our inverse model in our
+guide we've wrapped that in a custom
+solver and then the solver outputs just
+two
+probability distributions that we then
+uh
+that we then wrap in in pyro
+this is kind of cool because it allows
+us to train the two distributions these
+are the two distributions that were in
+the original model we can train the
+sensor distribution to learn sensor
+parameters like like how much sensor
+noise there is and we can train a prior
+based on um
+where we believe objects exist
+so for example on the the colorful plot
+here the green plot that's a that's a
+distribution that we've trained uh
+based on side information of where
+intersections are so we've trained this
+distribution to predict where signs
+might be even without any photographs
+these are i think stop signs we're
+trying to figure out where stop signs
+are given tons and tons of like a data
+center full of street level imagery
+um and then the other plot shows uh our
+prediction on a few thousand immigrant
+images of fusing those together into
+predicted sign locations
+uh
+yeah yes
+okay we'll just have a little bit more
+time so
+um this is a rough map of what the the
+pyrocode base looks like and i just have
+a few points here one is that we work a
+lot with the pi torch team and we push a
+lot of code upstream uh this is even
+outdated we also work with a couple
+other teams we push some code upstream
+to networkx
+and another library called optinsum so
+we work a lot with other other open
+source libraries
+another thing i want to notice point out
+is that
+we have a lot of inference algorithms we
+have this auto guide library that
+provides these uh automatic inference
+models amortized inference
+algorithms and then a host of other
+inference algorithms
+our biggest uh i guess the one we focus
+on is stochastic variational inference
+and that combines a bunch of different
+tricks from the literature and each of
+these is really difficult to implement
+and it's especially difficult to get
+them to work together and
+that requires a lot of unit testing to
+get them to play weather play well
+together i break i break this all the
+time and uh our tests our tests help me
+uh fix my prs so that they uh they
+actually work jp is going to tell you
+about
+a little of our unit testing
+infrastructure thanks
+um i think we're good on time i don't
+know when we started um so i'm just
+going to talk a little bit about like
+our workflow and then what it takes to
+kind of um keep this like big open
+source project um you know well oiled
+and sort of running um so i'm sure
+everybody in this audience knows that
+like testing is difficult right and it's
+a non-trivial part of you know the the
+software as a whole and in some respects
+i guess like testing is doubly hard for
+us because we deal with stochastic
+models right so what that means is if
+your test passes does that mean you know
+your model was correct or you got lucky
+right and conversely if it fails um does
+it mean that there's a bug in your code
+or you know you're dealing with models
+with high variance right and so these
+are these are you know uh kind of like a
+trade-off and a very finely tuned like
+scale we have to balance
+um and so because we're testing
+something as broad as a language um
+there's like a wide surface area we have
+to cover right and so users can
+theoretically write you know any model
+they want and then we have to be able to
+try to um test for these and so we
+leverage parametrization of tests um
+very aggressively so basically what that
+means is we test like variants of models
+and we test every permutation of like
+the architecture and the different model
+parameters and we exhaustedly go through
+for like
+like uh code that we implement
+especially the internals and
+so in the limit of infinite samples you
+know you can retrieve the expected value
+that you want but in practice uh we
+iterate you know quickly so we can't
+have tests running forever and so
+there's this careful balance between um
+test cost and precision that we need to
+balance of you know how many samples do
+we need to draw to be um certain to what
+confidence that you know this is correct
+right and uh we
+you know and we try to bypass that as
+much as possible so for instance um
+things like computing um like hails or
+you know this is like a i guess like the
+objective term we want to um compute we
+um anywhere we can compute it
+analytically we do the math and we
+compute it analytically and then we
+compare to approximations um and then to
+make sure that these are these are
+correct we also compare um like simple
+variants on the previous
+slide um there's all of these different
+you know techniques that like reduce
+variance and do all these like fancy
+bells and whistles we compare them to
+base implementations and make sure that
+those um agree with each other um and we
+also test you know performance
+regression so making sure that you know
+when we change internal code it doesn't
+uh drastically you know uh break
+performance and we have cron jobs that
+we run um on a cyclic like daily basis
+to make sure that these like very large
+expensive models don't break um even
+just today uh pytorch is like when they
+change their uh random number random
+seeds for their random number generators
+they actually run pyrotest to see if you
+know all of their upshift code is
+working um
+so that's something that you know we
+take seriously um and then the other
+thing i guess for an open source project
+is documentation um so documentation is
+important both external internal facing
+documentation so that realizes itself in
+um so internal documentation is
+obviously documenting the code we
+provide references to all the you know
+the research and the implementations
+that we use and we also
+make sure that the um interface is very
+clearly um defined and documented and
+this also helps
+other open source contributors to
+contribute code as a lot of people have
+done and you know and we we allow the
+flexibility when you need it so if
+people want to bake in you know their
+own objective or like modify it a bit
+it's very clear how to do that so it
+gives a lot of flexibility to the user
+and that's not possible if that's not
+well documented um and then uh we also
+make sure in our
+design of the interface that it's very
+uh pythonic and if i follows like
+pytorch idioms so for instance to
+declare conditional impedance we use
+context managers um you know uh pyro
+provides like very thin wrappers on top
+of like pi charge constructs like you
+know tensors and neural net modules so
+if you're like a pytorch user it's very
+seamless transition
+and external facing documentation is
+things like tutorials um examples um we
+maintain like a forum where we you know
+help answer questions about you know
+modeling in general and also
+um
+and things about you know uh the pyro
+language i'll get into that in a bit
+um so when we launched um i would say it
+was like a generally positive reception
+um this is a screenshot from a popular
+like machine learning youtuber saraj he
+made this like video of like
+probabilistic modeling and how to build
+this with pyro i got like 36 000 views
+um there's also been a lot of open
+source contribution um that you know
+people have contributed basically their
+own research code into libraries that
+you can um reuse so things like um
+experimental design things like object
+tracking our entire bayesian
+optimization library was written uh
+completely by an open source contributor
+do who's visiting um us at uber this
+week um so feel free to talk to him
+about that this has all been like widely
+used by other people and like shareable
+code and that's
+generally great to encourage
+there's also been a lot of um
+i guess just you know users using pyro
+for all sorts of things from like
+researchers and students um to their
+startups doing like financial
+forecasting there's like health startups
+doing like time series predictions um so
+you know i encourage you to check out
+you know these projects if you if you
+want to
+uh try something to get started
+um we also pride ourselves on like a
+very open uh design process and so
+um the pytorch distributions was uh led
+an effort by fritz and some members on
+our team and it was a collaboration
+across like industries and people from
+industry and academia across the world
+and that's the actual design doc that
+they used and so this was like open to
+everybody to you know kind of give
+feedback when we make um design
+interface changes we pull the community
+to see um you know what people need and
+we try to design for that
+oh and you know we also maintain a forum
+where people ask power specific things
+but also just about i guess like deep
+probabilistic programming you know
+building probabilistic models how to do
+that um
+and you know great place to get started
+and that's it uh we'll give special
+thanks to members of the python team and
+our open source contributors and
+academic collaborators if you want to
+check us out you can just go to pyro.ai
+and we'll be around later if you want to
+ask us some questions thanks
+[Applause]
+you

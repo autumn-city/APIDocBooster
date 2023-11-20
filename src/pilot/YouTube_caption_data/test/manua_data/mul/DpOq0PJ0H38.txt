@@ -1,0 +1,1052 @@
+ASHISH AGARWAL:
+Welcome, everyone.
+I will be talking
+about TensorFlow NumPy.
+I'm an engineering manager
+on the TensorFlow team.
+And I'll be joined with my
+colleague, Peng Wang, as well.
+We'll talk about how to
+take NumPy and accelerate
+it using TensorFlow.
+So a very high level summary is
+that you can take a NumPy code.
+And you can dispatch it
+to TensorFlow runtime,
+allowing your code to
+run faster and also
+to be able to leverage
+excavators like GPUs and CPUs.
+On top of that, you
+get all the benefits
+of the TensorFlow ecosystem.
+This includes
+auto-differentiation,
+compiler optimizations, like
+operator fusion and like
+auto-vectorization--
+also distributed execution
+onto clusters and parts
+of excavators.
+You can also use
+TensorFlow API seamlessly.
+For example, you can use linear
+algebra, signal processing,
+and decoding APIs of Tensorflow.
+You can also
+serialize your code--
+used by a safe
+model and solve them
+on clusters of servers
+or even [INAUDIBLE]..
+So as a NumPy user, this
+should be an exciting set
+of new capabilities.
+I really believe that this is
+a value addition for TensorFlow
+users as well.
+Because NumPy brings
+in a popular, stable,
+and time trusted API--
+with extensive documentation
+and even a reference
+implementation.
+This API surface is a
+great fit for a whole class
+of problems needed for our
+users and researchers as well.
+And it should nicely complement
+the Keras deep learning APIs.
+Please check out
+the extensive guide
+we have put on Tensorflow.org
+to get started.
+The rest of the
+structure as follows.
+So we will briefly talk
+about how to quickly
+get started with using this.
+And also go into what
+is supported versus not.
+We will touch upon
+interoperability
+with NumPy and TensorFlow, and
+walk through some example code.
+Next, we will look at how to
+add new Tensorflow-- new NumPy
+operations.
+Finally, we'll dive into some
+case studies of using this API.
+So the TensorFlow
+NumPy support is
+available in a stable
+version starting from 2.4.
+So for now, it is
+available in tf-nightly.
+Once you've installed
+that, you can
+start using it by importing the
+tensorflow.experimental.numpy
+module.
+And then after
+that, you can just
+start writing regular NumPy
+code using this module.
+So the example code
+here, for example,
+creates a 2D tensor
+of random values
+that clips it into some range.
+And then it does sigmoid
+computation on the value.
+This code can run imperatively.
+And so you can examine
+the shapes and values
+that you computed.
+You can also look at what device
+this code is being placed on.
+So if you look at
+a device property
+it shows that the code--
+the data is already
+placed on GPU,
+and the computation has
+been happening on GPU
+if you have one available--
+without having the
+user to do anything.
+That's all great.
+But how well does this work?
+Does it run your code faster?
+Really, the simple
+benchmark for this problem
+of sigmoid computation.
+So the graph here shows
+on x-axis input size,
+and on the y-axis the time
+taken to compute sigmoid
+on an input of that size.
+The blue line is the time
+taken by NumPy itself.
+The orange line is TensorFlow
+NumPy running on CPUs,
+while the red line is TensorFlow
+NumPy dispatched onto GPUs.
+The green line is with some
+compiler optimization on CPU.
+We'll go into compiler
+later in the talk.
+So if you look at these
+lines, on the left-hand side
+of the plot, you can see that
+the times are pretty standard.
+In fact, NumPy might be running
+a little faster for very small
+inputs like this.
+This happens because today
+NumPy's dispatch latency
+is much lower of the
+order of 1 microsecond.
+So if your benchmark is
+dominated by dispatch latency,
+NumPy does a much
+better job today.
+But however, as the
+problem size grows--
+so as you move towards the
+right-hand side of the plot,
+you'll see that as the flow
+starts coming much faster.
+And towards the
+right-hand side, which
+is like about 1
+million input size,
+it is 7x faster on this type
+problem compared to NumPy.
+And GPU is, of course,
+much, much faster.
+So a summary is that you
+can take an existing code.
+And without doing anything
+extra, if you have GPUs,
+TensorFlow magically
+leverages GPUs and makes
+the computation much faster.
+And even on CPUs, you
+have some advantage
+because of TensorFlow's
+highly-optimized and
+multi-threaded kernels.
+Next, we will talk in a
+little bit more detail
+about what is supported versus
+not, and what flexibility
+NumPy brings to the users.
+So we already have support for
+a large API surface of NumPy.
+Around 200 API endpoints
+have already been added.
+And please check out
+the API documentation
+at the link to find out
+more about what's supported.
+What is currently not supported
+in terms of features is--
+one big one is mutation.
+So our ndarrays are
+currently immutable.
+And this is something that
+we're going to be working on.
+Some of the details like object
+and recarray are not supported.
+We also don't support Fortran
+order of our data views.
+Also like NumPy C APIs,
+Cython and Swing integration
+is not supported.
+So having said that, let's dive
+into some of the flexibility
+that NumPy brings
+into TensorFlow users.
+One big feature I believe
+will be useful is indexing.
+So NumPys indexing
+is pretty powerful.
+So besides the basic indexing,
+as shown in this slide, which
+is using single values,
+adding new axes,
+doing ranges and strives by
+using ellipses for [INAUDIBLE]
+a fair number of demolitions.
+So that is a basic indexing.
+You can also do
+Boolean indexing,
+which is one of
+the indices could
+be a list of Boolean values.
+And in this case, for
+example, the second dimension
+says true, false, true.
+And what that means is
+it will select the false
+in the third rows
+on the dimension.
+It also supports
+advanced indexing,
+which means indices can
+be tensors or sequences.
+So in this case, we show
+like second dimension
+having a tuple and the third
+dimension having an ndarray.
+And TensorFlow and NumPy defines
+semantics for how this looks.
+Please check out the
+NumPy indexing guide
+for more details.
+NumPy also brings in
+flexibility with type promotion.
+And its type inferences also
+different than what TensorFlow
+naively supports today.
+So for example, Numpy
+refers wider types,
+like in n64 and float64
+for converting literals
+to integers.
+Also you can do things like
+adding an n64 with a float64.
+And it will be
+type-promoted to float64.
+Another powerful feature which
+is shared with TensorFlow
+is shape broadcasting.
+What that means is
+you can have inputs
+of different shape being passed
+to a function of an operator.
+And NumPy will define
+semantics for how to broadcast
+those inputs to a common shape.
+And then applying
+the operator on it.
+And the implementation
+would then
+leverage that to make
+it much more optimized
+instead of actually
+tallying the values.
+So again, check out the
+NumPy broadcasting guide
+for more details
+on these features.
+So with this, we'll talk about
+interoperation with NumPy
+itself.
+So like I said, we support
+around 200 NumPy API endpoints.
+However, NumPy
+defines many more.
+And so as a user,
+you want to leverage
+other functions that are
+not currently supported,
+you can do that.
+In this example, we'll show--
+we start with creating
+TensorFlow ndarray.
+And then we pass it
+to a NumPy functions.
+What does that piece do?
+Np.sum-- if I put np.sum,
+which is calling it
+to a NumPy function with
+a TensorFlow ndarray.
+How that works is-- when
+the function is called,
+it will force a
+conversion from TensorFlow
+ndarray to a NumPy
+ndarray, which
+might involve copying data.
+The function is called
+and then a NumPy ndarray
+would be returned.
+Similarly, you can take
+this ndarray now and pass it
+to a TensorFlow NumPy function.
+So here we call
+tnp.sum, and that then
+triggers conversion from a NumPy
+value to a TensorFlow value.
+It calls the function and
+returns a NumPy ndarray.
+So this allows you to
+kind of take existing code
+and even if things
+are not supported,
+you can at least get it working.
+It might not work as well
+because of all these data
+copies, but at least
+get the code running.
+The semantics of the operators
+are a little bit more
+complicated.
+So if you do like x + y,
+which is adding a TensorFlow
+ndarray with a NumPy
+ndarray, the semantics
+are defined by something
+called array priority.
+So you can set this value when
+you're defining a new class.
+In our case, we have
+defined TensorFlow NumPy
+with a higher priority.
+What that means
+is, in this case,
+the plus operator will be
+executed by TensorFlow.
+And so that will force
+a conversion from abide
+to a TensorFlow ndarray.
+And the return value would be
+a TensorFlow ndarray as well.
+We can also pass
+TensorFlow ndarrays
+to other APIs that
+expect NumPy inputs.
+So here we show that you can
+call matplotlib histogram
+function with TensorFlow
+ndarray input.
+And that works again
+why this conversion
+to NumPy value seamlessly.
+So next we will jump into
+TensorFlow interoperability.
+So similar to
+NumPy, you can also
+start mixing and matching
+TensorFlow NumPy functions
+with TensorFlow functions.
+So here we import
+TensorFlow first as TF.
+We create a NumPy
+ndarray and then
+we call the TensorFlow function
+tf.sigmoid on this value.
+And how that works again
+is this NumPy ndarray
+is converted to a
+TensorFlow tensor.
+And the return value is a
+TensorFlow tensor as well.
+This tensor can again you
+pass to a NumPy function--
+in this case, tnp.sum.
+And again, that does a
+conversion to an ndarray,
+calls a function, and the
+output is an ndarray as well.
+Operators similarly depend
+on the array priority.
+Currently, TensorFlow tensor
+has a higher priority.
+Which means the return
+value in this case
+would a TensorFlow
+tensor at well.
+I would note that
+compared to NumPy,
+here we don't trigger any data
+conversion or data copies.
+These copies-- these
+classes basically
+are wrappers on each other, so
+the conversion is zero copy.
+You can also do the
+conversion explicitly.
+So if you have an ndarray, you
+can convert it to a TensorFlow
+by calling the data property.
+Or we can take a
+tensor and convert it
+to the NumPy TensorFlow
+ndarray by calling asarray.
+And these conversions
+would happened
+without copying the
+underlying data.
+So next we will look at more
+examples of interoperability
+by working through an example.
+So we'll show how you can
+take a NumPy functions
+and call different
+TensorFlow functionalities.
+So we'll start by looking
+at an input pipeline.
+So you can call
+TensorFlow's data set APIs.
+And then start using that with
+TensorFlow NumPy functions.
+So in this case, for
+example, we pass the random--
+we create the numbers
+using NumPy API
+and then call it from
+tensor slices on that.
+We also-- in the
+map function, we
+use the clip function that we
+have defined on these ndarrays.
+And all of that works
+seamlessly, and without data
+copies all over the place.
+So this functionality
+is something
+that users do pretty commonly.
+They already have input
+pipelines with NumPy functions.
+And they believe a
+lot of these could
+be converted to
+TensorFlow NumPy functions
+and run more efficiently.
+We'll work through
+another example
+where we take this
+input and then compute
+a very simple toy model on it.
+And then compute variants.
+This demonstrates how
+variants can work seamlessly
+through both TensorFlow
+and NumPy functions.
+So we open up
+TensorFlow [INAUDIBLE]..
+This is TensorFlow's
+mechanism to define
+what code the variants
+are computed through.
+We do a watch and we output
+the details of this APIs.
+And then, you'll notice
+that in this code
+we now call both the
+NumPy and TF functions.
+So we would [INAUDIBLE]
+these functions.
+And then, how this works
+without overheads--
+because the conversion
+is almost Free.
+And also the gradient
+node in this case
+can work through both these
+NumPy functions as well as
+TensorFlow functions.
+So finally, we call
+table gradient,
+which computes the gradients
+through all of these function
+calls.
+And return that.
+To make it more
+interesting, we will also
+show how to compute
+per example gradients.
+And demonstrate TensorFlow
+as an iterative construct.
+So TensorFlow has
+both while loops,
+and high-level function
+called map function.
+So how map function works
+is it takes in a function.
+It applies it to each
+row of the input, which
+is the second argument.
+So we can use that to compute
+in this case, per example
+gradients.
+The way we do that is
+to take the gradient
+function we just defined.
+And map it over all
+the rules of input x.
+But given that this code, now
+we can write idiomatic NumPy
+and TensorFlow code.
+So in this case, we show how
+to create a wide data set
+and compute, per
+example gradients
+for each element in the--
+for each batch of elements.
+And then given
+this, now, you can
+start applying optimizer rules
+to update your parameters.
+So this is all great.
+And we anticipate that this
+code will be already used faster
+than doing it in NumPy.
+And also it allows things
+like automatic gradients
+through real code.
+So we also will talk about how
+to make this code even faster.
+So one of the types can use
+is called trace compilation.
+The way it works is
+by adding a decorator
+on any of the functions.
+It triggers this machinery.
+And what it does is, on the
+first part of this function,
+we will execute the code
+and the underlying machine
+will observe what
+operations are being called.
+It'll take that trace.
+It will compile it and store it.
+And in subsequent calls,
+it will involve the trace
+instead of running the
+pipeline code library.
+This gives TensorFlow
+opportunity
+for applying different
+kind of optimizations,
+like operative fusion--
+and so on-- which provides a
+lot of speed up to the code.
+Another optimization that
+provides a lot of speed
+up is auto-vectorization.
+The way it works is it
+takes an iterative code
+and it does a
+largely right on it.
+So it will take the loop body.
+It'll go over all the
+operations in the loop body
+and replace them with
+operations of higher ranks.
+And by doing that,
+it can completely
+get rid of loops, which provides
+large amount of speed ups.
+So in this case replacing map
+function with a vectorized map
+triggers this
+vectorization machinery.
+And can provide a
+lot of speed ups.
+To show up how much
+speed ups we can get,
+we did gain a small benchmark
+where we vary the batch size,
+and then measure the time taken.
+And this graph shows input
+size versus the time taken.
+So the blue line is the original
+code with the map function
+and without compilation.
+Data plot is with completion.
+And the green plot is both
+compilation and vectorization.
+And you can see, in the
+notes that the y-axis
+is on log scale.
+So notice that as the
+input size increases,
+both compilation and
+vectorizations provide
+huge amounts of speed ups.
+So to summarize, we
+saw how to take a NumPy
+code, how to leverage
+TensorFlow runtime
+to make it faster on GPUs.
+We also talked about
+some of the advantages
+that TensorFlow brings in,
+like auto-differentiation,
+compilation with
+auto-vectorization, and so on.
+Next Peng is going
+to talk about how
+to add a new NumPy operations.
+And then, we'll also
+talk to some case
+studies of using this API.
+PENG WANG: Hi, everyone.
+My name is Peng.
+I'll take you to peek into
+under the hood of TF NumPy.
+And in particular,
+I'll show you how
+to add a new operation
+into TF NumPy.
+So adding new ops into TF NumPy
+is the bread and the butter
+of TF NumPy development.
+The process of adding a new
+op is basically four steps.
+So we want to add a new op.
+You have to read
+the official NumPy
+doc for that op to
+comprehensively understand
+the behavior of the op.
+And then you think of a way
+to implement auto-behaviors
+in Python using TF ops.
+So you can look at the folder
+under /numpy_ops for more
+information.
+And we have a comprehensive
+test suite for NumPy performance
+that basically test
+all combinations
+of op shape and the dtypes.
+So we need to run those
+tests to make sure
+that we conform to NumPy in all
+the corner cases, especially
+dtypes.
+Because dtype promotion are
+where most of the corner cases
+are.
+So lastly, this is
+new compared to NumPy.
+So NumPy doesn't allow
+incomplete shapes.
+But we want to support
+incomplete shapes
+to be more like TF.
+So there are some
+tricky aspects of how
+to handle incomplete shapes.
+So I will show all this
+through three examples.
+The first example is
+the simplest possible op
+that we can add.
+So this is a barebone op.
+So as Ashish mentioned, we
+defined our own ndarray class.
+And it is just a thin
+wrapper around a TF tensor.
+So if you are adding an op that
+directly corresponds to a TF
+op-- like cosine, then the work
+to do is really very simple.
+You take the tf.Tensor
+out of the ndarray.
+And then you give the tensor
+to the corresponding TF op.
+And when you get back
+the result tensor,
+you apply the wrapper
+again to turn it back into
+and the ndarray.
+And that's it.
+So a little more
+extra here, because we
+want to accept any
+array-like arguments.
+We need to convert the
+documents into ndarray first.
+And secondly, we have this
+decorator called np_doc.
+So this decorator
+does two things.
+Firstly, it copies the
+docstring of the original NumPy
+op or link to the docstring
+into the docstring
+of this new Python function.
+And if you have extra docstring
+in the-- in your new function,
+it will be appended to the
+official NumPy docstring.
+And secondly, this np
+doc also does TF export,
+which exports this new symbol
+under the tf.experimental.numpy
+namespace.
+That's our first example.
+Our second example is a
+little bit more complicated.
+Well the only complication
+is that now we
+have more than one argument.
+And as Ashish mentioned
+it before, unlike TF--
+in TF NumPy we support
+the type promotion.
+So we have to promote
+all the related arguments
+to the common dtype.
+So we have our own promote
+dtype utility function.
+And internally, it caused the
+official numpy.result type
+function.
+So our type promotion rules
+are exactly the same as NumPy
+dtype promotion rule.
+So one technical challenge
+here is that this
+works for most of the time.
+But in some corner
+cases, especially when
+the arguments are--
+they have NumPy types
+like native Python types--
+like Python integers
+or Python floats.
+NumPy result type-- when
+it does data promotion,
+it can be value sensitive.
+It can decide that a detail
+based on the actual value
+of the argument.
+For example, if the argument
+is a Python integer 1,
+it may choose like a
+small integer dtype.
+But if it's like a
+very large integer,
+it may choose a
+larger integer dtype.
+That is fine in can
+motive but we also
+support graph mode the
+usage within your function.
+And in that case x1, x2
+maybe symbolic TensorFlow.
+So the value is unavailable.
+So in that case, we actually
+really can't do anything.
+Instead of using the
+x1, x2 we basically
+gave x1 dtype and x2
+dtype to np result type.
+So that may result in different
+type promotion results
+that NumPy--
+but those are really
+just the corner cases
+when x1 and x2 are
+Python native values.
+Our last example is for showing
+the complication of handling
+of incomplete shapes.
+So in some of our ops--
+because of their behavior of
+official NumPy, we need to
+or we want to do totally
+different computations based
+on the shape and the rank.
+So as a simplified
+Python version,
+we can adjust it
+to Python branching
+the shape and the rank.
+But if we want to
+support incomplete shapes
+for arguments, then there
+are some challenges.
+For us today-- well,
+we want to handle
+incomplete shape we shouldn't
+use tensor.shape.rank
+or tensor.shape.
+Instead we should use
+tf.rank and tf.shape,
+which will return
+the shape and rank
+as a dynamic tensor instead
+of a static Python value.
+But then because the
+shapes are dynamic,
+then we cannot use
+Python branching.
+We need to use tf.cond.
+So that's one requirement
+that requires to use tf.cond.
+But on the same time there
+is another requirement.
+So if all the shapes of the
+inputs are already complete,
+then many NumPy users expect
+the result to also be complete.
+So there are two
+motivations for this.
+First, this is what
+most NumPy users expect.
+Second is that, in one of
+our use cases, which is Trax.
+Trax actually requires
+to do this shape
+calculation in their
+model initializing phase.
+So they need to
+have all the ops use
+either model to completely--
+to successful propagate complete
+shapes from input to output.
+So we need to support this.
+But this raises a
+problem for tf.cond
+because the different
+branches being our tf.cond
+are doing totally
+different computations.
+So tf.cond cannot infer a
+complete result shape from
+those different computations,
+even if all the shapes are
+complete.
+So in conclusion, we cannot
+use tf.cond in this case.
+So we have two
+contradicting requirements.
+The solution that we need to
+constant-fold away tf.cond.
+Because we are only
+dispatching according
+to shape and the
+shapes are already
+known for all
+arguments-- so actually
+the condition in our
+tf.cond are already
+statically known at this time.
+So we just need to
+leverage this fact
+and just to eliminate cond
+because the condition is
+already known.
+The concrete solution that we
+have our own version tf.cond,
+which are called utils.cond
+that does a tf.get_static_value
+on its condition to extract
+the static of value.
+And then pick the
+true branch or else
+branch at graph building time.
+But the problem we find is that
+the support or the coverage
+of tf.get_static_value
+is not very great.
+It doesn't support many
+common ops, like add
+or greater or logical or.
+So when we use
+those ops, we need
+to use our own versions of
+those ops in our condition
+that more eagerly do
+constant-folding within the op.
+So like for add, it
+will do get_static_value
+on the two arguments of add.
+And if both of them
+are static, then it
+returns a static pass in value.
+All right, that's
+all for our examples
+for adding a pass in op.
+Then we'll talk about
+some case studies
+we have for you in TF NumPy.
+So we'll talk about
+two case studies.
+The first is JAX.
+So there are lots
+of existing JAX code
+written by researchers.
+So the goal in that is we want
+to try to export those JAX code
+or JAX library onto
+TensorFlow for them to enjoy
+the ecosystem of TensorFlow.
+But the problem we have is that
+JAX is not just the TF NumPy.
+It uses more APIs
+that's beyond TF NumPy.
+So our solution is that
+outside of TF NumPy,
+we have a TF NumPy extension
+library that provides
+a set of JAX specific APIs.
+Those APIs include the famous
+function transformers in JAX,
+like jit, vjp, vmap.
+And some facilities for
+distributed training,
+like pmap and psum.
+And also some
+mathematical functions
+that's outside of NumPy, like
+convolutional, and pooling,
+and also a set would
+stateless entries
+that's not part of NumPy.
+So we successively have
+done this porting for JAX
+unittest for NumPy ops.
+And also the Stax library,
+which is very simple
+layers library within JAX.
+And we also done it for
+the Neural Tangents model.
+Our second case study is Trax.
+Trax is the next generation
+of tensor to tensor library.
+So it's a framework for state
+of the art research for sequence
+to sequence modeling.
+It's created and
+mentioned by the inventors
+of Transformer, Reformer,
+and many famous NLP models.
+So it was initially
+implemented on JAX.
+But now, we have already
+ported it to TF NumPy,
+so users of Trax can easily
+do their Trax training
+on TensorFlow.
+So there is a difference
+between the other porting work.
+So instead of doing just a one
+off porting of the existing
+Trax code, we
+actually move the Trax
+into a multi-backend
+architecture.
+So that the user can
+seamlessly switch between JAX's
+backend and NumPy backend.
+And even just the
+[INAUDIBLE] NumPy backend.
+So they have very
+great flexibility
+when they train their model.
+So there is a way to achieve
+this-- is that Trax only uses
+a well-defined API surface.
+And those APIs are supported
+by both JAX and the TF NumPy.
+So in order to switch
+backends-- there are two ways.
+You can do it in command line
+by just giving one extra command
+line argument.
+Or you can do it more
+locally within the code
+and more programmatically.
+So in Trax there is
+a fastmath model.
+And the fastmath model has
+a use_backend Python scope
+manager.
+So when you open a Python
+scope using use_backend,
+or the code within that
+scope will use the backend
+you specified in use_backend.
+I want to mention-- we also
+have a Trax-to-Keras converter
+inside of Trax so that
+you can convert your Trax
+models into Keras models.
+And we also support
+save the model.
+So you can save your Trax
+model into save the model,
+and then later load
+it into TF ecosystem.
+So that's all for my talk.
+So if you want to learn
+more about TF NumPy,
+you can follow those
+links for further reading.
+Especially, please look at
+the comprehensive guide we
+have for TF NumPy.
+And we can also look at
+the API documentation
+for specific documents
+for each NumPy op.
+We also have some Colabs.
+So we have one Colab that
+uses simple multi-layer model
+to train and make a
+classification [INAUDIBLE]..
+But it is a distributed
+training examples.
+It uses multiple GPUs.
+We also have a
+Colab that shows you
+how you can use TF NumPy along
+with Keras end distribution
+strategy together.
+Also there is a Trax Colab that
+shows how you can use Trax,
+but so with the
+TF NumPy backend.
+That's all for our TF
+training talk today.
+Thank you.
+[MUSIC PLAYING]

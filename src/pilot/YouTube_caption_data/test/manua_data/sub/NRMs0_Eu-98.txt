@@ -1,0 +1,1326 @@
+Hi! My name is Antje Barth.
+I work as a developer advocate
+for AI Machine Learning at AWS.
+Thanks for joining my session:
+Building NLP models
+with Amazon SageMaker.
+Let’s have a quick look
+at the agenda for the session.
+First, I'm going to show you
+a quick introduction to NLP.
+We’re going to talk about
+the popular algorithms and concepts.
+And then I'm going to dive
+a little bit more
+into the BERT-family of models,
+and then I’ll show you
+how to build NLP on Amazon SageMaker,
+featuring TensorFlow, PyTorch,
+and Apache MXNet.
+And of course we will have a demo.
+So let’s get started.
+Let’s have a look
+at natural language processing.
+NLP is a major field
+in Artificial Intelligence,
+and it has been studied
+for a long time already.
+In NLP, the applications require
+a so-called language model
+in order to predict the next words.
+The language model consists
+of vocabularies
+which can be hundreds
+of thousands of words
+across millions of documents.
+So the problem we’re facing here is,
+how can we build
+a compact mathematical representation
+of the human language
+that will help us
+with the variety of NLP tasks
+we want to perform.
+And as I said,
+it has been studied for a long time,
+so if we look back to 1957,
+an English linguist
+called Firth coined the term:
+“You shall know a word
+by the company it keeps.”
+And it’s still relevant nowadays.
+So if you think
+of how machines communicate,
+they’re not using
+human language, words;
+so machines need numbers.
+So what we have to do
+is basically take our words
+and encode them in vectors,
+also called word embeddings,
+and they can get high dimensional:
+at least 50,
+sometimes up to 300 dimensions.
+Having words encoded in vectors
+gives us a couple of features.
+We can encode semantics,
+so we can find words
+with similar meanings
+because they should have
+similar vectors.
+For example,
+“car” should have a similar vector
+as “automobile” or “sedan”.
+Also, working with vectors
+we can calculate distances.
+So the distance
+between “Paris” and “France”
+should actually be similar
+to the distance between “Berlin”,
+guess what, and “Germany”.
+Also the distance between
+“hot” and “hotter”
+should be similar to the distance
+between “cold” and “colder”.
+So we’re really kind of able
+to encode semantics now
+with those word embeddings.
+So at a high level,
+what are the steps needed in NLP?
+We always start
+from a large text corpus.
+That could be hundreds of millions
+of words, billions,
+and a popular one
+is definitely Wikipedia
+or a collection of books
+which you can use
+to train your model.
+We then need to preprocess
+the corpus into tokens,
+and tokens can be single words
+or multiword entities.
+We then build the vocabulary
+from those tokens
+and learn
+those vector representations.
+And if that sounds like a long
+and heavy process, it definitely is.
+But the good news
+is that you don't have to do that
+from scratch every time.
+You can actually leverage
+pretrained models
+that have already those existing
+vector representations.
+And we’re going to see
+more about this later.
+I mentioned language modelling,
+but there are many more
+popular NLP use cases.
+For example,
+machine language translation,
+representation learning,
+text classification,
+sentiment analysis, you name it.
+NLP has really reached
+almost every industry
+and a variety of use cases.
+Let’s have a closer look
+at the popular algorithms
+and concepts and a little bit
+of the NLP history.
+And if you see the history here,
+it’s really all about
+the last couple of years.
+So in January 2013,
+Word2Vec got released.
+And Word2Vec uses
+a shallow neural network
+and the concept
+of continuous bag-of-words
+and continuous skip-gram.
+And those two concepts work
+either by predicting the current word
+and looking at the context
+of words surrounding,
+or taking
+the surrounding context words
+to predict the current word.
+Then in 2014, GloVe got released.
+GloVe stands for Global Vectors
+for Word Representations.
+And here the change is that GloVe
+actually uses matrix factorisation
+instead of the neural network
+to get to those word embeddings.
+Then in 2016, FastText appeared,
+and FastText, you can think
+of an extension of Word2Vec.
+The difference here is that each word
+is treated as a set of sub-words
+called character n-grams.
+But looking at those algorithms,
+they all have some limitations.
+For example,
+words have different meanings.
+So I could say,
+“Kevin, stop throwing rocks!”
+and “Machine Learning rocks.”
+And obviously the word “rocks”
+has completely different meaning
+in those sentences.
+But in Word2Vec in those algorithms,
+they would encode
+the different meaning
+as the same vector.
+Also another limitation
+is that the bidirectional context
+is not taken into account.
+Meaning, if you’re reading a sentence
+left to right,
+meaning you know the previous words,
+and reading the sentence
+right to left,
+meaning you know the next words,
+this is kind of building up
+this bidirectional context.
+And those algorithms don't have
+that visibility,
+so they’re either reading
+from left to right
+or from right to left,
+but not both at the same time.
+So this opened up actually
+the research space
+for a lot more different approaches
+and architectures
+how to implement NLP.
+So in 2018, ELMo got released.
+ELMo stands for Embeddings
+from Language Models.
+And in ELMo we’re implementing
+recurrent neural networks, LSTMs,
+to get to this context.
+And the way it implements
+is by executing
+two unidirectional LSTMs.
+So in a forward pass
+we’re first reading
+from left to right,
+and then in a backward pass
+we’re reading from right to left,
+and we’re concatenating those two.
+And this is actually why I called
+pseudo bidirectional on this slide,
+because it’s kind of learning
+that bidirectional context
+into different model architectures.
+A couple of months earlier in 2017
+a paper got released called
+“Attention Is All You Need”.
+And in this paper,
+they introduced a new mechanism
+called self-attention.
+And also a new architecture
+based on Transformer.
+And this basically
+led to the introduction of BERT
+then in late 2018.
+BERT picked up
+a lot of those concepts
+in its implementation.
+So one is, it replaced the LSTM
+with those Transformer architectures
+and also implemented
+a true bidirectional attention.
+And if you’re now wondering
+how attention looks like,
+have a look.
+If we’re giving the sentence,
+“This movie is funny, it is great”,
+applying attention means
+we’re able to detect the key words.
+And we can also say,
+picking here on the “it”,
+which is the word
+it actually refers to?
+So this one obviously refers
+to “movie”, right?
+“The movie is great.”
+So it got picked up correctly
+by this self-attention mechanism.
+And this is
+true bidirectional attention
+and context awareness.
+So let’s move on to the
+BERT-family of models
+that basically picked up that concept
+and implemented it.
+BERT stands for
+Bidirectional Encoder Representations
+from Transformers.
+And as I just said,
+BERT improves on ELMo
+by replacing the LSTMs
+with those Transformer architectures,
+which are basically also better
+in dealing
+with the long-term dependencies
+found in text.
+It’s also implementing this truly
+bidirectional architecture,
+left-to-right and right-to-left,
+in the same network.
+So also different from ELMo
+where it’s like two passes.
+BERT learns it in the same network.
+BERT also adds two more things
+in the training phase.
+Words are randomly masked
+to improve the learning,
+and it also pairs sentences randomly
+in some cases
+to improve Next Sentence Predictions.
+And, again, you don't have
+to pretrain your BERT models
+from scratch necessarily.
+You can also leverage
+ready-to-use models.
+Two of them are BERT Base
+and BERT Large.
+And as you can see here on the slide,
+they mainly differ in the size:
+number of layers,
+hidden units,
+and obviously the parameters
+it got trained on.
+So let’s have a look at
+what BERT does different
+in those steps.
+The first step we’re doing when we
+build a model from scratch
+is the pretraining phase.
+And here we’re taking
+this generic pretraining data,
+which could be Wikipedia,
+book collections etcetera,
+whatever large-scale text corpus
+you have at hand,
+and in a supervised training step,
+we’re then applying
+this masked language generation
+and the next sentence prediction.
+And I'm going to show you
+how they work
+in just the next slide.
+So once we’re
+through this pretraining phase,
+which can take a long time,
+we’re then doing,
+in a supervised training step,
+the fine-tuning.
+And in the fine-tuning we’re taking
+a domain-specific training set
+to teach the model,
+let’s say, to do text classification
+or question answering.
+And if this sounds familiar to you,
+if you maybe have been working
+in Computer Vision
+and you’ve seen transfer learning,
+you’re right,
+this is a similar concept basically
+of transfer learning in NLP.
+And this really kind of changed
+the paradigm a little bit,
+so the pretraining
+really becomes the new training,
+and training becomes the fine-tuning.
+So let’s have a quick look
+at the Masked Language Model.
+So as I said,
+third in the pretraining phase,
+randomly masks 15% of all tokens,
+and then tries to predict the token.
+So let’s say we pass a sentence,
+“The movie is great,”
+and we’re masking the token “movie”.
+We’re then giving BERT this task
+to actually predict this token,
+and it’s giving us the probability
+of whatever token it predicts.
+And this helps to build up
+an improved learning process.
+The second step it performs
+in pretraining
+is predicting the next sentence.
+So in 50% of all cases,
+it replaces a sentence
+in a sentence pair
+with another random sentence.
+And the goal here
+is really to learn logical coherence
+in your text.
+So let’s say I have a sentence,
+“This movie is great,
+I love thrillers.”
+This is the sequence it appears.
+And there might be,
+in 50% of the time,
+I replace it with something like,
+“This movie is great,
+tomorrow is Saturday.”
+So we’re passing
+those sentence pairs to BERT,
+and BERT predicts whether it’s a pair
+or it’s not a pair.
+And note that both steps,
+the masking of tokens and NSP,
+can happen or are actually happening
+in parallel.
+All right, so once we’re through
+this pretraining,
+our task is really to fine-tune
+the model
+to a domain specific exercise.
+So let’s say we want to implement
+a Star Rating Classifier.
+And you can think of, like,
+if you visited Amazon.com recently
+because you wanted to look
+for a specific product,
+you might have visited this customer
+review section on the website
+to see if other customers
+liked the product
+before you actually purchase it,
+and this is basically
+the star rating.
+So let’s say I want to train,
+fine-tune the BERT model
+to give me the star rating
+for any given review text.
+So let’s assume I put in,
+“This product is great.”
+I want to have BERT predicting
+this might be a 5-star rating.
+And to do this,
+this is happening
+in the fine-tuning step.
+So we’re providing the model
+with very specific training data,
+in this case the reviews dataset.
+It is also labelled
+with the star categories,
+so the model can actually learn
+to do that text classification.
+So looking at BERT,
+BERT really created
+kind of a BERT mania in the industry
+since it got released,
+so there has been
+a lot of work happening since 2018.
+And here’s just a couple of examples
+in the fine-tuning.
+For example,
+PatentBERT is classifying patents.
+BioBERT is trained
+and fine-tuned on optimising
+and recognising biomedical language.
+CamemBERT is actually
+a French language
+BERT implementation, funny name.
+And there’s also evolution happening
+in the architecture,
+so we’ll see DistilBERT
+in a demo here later,
+and DistilBERT is kind of
+a slimmer distilled version of BERT.
+All right, let’s move on to NLP
+with Amazon SageMaker.
+And just as a quick recap here,
+Amazon SageMaker
+is a fully managed service
+that helps you build,
+train and deploy models
+at scale and quickly.
+I know this slide is a little bit
+of an eye chart,
+but over the last 12 months
+we’ve probably released
+more than 50 features
+and functionalities
+as part of SageMaker,
+and it’s getting really hard
+to kind of
+put them all
+on a single slide anymore.
+So if you’ve missed some of them,
+I would highly encourage you
+to have a look.
+Whether you’re preparing the data,
+you’re building your models,
+you’re training, tuning them,
+or deploying
+and putting them in production,
+there have been a lot of additions
+and capabilities to SageMaker.
+Let’s have a look at popular
+deep learning frameworks,
+and in AWS it’s really all about
+giving you the choice
+to pick the right tool
+for the right job.
+Having said that,
+we definitely see TensorFlow,
+PyTorch and MXNet
+among the most popular frameworks.
+So let’s have a quick look
+how you can work
+with TensorFlow on AWS.
+TensorFlow is really
+a first-class citizen
+on Amazon SageMaker.
+We provide
+built-in TensorFlow containers
+for both training and prediction,
+and you can find
+the code available on GitHub.
+So you can pull the code,
+build the container,
+run it on your machine,
+and you can customise it
+in any way you want.
+We’re also supporting a broad range
+of TensorFlow versions.
+In addition, you can leverage
+all of the TensorFlow tooling
+you want to do.
+You can pull in TensorBoard,
+you can leverage TensorFlow Serving,
+or you can leverage any
+of the SageMaker built-in features.
+You can also choose
+between running TensorFlow on GPUs
+or CPU architectures,
+and obviously also
+to do distributed training.
+All right, enough slides for now.
+Let’s actually jump to the demo.
+And I’ve put in here the link
+to the notebook
+if you want to run it
+after the session.
+So as a dataset in the demo,
+I'm using actually
+the Customer Reviews dataset.
+And in the example I shared before,
+we were seeing those customer reviews
+from the Amazon.com website.
+Amazon actually released
+an open dataset for everyone to use.
+It consists of over 130 million
+of those customer reviews
+from 1995 to 2015.
+So it’s a really cool dataset
+if you want to
+use it in your NLP tasks.
+All right, so in the demo
+we’re implementing
+this text classification
+to give us the star rating
+for any given review text.
+The steps we need to do here is,
+A, we need a dataset
+of labelled sentences.
+And hey, we’ve got this.
+Then we’re grabbing
+a pretrained model,
+and add
+a classification layer to it.
+We then need as part
+of a feature engineering process
+to convert each sentence
+in that Amazon review
+to a list of vectors,
+and we’re using a pretrained
+BERT tokeniser to do that.
+Then we’re training,
+or better said,
+fine-tuning the model
+to predict our star rating class.
+All right, so let’s have a look.
+All right, I'm now in the Amazon
+SageMaker notebook environment.
+And in this notebook,
+I want to show you
+how you can do BERT fine-tuning
+with TensorFlow on SageMaker.
+So again, here’s the quick recap
+in the beginning
+with the differences
+between pretraining and fine-tuning.
+What I’ve done in preparation
+is I’ve used a pretrained BERT model
+to generate the features already.
+So I generated the BERT embeddings
+from the review_body text
+or a customer reviews dataset
+using this model.
+And what we’re going to do now
+in this notebook
+is basically set up
+the environment to fine-tune,
+which means we’re adding
+a classifier layer
+on top of the pretrained model.
+And you can use obviously
+any framework you like.
+In this case I'm using TensorFlow,
+and then we’re going to kick off
+and train the classifier
+using the review_body BERT embeddings
+which I created and the star labels.
+So again, to save us time,
+I’ve done
+the feature engineering already,
+so as part of that, I pulled down
+the dataset from the Amazon bucket,
+and I used
+Amazon SageMaker Processing Job
+to generate those embeddings.
+I then split the data
+into the training,
+validation and test dataset,
+and also important to note
+that I stored the data
+in TFRecord file format,
+which is optimised
+for the TensorFlow training
+which we’re going to do
+in just a bit.
+So here again is a quick recap.
+The input data, again,
+is the star ratings, as our label,
+and the review_body text.
+And the outcome here of this step
+is still star rating,
+but the text now got transformed
+into those BERT embeddings.
+So now we’re ready to do
+the fine-tuning.
+And to do that,
+I just set up my environment here,
+and I'm using
+the HuggingFace’s Transformer.
+HuggingFace is a company
+that specialises
+in natural language processing,
+and they’re providing
+architectures you can use
+for TensorFlow and for PyTorch.
+So have a look.
+Transformers are really popular here,
+both available
+in TensorFlow and PyTorch.
+And this is basically
+what I'm using here
+to save us time
+to implement all that.
+So I will use a variant
+of BERT called DistilBERT,
+which HuggingFace released,
+which uses
+and requires less memory and compute,
+and turn out to have
+still very good accuracy
+on this dataset.
+So I'm pulling
+in a couple of SDKs here
+to work with Amazon,
+so I’ll go to Python SDK, SageMaker.
+I'm also using Pandas later on.
+I’ll set our environment up here
+calling the SageMaker session,
+and also getting
+the execution role, etcetera.
+As a first step then,
+as I provided some sample data here
+to speed this up,
+I upload
+those TFRecord files into S3,
+but you’re actually running
+the whole end-to-end workshop.
+From the git repo
+you would have them already
+in your three buckets and obviously
+if you’re doing
+this processing on your own
+you would have the features
+as well probably already in S3.
+Then I'm just using this store here
+to pass on a couple of parameters
+from one notebook to the other.
+So either you’re uploading
+or you have
+the features already in S3.
+And then I'm specifying basically
+where to find them.
+So I'm setting here
+the training data location,
+valuation, and test data location.
+Making sure here
+with a quick LS command
+that I'm really in the right path.
+So you can see here for this sample,
+I’ve just pulled two categories
+from the reviews,
+basically Digital Software
+and Digital Video Games.
+Those two are smaller datasets,
+so actually we don't have to wait
+a couple of hours
+but just around 15 minutes later
+for the training.
+Then another
+thing to note here is
+when you’re distributing the data
+to your training instances,
+meaning when you’re performing
+distributed training,
+you can basically set
+a distribution strategy.
+And you can either do a full replica,
+meaning that the whole dataset
+gets copied to each
+training instance,
+or you can use ShardedByS3Key,
+which I'm showing here,
+which basically means
+I'm dividing the data
+and each training instance
+gets part of it.
+So in our case,
+as we have the two input files here,
+the two TFRecord files,
+and if I'm doing
+two training instances,
+each instance would get one file.
+This makes sense,
+so let me actually do this here.
+And then we still
+need to run code,
+so in this case I'm showing you
+how you can bring
+your own training code,
+which is called script mode
+in SageMaker.
+So here I’ve created a Python script
+which implements actually
+the BERT fine-tuning.
+So have a look at the script.
+You can see here I'm pulling
+in the Transformers from HuggingFace,
+and I'm also pulling in
+a couple of SageMaker libraries here.
+I'm pulling in TensorFlow.
+Also something called
+SageMaker Debugger,
+which you’ll see in a bit.
+And, again, from the Transformers
+we’re using DistilBERT Tokeniser.
+And you can see here basically
+how the training script is set up.
+So I'm going to show you
+also Pipe mode in just a bit.
+So here I'm just checking
+if I'm using Pipe mode
+to read the data,
+and basically the rest
+is pretty much TensorFlow code.
+Note that for script mode
+we need to pass
+a couple of variables here
+from the environment.
+This is done here.
+And then also obviously
+we’re passing
+in the hyper-parameters.
+And then we basically keep going
+with the training script.
+Use this as a reference
+if you like.
+There are also plenty more examples
+how you can do this.
+But feel free to have a look here
+in more detail after the session.
+And then once we’re done
+with the training on our dataset,
+I'm also doing some test runs
+at the end.
+So we’re going to pass
+actually three example reviews.
+So, “I loved it!
+I will recommend this,”
+“It’s OK,” and “Really bad,
+I hope they don't make this anymore.”
+And actually check here
+in the inferencing part
+if our model provides us
+with the right star labels.
+All right, this seems fun.
+So let’s switch back
+to SageMaker environment.
+So this is, as I said,
+our training script.
+We also set the hyper-parameters
+for this classification layer,
+so let’s just do one epoch here.
+Feel free to do whatever you want
+if you run this later.
+We want to do distributed training,
+so I'm setting it to two instances,
+and I'm also using
+our GPU powered instances,
+the P3 family here.
+So I'm picking the p3.2xlarge,
+which provides media GPUs,
+so we can actually have
+the training complete
+in a reasonable time.
+This one actually here takes
+roughly 15 minutes if you run it.
+And I just mentioned here Pipe mode.
+So interesting,
+you can use File or Pipe mode,
+and as the name suggests,
+if you’re using File mode,
+the whole file gets copied over
+to your instance.
+And Pipe mode you can think
+of similar to Linux pipes,
+if you’re familiar with the concept,
+where you load data as needed.
+So this is basically loading
+the data in small batches
+to your instance, piping it.
+So we’re going to use that
+just to optimise a little bit more.
+And we’re also setting up
+an experiment.
+So a new functionality
+within SageMaker
+is basically the experiment tracking.
+So I'm going to use that.
+So I'm creating here
+my experiment for this training job.
+And I want to log
+the hyper-parameters,
+so I'm creating a tracker object here
+and passing
+all of the hyper-parameters.
+Again, I'm logging
+the S3 input locations here as well
+where the dataset is stored.
+And then within an experiment
+you can obviously have
+many trial runs,
+so I'm setting up
+a first trial run for us,
+just really kind of basic setup,
+giving it a name, etcetera.
+And I also want to check on
+the model performance.
+I want to keep track
+of the training loss,
+training accuracy, etcetera,
+so I'm defining those here.
+And actually you have to pass
+the Regex expressions.
+And then another functionality
+with SageMaker Debugger
+gives us the option to actually
+keep track of what’s happening
+throughout the training
+run itself inside.
+So there’s a couple
+of built-in rules.
+For example, loss_not_decreasing.
+So if you’re passing that rule,
+you’re basically checking
+in real time
+when the model loss
+is not decreasing anymore,
+so we can have that information.
+And we’re also checking here
+in case we’re overtraining.
+So let me set up
+these Debugger rules here,
+create a hook,
+and then we’re finally ready, boom,
+to set up our fine-tuning job.
+So, for that, if you’ve worked
+with SageMaker before,
+it shouldn’t be too surprising.
+So I'm pulling in
+from SageMaker TensorFlow
+the TensorFlow estimator.
+So I'm basically creating
+this estimator option
+to be able
+to run our TensorFlow code.
+And as we’re doing script mode here,
+the only thing I have to do,
+as you can see,
+is passing the script,
+which I’ve shown, as an entry point.
+If you have more requirements
+you want to pull in,
+then just put your requirements.txt
+in the source directory,
+which we’re specifying here,
+and it gets picked up.
+Then we’re basically
+passing all of the hyper-parameters
+and information we set up before.
+Also make sure again
+here the training instance count,
+you’re not doing
+more training instances
+than you actually have data.
+We have the two data files,
+so it doesn’t make much more sense
+than having two instances here,
+with a sharded py3 key.
+So I'm going to do that.
+And then also I'm defining
+the framework version,
+the TensorFlow framework here,
+so I'm setting this to use 2.1.0.
+Passing the hyper-parameters.
+Passing the input mode,
+so we’re doing Pipe mode here.
+The metrics, I want to keep track of.
+The Debugger rules.
+The Debugger hook config.
+And also setting
+a training maximum run
+here of two hours.
+All right, so,
+training the model now.
+It’s as easy as just calling the fit
+then on this estimator object
+and giving it the path
+to the training valuation
+and test data.
+We’re also making sure that we set
+the experiment config here,
+so we’re making sure
+it’s part of this experiment.
+And with that,
+the training job got created
+on Amazon SageMaker.
+We’re checking here again
+on the name.
+And as soon as the training is done,
+you can basically peek in here
+to the training job itself,
+to the CloudWatch logs,
+and also have a look
+at the S3 output data.
+So basically I want to check actually
+if our model does
+some good predictions,
+so let’s peek in
+to the CloudWatch logs.
+And you see here
+the two instances,
+the two p3 instances
+that got started.
+So let me open up the logs
+from the first instance,
+and you can see here everything
+that got set up.
+So everything pulled in,
+hyper-parameters passed,
+data loaded,
+Debugger rules kicking in.
+And I'm scrolling down here
+to the very end
+because I want to see actually
+how our predictions are doing.
+And here we can see our text
+that we passed,
+“I loved it! I will recommend this
+to everyone.”
+And you can see the prediction
+actually gave it a 5-star rating.
+Yes! With a score probability of 92%.
+So it’s pretty sure I will love it,
+it’s a 5-star rating, perfect.
+The “It’s OK,” it said, well,
+give it a 3-star rating maybe.
+It’s not so sure if there’s 30%,
+but I think it’s the right rating,
+so I'm actually happy with that.
+And then,
+“Really bad. I hope they don't make
+those anymore.”
+Received the label of 1,
+also again
+with a pretty confident score.
+So, yeah, our model
+has been fine-tuned
+and is actually predicting
+reasonable results. So a great job.
+Feel free to poke around here.
+Training job takes you
+to the SageMaker training job site
+here in the console,
+so you can have a quick look.
+Note here, you only get billed
+for the actual seconds
+the model got trained, pretty good.
+Feel free to also leverage
+our spot trainings.
+I didn't do it in here,
+but obviously this is
+a huge cost saver,
+so feel free to leverage that.
+Just make sure you’re setting
+checkpoints in your model.
+And you can see here
+just to doublecheck,
+we trained here with two instances
+on p3.2xlarge instance family.
+All right, the rest I think
+is pretty straightforward here,
+and this concludes here
+the fine-tuning on BERT.
+You can definitely have a look here
+also at the experiment results.
+So here’s code that you can
+just execute on your own.
+And basically I'm just pulling
+the results here
+into a Pandas data frame,
+and you can see here the trial run
+and the metrics
+that its recorded here,
+so the valuation accuracy,
+for example, etcetera.
+You can also point it here to
+maybe in a different sorting.
+I just created
+what I called a lineage table
+and basically sorted by
+creation time and order ascending.
+So obviously if you’re running
+more trial runs,
+obviously more information here,
+but it’s a nice way
+to keep track of your experiments.
+And also if you want
+to peek in here to the Analyze,
+to the Debugger Rules,
+as you remember we put
+LossNotDecreasing as a rule.
+And you can see here
+the status, NoIssuesFound.
+So actually,
+we didn't run into a situation
+where we actually over trained.
+Overtraining, no issues found.
+Perfect.
+So this concludes this demo.
+As I said, in the Git repo
+you’ll find
+a lot more notebooks here,
+especially if you’re interested
+in how to prepare
+those BERT embeddings,
+have a look here
+at the Prepare section
+of this environment.
+All right, and with that,
+let’s hop back into our slides.
+Next, let’s see
+how you can work with PyTorch on AWS.
+PyTorch is a deep learning platform
+that really has become popular,
+not only in research,
+but across the industries,
+and we see a growth really happening
+in the cases PyTorch is getting used.
+It comes with a lot of benefits,
+whether it’s eager
+and graph-based execution,
+it’s pythonic way
+how it’s implemented.
+You can leverage
+dynamic neural networks.
+Obviously, you can do
+distributed training.
+And also leverage TPU
+and CPU environments.
+If you want to use
+PyTorch on AWS with SageMaker,
+it is similar to the code example
+I’ve just shown you in the demo.
+Let’s say you want to use
+script mode again
+to maybe train/fine-tune
+your BERT model,
+in this case with PyTorch.
+So this is the exact same lines
+of code we just saw
+except here we’re pulling in
+the PyTorch estimator
+and pointing it here
+to your PyTorch code.
+Also, if you want to implement now
+your training code in PyTorch,
+you can leverage
+the same HuggingFace libraries.
+Actually,
+HuggingFace first implemented
+all of those models in PyTorch,
+and then added
+the TensorFlow support
+in the second step.
+So you can still see all of those
+Transformer architectures,
+and then the TensorFlow options
+are just called
+with a “TF” before the name.
+So feel free to reuse those.
+They save you a lot of time
+in implementing your BERT code.
+Looking at PyTorch in general,
+it has been a little bit
+of a challenge
+to deploy models to production,
+and this is because
+of a couple of reasons.
+There hasn’t been
+an official model server,
+and you had to write
+custom code to deploy
+and predict with the trained models.
+And I'm super happy to announce
+and introduce TorchServe.
+TorchServe is a PyTorch model
+serving library
+built and maintained by AWS
+in collaboration with Facebook,
+which we just released recently.
+You’re basically starting
+with training and models
+as you’re used to in PyTorch,
+and then you can start
+TorchServe model server
+and load your trained models.
+And this helps you
+to easily deploy your models
+in production and scale,
+either hosted on SageMaker,
+EC2, EKS, Kubernetes,
+or any other
+machine learning platform.
+It comes with a lot of features.
+For example,
+you can do multi-model serving.
+You can do model versioning
+for A/B testing.
+It has extensive capabilities
+for monitoring and logging.
+And basically it provides you
+with a low latency prediction API.
+So if this sounds interesting to you,
+feel free to check it out
+at the link I’ve shared here.
+Next, I want to introduce you
+to deepset.
+Deepset is a Berlin-based startup
+founded two years ago by Milos,
+Malte and Timo,
+and they’re part of our
+AWS Activates Data Program.
+Deepset’s mission is to take
+the recent NLP research
+and convert it
+into enterprise products.
+And if you remember the example
+I showed earlier about CamemBERT,
+the French language BERT model,
+deepset actually released
+the first German BERT model,
+and also added algorithms
+for transfer learning
+and question answering.
+We’re working with deepset
+to optimise BERT training
+on AWS and SageMaker.
+And their challenge has been
+how to train transformers
+in a more efficient way.
+So as I said earlier,
+the pretraining phase
+can really take up a lot of time,
+and time obviously means money.
+So deepset looked for ways
+to optimise the training
+to obviously save costs
+and also run
+the training code more efficient.
+There are two ways, as I said,
+to optimise the training.
+One is to accelerate the training,
+and two is to make the underlying
+training resources cheaper.
+So let’s have a look
+what deepset accomplished
+in the code.
+To make the training faster,
+they’re leveraging
+a couple of settings.
+First of all,
+they’re using
+PyTorch's DistributedDataParallel,
+which parallelises
+the workload across various GPUs.
+And this helped them
+to make the training 30% faster.
+They’re also using
+Automatic Mixed Precision,
+which is a smart
+way to figure out
+where in your network you can use
+floating point 16 precision
+over floating point 32.
+This helped them
+in accelerating the training by 80%.
+And then they’re also using
+something called Lazy Data Loading,
+and this helps in combining
+the pre-processing
+and the training steps.
+So instead of waiting
+for the pre-processing job to finish,
+with Lazy Data Loading
+they can load batches of data,
+pre-process,
+and as soon as the first batch
+is ready,
+we can then start
+the training immediately
+on that first batch of data.
+Then for saving costs,
+they also leverage Amazon SageMaker
+Managed Spot Training.
+And here SageMaker
+really takes care of
+stopping and
+starting the instances,
+and your job is to only make sure
+that you’ve implemented
+check pointing
+of all of your objects.
+And leveraging
+the Managed Spot Training,
+deepset was able
+to save up to 70% of cost.
+We’re looking forward to working
+with deepset even more closely.
+We’re currently partnering
+actually with venture capitalists
+as they’re in their pre-series
+A funding round,
+and as a next step they want
+to publish more algorithms
+on the AWS Marketplace.
+All right, so as a last part here
+in this session,
+let’s actually see how you can work
+with Apache MXNet on AWS.
+Apache MXNet is an Apache project,
+no surprise,
+in the incubating phase.
+It also got adopted
+by Amazon in 2016
+as the deep learning framework
+of choice, by the way.
+Also it comes
+with a lot of benefits.
+It is highly scalable,
+debuggable and flexible.
+It actually supports
+a variety of languages,
+and it also comes
+with optimised libraries.
+If you want to run MXNet on AWS
+and in SageMaker, again,
+it’s pretty much the same code
+as we’ve seen before.
+So you’re creating
+an MXNet estimator.
+You can use script mode again
+by pointing it
+to your MXNet training script.
+You’re training
+the estimator deploying it.
+Looking at the toolkits,
+MXNet actually provides
+toolkits for Computer Vision,
+for NLP and for Time series.
+Here is the example
+for the GluonNLP Toolkit,
+and it really comes
+with a comprehensive model zoo
+and great documentation,
+many tutorials and examples.
+If you want to give it
+a spin yourself,
+here I’ve included
+a link to a notebook
+that actually uses
+the GluonNLP library
+and toolkit in combination
+with Amazon SageMaker Debugger,
+to visualise BERT attention,
+as you can see here
+in this little graphic.
+So in the notebook we’re downloading
+a BERT model
+from the GluonNLP model zoo,
+and then fine-tuning the model
+on the Stanford Question
+Answering dataset, “SQuAD”,
+which is also
+a popular benchmark in NLP.
+We then use
+Amazon SageMaker Debugger
+to monitor attentions
+in the BERT model training
+in real-time.
+So really exciting.
+Highly recommend
+you give it a try yourself later.
+So, how can you get started now
+with NLP on AWS?
+I’ve included a couple of links here,
+including again
+the link to the GitHub repo,
+which contains the demo code
+I’ve shared earlier.
+So feel free to have a look
+at those links
+and to also play around
+with that demo code.
+Also, please visit the Partner
+Discovery Zone and get in touch
+with our APN Machine Learning
+Competency Partners.
+This concludes the session.
+I hope you enjoyed,
+and thank you very much for joining.

@@ -1,0 +1,1474 @@
+[MUSIC PLAYING]
+POLONG LIN: My
+name is Polong Lin.
+I'm a developer advocate in
+the Google Cloud Platform team,
+and my focus is on data science.
+And as a developer
+advocate, actually,
+as a question for
+[AUDIO OUT] know
+what a developer advocate is?
+It's very strange
+title to many people.
+So a developer
+advocate is someone
+who I would say is
+a middle person who
+[AUDIO OUT] teams at Google and
+the outside world, essentially.
+So the reason why we exist is
+to help not only bring awareness
+to some products
+at Google, but also
+to take some feedback
+[AUDIO OUT] users
+from our customers from
+the external community
+and bring that feedback
+back to the product teams
+to help improve the products at
+Google so that there's a better
+fit for the users out there.
+As a developer advocate in
+data science, one of my focuses
+is around, of course, analytics,
+data science, machine learning.
+Bit of AI, as well.
+And so here I am really
+happy to be here in Scotland.
+It's one of my favorite places.
+[AUDIO OUT] here to talk
+to you about machine
+learning at scale with
+this product at Google
+called BigQuery.
+So the agenda today, I
+realized we don't have
+a full hour, which is fine.
+We'll see what we can
+get through here today.
+Cover a couple
+different sections here.
+The first is just kind of
+around Pandas and Python just
+to give you a sense of what
+big data is like when you try
+to analyze, and some
+of the limitations
+that you might see when you're
+analyzing large amounts of data
+[AUDIO OUT].
+For those of you
+who may have already
+been working with Python,
+this might be quite familiar.
+And then we're
+going to see how we
+can unlock some of
+these limitations
+by using something
+like BigQuery.
+And then further to
+scale up machine learning
+using what's called a
+[AUDIO OUT] or BQML sometimes
+we might call it.
+So with BigQuery ML, we can now
+use machine learning at scale,
+and it's all in the cloud.
+And if there's a little
+bit of extra time,
+for those of you who are
+familiar with Jupyter notebooks
+raise of hands.
+Lots of hands.
+So Jupyter notebooks,
+scaling that out
+in the cloud when
+Jupyter notebooks,
+if you're trying to run Jupyter
+notebooks on your computer
+or JupyterLab on your
+computer, and you
+find that your resources on your
+computer are simply not enough
+[AUDIO OUT] called
+AI platform where
+you're able to essentially
+deploy these JupyterLab
+notebook environments in the
+cloud at the click of a button.
+And then you'll be running at a
+much larger essentially virtual
+machine in the cloud.
+So first and
+foremost, I don't like
+to go too far into
+the presentation
+without doing a quick demo.
+Here we have Colab notebook.
+So it's kind of a form of
+Jupyter notebooks, so to speak,
+[AUDIO OUT] which allows
+you to run Python code
+kind of like in a Jupyter
+environment, but via this tool
+called Colab.
+And here what we're
+doing is simply
+bringing in some data
+[AUDIO OUT] does,
+and we're just going to
+do some simple analyses.
+So here we have some data that
+I've posted on Google Cloud
+Storage, and this is Wikipedia
+data, page requests by title
+for the month of May 2015.
+And this is this data set here.
+So I've brought it into
+a Pandas data frame.
+So this is something
+probably many of you
+are quite familiar
+with, read CSV.
+And then as we look
+at this data frame,
+I've only kind of [AUDIO OUT]
+subset of this data.
+But you can see here-- oh, I
+think this one didn't run here.
+Let me just rerun this here.
+This should be 10 million rows
+that I brought into this Pandas
+data frame.
+So it's going to take
+20 seconds, 30 seconds
+to download into load.
+And then as you saw, there's
+lots of different columns.
+And more importantly, there's
+lots of rows in the data frame,
+as well.
+And if you look at how
+large this data set is,
+how much memory
+[AUDIO OUT] used in Python,
+we're looking at 380 megabytes.
+And if you look
+at it more deeply,
+it actually goes up to
+more than one gigabyte,
+or close to one
+gigabyte of memory.
+What if we were to do some sort
+of simple data manipulation
+at scale with this
+kind of large data set?
+well, if we look at just
+the first 100,000 rows,
+and if we were to look at
+[AUDIO OUT] Wikipedia page
+request to see if that
+title that is being looked
+at contains the word start,
+or help, or anything else--
+so it's doing some sort of--
+it looks [AUDIO OUT] to frame
+by condition for the word start.
+It's then going to group by the
+title of that Wikipedia page,
+and it's going to take the
+sum of all the page views.
+So this is the [AUDIO OUT].
+And then it's going to sort
+it by the number of requests.
+So essentially, what we have
+below is every single Wikipedia
+page that starts with or
+contains the word start,
+and the number of
+page views that
+have been [AUDIO OUT]
+that corresponds
+to that particular title.
+So this is very simple kind
+of data manipulation script,
+so to speak, right?
+It's very common thing
+to do this in Pandas.
+And we've run this
+on 100,000 rows,
+so it's a fairly, I
+guess, healthy amount.
+[AUDIO OUT] long did this
+take to run in Python?
+So we can import time.
+I created a little function to
+help track the amount of time
+it takes to run this data
+manipulation function.
+And as we see below, to process
+100,000 rows it [AUDIO OUT]
+quick in Python.
+It only takes 9/100 of a
+second to process 100,000 rows.
+And then the question
+becomes, well,
+what happens if our data frame
+contains millions of rows,
+or tens of millions, or
+hundreds of millions of rows?
+[AUDIO OUT] does that scale
+out in terms of the processing
+time?
+So what I did was I
+subset in the data
+set so that it could be a
+little bit smaller, and smaller,
+and smaller.
+And we could see by running the
+same script how long it takes
+to analyze the data
+set this [AUDIO OUT]
+to group by and do the ordering
+on the data sets that are
+a little bit smaller in size.
+We find that as we increase
+the number of rows,
+it becomes quite a
+bit longer and longer
+to process [AUDIO OUT] frame.
+So at 1,000 rows, very, very
+quick, 9/1000 of a second.
+But this is 10 million rows.
+This is now taking five seconds.
+And this is to look at titles
+that start with or contain
+[AUDIO OUT].
+So if we were to plot
+this on a little plot,
+you can see as the
+number of rows increases
+by 10x, the amount of time--
+so in the y-axis we have the
+seconds of time elapsed--
+starts to grow
+[? exponentially. ?]
+So this is 10 to the power
+of 7 in the bottom right hand
+corner, right?
+10 to the power of 7, and
+then 10 to power of 3.
+So if we were to
+extrapolate this
+to 10 to the power
+of 8, 9, and 10,
+you can see it's
+going to take not
+[AUDIO OUT] seconds, but rather
+now in the order of minutes
+and then potentially hours as we
+continue to grow our data set.
+So this is very
+hard to scale even
+for something simple like
+data manipulation in Python.
+So the operate-- sorry,
+the [AUDIO OUT] number
+of rows as it increases, or
+the size of the data frame
+increases, the
+processing time in Pandas
+will increase exponentially.
+So what if we were to do this on
+something like Google BigQuery
+instead?
+So if we were to do
+[AUDIO OUT] [? operation, ?]
+but in standard SQL, which
+is the language that's
+used to query data on BigQuery.
+So what we're
+doing here is we're
+doing the exact same
+operation, selecting
+the title of the [AUDIO OUT],,
+the sum of all the page
+views from this particular
+table where the title contains
+the term start.
+And then we're going to group
+by the title and then order
+by the number of requests.
+And then finally
+just [AUDIO OUT]
+100 rows of the data.
+So as we execute this, we'll see
+below this took seven seconds.
+And then we see
+Kickstarter, lean startup,
+any kind of titles that
+contain the word start.
+So [AUDIO OUT] to run this in
+SQL only took seven seconds.
+But if you look at the number
+of rows that is actually
+in this BigQuery table--
+and we can count the number
+of the rows, essentially--
+[AUDIO OUT] that
+there's actually
+5.7 billion rows
+of data in which
+the same script essentially
+is being run on the data set.
+So if we're looking at that,
+this is 10 to the power of 9.
+And if [AUDIO OUT] this
+graph we're be looking
+at the order of minutes.
+So at scale when you're doing
+any kind of data analysis
+and analytics, the
+kind of takeaway
+here is that [AUDIO OUT]
+in Pandas data frames.
+But as your data set
+grows to big data,
+then what you really want
+to do is try to do as many
+of the operations as you
+can where the data already
+currently sits, which
+is often in a database
+or in data warehouse.
+And then once you have
+[AUDIO OUT] that data,
+then you can bring
+that back into Python
+and then do more with it.
+If you want to visualize,
+or create apps, and so on.
+So do a lot of your bulk work--
+the heavy lifting-- should be
+done in something like BigQuery
+where there's operations
+that [AUDIO OUT]
+scale of your analytics.
+So BigQuery is a completely
+fully-managed data warehouse
+in a cloud.
+And what that means is as
+you saw here in this Colab
+[AUDIO OUT],, I didn't have
+to worry about scaling up
+the number of compute
+nodes, skimming out
+the size of my virtual
+machines to run this query.
+This is simply a table
+that exists on BigQuery.
+And as I query it, it
+simply returns a result.
+[AUDIO OUT] a data
+scientist, as a data analyst,
+I don't have to
+worry about what's
+happening in the background.
+I can just run my
+queries, and they can just
+work as if they're working with
+Pandas data frames, as well.
+So it's fully managed,
+it's all in the cloud,
+it's enterprise-ready,
+and so it's
+lots of encryption and
+permissions-based settings
+that you can tweak
+with BigQuery.
+And the reason why that
+BigQuery is so fast
+and also the way that it
+reduces its costs [AUDIO OUT]
+is because of two things.
+Number one is that it
+completely separates
+the idea of storing your data
+in a data warehouse and compute.
+So analyzing the data
+and running your queries.
+And by storing
+[AUDIO OUT] replicated
+across lots and lots
+of nodes, if you will,
+and distributing it across
+lots and lots of nodes,
+it can now do a lot of
+distributed computations
+via the compute, which
+is completely separate.
+And that can be
+[? skipped ?] [AUDIO OUT]
+depending on the kinds
+of queries that you run.
+So at the end of
+the day, BigQuery
+becomes extremely scalable
+and extremely fast.
+And you also have
+different kinds
+of ways in which you
+can work with BigQuery
+that I'll talk
+about in a second.
+But so far, I
+haven't really talked
+about machine [AUDIO OUT].
+So far it's all been around data
+analytics and data manipulation
+with SQL and Pandas,
+but what about machine
+learning at scale?
+Well, let me first preface
+with one of the challenges
+that you see in businesses
+[AUDIO OUT] learning.
+And here I've kind
+of highlighted three,
+but there is, of
+course, many more.
+Number one is it's
+very difficult
+to hire data
+scientists because they
+can be expensive and hard to
+train, or might be-- you know,
+there's not enough supply
+of data scientists.
+Number two is that it
+can be quite complex
+and time consuming to bring
+that data from some large data
+warehouse where, perhaps, a
+lot of your user behavior data
+online from our mobile apps are
+stored and bring it [AUDIO OUT]
+then do a machine learning,
+and then do an analytics,
+can be very time consuming,
+can be very complex.
+And then finally, as you
+build machine learning models,
+each model that you're
+building can take itself
+quite a bit of time.
+So how do you iterate
+creation and training period
+so that you can create
+more experience--
+create more experiments
+to optimize your models?
+And so that's where
+BigQuery machine learning
+comes into play.
+This is probably better.
+Let me describe a little
+bit about BigQuery machine
+learning.
+Essentially, with
+standard SQL in a cloud,
+you can run machine
+learning models.
+Whereas you know
+normally you would
+have to [AUDIO OUT]
+Python and then
+run your machine
+learning models,
+but now you can bring the
+machine learning models
+directly to where the data is
+currently stored, which would
+be potentially in BigQuery.
+The way that BigQuery
+machine learning
+is kind of [AUDIO OUT]
+Google Cloud
+is that if we'd
+start from the lower
+level with machine learning
+frameworks like TensorFlow
+and so on.
+And as you move up to be
+higher and higher abstractions
+from working with deep
+learning virtual machine
+image [AUDIO OUT] flow,
+I'll talk about AI Platform.
+As we go higher and
+higher, then we're
+talking more about application
+developers and data analysts.
+As we go lower and lower, we're
+talking more about machine
+learning engineers
+and data scientists.
+So BigQuery [AUDIO OUT] to
+quickly build machine learning
+models with SQL at ease.
+And there's a lot
+of public data sets
+that allow you to
+help learn and get
+the feel of what BigQuery
+machine learning kind of feels
+like.
+And you get [AUDIO OUT]
+with machine
+learning with these
+public data sets, which
+I'll show you in a second.
+So essentially, with
+BigQuery machine learning--
+well, let me first
+talk about what
+the process for data science
+is like without BigQuery
+machine [AUDIO OUT] and
+what it's like with BigQuery
+machine learning.
+So first, traditionally when
+it comes to machine learning
+pipelines, you first
+identify the problem
+that you're trying to,
+let's say, predict, or do
+some clustering, or build some
+recommendation engines with.
+[AUDIO OUT] pre-processor data.
+You split your data
+into train, testing,
+and validation data sets.
+You then build your
+machine learning models,
+train and evaluate your models.
+Then you have to find somewhere
+to deploy your models,
+and to often actually rely on
+data engineers or application
+developers to help
+them deploy models.
+And then finally,
+you use those models,
+and then you try to
+make predictions.
+With BigQuery machine
+learning, you're
+trying to simplify that a lot by
+reducing the number [AUDIO OUT]
+involved that a data
+scientist or a data analyst
+were required to do.
+So you have the problem.
+You have the data set.
+You run some SQL statements
+to build your machine learning
+model, and that trains.
+It also does evaluation.
+It also does
+[AUDIO OUT] single step.
+And then finally,
+it's up to you just
+to go ahead and
+make predictions.
+So before I move
+too much further,
+I'd like to show you a quick
+demo of BigQuery machine
+learning in action.
+[AUDIO OUT] who've never
+seen BigQuery on Google Cloud
+Platform before, this is
+the sandbox interface.
+It's the UI that allows
+you to write SQL statements
+and basically look at all
+of your tables and data sets
+that you have
+available [AUDIO OUT]
+So I'm in this
+BigQuery environment.
+And to get here, I'm
+on this GCP console.
+On the left hand side, I've
+simply navigated to BigQuery.
+And as I click BigQuery, this
+is the screen that I get to.
+So here in [AUDIO OUT] area,
+I have the query editor.
+This is where I can
+write my SQL statements.
+Below is kind of where I would
+see the results for BigQuery.
+On the bottom left hand side,
+I have all of my data sets
+and my tables that
+I have access to.
+So we have, for example, my
+project for a [AUDIO OUT]..
+I also have access to some
+public databases and tables
+within those, and data
+sets within those, as well.
+And so what I'd like to
+show you is first some of my
+[AUDIO OUT] that show us how
+we can run BigQuery machine
+learning.
+So the first step
+is seeing how we
+can generate a predictive model
+on the New York City trips
+data set for cabs.
+Bring this up to show
+you what it's like.
+So here we have this data
+set for NYC taxi trips.
+And what we're
+going to do is we're
+going to create a model
+to predict the fare
+amount for that
+taxi cab [AUDIO OUT]
+[? off of ?] some of the
+features like where they were
+picked up, where they
+were dropped off,
+and the number of passengers.
+Fairly simple kind of
+example use case here.
+And I'm also running this
+model on a clean training data
+set that comes from
+one of [AUDIO OUT]..
+So if you would like to try
+running this on your own
+as well afterwards, you
+can run BigQuery machine
+learning on essentially any
+of these public data sets
+at scale.
+So it's a great way to kind
+of practice their [AUDIO OUT]..
+It's going to take a
+little bit of time.
+It's going to take
+about a minute, minute
+and a half or so.
+And essentially what
+it's doing, it's
+doing not only pre-processing,
+but also training the model
+and also deploying
+all in one step.
+[AUDIO OUT] that SQL
+statement, hit Run,
+and it's going to
+take a bit of time.
+Because it's scaling
+out across lots of nodes
+and bringing that model back
+together into a single result.
+And that result is
+essentially this table here
+on the left hand
+side, model_linreg.
+So if you look at the
+code here, what I've done
+is I've created or replaced
+a model under this data set
+serverless ML.
+Under this model called
+[AUDIO OUT] progression,
+and I've asked it to choose the
+input label columns as a fare
+amount-- that's kind of what
+we're trying to predict--
+and then the model type
+as linear regression.
+And so with that, it
+generates this [AUDIO OUT]
+underscore linear regression.
+Now, with this table, this is
+essentially the machinery model
+that's been built
+with BigQuery, I
+can now use this to
+make predictions.
+But before we make
+predictions, why don't we
+try to evaluate how well
+this model's performing?
+So let me go [AUDIO OUT] my
+saved queries to my project
+queries.
+Evaluate the model.
+And just going to
+open that here.
+Open query.
+And then I'm running essentially
+ml.evaluate on the model
+that we had just created.
+[AUDIO OUT] and it
+shows us some metrics
+that we can use to infer how
+well this model's performing.
+Like MAE, mean squared error,
+means squared log error,
+median absolute
+error, and so on.
+[AUDIO OUT] we have this
+model, and it's been trained.
+And it's now stored here
+almost as a table here.
+How can we use it?
+Well, we can use this to predict
+on new data that's coming in.
+So as I go back to my
+[? said ?] queries,
+I can open up my [AUDIO OUT].
+And hear what I've done is use
+this function machine learning
+or ml.predict,
+brought in this model
+for model linear regression.
+I select the same data,
+just from a different source
+so that it's not using the
+same as the training data set.
+And then if I run
+it, it will give me
+the predictions for the fair
+amount for these New York City
+Taxi cab rides.
+So we [AUDIO OUT] column
+called predicted fare amount,
+and these are the predictions
+versus the actual data set
+itself.
+Now, it's not doing the best
+since I haven't customized
+and tweaked all the
+hyperparameters,
+but this is just a
+three-step process
+in showing you how to
+[AUDIO OUT] the new models
+with BigQuery.
+So just going back
+here, to summarize,
+so with BigQuery
+machine learning you
+can train and deploy
+machine learning models
+without having to
+move your big data out
+of your [AUDIO OUT] query.
+And then you can
+iterate on these models
+by changing up your SQL
+queries, and you can also
+interface with other
+languages like R and Python
+to help augment some of your
+queries to help increase
+how quickly you train your
+models and [AUDIO OUT]
+parameters to tune
+your models, as well.
+And because you're training and
+deploying all in a single step,
+you can make your
+predictions directly
+without having to worry about
+where to deploy your model,
+and trying to find the right
+person to help you deploy
+your model, or trying to find
+[AUDIO OUT] deploy server that
+helps you run the model.
+It's all done in a single step.
+So you can start making
+predictions using
+the model right away at scale.
+So as data comes
+into BigQuery, you
+can run machine learning on
+that with some of the models
+that you've generated
+and trained.
+So to recap, we build
+and trained models
+with Create Model.
+We've used ml.predict
+to predict the model,
+and we've covered only
+linear regression so far.
+[AUDIO OUT] has support for
+a number of different models.
+Some of them are still
+currently in private alpha,
+but they'll be released
+publicly in some time.
+So k-means clustering is out.
+You can run linear
+regression, [AUDIO OUT]
+and there's going to
+be support for XGBoost.
+Importing TensorFlow models.
+It can do some pre-processing
+or extra pre-processing,
+and for TensorFlow you
+can import classifiers
+and regressors directly
+into where your data is
+stored [AUDIO OUT] as well.
+So kind of covered
+this already, the demo.
+Just to quickly show
+you the different kinds
+of machine learning
+algorithms for those
+who may not be familiar.
+If you're working with
+unsupervised machine learning,
+you may want to look
+at some [AUDIO OUT]
+clustering to see how your data
+is grouped together based off
+of similar characteristics.
+Whereas on the left
+hand side, it's
+more around supervised
+machine learning.
+And under supervised
+machine learning,
+these different
+kinds of, I guess,
+categories of techniques.
+So if you want [AUDIO OUT]
+something that's
+classification, of course.
+You want to try to predict a
+continuous variable, that's
+regression.
+And if you want to build
+recommendation engines,
+that's matrix factorization.
+So all these are supported
+or will be supported
+in BigQuery machine [AUDIO OUT]
+Linear regression,
+fairly straightforward.
+Kind of fit the best line--
+line of best fit.
+Logistic regression, trying to
+predict categorical outcomes.
+So yes or no versus success
+versus failure [AUDIO OUT]..
+XGBoost.
+If you're not familiar,
+it became quite popular,
+particularly through one
+of the platforms, Kaggle.
+So if you're not
+familiar with Kaggle,
+Kaggle's a competitions website
+for data scientists [AUDIO OUT]
+allowing you to test to see how
+well you can predict something
+that a company or
+an organization
+is trying to predict.
+In this case, this is a
+competition to try to, I think,
+detect [AUDIO OUT] ads
+or something like that.
+And the number one model that
+came out of it was XGBoost.
+And this kind of
+generated a lot of news,
+essentially, because the
+first place [AUDIO OUT]
+essentially just
+ran XGBoost as-is
+by changing different
+speeds and getting
+the topmost result or
+the most popular result
+from the XGBoost.
+So XGBoost became very
+popular, and it's a great tool
+for [AUDIO OUT].
+And I think can also be used
+for regression, as well.
+Deep neural networks, of course.
+So building TensorFlow models
+outside and then bringing that
+into BigQuery is a possibility.
+And k-means clustering.
+So again, two [AUDIO OUT] data
+points based off of similarity.
+It can also be used
+to reduce dimensions.
+So if you have lots of
+data points on behavior
+and you want to reduce a number
+of different kinds of actions
+that people are taking on a
+particular website, [AUDIO OUT]
+cluster them into different
+kinds of categories or buckets
+of behavior.
+You can use something
+like k-means clustering.
+And then finally,
+you can you also
+use k-means clustering to
+spot anomalies, as well.
+So as you can see in this
+little animation [AUDIO OUT],,
+this data set, suppose
+it features x and y,
+and you're [? plugging ?]
+it on this graph.
+And as we look at how the
+data is shaped, you could say,
+maybe there's two
+clusters of data.
+[AUDIO OUT] and the green
+and the yellow here.
+But as you increase
+the number of clusters
+that you're looking
+for, maybe you
+might find something
+like this where
+you have green, yellow, and the
+purple cluster of data set--
+of clusters of data points.
+[AUDIO OUT] way it can actually
+be used to spot anomalies
+is if you calculate the
+distance between new data points
+to its nearest cluster and
+then the centroid closest
+to the centroid, that's one
+way to detect how far off it
+is from any [AUDIO OUT].
+And then number two is
+if you actually have--
+let's say we have the x-y
+coordinates extending actually
+beyond this slide towards your
+right and towards, I guess,
+the ceiling.
+If you have a data set in
+a far corner, [AUDIO OUT]
+it could actually
+generate a cluster,
+or you can actually find a
+cluster that only ties itself
+to that particular data
+point towards a wall.
+And so if you have
+clusters, essentially,
+that have very few data points,
+whereas every other cluster
+[AUDIO OUT] thousands
+of data points,
+hundreds of data points, or
+much more number of data points,
+then you know that
+that cluster that
+has very few data
+points actually
+could be some sort of anomaly.
+So different ways
+in which you could
+use k-means clustering to help
+[AUDIO OUT] some of your data.
+Some examples that have
+been used with BigQuery
+ray machine learning.
+I really like this one is--
+so who here uses Stack
+Overflow, whether to help you
+with your code, or
+to ask [AUDIO OUT]??
+All of us.
+And the question
+that Felipe Hoffa,
+so he's a fellow developer
+advocate at Google.
+The question that
+he asked was, if you
+write a question
+on Stack Overflow,
+how long will it take for
+someone to reply to you?
+And how [AUDIO OUT]
+take based off
+of when you submitted your
+question and what kind of words
+you use to submit your question?
+So there's actually an
+interactive dashboard.
+We can actually fill in
+some of these features
+and then try to see how
+long it takes for people
+to [AUDIO OUT] according to
+these particular settings,
+you know, what day is it today?
+Monday.
+OK, what time is it?
+7:00.
+Did you write a long question
+versus a short question?
+Short question.
+What was the first
+word of your question?
+Title.
+Is it why, or how
+[AUDIO OUT] else?
+And does that title end
+with a question mark?
+And so on.
+And using the BigQuery
+machine learning,
+because there's a whole
+lot of Stack Overflow
+questions out there.
+And you use this to quickly
+generate these insights.
+Well, given all these
+settings, [AUDIO OUT] 84.77%.
+And then it'll probably
+take them around 51 minutes
+to respond with 11% chance
+of being downloaded, as well.
+So another kind of funny
+thing I was looking at
+as well [AUDIO OUT]
+what if you changed
+the first word of
+your question title
+to be something different?
+Or if you started
+with why versus
+if you started a question
+with I, how does that change
+results of how likely someone
+will respond to your question?
+And it turns out it
+probably [AUDIO OUT]
+increases by 2x if you start
+your question with the word I.
+So without knowing
+further context,
+maybe that's something to
+keep in [AUDIO OUT] time
+you asking a [? quiz ?] title.
+Using BigQuery machine
+learning, [AUDIO OUT]
+model was exported into
+the cloud somewhere.
+So it's in cloud storage
+under this model path.
+And then within BigQuery
+machine learning,
+he connects to that
+specifying model type is
+equal to TensorFlow
+[AUDIO OUT] path
+is equal to that particular
+location, where his TensorFlow
+model is stored.
+And then he does
+ml.predict afterwards.
+So ml.predict, using that
+model that was created,
+and then selecting
+more data that comes in
+and try to classify [AUDIO OUT]
+with the right news source.
+So here are some of the results.
+With a title like, "Unlikely
+Partnership in House
+Gives Lawmakers Hope
+for a Border Deal,"
+predicted to be New York Times.
+Fitbit's newest [AUDIO OUT] for
+Employees and Health Insurance
+Members, that's for Tech Crunch.
+And so on and so forth.
+So interesting ways in
+which you can kind of
+use BigQuery machine
+learning and TensorFlow
+combined together.
+So kind of went
+through the BigQuery
+was the console that
+I showed you here.
+And what I like about this
+console here personally
+is that it gets you up and
+running with BigQuery very
+quickly.
+So if you have a GCP
+account-- actually,
+if you don't even have a GCP
+[AUDIO OUT] into your Gmail
+and then start using this
+sandbox environment right
+away without having to
+import your credit card.
+So lots of cloud
+providers do that, right?
+So you have to put
+your credit card.
+But with BigQuery,
+you don't have to.
+And you can start querying
+[AUDIO OUT] 1 terabyte
+of data per month for free.
+And then afterwards,
+I think it will
+start asking for a credit
+card because you'll
+be using quite a bit.
+But this is one way
+to use BigQuery,
+but there's many different
+ways to use BigQuery.
+[AUDIO OUT] the reason why
+actually in practice avoid
+using this console is
+because as you kind of saw,
+as I was presenting, trying to
+go back into my saved queries,
+clicking on project queries,
+clicking on this [AUDIO OUT]
+opening that query in editor,
+and then clicking Run,
+that's like seven steps.
+And as a developer,
+that's six steps too many.
+What I prefer to do
+is able to quickly
+create my SQL
+statements, [AUDIO OUT]
+to change it up, and
+see the results in flow
+in a document kind of format.
+So what I prefer to do
+is Jupyter notebooks.
+And so what you
+can do is you can
+run BigQuery machine learning
+directly from a [AUDIO OUT]..
+So this could be
+with Colab notebooks.
+This could be with Jupyter lab
+notebooks or Jupyter notebooks.
+Anything would be fine.
+And you just need to install
+the Google Cloud dash BigQuery
+package.
+There's one for [AUDIO OUT]
+though for Python users,
+it's Google Cloud BigQuery.
+R, there's a different package
+called Big R Query, or--
+I believe.
+And then you input
+your GCP credentials,
+and then you can
+go ahead and just
+start writing your
+BigQuery statements.
+So [AUDIO OUT]
+styles percent signs.
+So using this magic function
+in Jupyter notebooks.
+And then you can run
+your SQL query directly
+and get some results.
+So here I'm just
+looking at the headers,
+and then here I'm look at
+the number of row [AUDIO OUT]
+at the data frame.
+You can export it from BigQuery
+directly into a Pandas data
+frame, and then do more in
+Pandas if you wanted to.
+That's what you'd like.
+And of course, as you
+go into running things
+with BigQuery machine
+learning, because everything
+is [AUDIO OUT] and so far you've
+seen stuff done in SQL already,
+you simply write your
+SQL statements to create
+or replace place your table,
+create or replace your model,
+ML predict, and then you can run
+your linear regression models.
+Logistic regression [AUDIO OUT]
+k-means clustering, and so on.
+So everything can
+be done essentially
+within this notebook environment
+which as a data scientist
+I would very much enjoy using.
+So I can see results
+from one model,
+change up [AUDIO OUT] to the
+results from the new model,
+compare and contrast,
+and keep iterating
+until I find the most
+appropriate model that I like.
+So I have this
+notebook here that
+shows different kinds of
+models, which I won't go into.
+Wanted to cover something
+else here as well.
+But [AUDIO OUT] the gist
+of working with BigQuery
+machine learning
+within these notebooks.
+Now, you can use
+BigQuery, as I mentioned,
+with Python and with R.
+So if you're using Python,
+[AUDIO OUT] on users or people
+who predominantly use Python.
+Hands up for those who
+prefer to use R. OK,
+I started off with
+Python, [AUDIO OUT] R,
+and then back to Python.
+So I use both, but in my mind
+when I'm writing my statements
+I tend to think in R.
+But then in practice, I
+end up using Python a lot more
+just because my colleagues tend
+to use [AUDIO OUT] both my
+previous job and my current job
+people tend to use
+Python a little bit more.
+But any case, for Python
+if you're Python user,
+you can use Jupyter notebooks.
+You can use Colab notebooks.
+And if they're not
+enough, then you
+can scale out to what are
+called AI Platform [AUDIO OUT]
+next about.
+And then if you use R,
+you can use RStudio,
+you can use notebooks that use
+the R kernel, if you'd like.
+And then you can run your
+SQL statements there.
+And then if your
+[AUDIO OUT] data sets,
+then you can use AI Platform
+notebooks on Google Cloud.
+So I'll skip.
+So just a quick demonstration
+of AI Platform notebooks.
+So [AUDIO OUT] Google
+Cloud Platform main page.
+So as you log in, this is
+the screen that you see.
+This is my project,
+polong-bigquery.
+On the left hand side, as
+you navigate this large list
+of services on Google
+Cloud, [AUDIO OUT]
+it's often quite hard to find
+the right product you want.
+But if you scroll
+down, you'll find
+under artificial
+intelligence [AUDIO OUT]
+Ai platform [AUDIO OUT]
+And this is essentially
+generating [AUDIO OUT]
+notebook instances that'll
+help you run JupyterLab
+in the cloud at whatever kind
+of particular VM you'd like.
+So for example, this
+one I've created
+is one that's [AUDIO OUT]
+United States.
+It's using NumPy,
+SciPy, sci-kitlearn,
+the basic libraries
+pre-installed.
+And these are my
+machine-type settings.
+But if I wanted to, I
+could create a new one.
+I could choose one for R
+pre-installed [AUDIO OUT]..
+If I wanted to use TensorFlow.
+The new version, or the
+enterprise version--
+which still I believe
+uses the old 1.x version.
+PyTorch, I'm not familiar
+with this one, actually.
+And then with [? kuta, ?]
+[AUDIO OUT] let's say with R.
+And then it'll give
+you a default setting.
+And then you can say,
+oh, this is good enough,
+or this is not good enough.
+You can customize that,
+click on Customize,
+and then you can
+choose your region.
+[AUDIO OUT] deploy
+your instance to,
+what environment you want to
+use, machine configuration.
+So here.
+It's not only just
+about CPUs and RAM.
+You can also choose
+GPUs, as well,
+if you choose the right
+setting, of course.
+[AUDIO OUT] you can create.
+And as you create it--
+let me go back here--
+you create this little line.
+And you click on
+Open JupyterLab.
+So as you click on it, it
+launches JupyterLab in a cloud
+as if [AUDIO OUT]
+locally on your computer.
+So it's simply a
+link to this URL.
+Launches JupyterLab,
+and now it's
+running on a much larger
+computational resource
+than it would be
+via your machine.
+So that is AI Platform
+notebooks for R and Python,
+and you can run your SQL
+statements with BigQuery
+or generate your BQML
+[AUDIO OUT] from AI Platform,
+as well.
+OK, quick summary.
+BigQuery machine
+learning takeaways.
+You can create,
+evaluate, predict.
+Three simple steps
+that helps you
+train and deployment models very
+quickly where the data sits.
+[AUDIO OUT] in BigQuery.
+The models persist as tables,
+allowing you to deploy
+and train in a single step.
+And it becomes production-ready.
+And rights.
+So before I end, just
+want a quick shout out
+to this little thing that
+some colleagues have launched,
+which is a little bit
+of a BigQuery challenge.
+So you can participate
+in this challenge.
+[AUDIO OUT] It's simply called
+test your data analysis skills
+with the pros.
+You create an
+account in BigQuery,
+you look at the queries
+below, you run those queries.
+And then as you submit
+them, you essentially
+enter yourself into
+a draw where you
+can potentially
+when a special prize
+and be invited to join Felipe
+Hoffa, who is a developer
+advocate for BigQuery,
+for a live hangout session
+or challenge for the
+next week's filming.
+So it's a pretty exciting
+thing [AUDIO OUT]..
+You also get some
+extra GCP credits,
+I believe, by winning
+this challenge.
+So it's very simple.
+You can to Google--
+or goo.gl/bqchallenge
+to learn more,
+and it's a great way to
+just kind of [AUDIO OUT] up
+and running with BigQuery.
+But that is the presentation,
+so thank you very much.
+There's some extra
+resources here.
+There's a subreddit
+for BigQuery,
+so feel free to follow
+that or subscribe to it.
+Twitter handles for
+Felipe and myself
+are [AUDIO OUT] and machine
+learning data science.
+There's also a really
+great book that's
+been recently released this--
+no, last month, in October
+called "Google BigQuery,
+the Definitive Guide."
+So that's a really
+great resource
+for learning more around
+BigQuery and [AUDIO OUT]..
+But aside from that, can
+connect with me on LinkedIn
+or follow me on Twitter.
+Thank you very much.
+[APPLAUSE]

@@ -1,0 +1,1220 @@
+- Hello, welcome to a video tutorial.
+That's what happens on
+this channel, I guess.
+So this is sponsored by Spell.
+Thank you so much to
+Spell for the sponsorship.
+What you're about to
+watch is an edited version
+of a livestream that
+happened a couple weeks ago.
+We have a guest educator and artist,
+Brooklyn based educator
+and artist Nabil Hassein.
+I recommend you check out his website
+linked in this video's
+description and learn more
+about his background and his current work,
+and all sorts of wonderful
+stuff that he is up to.
+So what you're going to
+see, from beginning to end
+in this video, is the process
+for taking a corpus of text,
+training a machine learning model,
+this particular model is called LSTM,
+long short term memory neural network.
+Nabil will explain that
+a bit more in the video
+and offer you some
+resources to learn about it.
+Train a model to learn about that text.
+Train it in the cloud, on Spell,
+you go to spell.run slash coding train
+if you want to sign up for that service
+and follow along with the tutorial.
+And then download the train model,
+then bring that train
+model into the browser,
+into JavaScript, generate
+new text in the style of
+the original text that
+the model was trained on.
+So you're going to see the
+full process for this tutorial.
+Probably, if you've never watched
+any of my videos before
+you're new to coding,
+you might want to watch
+some of my workflow videos
+that show you how to
+set up your environment
+you're going to need, you'll
+need a Python environment,
+you're going to need a code editor
+and know how to run a
+webpage in your browser
+that you're developing
+locally on your computer.
+But I have videos that
+show all that stuff.
+I also have a video that
+introduces the Spell platform
+and gives you some background
+about how that works.
+Alright, so I hope you enjoy this video.
+If you make something with
+this, please share it with me.
+I would love to see what kind
+of crazy, and interesting,
+and wacky, and original, and
+fun, and playful projects
+you are inspired to make
+by learning how to do this.
+Thank you again to Nabil
+for being here to make
+this tutorial and to
+Spell for the sponsorship.
+Okay, bye bye.
+- Alright, hello everyone, I'm Nabil,
+thanks Dan for this great intro
+and thank Spell for paying me to make
+this video or to do this livestream.
+So I have here kind of an outline
+of what I plan to go through,
+so I guess I'll start by going ahead
+and introducing myself.
+So I already said hi, I'm Nabil,
+I live in Brooklyn, I'm a freelance
+technologist, educator,
+do some other things.
+Again, thank you Spell
+for sponsoring this video.
+So this livestream is about how to train
+an LSTM model using the Spell platform,
+so on some remote machine somewhere,
+and then how to use that
+model that we've trained
+using a library called ml5.js,
+which is a browser based front end library
+for using machine learning models.
+So what I'm going to do in this video,
+I've practiced most of this,
+I'm going to try to do a few things
+truly live for you here today.
+I'm going to kind of
+extend a project that I did
+actually at the School
+for Poetic Computation,
+which Dan mentioned last summer.
+The way that that project
+works is there's a bunch
+of random, it'll generate random rhymes.
+Right now, this, what
+I have live on the web,
+what I'm actually showing from my website
+is based on a Markov model,
+so it's not really machine learning,
+it's just probabilistic predicting
+the next character based
+on the previous ones.
+Then you can click this all day
+and it'll keep coming up
+with more and more rhymes.
+The video in general, as you know,
+is about training an
+LSTM model using Spell
+and then using it in the browser
+via a library called ml5.js.
+So let's go ahead and get into it.
+So the next thing, so I'm
+not really going to talk
+to you much in this video about the theory
+of neural networks or
+what is an LSTM really,
+but I figure I should
+probably say something.
+First of all, LSTM stands
+for long short term memory.
+It's a specific type of
+recurrent neural network,
+and what is useful about
+recurrent neural networks
+or RNNs compared to some other types
+of neural networks is the way
+that their architecture includes loops,
+and that can be useful for kind of
+keeping data around in the network,
+so to speak, which is very useful
+for applications involving
+natural language, human language,
+because context matters
+so much in language.
+Predicting the next
+character or the next word,
+you might get a much better prediction
+if you actually remember what was said
+even some while ago, maybe like
+much earlier in a long sentence.
+I have a few quick references here,
+which, by now are a little old,
+but these are what I read to learn
+a little bit about
+recurrent neural networks.
+So there's this blog post
+called The Unreasonable
+Effective of Recurrent Neural Networks,
+and there's this other blog post
+called Understanding LSTMs.
+So yeah, this gives a
+little bit of overview
+of kind of the same stuff
+I was just talking about.
+Humans don't start their thinking
+from scratch every second.
+You understand each word based on
+your understanding of previous words,
+and that's what we want
+our network to do as well,
+which is why we're going
+to use this LSTM model.
+I know that before I had the chance,
+while preparing for this video,
+to watch a video that Dan made kind of
+giving an overview of the Spell platform,
+so a link that video will also
+be added to the video description
+and you can kind of get into a little
+bit more depth about using Spell.
+And I'll also mention some things
+about using Spell as we go through this.
+Okay, so when you want to
+do a project like this,
+the first thing that you have to do
+is get your corpus of data.
+So in this case, since I
+was getting song lyrics,
+I used a site called Genius.com,
+which you might be familiar with.
+It's a popular lyrics website,
+it has some other features too
+but the main thing I use it for,
+and I think most people use it for,
+is reading lyrics.
+So what I'm going to do,
+I'm going to try to do
+everything kind of from
+scratch, so to speak,
+so that you should be able
+to follow along in theory.
+What I'm going to do, this is a
+folder that I used to prepare.
+What I'm going to do is
+just make a new folder
+called Spell Livestream, and I'm going to
+do everything from inside of this folder,
+which just lives somewhere on my computer.
+So right now this folder is empty.
+And so the first thing that
+I'm going to do is just
+clone my generative DOOM
+repository from GitHub.
+There's only actually one file in there
+that I care about so
+maybe not actually clone
+the whole repository, let
+me just get that one file.
+Okay, so I'm just going to
+where this is, it's in data,
+oh but did I push it up?
+I have so many branches here.
+Okay, why don't I use the one
+that I have on my computer.
+So I'm just going to copy a file
+that I have on my
+computer into this folder.
+So where's that, in Spell demo slash
+generative DOOM slash data.
+I have a file called
+input.txt that I just moved,
+that I just brought a copy
+of into my current directory.
+We can just check it out really quickly,
+oops, less input.txt.
+So you can see this is
+just the list of lyrics.
+Okay, this is my corpus.
+It's worth noting that the data set
+I'm actually using for this
+example isn't that big.
+We can check the size
+of it with the command
+line utility du for this usage,
+past the human readable
+flag so that we can actually
+tell how big this file is.
+It's about 308 kilobytes,
+so it's not huge.
+Normally when you're training
+machine learning models,
+kind of, the more data the better,
+but I got all the lyrics I
+could find by this artist,
+this is really the most that I could get.
+So that's what we're going to use.
+Cool, so it's also worth noting
+that you have to clean the
+data before you train it,
+so I can actually go ahead and show
+the code that I used to get these lyrics.
+I'm not going to go into
+full depth, but again,
+it's on my GitHub if you
+want to check it out.
+So let's put it over here.
+So I happen to do my
+scripting using Python.
+You can do this in any language,
+you can do web scripting using Node.js
+or Ruby or whatever your
+favorite language is.
+But I happen to have already used before
+a Python library called BeautifulSoup,
+which is very useful for web scripting.
+It so happens that
+Genius.com happens to keep
+their lyrics and their URLs
+follow a pattern like this,
+genius.com slash the name of the artist,
+which I substituted in here,
+and the name of the song,
+which I substituted in here,
+and then I used another Python library
+called Requests to just go ahead
+and fetch all these different things.
+So this is the basic idea,
+I'm not going to go into full depth,
+but I just kind of hard
+coded a lot of names
+of different songs into here,
+and then I have a main
+loop which basically
+just loops through each artist's name
+because DOOM has actually recorded
+under many different
+names, so I can't just
+use the same artist's name all the time.
+And then the same thing for the albums
+and then finally the songs in order
+to go ahead and just
+fetch all of this data.
+The thing is that when you
+just go directly to some
+lyrics website, like when you fetch
+the data on the page, you end up getting
+a lot of other data that you don't
+really care about in the HTML,
+and so an important step
+is to clean the data
+so that when you're training the model
+you're only training it on the actual
+corpus that you care about
+and you're not training
+it on the angle brackets
+of HTML tags or something like that
+that you don't actually want.
+So again, I think I have most of the code
+that I used to clean it on the GitHub,
+I think it is there, but if not there are
+other resources that you can use
+to learn more about data cleaning.
+Again this video is really about
+training machine learning
+models using Spell
+and then using them in the browser.
+So let's get back to that.
+I wanted to mention Project Gutenberg
+is another resource that
+has lots of free text
+that's in the public domain
+that you can just use.
+Web scraping with Node.js
+is another resource
+that I've happened to look at
+for doing this kind of thing.
+And so although my script.py
+file in my generative
+DOOM repository doesn't show this,
+the original version I
+kind of kept each file,
+kept each song, in it's
+own file of lyrics.
+But it so happens that the machine,
+where I'm going to show you next,
+works with an input that's
+just one big input file,
+input.txt, so I just did
+some boring shell script
+stuff that just concatenate
+all the files together.
+And I've already noted that
+my dataset is kind of small.
+That's everything that I wanted
+to say about getting there.
+So let's kind of get into the main thing.
+So I think I already did this part,
+I created a new directory for all
+this stuff to live in.
+Okay.
+So let's go ahead and
+go on to the next step.
+So it's a good habit, I
+think, to use virtualenv.
+I use it with Python two, I understand
+things have kind of moved
+on a bit with Python three,
+but I'm still on the Python two,
+so I'm going to use this virtualenv thing
+to kind of keep my dependencies isolated.
+Although I think there
+should actually only be one.
+But let's go ahead and do that anyway.
+So I have some other
+virtualenv active right now,
+it so happens, I see that from
+my command prompts over here.
+So I just ran this command
+deactivate to get rid of that.
+I'm just going to clear the screen
+to make it a little less noisy here.
+And then what did I want to do?
+I wanted to create a new virtualenv.
+And what did I want to call it?
+I want to call it spell video virtualenv.
+Okay.
+So it's setting up a
+new virtual environment,
+which lives inside of this folder here.
+And the way that you use Python virtualenv
+to get it active is you say, what is it,
+spell video virtualenv
+slash bin slash activate,
+we'll have to say source at the beginning.
+Source and then the path
+to this activate script.
+Okay, alright.
+And now you can see my prompt changed
+because I happen to have
+my terminal preferences
+set up that way so that I can
+remember what virtualenv I'm in.
+Okay, so I did that.
+Oh yeah, I already went
+and got that input file,
+which I should probably push it up,
+I haven't actually
+pushed up to the GitHub,
+like the one file version, but you know,
+life is messy.
+But what I am going to
+get the proper version
+of from GitHub is this repository
+called training LSTM and so I'm just
+going to go ahead and clone that,
+and let's actually go and take a look
+at that repository and its read me.
+Cool, so you can see that this,
+you can see from the description of this
+repository training in LSTM network
+and using the model ml5.js that it's
+highly relevant to what
+we're doing in this video.
+The directions in this
+repository's read me
+are based on what you would want to do
+if you were training
+the machine learning model
+locally on your own computer.
+So if that's what you want to do,
+you can go ahead and follow this,
+but since this video is
+about how to use Spell,
+that's what I'm actually going to do,
+so I'm not going to follow
+these directions exactly,
+but we are going to follow along
+with certain parts of it.
+Okay, so I've already
+cloned this repository,
+right, that was the
+last command that I ran,
+so I'm going to go ahead and
+enter into that repository.
+And then what I want to do is create
+a directory inside of here called data.
+And then I'm going to
+go ahead and move that
+input.txt file into that data directory.
+Or a copy, I'd rather.
+I guess I could've deleted it in
+the other directory, but whatever.
+Okay.
+Okay, great, so this is the setup.
+We have a repository.
+We have this repository
+locally that is going to
+help us train an LSTM
+network using TensorFlow.
+And then we're going to,
+after we train the model,
+we can use it in ml5.js.
+So we're pretty much done with our setup,
+let's get into actually
+training the model.
+So again, this is the
+link that you can use
+to sign up for Spell
+if you haven't already.
+It so happens that I have already,
+so I should be logged in here,
+let me just make sure I
+haven't been logged out.
+I haven't.
+So I'm in here in Spell.run,
+and it gives me some information
+about how to install Spell,
+how to log-in with Spell,
+there's a little quick step guide
+that you can check out
+with some of the resources
+that I used when preparing for this video.
+So yeah, like I mentioned, that other
+training LSTM repositories
+tells you how to run locally,
+but for us all we really do
+need to install is Spell,
+so I'm going to go ahead and
+do that with pip install Spell.
+And it's going to go ahead and fetch Spell
+and whatever things Spell depends on
+from the Python packing, Py
+Py, whatever it's called,
+it's going to just go ahead and get that.
+Okay.
+And then once it's done
+installing I'll be able to log in.
+Alright, I can remember it.
+So, you see it greeted
+me, hello Nabil Hassein,
+so that's me, so I am logged in as myself.
+And if you ever forget who you're
+logged in as for some reason,
+the Spell command has
+a lot of sub commands,
+like Spell who am I will
+tell you who you are.
+I'm just going to go ahead and get started
+with training this model,
+and the first thing that we need to do
+is to upload the file to Spell, okay.
+So what I want to run
+is this command here.
+Spell upload the path on my
+local computer of the file,
+and then I want to give it a name
+of where I'm going to upload it to.
+Okay, so I just got to place that command.
+Spell upload my data slash
+input.txt to this destination.
+Oh it's actually going to prompt me
+for the destination in a minute.
+It doesn't want that yet but it's
+going to want that momentarily.
+So let me just say spell upload
+the name of the file
+that I want to upload.
+And now it's asking me
+for the name of the upload
+that I was trying to
+give a little bit early.
+And it tells me that the file,
+this is the path to it
+on my local computer
+that I'm typing on right
+now will be accessible
+at upload slash name slash input.txt.
+And that's the name, oops, oops,
+just part of it is the name
+that I want to put in so I'm just going to
+delete the part I don't want and put in,
+what was it, Nabil spell livestream DOOM.
+Okay.
+Total upload size, 307k,
+same as what we saw,
+or at least very close to what we saw
+when we ran the du command earlier.
+And the upload completed.
+So that's great.
+So what we're going to do now,
+this is kind of the most,
+probably most complicated command that
+we're going to run but
+it's really the only one.
+This is really what's saying to go ahead
+and actually run the Python script
+that we downloaded from train,
+that training LSTM git repository.
+Okay, we're going to run that with Python,
+this train.py script with
+the data dir set too,
+what I happen to call data,
+that the name of the folder
+where I put that input.txt.
+And I'm going to run it and
+I'm going to mount the data,
+I'm going to mount the folder that I had
+just created by uploading
+that file as the name data
+so that it can understand
+this data directory.
+Okay, so I should get, I think,
+one error when I do this,
+and I'll talk about why.
+Okay, spell run mount
+dash dash mount upload
+slash Nabil Spell DOOM,
+ope, I called it livestream,
+in my notes I didn't quite update
+from when I practiced so let
+me go ahead and fix that.
+Okay, let's see.
+Okay, so let's try that.
+And it tells me that there's some
+untracked files in this repository
+and they won't be available on this run.
+Continue the run anyway?
+No, that's really the
+file that I care about.
+So Spell encourages us to use the Git
+version control system to make sure
+that the data that we're
+training on is checked in,
+and that's very good for reproducibility,
+if we want to go back later and understand
+what was going on and what was there,
+so I'm going to go ahead
+and kind of follow this
+adjusted workflow so I'm going to go ahead
+and git add dot, or I guess I could
+git add data, whatever.
+That's the only thing, same effect
+in this particular case, and I'm going to
+say add data dot input.txt
+file of DOOM lyrics.
+Okay.
+And now, having done that,
+if I run the same command it won't give me
+that same warning since the files
+are now tracked instead
+of being untracked.
+Okay.
+Let me go ahead and start to do this
+and then I'll go ahead and
+mention that other thing
+that I said I was going to mention.
+So I'm just going to press up a few times
+and just go back to my history
+to run the same command again.
+Spell run, I'm mounting that data folder
+that I uploaded to be called data.
+Oh I put it in the wrong order.
+- [Dan] So one thing to mention, I think,
+is that if you're going
+to mount the data file,
+you don't actually have to commit it.
+- Oh.
+'Cause otherwise if you pull it
+from there you can do either.
+- Oh, I see.
+- [Dan] So if you don't
+want to upload it with git,
+then you can do the mounting thing
+that you're showing now.
+- Okay, yeah, oh right, so I'm kind of,
+so there's more than one
+way to work with Spell,
+and I think I kind of conflated
+two of them a little bit.
+So, yeah, I didn't actually need to do
+the git commit because of the way
+that I'm doing this because
+I uploaded it before,
+and that will also kind
+of give some of the same,
+reproducibility benefits
+because Spell will
+keep a record of what we uploaded,
+but it doesn't hurt to
+get committed either.
+Let me just fix that typo.
+- [Dan] In this case, it's such
+a small file it doesn't really matter.
+- Yeah.
+- [Dan] If you were working with a huge
+gigabyte file or something,
+you'd want to upload that separately
+without having to commit it also.
+- Right, yeah, because Git isn't always
+the best for dealing with large files
+which is why there's tools like Spell
+and tools like, what is it, Git,
+whatever, there's a bunch of tools.
+Cool, so let me just go
+ahead and fix that typo.
+I should fix that on my notes as well.
+Tells me everything is up to date
+because I did make, like, a commit,
+although, like Dan mentioned,
+I didn't really have to.
+Tells me it's casting spell number 16,
+so I happen to have used
+Spell about 15 times before.
+Tells me I can stop viewing the logs
+with control C, tells me it's requesting
+a machine and building and mounting,
+and the run is running.
+And, so, this is still running,
+and like it told me before,
+I can just get out of the logs in my
+local terminal with control C,
+but this is running on a remote machine
+that Spell has provisioned
+and set up very nicely
+for me so I don't have to worry about it.
+So I'm not actually stopping the run
+from happening when I control C,
+I'm just stopping the logs
+from appearing in my own terminal.
+If I want to check out those logs,
+I can say Spell logs 16,
+and they'll start appearing again.
+And there's also some other commands
+that it told me about,
+like I could kill it
+with Spell kill whatever,
+but I don't want to,
+I'm going to let it keep running.
+And besides checking out the logs locally
+with Spell logs the number of the run,
+you could also come over
+here to this Spell Web UI,
+and check out different information
+about the run in here.
+But as you may notice from this video,
+I tend to have a preference
+for the command lines,
+so I'm going to keep doing
+things mostly that way.
+Cool.
+So let's see.
+Oh yeah, so one thing I did want to
+mention was the parameters,
+or what is sometimes
+called the hyperparameters
+of the network, so let's just go back
+to this git read me really quick.
+So yeah, like I said, this gives you more
+information about how
+you would run it locally,
+including how you can
+pass additional flags
+that I didn't bother passing to control
+more of the characteristics
+of the network,
+like its size, how many
+layers they are built
+into the sequence, and
+various other things
+that you can read more
+about in this repository.
+They have here some
+recommendations for what
+you might want to select
+for your hyperparameters
+according to the size of
+your training dataset.
+Because my training dataset is so small,
+I decided the defaults were probably fine.
+The next thing that I wanted to talk about
+was the difference between running
+on CPU versus GPU.
+So I imagine this might be
+review for many viewers,
+but I am a teacher, so I'm always
+a fan of just reviewing material.
+So the CPU is the central processing unit
+of your computer that has maybe a little
+bit of parallelism, but for the most part
+is best at running things
+sequentially, very fast.
+And the model of computation is a little
+bit different from that of GPU,
+which at some point stood for graphics
+processing unit and maybe still does,
+but maybe that acronym's
+been retired by now
+because GPUs actually have
+very many applications
+other than graphics, including training
+neural networks on text, for example.
+GPUs, historically they got, I think,
+that name because each pixel on a screen
+for the most part is
+independent of each other one
+and so can be computed independently,
+and so a GPU is much more highly
+parallel compared to a CPU.
+It's not going to be as fast at
+completing like one single task,
+but it is very good for displaying things
+on screens and it also happens to be
+very good for training neural networks.
+So in the last command
+that I ran over here
+on the command line to
+train the neural network,
+this is running by a CPU,
+and what I could do if I wanted to
+instead run my code on a GPU
+is just tell it that
+that's the type of machine
+I want by adding this dash
+dash machine type flag.
+And the machine type that
+I'm going to use is K80,
+okay, so where does this K80 come from?
+Well, if you check out
+spell.run slash pricing,
+you'll see some information about how much
+Spell charges for different
+types of machine types
+according to your needs
+for whether this GPU
+or that CPU is the best
+for your particular task.
+As you can see there's
+a few different ones,
+CPU, CPU big, you know,
+all these things, K80.
+K80 happens to be one of the
+less expensive GPU units,
+so it's good enough for my purses
+and that is what I'm going to use.
+Okay, so I go ahead and run that command.
+Everything's up to date,
+it's casting spell number 17,
+we see a very similar bit
+of output as we did before
+as it gets ready to
+start training the model.
+Okay, the run is running,
+so in a moment we should
+start seeing the logs, after
+it reads the text file.
+Alright.
+So now this run is running,
+and I don't know how obvious this is
+if you're following
+along, but it's actually
+noticeable at least for me that
+this is happening a lot faster.
+This model is being trained a lot
+faster via the GPU than the CPU one was.
+So the CPU one got a head start,
+but I still expect that the GPU one
+will actually finish substantially faster.
+We see we're already at
+like 413 out of 6,000
+iterations that it's going
+through to train the model.
+Like if we check in on the previous one,
+let's see how far it is.
+Yeah, actually, okay, no, I mean
+the head start it had was pretty big,
+but you can see the GPU
+one is moving faster.
+Like, if we actually go in,
+because like I mentioned before,
+I've had a few practice runs here before,
+we can look at a few
+ones that I did before.
+Yeah, these were kind of
+my first two practice runs.
+Using a subtly different
+model, you can see here,
+but this one on CPU took
+close to five hours,
+and on GPU it took only a little
+bit more than 15 minutes.
+Yeah, so GPU is faster for
+this particular use case.
+Okay, so just for the sake of time,
+I'm going to grab a
+model that I had already
+trained before rather than
+just waiting for this one
+to go all the way through,
+although we could.
+We could do that, I
+mean we can actually use
+this model later if people
+are interested in that.
+But so what I want to do to grab the data
+from Spell is to run this command here,
+spell cp runs slash the number
+of the run slash models.
+Okay, that's how I'm
+going to fetch that data.
+Okay, so I'm just going to cd up here,
+now I'm kind of in my home folder of all
+the different things that I'm kind of
+grabbing from here, grabbing from there
+to put together into this demo.
+I'm going to go ahead and
+run spell cp, it was 15,
+right, let me just look here again.
+Yeah, yeah, so you can see this is using
+that same training LSTM
+I was talking about,
+it completed in about five minutes.
+Actually I guess this one should
+complete pretty quickly, too.
+And that was a practice
+run that I did just
+a few minutes before
+this livestream started.
+So I'm going to spell cp
+runs slash 15 slash models.
+And it's copying 10 files
+that are from there.
+My ls, my ls data, it
+remembers the same data
+directory that I passed
+in before as the name.
+And these 10 files
+constitute the model, okay,
+I'm not really going
+to go into depth about
+what are these files and what's in them,
+but yeah, if you're following along
+you could poke into them and check it out.
+Cool, so we've trained the model.
+We've used Spell to train a LSTM model
+on a corpus of data that we obtained,
+and now that we have the model,
+let's use it for something.
+So I'm going to borrow and then modify
+an example from this repository here,
+on the ml5.js GitHub account they have
+a repository called ml5 examples.
+So there's a whole collection of examples,
+there's a bunch of them.
+You can find out a little bit about how
+it's organized and some other
+stuff from their read me.
+I'm going to use one in the p5js folder.
+We are worried about LSTMs.
+Yeah, that interactive
+one is also interesting.
+That's more
+I mean, it's more interactive,
+I'm not really going to describe it.
+We're going to use the
+non-interactive version, LSTM texts.
+And we have here just a few files.
+So they actually have a pre-trained model
+that I'm going to just ignore and not use
+because we're going to use our model
+that we just trained instead,
+but what I am going to do is just fetch
+these two files, this HTML
+file and sketch.js file.
+And because this repository's big
+and I just don't want to wait to clone it,
+I'm literally just going to fetch
+these two files and nothing else.
+Okay.
+So what I'm going to do is just,
+we'll create another directory, why not.
+Ml5 LSTM example,
+and I will change my current
+directory to be in there.
+Let me just clear my
+screen for clarity's sake,
+and then I'm just going to use the command
+line program wget, which
+will just fetch the raw file,
+I did have to click raw on GitHub.
+And we'll fetch it onto my local machine.
+So I do that,
+and then I go back and I do
+the same thing with sketch.js.
+I just find this one raw file,
+copy the URL and I use the program wget
+to download it locally.
+Okay, so now if I list what's here,
+I have these two files,
+index.html and sketch.js.
+So let's take a minute to check out,
+we'll read the files themselves
+and we'll also use them.
+So what I'm going to do is just run
+a program called http server,
+which you could install if you want,
+if you don't already have it with,
+what is it, mpm install
+dash g http dash server.
+You can use any of it, if you're used
+to using a different web server,
+anything that will serve up index.html
+in your local folder is fine.
+So it tells me where, tells me
+the URL I can go to on local host
+to check this out so
+I'm going to go there.
+Says LSTM Text Generation Example,
+this example uses a pre-trained model
+on a corpus of Virginia Wolf,
+although I'm actually not doing that,
+so I might change that.
+So let's actually go ahead
+and go into this file
+and also look at the JavaScript file.
+So let me, I'm a iMAX user,
+I'm just going to go
+ahead and open up repos
+and I call it Spell livestream.
+So these are the two files that I had
+just downloaded a moment ago.
+It's index.html and sketch.js,
+so let me open those up in a way
+that's going to be a little
+bit more readable for you.
+My notes before were so, I guess
+let me do it over here then.
+The folders don't really bother
+the video as much as this one does.
+Okay, so we have here an HTML document,
+which relies on p5
+and ml5 as the libraries
+that are being used
+and pretty much nothing else.
+Alright, so this example uses
+a pre-trained model on
+a corpus of MF DOOM.
+So let's just make this nice and accurate.
+Okay.
+It says the meaning of life is,
+which isn't something
+I remember DOOM saying,
+but whatever, we can leave that
+as the seed text for now.
+That's an input field in HTML,
+so we can just change that anyway.
+So we have a few sliders for how long
+we want the output to
+be and the temperature,
+which we'll talk about
+more a little later.
+And what's really interesting
+is the sketch.js file,
+so let's actually take a look there.
+It says open source software,
+I can just do whatever I want with it,
+which is great.
+Okay, so we declare a few variables here,
+so again, this video isn't about p5,
+there's kind of a lot of things
+that I'm touching on but not getting into,
+but p5 is a really cool library,
+I encourage you to check that out
+if you're not familiar with it already.
+It's great for a lot of artistic coding,
+I've used it for some
+other projects as well.
+There's kind of two main functions in,
+well, yeah, let me not really get into p5.
+We're going to start
+with the set up function.
+Now I'll just say that p5 will run
+this set up function
+for us at the beginning.
+And it says create the LSTM generator
+passing it the model directory.
+I don't have anything
+called model slash wolf
+'cause I didn't clone
+that whole repository,
+so what I need to do
+is make sure that this,
+when it's generating,
+like when it's creating
+the LSTM that we're going to use,
+I need to make sure that this is pointing
+towards the proper path
+where we have our file.
+So let me go ahead and just
+remind myself on the command
+line of where I am keeping everything.
+Let me just control C out of the server
+and I'll start again in a minute.
+So let's see.
+Let me ls up here, I have something called
+data up there, which had
+what I wanted, right?
+Yeah, those are the files from my model.
+So why don't I just copy that
+folder into here, where I am.
+I have to say, what is it, lower case R
+or capital R for our cursive copy.
+I guess lower case worked.
+So now when I ls here,
+besides the two files
+that I fetch from GitHub using wget,
+I also have all those data
+files that are right here.
+So what I'm going to do is I'm just
+going to change this to say data,
+because that's where my data is, okay.
+And then here, there's some other code.
+This is really about the user interaction
+of like what happens when sliders
+get moved around and buttons get clicked,
+so I'm not really going to go over that.
+What we will just take a minute to look at
+is this generate function, which again,
+not going to go all the way through,
+but it lets you know
+it's generating stuff,
+like just so that the user knows something
+is happening, grabs the
+input from the seed text.
+It uses these parameters,
+temperature and length,
+and then the ml5.js
+library does really all
+the heavy lifting for us,
+we just kind of cull this
+lstm.generate function
+with our data and patch up this call back
+function which will go
+ahead and update the dom,
+kind of update the HTML
+page when that function
+is done running, done generating the text
+that the model has predicted
+based on the input seed.
+Okay.
+So you can see this is
+a pretty short file.
+Didn't go through every detail,
+but it's on GitHub, you can check it out.
+You saw I really just made
+one small change to it.
+Cool, so let me go back to my notes.
+I'm pretty sure I know
+what I want to do next,
+but it's always good to be sure.
+That's the path, yup, I
+already told you that.
+I did that.
+Alright, so let me actually go ahead
+and run the server again.
+Okay, just refresh the page,
+you can see it's updated with this.
+Okay, the model's loaded,
+we can click generate.
+And it, I mean, I don't know how many
+people listen to DOOM, if you don't
+maybe you can just take my word for it.
+This sounds a little bit
+like something he might say.
+So we can adjust the
+length, make it longer,
+or make it shorter,
+and we can use this
+temperature thing, like,
+the temperature is
+something like intuitively,
+it's kind of like the
+randomness of the text.
+The higher the temperature,
+the less random it will be,
+kind of the more derivative it will be
+of the original text,
+and if you turn it up
+very high it starts to become very likely
+that you get kind of direct quotes
+from the original corpus.
+If it's lower, it is maybe a little
+bit more chaotic, so to speak.
+And I think that can generate things
+that are a little bit more out there
+and more interesting or original.
+But if you start to do it maybe too low,
+you might start to get
+kind of just nonsense.
+It might not really make
+very much sense at all.
+Especially if you get like really low.
+Oh, it might or it might not.
+So yeah, I mean, okay, I'll withhold
+my opinion on these
+generated lyrics for now.
+This is an art critique session.
+Alright, so yeah, I mean,
+that's really the main thing,
+so I mean if I was going to go ahead
+and reproduce my original project,
+what I would do now is pull in another
+dependency which is the
+pronouncing library,
+and then I would've,
+what I should've done,
+maybe I can do this now, is trained
+the model backwards, like
+if we actually look at
+this input.txt you can see
+that these lyrics are forward
+and so the model does that also,
+so that's something that I would
+want to do is just reverse that input
+and train the model backwards.
+And then I can use the pronouncing
+thing to go backwards and so on.
+But, yeah, I think instead of doing that
+I think what might make more sense
+would be for me to take any questions
+from the people who are on the livestream
+because that is pretty much, yeah,
+that's pretty much that.
+So we've got through what is LSTM,
+getting data, setting things up,
+training the model using Spell,
+and then using the model in ml5.js,
+so that is what I had
+prepared for you today,
+and I look forward to any questions.
+- Thank you so much Nabil,
+for this wonderful tutorial.
+Again, thank you to Spell
+for the sponsorship.
+If you make something with this,
+please share it with me,
+I would really love to know about it,
+and I'll see you in future tutorial.
+Many more machine learning, ml5,
+Python-y, TensorFlow-y
+things to come I hope.
+Goodbye.
+(upbeat music)

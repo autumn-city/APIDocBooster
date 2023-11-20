@@ -1,0 +1,308 @@
+- Hello, everyone, and welcome.
+My name is James,
+and I'm a software engineer
+on the PyTorch team,
+working on Torch.fx.
+Today I'm going to be
+introducing Torch.fx,
+a new program
+transformation system
+we have developed
+for PyTorch programs.
+So a little bit
+about the agenda today.
+First, we're going to cover
+some background.
+What are program
+transformations,
+and why do we need them?
+Second, I'm going to cover
+the motivation of Torch.fx.
+Third, I'll give an overview
+of Torch.fx
+and show you how you can use it
+in your PyTorch workflows.
+Finally, I'm going to present
+a case study
+of the different use cases folks
+in the PyTorch ecosystem
+have found for Torch.fx.
+So first, let's start
+with some background.
+Why do we need
+program transformations?
+PyTorch's Python-based API
+is great for code authoring.
+It allows you
+to use the flexible
+and friendly Python language
+and allows you to access
+the entirety of the Python
+library ecosystem.
+On the other hand, sometimes
+we want to use PyTorch code
+in a different way from how
+it was authored in Python.
+Examples of this
+include model quantization,
+applying optimizations to
+the code to make it run faster,
+or moving the code
+to a specialized accelerator.
+These transformations often need
+to see the code in a form
+other than the Python code.
+Historically,
+deep learning frameworks
+and compliers have consumed
+graph representations
+of programs
+for such transforms.
+In summary, we would like
+to have a system
+that can allow modifications
+to PyTorch programs
+after they have already
+been authored.
+So how can you do
+such transformations
+in PyTorch today.
+One option is to swap modules
+in the nn.Module hierarchy
+built into PyTorch.
+This works in many cases,
+but sometimes
+the module boundaries
+do not line up with the places
+that you want to transform.
+In addition,
+you cannot transform code
+within the forward method
+with this technique.
+This includes calls
+to PyTorch operators,
+which are functions,
+rather than modules.
+A second technique
+is to use TorchScript.
+TorchScript can be used
+to capture a graph
+representation of the program,
+including the operators.
+And this graph representation
+can be modified
+to implement transformations.
+On the other hand,
+TorchScript is optimized for
+serialization and deployment.
+So the way it represents
+programs is very complicated.
+Its representation supports
+many Python features
+and it optimized for use by
+experienced compiler engineers,
+so it is often difficult
+to use for many developers.
+So there are existing techniques
+that you can use
+to modify programs in PyTorch,
+but we built torch.fx to make
+this process even easier.
+Let's dive into that.
+With torch.fx,
+we want to provide a system
+that enables capture
+and transformation
+of PyTorch programs
+after they have been written.
+We strive to follow
+a few principles
+in the design of torch.fx.
+First, it should be
+Python-native.
+It should consume
+and produce Python programs,
+and its APIs should
+be written in Python.
+Second, it should be
+simple to use.
+It should probably a simplified
+program representation
+and simple APIs
+for the end user.
+Finally,
+it should be lightweight.
+The user should be able
+to use torch.fx
+with their
+existing PyTorch installation.
+The user shouldn't have
+to learn or compile C++
+to use this system.
+So let's cover what torch.fx
+actually is and how to use it.
+Torch.fx has three
+main components.
+First, it has a symbolic
+tracing mechanism
+to capture the program.
+Second, it has an intermediate
+representation,
+or IR, that is a data structure
+that represents the code
+of the captured program.
+Finally, it has Python
+code generation
+to return this IR back
+to the Python ecosystem.
+This is the typical pipeline
+used in torch.fx,
+but each of these components
+can be used separately as well.
+Torch.fx uses a technique
+called symbolic
+tracing to capture
+the program.
+It feeds fake values
+through the program
+and records the operations that
+happen on those fake values.
+You can see in the code example
+to the right
+that the fx.symbolic_trace
+API exposes this functionality.
+Just pass in a function
+or module to this API,
+and fx will capture
+it using symbolic tracing.
+Note that symbolic tracing
+only supports DAG programs,
+that is dynamic control flow,
+such as loops
+or if statements that depend
+on dynamic values
+are not supported.
+Neural networks
+are most often DAG programs,
+so we find this is
+a reasonable trade-off,
+as it simplifies
+the graph representation
+for transformation purposes.
+Nevertheless, symbolic tracing
+is configurable
+via the tracer class.
+A custom tracer
+can be used to specify
+the level of representation
+of the capture,
+or leave untraceable parts
+of the program as opaque calls,
+and allow the program
+to be captured.
+Once a program is captured
+by torch.fx,
+it represents
+the captured operations
+in a directed graph
+or DAG representation.
+This representation
+records the functions,
+modules, and methods called,
+and the data dependencies
+between them.
+Nodes in the DAG
+are the operations,
+and the edges are the values.
+This DAG representation
+has convenient APIs
+to add, remove, reorder,
+or replace operations,
+allowing you to transform
+the code as you please.
+You will see on the right
+a string representation
+of this graph structure,
+containing the relu
+and neg operations
+that were observed
+during tracing of this function.
+Finally, torch.fx provides
+Python code generation
+from this IR.
+You will see on the right
+the code
+that is generated from the IR
+we saw previously,
+similarly containing the relu
+and neg operations.
+Since torch.fx emphasizes
+interoperability with Python,
+transformed programs
+are returned to Python
+through this mechanism.
+Transform code is wrapped
+in an nn.Module subclass
+called graph module,
+and the generated code
+can be called
+just like any other
+nn.Module instance,
+or passed to other systems,
+such as TorchScript.
+Now let's take a look
+at a few of the use cases folks
+have found for torch.fx.
+First, torch.fx is being used
+in the prototype
+fx graph
+mode quantization tool.
+Torch.fx provides the ability
+to programmatically modify
+the operations
+and the parameters of a model,
+so it is a good fit
+for quantization,
+which modifies both.
+Second, torch.fx is being used
+for optimization,
+such as fusion
+and operations scheduling.
+FX can be used to,
+for example,
+fuse convolution and
+BatchNorm operations together,
+or schedule asynchronous
+versus synchronous
+or local versus
+remote operations
+for maximum parallelism.
+Third, torch.fx has been used
+for various analyses.
+These include analyses like
+shape propagation or inference
+or module simulation
+to determine the performance
+characteristics of a model
+without using actual hardware.
+Finally, torch.fx is being
+used for device lowering,
+top optimize model execution
+on various hardware devices
+and in optimizing
+compiler back ends.
+What will the next use case
+on this list be?
+Will it be yours?
+Please check out
+our documentation at the link
+to the right
+and try out torch.fx
+for your program
+transformation needs.
+And please feel free
+to ask questions
+on the discussion forms
+or report issues
+on the GitHub issue tracker.
+Thank you.

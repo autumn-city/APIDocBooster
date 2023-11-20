@@ -1,0 +1,280 @@
+hi everybody welcome to a new machine
+learning from scratch tutorial today we
+are going to implement the naive Bayes
+classifier using only built-in Python
+modules and numpy so the naive Bayes
+classifier is based on the bias theorem
+which says that if we have two events a
+and B then the probability of event a
+given that B has already happened is
+equal to the probability of B given that
+a has happened times the probability of
+a divided by the probability of B and if
+we apply this to our case then our
+formula is the probability of Y of our
+class Y given the feature vector X is
+equal to the probability of X given Y
+times P of Y divided by P of X and where
+X is our feature vector which consists
+of several features and now it's called
+naive bias because now we make the
+assumption that all features are
+mutually independent which means for
+example if you want to predict the
+probability that a person is going out
+for a run
+given the feature that the sun is
+shining and also given the feature that
+the person is healthy then both of these
+features might be independent but both
+contribute to this probability that the
+person goes out so in real life a lot of
+features are not mutually independent
+but this assumption works fine for a lot
+of problems and with this assumption we
+can split this probability in into the
+and use the chain rule so we calculate
+the probability for each feature
+given why and multiply each and then we
+multiply it with P of Y and divided by P
+of X and by the way and this P of Y
+given X is called the posterior
+probability P of x given Y is called the
+class conditional probability and P of Y
+is called the prior probability of Y and
+P of X is called the prior probability
+of X and now we want to make a
+classification so given this posterior
+probability we want to select the class
+with the highest probability so we
+choose Y which is the arc max of Y of
+this posterior probability and now we
+can apply our formula and since we are
+only interested in why we don't need
+this P of X so we can cross this out and
+then our formula is this so why is the
+arc max of and then we multiply each
+class conditional probability and then
+the prior probability and then we use a
+little trick since all these values are
+our probabilities between 0 and 1 so if
+we multiply a lot of these values then
+we get very small numbers and we might
+run into overflow problems so in order
+to prevent this we apply the lock
+function so we apply the lock for each
+of these probabilities and with the lock
+or the rules for logarithms we can
+change the multiplication sign into an a
+plus signs and now we have an addition
+here and now we have this formula that
+we need and now we need to come up with
+this prior probability so the prior
+probability is just the frequency
+we can see this in a second and then
+what is this class conditional
+probability P of X given Y and here we
+model this with a Gaussian distribution
+so here we can see the formula so this
+is 1 over and then the square root of 2
+pi times the variance of Y times the
+exponential function of minus X minus
+the mean value squared divided by 2
+times the variance and here we see a
+plot of the Gaussian function for
+different means and variations no
+variances so this is a probability that
+is always between 0 and 1 and yeah with
+this formulas this is all we need to get
+started so now we can start and
+implement it and first of all of course
+we import numpy as NP and then we create
+a class called naive bias and that it
+doesn't need an init method so we can
+implement the fit method first so we
+want to fit training data and training
+labels and then we also want to
+implement a predict method so here we
+predict the test labels no test samples
+and now let's start so let's start with
+the fit method so what we can do here is
+so we need the priors and we can
+calculate them in this fit method and we
+need the class conditional so here we
+need the mean for each class and the
+variance for each class so we can also
+calculate these so let's do this so
+let's get the number of samples and the
+number of features first and by the way
+our
+put here the X is an umpire nd array
+where the first dimension is the number
+of samples and the second dimension or
+the number of rows is the number of
+samples and the number of columns is the
+number of features so we can unpack this
+and say this is X dot shape and our Y is
+a 1d row vector also of size the number
+of samples so this is our input and now
+let's get the unique classes let's say
+self classes equals numpy unique of Y so
+this will find the unique elements of an
+array so if you have two classes 0 & 1
+then this will be an array just with 1 0
+& 1 Y in it and 1 1 in it then let's say
+the number of classes equals the length
+of this self classes and now let's in it
+or in it mean variance and priors so
+let's say self dot mean equals and we
+want to init them with zeros at first
+and it gets the size it has number of
+classes and number of features as tuple
+here so it also for each class it has
+the same number of for each class we
+need means for each feature and we want
+to get this I'll give this a data type
+of float numpy dot float64 and we want
+to do this with
+same for the variances so let's say self
+dot VAR equals this and then we want to
+do self dot priors equals and pete of
+zeros and here for each class we want
+one prior so this is just a 1d vector of
+size number of classes with a data type
+offs and P dot float64 and now let's
+calculate them so for each class in self
+dot classes we now only we only want the
+samples that has this class as label so
+let's call this X C equals x and then
+where C equals equals y and now we can
+calculate the mean for each class and
+fill our self that mean so we want to
+fill this row and all columns here and
+we say this is X X C dot and numpy has a
+or a and D array has the built in mean
+function so we can say mean along the
+axis 0 so please check the mean function
+for yourself and we want to do the same
+thing for var so self var in this row
+for each column is X Z dot var so numpy
+also has a var method and then we
+calculate the prior so self fryers
+of this class is equal to and now what
+information do we already have if we
+have the the training samples and
+training labels so we can say the prior
+probability that this class will occur
+is equal to the frequency of this class
+in the training samples so we say we get
+X C dot shape zero so only this will get
+the number of samples with this label
+and then we divide it by the number of
+total samples so and we have to convert
+this to a float because we don't want
+integers here so let's say float number
+of samples so this is the frequency how
+often this Class C is occurring and now
+this is all for our fit method and now
+let's implement the predict method so
+and for this we create a little helper
+method so let's call this underscore
+predict self and this will only get one
+sample so here we have we can have
+multiple samples so here we say why
+predict equals and then we use list
+comprehension and call this underscore
+predict method for only one sample and
+then we do this for each sample in our
+test samples and then we return them and
+now we have to implement our underscore
+predict method so here what we need now
+is we need
+to apply this function so we have to
+calculate the posterior probability and
+calculate the class conditional and the
+prior for each one and then choose the
+class with the highest probability so
+let's create an empty list called
+posteriors equals an empty list and now
+let's go over each class so let's say
+for index and c in and numerate self dot
+classes so here we get also the index
+and the class label with this enumerate
+function and now we can say first we get
+the prior so the prior equals and we
+already have calculated the priors
+so this is the prior of self dot priors
+with this in current index and now as I
+set them at the end we apply the lock
+function so let's apply this right here
+so let's say n P dot lock and then
+create the posterior so the posterior
+equals well let's call this class
+conditional equals and then we apply the
+gosh function so for this let's create
+this helper function and call this
+probability density function with self
+and then it gets the class index and
+then it gets X
+and here we apply this formula here so
+we need the mean and the variance and
+then apply this function so first of all
+let's get the mean equals and we already
+have the mean so we can say self mean of
+this class index and also the variance
+equals self var of this class index and
+then let's create in the numerator which
+is equals to numpy dot X so the
+exponential function of minus and then
+we have X minus mean to the power of two
+divided by and then two times the
+variance and then we have the
+denominator so de nominator
+equals and here we have NP dot s to our
+T's over the square root of two times
+and we have pi we can also get this from
+numpy and peter pi times the VAR and
+then we return numerator divided by
+denominator so this is our probability
+density function and then we can say our
+class conditional is self dot
+probability density function of our
+index and X and then we want to we want
+to have the logarithm oh so we say MP
+dot lock and then we sum all of them up
+so we can use numpy dot some of this and
+then we say our posterior equals prior
+plus the class conditioners our class
+conditioner and then we have penned them
+to our posterior so posteriors dot
+append posterior and now we use or we
+apply the arc max of this and choose the
+class with the highest probability so
+numpy Ora also has a arc max function so
+this is very easy so we can now say
+return self dot classes off and the
+index is now the index of the posteriors
+with the highest probability so we can
+say MP dot R max of this mysterious and
+now we are done so this is the whole
+implementation and now we can run it so
+I already have a little test script
+where I use the scikit-learn library to
+load a data set and create a data set
+with 1,000 samples and ten features for
+each sub
+and we have two classes then we split
+our data into training and testing
+samples and the labels then we create
+our naive Bayes classifier which I
+import from this file that I have here
+and then I fit the training data and the
+training labels and then I predict get
+the predictions for the test samples and
+then I will calculate the accuracy so
+let's run this and see if this happened
+if this is working so yeah it's working
+and we have a classification accuracy of
+0.96 so pretty good so yeah that's it I
+hope you enjoyed this tutorial and see
+you next time bye

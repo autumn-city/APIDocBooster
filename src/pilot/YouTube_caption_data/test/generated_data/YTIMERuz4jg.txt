@@ -1,0 +1,823 @@
+welcome back everybody to the deeper and
+jump start with PI torch in this
+tutorial you are gonna learn how to code
+a simple convolutional neural network in
+pi torch we're gonna use it to do
+optical character recognition with the
+MS data set you don't need to know
+anything about deep learning or
+convolutional neural networks we're
+gonna cover everything you need to know
+as you go along let's get started
+so as usual we start with our imports
+and torch has a whole bunch of them so
+we'll need the base package torch
+we'll need the an end package
+we'll need n N and dot functional these
+will serve as the basis for our layers
+and our activation functions
+respectively we also need the optimizer
+the optimizer is in this case a form of
+stochastic gradient descent we're going
+to use the atom optimizer as opposed to
+something like SGD vanilla stochastic
+gradient descent or the like rmsprop
+this is going to work to change the
+weights of the neural network over time
+to increase the accuracy of their
+predictive power we also need the data
+sets so we need from torch vision data
+sets import and mist torch vision has a
+whole bunch of data sets built in we're
+gonna use em mist because it's gonna run
+quickly it's very simple there aren't
+too many you know hiccups in it so it's
+a good data set to get started with it's
+kind of a canonical problem in deep
+learning it's not the most exciting
+there are other data sets like the cocoa
+data set that has a whole bunch of
+classes but this will do for now we need
+towards vision transforms we will need
+the two tensor what this will do is
+it'll turn the raw data from the NS data
+set into pi torch tensors we also need
+numpy to handle numpy type operations
+and we're gonna do some plotting at the
+end so we need map plot live that pie
+plot as p LT so in the previous video we
+did a simple deep neural network to do
+this same classification task when he
+achieved an accuracy is something like
+90 percenter but maybe even up to 95% so
+nothing to write home about but pretty
+good for a very simple approach and in
+that particular case we used a
+procedural implementation where we
+didn't store anything in a class in this
+case we're gonna take it one step
+further in both the complexity of the
+neural network we want to use as well as
+the complexity of the computer science
+we're going to implement so we're going
+to use a CNN class and in pi torch if
+they have the idiom where all of the
+classes that extend the functionality of
+pi torch must derive from this n n dot
+module and the reason is it gives you
+access to things like the parameters of
+the layers that you can use or the
+optimizer very very important of course
+when you do that you have to define an
+initializer as usual that'll take a
+learning rate epochs batch size and
+classes so for this data set it defaults
+to ten so we'll just go ahead and hard
+code that but the other thing you have
+to do when you use inheritance in python
+is call the super keyword super CNN self
+dot in it so next we move on to saving
+our member variables all very standard
+stuff we also need a couple arrays for
+keeping track of things like the lost
+history that'll be helpful when we plot
+our data and we need an accuracy history
+because we want to watch the evolution
+of the accuracy over time we want to see
+if this does better than our simple
+linear classifier and spoiler alert of
+course it does other stuff we'll need is
+a device so the question came up in the
+previous video how would you speed up
+the calculation by sending everything to
+the GPU I'll make a separate video to
+address that you know kind of looping
+back to the first video to show
+specifically but in this case we're
+gonna use the torch device function
+let's say CUDA 0 if T dot CUDA is
+available else CPU so what this will do
+is it will see that your GPU is
+available and if it is it's going to use
+it for the calculations provided that
+you send the variables and the network
+to the GPU this doesn't do that
+automatically I'll show you how in a
+second this just sets up the device for
+use later on by your neural network and
+if you don't have a GPU it'll default to
+the CPU other the cool thing you can do
+is if you have multiple GPUs you can say
+cout to 0 or CUDA 1 or whatever number
+of GPUs you have so you can actually
+allocate different neural networks to
+different GPUs if you want to run
+multiple models you could say use
+something like a
+and parameter to pass that in so now we
+have to define our label our layers of
+which there are many so the first is a
+two-dimensional convolutional neural
+network that takes one layer sorry one
+channel as input and we have one channel
+because the input images are grayscale
+there there's no RGB which gate in which
+case there would be three filters but
+you know it's just grayscale so it's
+just simply one we're going to apply 32
+convolutional filters with a 3x3 size
+next we want to do batch normalization
+batch norm 2d that'll take 32 filters as
+input that comes from the output of the
+other layer next up we want to do a
+second convolution and that is again
+comp 2d it gets 32 32
+and 332 filters is input 32 is output
+and a 3x3 window then we need another
+batch norm layer and if you don't know
+what Bachelor Malaysian does it simply
+kind of does what the name implies it
+takes a batch of data and normalizes it
+so that you get you know stuff between
+some boundary you know I should honestly
+don't member it's minus 1 and positive 1
+or 0 and 1 but either way it takes
+inputs that would otherwise be kind of
+all over the place you know abort or 10
+or 100 or whatever and normalizes them
+to something more manageable for the
+neural network kick helps facilitate
+smooth training
+we need another convolutional neural
+another convolutional layer and com3
+will take 32 by 32 by 3 again and we
+need a BN 3 for another batch norm 2d
+and that of course takes 32 as input and
+then we're going to perform a max
+pooling what this does is when you
+perform the convolutions what you're
+doing is you are taking a matrix which
+is of size 3 by 3 that's where the 3
+comes into play and you're sliding it
+over the input image in this case for
+the NS data set the input image is a 28
+by 28 image of pixels of handwritten
+digits so you're sliding a 3 by 3 matrix
+over that 28 by 28 matrix and you're
+performing matrix multiplication with
+each time you slide it the product of
+those matrix multiplications goes into
+the result and that is going to be not
+just one matrix but in this case a set
+of 32 so you can perform another
+operation on that which is called max
+pooling so you have a bunch of different
+values in that particular on those
+filters and you can do max pooling which
+is a type of another type of feature
+selection where you take the max of a
+two-by-two matrix so you slide a
+two-by-two matrix over your 32 filters
+each each of those filters and you take
+a max element out of that two-by-two
+matrix it's a way of reducing the
+dimensionality of the of the feature set
+so I guess this actually feature
+reduction not really a feature
+engineering so it's a handy function to
+use to take to decrease the
+dimensionality of your problem to
+something more manageable but I digress
+so next we follow that up with another
+convolutional a 2d layer Tom 2d and that
+will have size 32 by 64 by 3 so that
+will take 32 filters as input and output
+64 filters again of size 3 by 3 again
+with a batch of normalization 2d but
+this time it takes 64 instead of 32 and
+then we'll have a fifth convolutional
+layer and that is size 64 by 64 because
+it has 64 input
+sixty-four outputs 3x3 and another being
+layer again with a size 64 and then
+finally a self comm six equals n n comm
+2d and that takes 64 by 64 by 3b and six
+dot batch norm to the 64 and followed by
+max pool - good grief
+okay so this is the convolutional
+portion of our deep neural network so
+what this does is it serves as a form of
+feature selection and reduction from the
+input images into something that we can
+feed into a fully connected layer but we
+have one catch in this so I don't know
+the dimensionality that comes out of
+this right because we have 64 filters
+we've done a couple max pooling
+operations which will reduce the size of
+the feature set by a factor of two each
+time so total factor of four so you know
+I haven't done the math and I'm not
+about to bust out pen and paper because
+I'm lazy and we can do it in a more
+elegant fashion that facilitates more
+feature hyper parameter tuning down the
+line and say you want to change these
+numbers you don't want to hard-code the
+input dims because then you have to go
+back and redo the calculation every
+single time so let's do it in an
+automated fashion so we will define a
+function to handle that and we'll get to
+that in a second but first we need to
+say self dot F C 1 is a linear layer
+linear linear and that will take input
+dims as input in a route put number of
+classes so it'll take whatever our
+convolution neural network outputs pass
+it through a simple linear layer and
+then calculate the probability of the
+image belonging to one of the ten
+classes next we need an optimizer and
+this is how the network is actually
+going to learn and that is going to be
+Adam and what is it going to optimize
+self dot parameters excuse me you may
+notice we've never defined self dot
+parameters and that's where this
+inheritance from n n dot module comes
+from so it's kind of a back door into
+the
+the parameters of these layers in our
+deep neural network so very important
+and of course you want to specify a
+learning rate because you know you kind
+of need one of those next we need a loss
+function and in the case of multi-class
+classification you almost always want to
+use cross entropy loss if you have only
+two classes you can away with binary
+cross entropy loss but in this case we
+have more than two so it's going to be n
+n dot cross entropy loss finally we want
+to send the whole thing the entire
+network to the device this is how you
+get the deep neural network on your
+device I mentioned that earlier and that
+is very important for taking advantage
+of your GPU and finally we want to use a
+function to get the data from the M NIST
+data set so we'll define that in a
+moment but we have to call it in the
+initializer so next we're gonna call a
+couple functions and there's gonna be
+some repetition here this isn't good
+practice I'm kind of repeating myself
+but this is just for illustration
+purposes if you wanted to improve on
+this code then you would consolidate a
+lot of this material into a single
+function and then just reference that
+function but I digress so we want to
+calculate the number of input dimensions
+so as I said this is kind of tedious to
+do if you have a if you try to do it by
+you know pen and paper so it's best to
+just let the computer do the heavy
+lifting so we'll say batch data equals T
+zeroes towards zeros a batch size of one
+this is very important it so that we can
+we don't have to take into account or
+hardwire the batch size in just send in
+a batch size of one with one channel and
+28 by 20 and I've forgotten a Perret to
+see here because this has to be a tuple
+so this is a just an array of zeros in
+the shape one by one by 28 by 28 it's a
+four dimensional tensor it doesn't
+matter that zeros because we don't care
+what comes out all we care about is the
+dimensionality of what comes out so who
+cares that the data is garbage so then
+we say batch data equals self.com one
+batch
+data and of course it's not batch -
+data's batch underscore datum and what
+we're gonna do here the idea is we're
+just going to feed that array of the
+four tensor of zeros all the way through
+the network and then see the size of the
+stuff that comes out of the other end
+and then plug that into our linear layer
+it's the easiest way that I know of to
+to actually you know make the computer
+do the hard work so then we say batch
+data equals self mm-hm
+batch data equals self dot bn1 batch
+data we don't have to worry about
+activating because we don't care about
+the outputs so we'll skip the activation
+batch data equals self dot cond to batch
+data and you know we don't even really
+need the batch normalization layers
+because really it doesn't change the
+dimensionality of the problem so
+actually now that I'm looking at it
+let's try this and if it doesn't
+actually let's comment it out so that
+way I have to do less work if it doesn't
+work then we'll you know go back and
+uncomment this but let's see so I don't
+think it's gonna matter but famous last
+words right then we say batch data
+equals self com3 batch and data and then
+comes after con three no sorry con yeah
+after con three we have our max pooling
+so batch data ego self dot what does it
+called max pool one we definitely need
+this because it will reduce the
+dimensionality of the problem and then
+we say feed through to the next layer
+econ four
+and batch data equals con 5 good grief
+and then cond 6 if I'm not mistaken and
+finally batching data equals max pool to
+data and then now what we want to do is
+something pretty cool we want to say we
+want to return int numpy product batch
+data dot size so this will get us the
+number of elements in a batch size of 1
+so that's how we're gonna find out the
+input dimensions pretty straightforward
+and then we're going to do something
+kind of repetitive after this so just so
+you know where we are we calculate the
+input dims and that goes into the first
+fully connected layer other thing we
+have to worry about is the forward pass
+so batch data so next thing we have to
+do is calculating the forward pass and
+so this is going to be a little bit
+different so we have to say batch data
+equals T dot tensor let's make that
+lowercase and the reason I'm making a
+lowercase if you watch the first video
+is that the lowercase tensor preserves
+the data type of the underlying of the
+incoming data whereas the capital T uses
+some default data type so I don't want
+it to do that so I'm gonna tell it
+lowercase
+and you have to this is kind of a bit of
+a peculiarity of Pi torch it is very I
+guess strongly typed in a sense not
+literally strongly typed but it is very
+particular about the data types you pass
+it so if you try to pass at a regular
+float tensor and it's expecting a CUDA
+tensor it's gonna give an error or vice
+versa tells you hey I'm expecting
+something else why are you giving me the
+wrong thing and since we want to do all
+the calculations on the GPU it's best to
+start out by passing the batch data from
+the NMS data set to the GPU making it a
+CUDA tensor next we want to perform our
+feed forwards so I am going to copy all
+that so we can just kind of fill in the
+missing parts so then we want to do a
+batch norm and batch batch batch data
+equals F dot value batch data there is
+somewhat of a debate this is another
+interesting point there is a debate of
+whether or not to do batch norm before
+or after the rail you activation I
+really don't care we get good results
+with this but for more advanced more
+complex problems that may actually
+matter just keep that in the back your
+mind that you are doing a batch norm
+before ever oh you activation and Rho U
+is a non commutative operation so it you
+know with the respect like things like
+addition and multiplication so
+definitely keep that in the back your
+mind if you want to come back to later
+to revisit the performance on the
+accuracy of the deep neural network so
+then we have conf to batch to batch data
+self sorry F dot r lu batch data and we
+have cond 3 and then let's do this just
+copy paste and make sure to change that
+the bn3 and then we have the max pool
+and then a con for a BN for
+and the value and then con 5 BN v and r
+lu whoops that's unhappy comma 6
+so BN 6 and then rel U and then a max
+pool of course and then we want to say
+batch data we want to kind of flatten it
+batch data I'm going to be doing that
+all my batch data top view batch data
+dot size zeroth element minus 1 so this
+will flatten it into the zeroth element
+by negative 1 so it will get us square
+array that's right will be square it'll
+just be two-dimensional sorry then we
+want to say classes equals self C one
+batch and data now we don't want to do
+any activation here on this we just want
+to do a linear fordpass and the reason
+is that the cross entropy loss will
+perform a soft max activation on the
+classes and so you don't want to do a
+double softmax you know that's going to
+give you meaningless results so we don't
+activate that here the in and cross
+entropy loss is going to take care of
+that and when we calculate the accuracy
+on our own we're gonna perform an
+activation using a soft max function if
+you're not familiar soft max is an an
+exponential function it's like either
+the something divided by the sum of the
+e to the something's so it tells you the
+exponentially weighted probabilities
+such that they sum up to 1 so that's a
+very important property for
+probabilities in this universe at least
+all probabilities sum to 1 and so
+whatever function you choose to
+calculate the probability of an
+observation belonging to a class must
+you know sum up the one that has to
+belong to one of the classes at least
+so that is that for the forward and get
+input size functions so next we have a
+function to get the data so what all
+this does is very simple is it says M
+missed train data equals M missed and
+that comes from our imports and you
+wanted to do a make dur M miss before
+you run this just to be sure say train
+goes true so this is how it knows this
+is going to be training data download
+equals true so if you don't have the
+data it's going to go ahead and download
+it transforming goes to ten search so
+that'll take the data and transform it
+into a pie and torch tensor and then we
+need to create a data loader so we have
+the data now we have to create a object
+to load it self dot train data loader T
+dot utils dot data sorry
+data data loader and missed train data
+match size equals cell top batch size
+shuffle people's true you always want to
+shuffle your data in deep learning the
+reason is that the if the data is not
+pre shuffled then what you're doing is
+you're passing in data from sequential
+classes it doesn't weigh so much matter
+they're sequential but the fact that you
+have a large portion of the data that
+all belongs to the same class followed
+by another chunk of data that all
+belongs to the same class so what you're
+doing there if you think about what
+we're doing a deep learning we're kind
+of navigating some complex parameter
+space right we have a deep neural
+network that transforms images into
+features and to mathematical linear
+features so it's just some function that
+says you know this image is this feature
+times this input parameter plus this
+parameter times that feature and sum
+them all up and gives you an answer for
+what the probability of a belonging to a
+class is it's a highly multi-dimensional
+complex function and if you pass in a
+bunch of representatives from one class
+all in a row you're going to get stuck
+in one little corner
+parameter space it's gonna result in
+overtraining where it's gonna you know
+not be able to generalize well and then
+when you transform when you roll over to
+the next class it's gonna be it's gonna
+be a total mess because then you're
+shifting to a totally different portion
+of parameter space with weights that are
+tuned for a wholly separate portion of
+parameter space so shuffling is
+incredibly important just a long-winded
+way of saying make sure to shuffle your
+dang data next we want to say no workers
+equals eight that's the number of
+threads to dedicate to to this data
+loader utility you can set that to
+anything less than the number of threads
+that you have on your PC I don't
+actually know what it would happen if
+you set it to be more than the number of
+threads you have it's probably limited
+by however many you actually have so I
+haven't tested that maybe I'll play with
+that on the fly so next we want the
+testing data and that's almost the same
+thing except train equals false pretty
+straightforward and of course you have
+to change that from train data to test
+data and change the name of this test
+data loader train data loader and this
+test data perfect we don't need to
+return anything because it's a pretty
+self-contained function next we want to
+define the Train function and we don't
+want to call it just train and the
+reason is that PI torch the tenant
+module class already has a function
+called train and now don't get confused
+this is a confusing point for beginners
+this kind of tripped me up the first few
+times this function train doesn't
+actually do anything with respect to
+training or updating the weights of the
+neural network what it does is it tells
+PI torch that you are about to enter the
+training mode there's a training mode
+than the testing mode and the reason
+that matters under general case it
+doesn't matter but in the case of using
+batch normalization it does matter and
+the reason is that in training mode PI
+torch keeps track of the batch
+normalization statistics but then when
+you're doing testing it doesn't keep
+track of the statistics you know the
+the standard deviation and stuff like
+that putting the bachelor layer so you
+want to be very careful to be verbose
+telling Pytor hey I am training my
+neural network and then later on hey I
+am testing my deep neural network so
+that way doesn't update the statistics
+for the bad storm layers and there's I
+believe one other function that has that
+same caveat I don't recall what it is
+off the top of my head but I digress so
+we have to say we're gonna iterate over
+our number of epochs if you're not
+familiar with it an epoch is just an
+iteration over the full data set so we
+have a data set of order tens of
+thousands of samples I forgot the exact
+number I think it's 50,000 or 60,000 the
+training set in 10,000 on the test set
+and so an epoch is one full pass over
+the data set so we're not passing in the
+whole data set at once we're passing in
+chunks Oh size batch size and so you
+want to iterate over that data set many
+many times in this case we'll just
+default to 25 they get really good
+results with that but you need an outer
+loop to account for that and we want to
+keep track of an epoch loss as well as
+an epoch accuracy and those will be
+stored will get default values of 0 and
+then d-list respectively next we want to
+enumerate over our data so it has this
+particular form it's going to pass back
+you know the index as well as a tuple of
+input and label
+train data loader that's just how the PI
+torch data loaders work so for anything
+that you're using a data loader for
+excuse me this will be the default
+format very important in pi torch
+optimizer not sir this isn't this isn't
+England but very important is you want
+to zero of the gradient and the reason
+is that theme gradients accumulate from
+training step to training step and this
+can cause degree to performance and
+doesn't give you any additional useful
+information so you always want to zero
+the gradient at the top of each training
+step next we have to do a little bit of
+bookkeeping and say label to self dot
+device this will take the label from the
+data set and send it to the device and
+we want to say prediction equals self
+top forward input so this will do the
+feed forward pass of that input that has
+been and the input doesn't have to be
+explicitly cast to the device here
+because that gets taken care of up here
+so perform a feed forward pass to get
+your prediction for the batch of data
+calculate your loss prediction
+prediction and label and so this will
+actually calculate the loss for the deep
+neural network but the next thing we
+want to know is for our purposes so we
+can kind of observe the performance of
+the network over time is what is the
+actual prediction of the class so we
+want to perform a soft max activation on
+the output of the deep neural network
+along the first dimension because the
+zero dimension is the batch and then say
+classes equals T to Arg max prediction
+dim equals one then we don't know how
+many we have wrong so we want to count
+up the number of times where the classes
+are not equal to the labels so wrong
+equals t dot where classes not equal to
+label and this has the syntax of where
+this is true it gets T dot tensor one so
+at a value of one
+and - sorry - self dot device now this -
+self device may very well be unnecessary
+I'm trying to think I haven't
+experimented with not doing it that I
+will leave as an exercise to the viewer
+and then the rest of the syntax is what
+value does it get when they are equal or
+when it is false in this case so I could
+set value of zero because we don't want
+to sum up anything for the case where we
+got it right
+you see accuracy is 1 - t dot some wrong
+/ self duh patch size so this will scale
+the accuracy by the batch size next you
+want to append the accuracy of this
+particular episode and this is since it
+is a tensor we want to dereference it
+with item that gives you the value
+stored in that tensor otherwise just
+throwing a tensor object and it's hard
+to operate on those ik history dot
+append act item so we're keeping track
+of in two different places episode loss
+plus equals loss on item
+same deal loss as a tensor we want to
+get the value of that tensor so we call
+the item next very important you want to
+back propagate the loss if you don't do
+this you don't get learning and also you
+have to step the optimizer so if you
+don't do these two steps then you don't
+get learning so if you're a novice of Pi
+torch and you're running a a training
+loop and you don't see your accuracy
+going up or your loss going down that is
+the first thing to check to make sure
+you set law stuff backward and optimizer
+dot step so check that first that'll
+save you a lot of time bug hunting in
+your network I've made that mistake
+before don't feel bad so save yourself
+the pain and the time and check that
+first at the end of each epoch we want
+to say
+finish epoch I total loss will say 3f
+episode loss and accuracy 3f you want to
+make sure that you're not you know
+automatically running rounding up the
+one numpy that mean episode accuracy so
+that'll just take the the mean of the
+accuracy for each batch in the epoch and
+then at the end of the epoch you want to
+say loss history that append episode
+loss okay so that is the whole of the
+training function will come we'll run
+this and come back to the actually you
+know what let's I didn't actually do
+this in my cheat sheet let's define the
+test function I'll do it on the fly this
+almost never happens I almost always
+solve stuff first and then you know go
+off a cheat sheet but the you know it
+should actually be almost the same so
+let's do this let's copy this one
+difference is as I said we had to tell
+it self dot test other thing that is
+going to be different is we don't care
+about zero in the gradient because we're
+not going to be updating gradients so we
+can calculate the loss that is fine do I
+really want to do that yeah I won I want
+to see the total loss over the course of
+the episode so yes I do want to do that
+I want to do this what I don't want to
+do is this and that so we also need to
+change some variable names here
+we don't want self thought thank you
+yeah so let's do this you know I'm not
+gonna plot it so this is the danger of
+doing things on the fly so I'm not gonna
+plot the testing data we're just gonna
+go ahead and print it out to the
+terminal see how well it does okay so
+that should do that now oh yeah oh the
+other thing is we had to change that the
+test data loader okay
+anything else I have to do hmm
+now I'm thinking about it we don't
+really want to iterate over epochs
+because we're not training so I can get
+rid of this outer loop and move that all
+in and yeah so it will just do one epoch
+one pass through the training the test
+data okay so that's what I'll do
+okay so now that I've done this on the
+fly that's a rare treat for you guys I
+almost never do that so now we get down
+to the business of our main loop so if
+name is main then you want to say
+network equal CNN learning rate of 0.01
+look a bit a batch size of I don't know
+120 it doesn't really matter thee if
+you're using a modern GPU then the batch
+size isn't the huge concern because the
+images are so small they're 28 by 28
+we'll do 25 training epochs we want to
+call the training function and we want
+to plot network dot loss history and
+plot that show
+PLT dot plot network dot accuracy
+history PLT dot show all right perfect
+so now we're gonna head to the terminal
+and see how many typos I made all right
+so let's see how well this worked python
+simple CNN and NIST moment of truth
+hasn't complained yet aha
+so it gives me a warning I'm not gonna
+worry about that right now so you can
+see that it is in fact learning and it
+starts out with an accuracy of 96.7 and
+already by the fourth epoch it is up in
+the 99.5 plus range so it is learning
+quite well quite effectively
+for a relatively straightforward
+convolutional neural network I'm gonna
+let this run and you can check out the
+plots here where the loss you know
+decays exponentially over time and the
+accuracy goes up to you know a factor of
+practically one so it arbitrarily
+approaches one never quite gets there
+maybe in some episodes but you know
+you're never gonna have truly 99 100%
+accuracy
+one other thing of note is that there is
+a huge difference between 99.9 &
+99.999999 accuracy just you know think
+about it in terms of samples per million
+how many mistakes you're gonna make so
+if you're designing neural networks for
+industrial purposes make sure to get as
+good of a testing accuracy as you
+possibly can
+and your employer then your customers
+more importantly will thank you for it
+so this is about to finish when it
+finishes off we're gonna see how well it
+does on the testing data maybe I made a
+mistake and the testing loop will see
+that in a second so of course after
+running it I realized that I didn't
+actually call the testing function so
+let's go ahead and fix that mistake
+shall we simple CNN and NIST but on the
+bottom and say network dot test so I'm
+gonna run that again I want me to get
+through it one second and after finally
+completing you can see that the accuracy
+on the test date is actually nine eight
+eight so ninety eight point eight as
+opposed to ninety-nine point nine so we
+have a little degree of overtraining
+here so that's something you would fix
+by adding in some drop out to the deep
+neural network the convolutional neural
+network as well as perhaps some other
+hyper parameter tuning that's probably a
+topic for another video however in the
+next video in the sequence we are going
+to get into modularizing this
+convolutional neural network so that we
+can make it you know infinitely
+expandable by sticking things in nicety
+compartmentalize modules that we can
+just stack together like Legos to make
+arbitrarily large deep convolutional
+neural networks stay tuned for that
+subscribe for that and other content
+leave a comment share this if you found
+it helpful and hey don't forget to hit
+that Bell icon because I know only 14%
+of you get my notifications and I'll see
+you all in the next video

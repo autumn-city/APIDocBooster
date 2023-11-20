@@ -1,0 +1,395 @@
+ Yeah, let's not talk about pytorch custom data load. So
+ the data loader is a class in pytorch that lets us Yeah, a
+ lot data more conveniently compared to doing it manually. I
+ will show you two notebooks. One is just the data loader itself
+ with a simple example. And then I will show you how we can use
+ it in a model training context. So yeah, what I should say is
+ I'm actually using MNIST here. And you may wonder why MNIST
+ because there's already MNIST data set and data loader
+ implemented in torch vision, which we could technically
+ import, which is what we have done. And yeah, last couple of
+ videos. So the reason is, MNIST is relatively small. And yeah,
+ in this way, I can upload it to GitHub. So I can upload this
+ without, let's say, taking too much space in that repository.
+ And it's also for you faster to download. And it was just convenient
+ because you are already familiar with it. But of course, here
+ MNIST this represents a more general data set. So think of
+ it as an arbitrary data set consisting of PNG files. So what
+ I've done is I divided MNIST into three parts, a training set,
+ a validation set, and a test set. So I put them here into
+ um, PNG files, just in each folder, there's a set of PNG
+ files, as you can see here. And I have also a corresponding CSV
+ file. So here in the CSV file, I have the class labels and the
+ file name. Of course, you can also if you like, you can have
+ only one folder with PNG files and then have a column with
+ validation train and test index. So you can also specify it like
+ this. I mean, how you set it up is up to you. I sometimes find
+ it convenient to do it like this. Sometimes I only have one
+ gigantic PNG file folder and keep track of what is training
+ what is validation with this test, I keep track of it with
+ columns in the CSV file. But this is really optional. I mean,
+ like how you want to set up is up to you. You can set it up
+ however you like. And I will show you how we can then handle
+ handle that with pytorch data set class. So back to this
+ notebook, so I showed you now, I have these files. So focus now
+ on the on these three folders. And these CSV files, the helper
+ function, I will use them later in this train model notebook.
+ So yeah, let's get started. So usually, when I have a new
+ data set, what I do first is I inspect this data set. So I
+ sometimes use I use image IO, sometimes I just use the Python
+ image library. I'm not very consistent, it doesn't really
+ matter. There are multiple libraries in Python that lets
+ you open a PNG file or JPEG file in Python itself. And then you
+ can take a look at it. So here, I'm using PIL, it's the Python
+ imaging library. If you have to install it, I think you have to
+ do kind of install pillow. Why pillow and not why pill or PIL,
+ that is because on the Python imaging library, I think it got
+ abandoned at some point. And then some people forked it on
+ GitHub to further maintain it. And this fork is called pillow.
+ But even if you install it as pillow, the import is identical,
+ you use this one to import it. Or in particular, we are only
+ implementing the importing this image class. So here, I'm just
+ looking at the image. So here, I'm loading one data point or
+ one image from this MNIST train folder. Why C map binary? Yeah,
+ because color maps by default is this the readers color map,
+ which is kind of useful for heat maps. But yeah, here, maybe it
+ looks a bit goofy if we have these colors for MNIST. So here
+ we use just this version. All right. Yeah, also, I find it
+ helpful to just take a look at the image dimensions. So here,
+ here, it's 28 by 28. There is no color channel. And you can see
+ the values, the pixel values are between zero and 255. Could be
+ 254. I'm not actually not quite sure. He actually I see the
+ the highest one is 253.
+ Alright, so then looks okay. So we know, know what we are
+ working with. Let's now load the CSV files, pandas and CSV files.
+ So these are only the first five rows with this head command.
+ Yeah, and I can also show you Oh, you can see it right here.
+ The data set is yeah, only I made it artificially small,
+ there are only 256 images in each data set. And this is of
+ course, much bigger. It's usually, I think 50,000 in the
+ training set and 10,000 a test set. Here, I just made it
+ smaller, because I'm going to upload this to GitHub. So you
+ can download it in this way. It's not like too much taking up
+ too much space there. Otherwise, I don't want to upload 50,000
+ small files and stuff, you know. Alright, so here,
+ um, here's our interesting part. Now, that's the data set class
+ and pytorch. And so in order to do to use the data loader, we
+ need a data set. So there are two parts, one is the data set,
+ and one is the data loader. So let's talk about the data set
+ first, because that's what we need for making the data loader.
+ So here, the data set is really how we read the data. So this is
+ something you have to set up yourself for a new data set. So
+ here, this is from pytorch torch utils data, this is something a
+ class from pytorch. And here, this is called class inheritance
+ in Python. So we are inheriting certain features from data set,
+ so that they are available in our data sets, it's called class
+ inheritance, it's like a, not a pytorch, but a Python concept.
+ So and then we're defining our own data set, I'm just calling
+ it my data set, but you can call it whatever you like. And then,
+ like in every class, we have an init method. And here in this
+ constructor, and this init method, I'm specifying certain
+ things. It's basically, by the way, arbitrary, what I put here,
+ it's not required to put anything here. But what we need
+ here, because we have CSV files, and we have folders, I put both
+ the CSV path, path, the path to the CSV file, let's say the
+ training CSV, and the image directory, for example, here,
+ this directory. And there's also a transform for doing a custom
+ image transformation, I will show you just a very basic
+ transformation, actually, we're not doing any transformation. I
+ will talk about this in the next lecture. Yeah, so what's going on
+ here is in the init, in the end, we are loading the CSV file and
+ keep it attached to the data loader. Not now, we don't need
+ it attached, we one second. So we load CSV file, we save the
+ image directory to the self dot image dear attribute, so we can
+ use it later. And then we save the image names as self dot image
+ names. And this comes from the CSV file from the file name
+ column. So if I scroll up again, this is this column, we just
+ save this column here. And then we also save the class label
+ column as self dot y, these are our class labels. And then we
+ just store whatever we provide us transform here. So this is a
+ setup for the data set when it's created. And here, this is how a
+ data point gets loaded a single data point, remember that this
+ one that was in short unit animation, loading a pair of data
+ point with its training label, basically, so one image and one
+ label. So that's what we are, what's loaded with this get item
+ here. Here, you have to have this index here. I mean, there are
+ other ways, but I find it convenient with the index. And
+ then we have to specify. So what we do is here, we specify how we
+ obtain one image and one corresponding label. So how do
+ we open the image? So image dot open, so this is similar to what
+ I used up here, image dot open. And then I'm giving it the path.
+ So the path is based on the image directory that I provide
+ here. And then the image name. So the image name is in this
+ column, right? So here, what IMG is, it will be, for example,
+ something like MNIST train, let's say one dot png. So here,
+ index will select a random one, so it could be the one or three
+ or five, one, two, 123, whatever. So this is chosen
+ randomly. So this is how this data set is basically shuffled
+ by always picking the indices in random order. And then there's
+ an optional transformation that we can apply to the images, for
+ example, normalization, rotation, and things like that.
+ And I will show you how that works in the next lecture. And
+ then we also obtain the corresponding class label. So if
+ index is, let's say one, then we will let's say, index is here
+ one, then we would obtain image 513 dot png and the
+ corresponding label zero. And then it returns both the image
+ and the label. And that's essentially it, there's one more
+ method here, that's the len. And this one is the length of the
+ data set. So that is how this data set knows when one epoch is
+ finished. So here, we can simply compute the length by getting
+ the shape of this y, which is the class label column. So
+ essentially, I have not imported anything here. I actually should
+ have def is not defined, huh? Oh, I sorry, I called it the
+ gift train. Alright. Okay. So this is our data set. So this is
+ really specifying how we lot a data set or images from the
+ data set. And now this is the data loader that is also
+ loading data points. But this is really for making our mini
+ batches. So for doing that, we need the data set. So here, what
+ I'm doing is I'm setting up the training data set. So the
+ training data set has the CSV file, men, mnist, underscore
+ train dot CSV, and the folder mnist train. This is this folder
+ here. And this CSV file. Let me before I explain this in more
+ detail, also show you the validation data set. So here's
+ the same thing for the validation set. But notice that
+ the folders names are different, and the CSV file names are
+ different. And here is the same for the test set. Now, see,
+ there's another thing going on transform. And this is our
+ custom transformation. We don't do anything here, except
+ converting the image to a pytorch tensor. So there's the
+ torch vision library, which has this transforms package or sub
+ library. And there are different methods for augmenting and
+ transforming images here, I'm using something called to
+ tensor. And this one will convert an image to pytorch
+ tensor. But it will also normalize the images by dividing
+ them by 255 automatically. I actually find this, I don't know,
+ I would like if it wouldn't do this automatically, because
+ it's maybe something we don't want to do. But in any case, it
+ does. So what I mean is, it would be cool to have the
+ choice, whether we do it or not, maybe there's a new function
+ that has or give you gives you the choice. But it's actually
+ not a bad idea to normalize images. So in a way, it's maybe
+ good. So people avoid making mistakes, because you're
+ training a network on unnormalized images is usually a
+ bad idea. Okay. Um, yeah, so this is how we then set up our
+ training data set. Now we have created a data set of training
+ data set using our my data set class that we defined here. So
+ here, this is just defining the class. And here, we are actually
+ using it. And now we are setting up the data loader. So that's
+ the main part, which takes in this training data set. And
+ here, we also specify the batch size. We specify whether we
+ shuffle or not, after each epoch. So this is shuffling,
+ essentially before each epoch. And there is also a parameter
+ num workers. So it would be great to have a whiteboard here
+ or something. I don't have one. But think about it as this. So
+ if we Python is single threaded, usually, so there's one main
+ Python Python process, one process running. So there's
+ usually let's say, data processing. And then there's our
+ model. And this, let's say, we give our data to the GPU. And
+ then on the GPU, that happens to model training. And then it then
+ then it goes back to data processing again. And then it's
+ basically a repeating loop. So we're going from data processing
+ to the GPU, where we do the model training and then data
+ processing GPU model training. And this would also be true for
+ CPU. The main point is that this is sequential because Python is
+ usually one single process, one main process. However, data
+ processing can be slow. I mean, it can take, let's say 10
+ seconds or five seconds to load the images. So it would be more
+ efficient if we have the data processing decoupled from giving
+ the data to the GPU and the model training if those happen
+ like in parallel, right, so we could have actually multiple
+ CPUs via multiple CPUs, we can do the data processing and then
+ the data is already ready in the memory. And the GPU just has to
+ read it and do the model training and it has never, never
+ has to wait until the next batch is processed. So in that sense,
+ we can use multi processing of our CPU to prepare the next
+ batch of images for the GPU so that GPU doesn't have to wait.
+ For that, we can use the number of workers greater than zero. If
+ we have zero, then only one main Python processes used for both
+ for everything for the whole pipeline. If we set it to one,
+ then it will create one sub process to load the data, which
+ is makes it more efficient. And two is even better. I noticed
+ when I run it here, actually, I get problems recently with
+ recent versions. I think this is because m this is so fast to
+ load, that it will just load too many things at once. And then it
+ has too many open files waiting for the GPU to be processed. So
+ I get some nowadays an error when I run it on mnist. But if I
+ have any other data set other than mnist, that is usually not
+ a problem, because mnist is really just too simple. I think
+ that's the problem. So I set it to zero. But in your projects,
+ you may want to set it to a higher number. And for example,
+ in my research projects, I usually use two or three without
+ two or three without problems. Yeah. Well, I should also
+ explain what drop last means. So if you have a number that is,
+ let's say, not divisible by 32, then there will be a last batch
+ that is smaller than 32, right. And if drop last is true, it
+ will be dropped. You don't have to do this. I mean, like, you
+ don't have to drop this. But I noticed sometimes in my research
+ code that if I have, let's say, batch sizes of 512, and then the
+ last batch is only 11 examples, this last batch can be extremely
+ noisy, and sometimes harm the model performance as a bad
+ update at the end of the epoch. So personally, in my projects,
+ I found usually dropping the last mini batch, if it's smaller
+ than the batch size is sometimes good. Alright, let's take a
+ look now. So here we are initializing all the data loaders
+ for the training set for the validation set and the test set.
+ And here, I'm just, yeah, I'm iterating through it to just
+ make sure that it works. So yeah, I'm simulating how we
+ would train a model. So we have, let's say, just two epochs. And
+ then we iterate through the batches here. For our training
+ order, this is actually what you have seen before, we have used
+ the built in MLS data set. Here, I'm transferring it to the
+ device. So the device, if you have a GPU, it will be the first
+ GPU. Otherwise, it will be the CPU. So yeah, it will just
+ iterate. See,
+ to just give the batch size, so it will create 12345678 mini
+ batches. And that is it. Let me change this to one and see what
+ happens. So I don't always get this error. But with MNIST, see,
+ I get something called like this.
+ I think this is because there are too many open files doesn't
+ say so explicitly. Because the weird thing is, I don't get this
+ error when I run this on data sets that are not MNIST. There's
+ something about MNIST. I think it's MNIST is just too simple.
+ It's a little bit weird, to be honest. Also, I can't remember
+ in the past getting this error. But anyways, could also be my
+ computer because I compiled pytorch from scratch. But I
+ also get this error on my other machine. So anyways, so let's go
+ back to this one. Yeah. And here, we can also just print the
+ shape of one of the batches here. So the shape is 32, then
+ the color channel is only one color channel. So because it's
+ back in white, and then 28 pixels high 28 pixels wide, he
+ is just printing it as a vector if we reshape it 32 times 784.
+ So this is what our multi layer perceptron needs as an input. So
+ convolutional networks can work with this input directly.
+ multi layer perceptrons cannot they can only work with this is
+ just for reference. So it looks like the torch tensor, you can
+ see it's normalized, we should be able to maybe we can't just
+ see if it because it's abbreviating it. So we can print
+ it. You can see the highest values point 999 because it's
+ 253 divided by 255. Alright, so this is how the data loader
+ works. Let me now show you the model training code here using
+ the custom data loader. So here, I'm now using a hybrid of what I
+ showed you two videos ago when I use helper functions, helper
+ scripts and a notebook. So here, I've set up several helper
+ files that I may reuse in different projects. And this
+ helps me keeping the notebook kind of small. So if I make a new
+ notebook, let's say I call it notebook. To I can make some
+ changes to this notebook, for example, some settings, but I
+ don't have to copy and paste all the code. It's in that way easier
+ to read, especially if you want to let's say modify some
+ function as a bug in the accuracy function, then you
+ don't have to go back to every file here and change the code,
+ you only have to change it in one of the files and the pie
+ files. So I can just maybe open them, show you what I mean. So
+ example, helper evaluate, I have this set all seats, deterministic
+ compute accuracy. So if there's a bug, for example, I only have
+ to change it here once I don't have to go back to all my
+ notebooks. I find this very helpful if I have a project with
+ multiple model training and model notebook scripts or
+ notebooks and scripts. All right.
+ We close this again, we can take a look at individual ones. So
+ yeah, yeah, importing certain functions from this, from these
+ helper files.
+ Then here are my settings, you can also like I explained
+ before, have a separate settings file here, I have it just in a
+ notebook itself, random seed batch size, a number of epochs.
+ And then I'm using these to make that deterministic. And he has
+ just, so yeah, I have a get data loaders function that actually
+ uses the data model from the previous notebook that I showed
+ you, I just put it into this script here. Now I have my data
+ set here. And I have written a get data loader, which will set
+ it up for me automatically. So that's basically just a slightly
+ modified version of what I've showed you in the previous
+ notebook, where I just have arbitrary paths and stuff. And
+ it will return the training loader validation order and test
+ loader. And here, I'm just testing that they actually work.
+ So just getting some statistics. And you can see, so if I run
+ this again, you can see that the shuffling works, because you can
+ see that these numbers change. So these are the first 10
+ labels. So you can see, so every time it will start from scratch,
+ because I break here. So you can see these numbers change. However,
+ if I set my random seed, I always get the same order. See,
+ I can run this again, always get the same order because of the
+ random seed, the random seed. Yeah, makes the makes it
+ consistent. It's so for example, if you run this code, you will
+ get the same model and same accuracy I got, because you use
+ the same random seed. This is useful, for example, if you do
+ research, and you develop some code and want to share it with
+ someone else and other person wants to reproduce your code.
+ So yeah, here's the multi layer perceptron. I simplified this a
+ little bit. So I'm using sequential now I mean,
+ simplified compared to two videos ago. Here, I'm actually
+ using flatten, this is actually new, I like this a lot. So this
+ way, we don't have to reshape our feature vector. So it will
+ essentially reshape the 28 by 28 to 784 for us. So we don't have
+ to do it manually somewhere down here. And this is it. So here,
+ I'm using sequential, so I don't have to do anything in the
+ forward, it will automatically return the logits. So here, this
+ is a multi layer perceptron with only one hidden layer. So this
+ is the first hidden layer, then with a sigmoid activation, and
+ then we have the output layer. And then we would technically
+ have a softmax, but we don't need to have the softmax
+ because the functional cross entropy loss in pytorch computes
+ the softmax for us. Alright, so this is how it works. So don't
+ need to set another seat here, because I've done that above. So
+ here, the seat would be for for the initial random weights, we'll
+ also talk about this in two lectures. So not the next
+ lecture, but the next one. After that, we will talk about these
+ different ways we can initialize weights, use stochastic gradient
+ descent. And here, I also just brought a function for training
+ the model is essentially what you've seen before, I just put
+ it into a separate file here. So if I go to help out a train dot
+ train dot pi, I have all the code I have had previously in
+ here. Because it's essentially always the same code. So you can
+ use that in other projects as well. You can just copy and
+ paste that just keeps the notebook more readable in that
+ way. It's not such a long notebook anymore. Oops, we got
+ here. That's what I always forget defining things. Alright,
+ so trains will train very fast, actually, because we only have
+ 256 data points in each data set. This training fast. Now we
+ get actually pretty high accuracy. I mean, given that we
+ only have 256 images, it's also barely overfitting. It's
+ actually not Yeah, you can see it's 91% and 73. It's actually
+ it is overfitting. But yeah, the validation accuracy and test
+ accuracy are almost identical. The difference here, why is the
+ difference? It's usually just a small random effect, right,
+ because it's a small data set 256. Yeah, and then I also have
+ functions for plotting the training loss and the accuracy
+ is also helpful. So yeah, I have the version with a running
+ average. And can see on the loss goes down. We are trained for
+ 100 epochs. And here the accuracy goes up. But then at
+ some point, there's more and more overfitting. So yeah, put
+ these plotting functions in help out of plotting, if you ever
+ need them. I think I will also personally reuse them in future
+ lectures, because then I don't have to make these long
+ notebooks, because this code is really always the same. So I
+ have it sometime defined here, and then I can reuse that. You
+ don't have to honestly memorize any of that. Or it's good, maybe
+ to understand it if you want to change it, but you don't even
+ technically have to understand any of these details. So it's
+ also something I wrote one time. And if I ever need it again,
+ I'll just copy and paste it. Because there are too many other
+ things to worry about. It's rewriting, this is, it took me
+ some time, I had to, there were some bugs, and things didn't
+ work. And that way, you write it once so that it works, and then
+ you can just reuse it. Alright, so last as a show examples
+ function I wrote, so it shows some of the images. So you can
+ see, P means predicted and T means true label or target
+ label. So these are all correct. So here, this is a predicted as
+ two, but the target is six, I see, I think I made an error
+ here that can't be right. Maybe it is right. But let me double
+ check. I haven't planned this. It's very spontaneous. So good
+ that we look at it, I think is, yeah, I saw it's my mistake. I
+ just wrote this code, actually, for this lecture. So made a
+ mistake. Let's do this again.
+ Oops, should have been targets. One of the disadvantages because
+ I have the import at the top of this notebook. I have to run the
+ whole notebook. But it's faster. Alright, so that looks better
+ now predicted six, target two predicted five, well, target
+ zero. Some other mistake here, you can see the model makes some
+ mistakes. But I think these are just mistakes, because the model
+ hasn't haven't hasn't seen enough numbers, because these are
+ should be easy to distinguish them. I think they are clearly
+ number twos. Okay, so yeah, this is the custom data loader. So
+ that's it then for this lecture. Next week, we will talk about
+ regularization like preventing overfitting. All right, have a
+ good weekend.

@@ -1,0 +1,245 @@
+ Yeah, so instead of making more slides, I thought it might be
+ more fun to do this video on tips and tricks to make guns
+ work a little bit more interactive. That is, yeah, I
+ will walk you through a list, a very nice list of tips and
+ tricks. And then we will see in the code that we seen last
+ video how or if I use these tricks. Okay, so this list is
+ based on a GitHub repository by Sumit Chintala. Sumit Chintala
+ is a researcher at Facebook AI research. And yeah, it's also
+ one of the main pytorch developers and also back in 2016
+ worked on the Wasserstein gang, which is a very popular version
+ of the gang. So here in this list, there are I think 17
+ tips. So I wanted to walk through them step by step. It
+ says that this list is no longer maintained. And he says he's
+ not sure whether it's still relevant in 2020. But actually,
+ most of the tips are still very useful. So they are really
+ useful starter tips for guns, even though the list is not
+ maintained anymore. So let's look at them one at a time. So
+ normalizing the inputs, normalize the images between
+ minus one and one range and using 10 h in the last layer of
+ the generator output. So that is something I actually did. So
+ here, I normalize the images and minus one, one range. And then I
+ also had my 10 h here. By the way, I was writing this code
+ before I looked at the list. So everything is just a poor
+ coincidence, or based on something I've heard before,
+ that seems to work well in practice. So then in gang
+ papers, the loss function is to optimize it as follows, but in
+ practice, we do the maximization. And then we flip
+ the labels. When training the generator, this is for the whole
+ thing is for the generator, the modified loss function. And this
+ is also what we extensively talked about. So when we go
+ back here, this is essentially what we talked about when we
+ flip this one minus into just the output. And then we also
+ flip the labels that was right here. So yeah, we are also using
+ that trick. That was also in the code using a spherical scene. So
+ instead of sampling the noise from a uniform distribution, we
+ are sampling from a Gaussian distribution. And that's also
+ something I did when we revisit training code here. So I think
+ it was at the bottom somewhere training again. So yeah, we used
+ a random normal distribution and not uniform distribution. All
+ right, next, using batch norm. So when using batch norm, it's
+ so I'm actually not using batch norm in this code, but I will
+ show you in the next video, my code for the setup a face image
+ data set where I was writing convolution again, and there I
+ used batch norm. And here the trick or tip is about not
+ mixing the real and generated images. So here, the
+ recommendation is keeping them separate. So training the
+ discriminator on a batch of real and a batch of generated instead
+ of mixing real and generated. And that is also something we
+ did. So when we go back to the code here, right here, so we
+ have fake images. And we have the real image, the real images
+ are up here, real images, and fake images, and we feed them
+ to the discriminator separately. So first, we get the real
+ images, and then the fake images, we don't mix them
+ together. Okay, next, avoiding sparse gradients using leaky
+ relu. So yeah, like we talked about before, the relu can have
+ these dead neurons. Let's lecture, I think lecture five,
+ six, something like that. Was it later, it could have been nine
+ when we talked about activation functions. And we talked about
+ the dead relu problem. And yeah, if we have a generator that
+ should generate something, maybe using a regular relu is not a
+ great idea. So using relu here, actually, in both in G and D,
+ the generator discriminator might be a good idea. So let's
+ check whether we use that. Yep, I have leaky relu here. Next
+ for down sampling use average pooling. Okay, this is something
+ I have not done. So this is actually that will be in my
+ next. Let me just double check. No, I don't have done that. Okay,
+ that might be that might be something to consider to improve
+ my code using average pooling. And for up sampling, conf
+ transpose plus stride, that is something I used pixel shuffle
+ might also be an additional interesting trick, which we may
+ find here in this paper, using soft noisy labels, that is
+ something I have tried in the past, it worked a little bit
+ better, I think. So wasn't that much better about slightly
+ better. I haven't done this in this code, because I didn't, I
+ didn't keep in mind everything. But if you want to play around
+ with that, it's another interesting thing to do. So
+ instead of using one for real, we use random numbers between
+ point seven and point one point two, to make the labels a bit
+ softer, or not softer, but to Yeah, instead of having these
+ fixed numbers, having some uncertainty around them. And
+ then for the fake ones to use the numbers between zero, and
+ point three, actually, when I did that, I had like a slide,
+ as I only had the soft labels, not the noisy labels. So I only
+ had like, instead of one, I had a point nine and stuff zero, I
+ had a point one, and it helped a little bit. So I haven't tried
+ this range before or this range point three. So it might be
+ something interesting to try. And there's also another thing
+ here on making the labels noisy for the discriminator by
+ occasionally flipping them. I also heard this works very well
+ in practice to improve the discriminator. So it doesn't
+ become too good. So you kind of shake it up sometimes. And I
+ also have not tried that yet. It might be another interesting
+ thing to try. Yeah, using DC again, when you can. So I okay,
+ I mean, I intentionally didn't use it here to keep things
+ simple, just having the simple regular GAN with the fully
+ connected layers. But in the next code example, where we work
+ with face images, I will use DC again. So nowadays, also, like
+ I mentioned before, in the lecture, it's just called GAN,
+ because nowadays, I mean, when DC again, was new, everyone used
+ abbreviation DC again, to distinguish it from the original
+ GAN. But nowadays, convolutional GANs are so common that we don't
+ say DC again, we just say again, using stability tricks from
+ reinforcement learning. So I'm not a big reinforcement
+ learning person. So I haven't used these tricks. But what
+ might be useful is keeping checkpoints from the generator
+ and discriminator that is like saving them occasionally every
+ few epochs. And then also swapping them sometimes. So if
+ things go bad, swapping in the old versions could also be
+ useful. Now, yeah, regarding the optimizer, Adam rules. So yeah,
+ Adam is usually working most of the time, well out of the box.
+ And another recommendation is using SGD for the discriminator
+ and Adam for the generator. I think this is due to the fact
+ that momentum may not be ideal for the discriminator because
+ you wanted to react quickly. Same actually also for the
+ generator. But in practice, I still find that training
+ actually both with Adam is even better. I tried this, actually,
+ and it didn't work so well. So I switched back to using Adam for
+ both the discriminator and the generator. But again, this is
+ something you have to try and practice. Sometimes it may work
+ better. Sometimes it may work worse. Track failures, failures
+ early. Okay, so just checking things if the discriminator loss
+ goes to zero, then that's not good. The discriminator is too
+ strong. And then the generator may not be able to learn
+ anything useful, maybe you have to see how you can address that
+ checking the norms. So if the norms of the grain of the gradient
+ norms are too large, then it might also not be good. So some
+ people also use something like a gradient penalty. We haven't
+ talked about this yet. It might be I mean, there's so many
+ infinite many things to talk about. But it's another thing to
+ keep in mind. When things are working, the discriminator has a
+ low variance and goes down over time versus having a huge
+ variance and spiking. Let's take a look.
+ Oh, yeah, it goes down. I mean, goes up and down and then kind
+ of stabilizes. Looking at there are no spikes, actually looking
+ at the value. Also, the variance is relatively small compared to
+ the generator. So that kind of looks like it's a hearing to
+ what we would expect here. One thing about that is this value
+ is around I would say maybe point point 5.6, something. And
+ if you think about a random prediction around point five, and
+ then you take the log of point five, or minus log point five,
+ it should be around point 69, something like that. So it's
+ actually kind of like a random prediction. So it's actually
+ quite good that it is in that range here. So for binary
+ prediction, point five minus log point five should be around point
+ six, nine. So in that way, you can see, okay, this is actually
+ close to point six, nine. So it's kind of like a random
+ prediction here, which is good. Okay. Um, if loss of generator
+ steadily decreases, then it's fully D with garbage. Okay. So
+ yeah, okay, we don't have this problem here. I will show you
+ actually a failure case in the next video. Let me just double
+ check on it. I can show it already. It's not going down.
+ It's rather going up. But yeah, there was something interesting
+ happening there. We will revisit that in next video. Okay. Don't
+ balance the loss via statistics unless you have a good reason
+ to. So yeah, that is, don't try to find a number of generator
+ number of discriminator updates. It usually doesn't work so well
+ in practice. It's kind of hard just to find the good
+ recommendation. If you recall the original GAN paper, I had a
+ hyper parameter for the number of discriminator updates before
+ updating the generator. Let's go to the paper, the screenshot of
+ that algorithm somewhere here. Yeah, the case steps. So here,
+ they used cake was one one might be tempted to have multiple
+ discriminator updates before updating the generator. But
+ yeah, apparently, this is probably not a great idea. It's
+ hard. We've all tried it. Also, following a more principled
+ approach. Like checking the loss of the losses too large, or if
+ the loss is very large, train the discriminator until it goes
+ down. Or if the loss for the generators too large, train it
+ until it goes down instead of doing a fixed number of updates.
+ If you have labels, use them. So if you have labels available,
+ train the discriminator to also classify the samples. So it's
+ kind of like an auxiliary GAN. Actually, last year, we worked
+ on a paper, we actually did that here. This is used to cycle
+ again, it's more of the advanced concepts, which we won't cover
+ in this class. But part of it, we also had a GAN here. I mean,
+ this is like an interesting setup, we have an auto encoder
+ plus again, so there's also the GAN aspect that we have a
+ discriminator here. And this is the generator, but it happens
+ also in auto encoder. So it's kind of like a hybrid. And here,
+ we also had attribute classifier and an auxiliary face matchup,
+ which are kind of like auxiliary ones. So this is really the
+ auxiliary one. And this is an additional constraint here. So
+ it's also Yeah, might be a good idea if you have label
+ information to include that as well. It also brings me to the
+ topic of how we evaluate GANs. So kind of a tricky question.
+ Still an active research problem. We haven't really
+ talked about it. One is called fresh at inception distance. And
+ it's kind of also, it's based on essentially comparing. So many
+ of these metrics are based on comparing the distribution of
+ the training data to the distribution of the generated
+ data to see how similar the distributions are. And sometimes
+ people also use pre trained models. For instance, you can
+ train, let's say model on, let's say MNIST, the classifier on
+ MNIST, and then you do the classification on the original
+ MNIST data set. And then you do the classification on the
+ generated data set. And you expect approximately that. So
+ the better the model is, the better the classifier prediction
+ should be. Because if you train the classifier on the original
+ data set, and then you show it garbage, it probably won't
+ perform as well, the distribution of predictions
+ will be different from the training set distribution
+ predictions. So that is kind of one way to kind of get a feeling
+ of how good the results are. But yeah, there are many other
+ metrics, which are also slightly out of the scope of this class.
+ At noise to the inputs decay over time. So adding some noise,
+ it's kind of, I think, yeah, this is like getting noise to
+ the way of the generator and to the inputs. It's kind of like
+ adding, if you think back of the denoising auto encoder we talked
+ about, it's kind of like that adding some noise to the input
+ images, train the discriminator more, so it's not sure. So yeah,
+ there that is like going back to the tricky part that we also
+ had here in the paper, whether we should train the
+ discriminator more times than a generator. It's a not sure
+ thing. batch discrimination, I actually forgot what that is.
+ Sorry, should look this up again. discrete variables. So
+ yeah, so conditional, again, is another topic we haven't talked
+ about. So what you can also do is you can concatenate the
+ target variable with the input, and then also feed it through
+ the network is in a conditional setting. And then it also allows
+ you to reconstruct. So if you mean that two ways to do that,
+ some people concatenate it with the input. And then you
+ concatenate it with the generated output. And you check
+ the sorry, you check the reconstruction also. So there's
+ more like for an auto encoder setting, but you include
+ essentially, labeling information. And that can also
+ help you to generate particular data points of a particular
+ class, if you're interested in that. And here it appears that
+ it also may be a general trick that helps making gants perform
+ better. I haven't done experiments extensively with, with
+ that, but it also goes back. I mean, not without it, but also
+ goes back to our case here where we add, add this to the input,
+ the target labels, essentially, we provide both essentially, and
+ this is for different contexts, because we want to switch the
+ attributes of the image. But yeah, apparently, maybe it can
+ also help stabilizing GAN training. Using dropout both
+ during training and testing, I have used only dropout during
+ training. Using it during testing is an interesting idea
+ might be something worth trying. And now this is already it, by
+ the way, 17 is also my favorite lucky number, I always like to
+ have the 17 in soccer back then, long time ago. But yeah, so
+ anyway, so that is just maybe an interesting idea of things to
+ try some initial things that work well with GANs. Notice
+ that this is not longer maintained, but many of these
+ tips are still very relevant, in my opinion. Alright, so the
+ next video, I will then talk about our DC GAN.

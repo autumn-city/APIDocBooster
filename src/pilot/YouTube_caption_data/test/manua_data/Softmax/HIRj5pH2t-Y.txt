@@ -1,0 +1,170 @@
+So, we want to classify a 3D object – but
+how exactly do we do that? And how different
+it is from a 2D object classification. Unless
+you completely agree with Elon Mask who said
+“Lidar is a fool's errand and Anyone relying on lidar is DOOMED.”,
+then this video is for you. First, Let’s
+go over 2d classification, super quickly.
+In 2D vision, an image is represented as a
+matrix or a tensor.
+You may know how classification is performed
+in 2d vision. A very popular method is CNN
+(Convolutional Neural Network).
+From this 2d image, we can simply learn features
+through convolution operation and introduce
+non-linearity through activation functions
+such as ReLU. Then pooling can be used to
+reduce dimensionality and preserve spatial
+invariance. This portion is called “Feature
+Learning”. The convolution layer and pooling
+layer generate high-level features of the
+input image.
+Then fully connected layers use these features
+for classifying the input image. The output
+layer produces the probabilities for each
+class. The class with the highest probability
+is the predicted class for the input image.
+In this example, it’s a sweater with 99%
+probability. This portion is called classification.
+So, what do you do when you have a 3D input?
+This is also a sweater but it’s a 3D point
+cloud. 1) How is the data represented at the
+input level? 2)How are features learned? and
+3) How is classification performed?
+To answer all these questions, I’m going
+to go over PointNet, a very popular method
+for 3D object classification that has more
+than 5000 citations. A group of researchers
+from Stanford University proposed this method.
+I’ll share the paper link in the description.
+I will explain the concept first, then I’ll
+discuss the PyTorch implementation side by
+side with the PointNet architecture figure
+for a better understanding.
+We initially start with a point cloud that
+has “n” numbers of points in it. A point
+Cloud is basically a collection of individual
+points in 3d space. Each point is represented
+by its coordinate in the XYZ plane. That’s
+why the input size is nx3 here. In this particular
+paper, n is 1024. In other words, the input
+object that we want to classify has 1024 points.
+Then the input points are transformed by an
+input transformer network.
+Let’s take a closer look at this input transformer.
+The main idea behind this transformer network
+is to align the input point cloud to a canonical
+space. So why do we need to do this alignment?
+The answer is in the definition of a point
+cloud. A point cloud is simply just a set
+of points in 3d space and therefore invariant
+to permutations of its members. Researchers
+have been handling this issue in several different
+ways.
+* Like 1) Sort the input points into a canonical
+order; 2) Sequential model, like train RNN
+model that considers input points as a sequence;
+or 3) use a symmetric function to aggregate
+the information from each point. This paper
+uses the last technique.
+ 
+Since we want the point cloud to be invariant
+of certain geometric transformations, such
+as rigid transformation, like refection, rotation,
+and translation, an affine transformation
+is applied to the input point coordinates
+to accomplish this alignment.
+Here, T-Net is used to predict the transformation.
+T-Net stands for Transformer Network. T-Net
+is basically a mini PointNet which is composed
+of basic modules of point independent feature
+extraction, max pooling, and fully connected
+layers and the T-Net is trained with the rest
+of the network. I’ll show the exact T-net
+architecture in the implementation section.
+For point cloud, a geometric transformation
+is just matrix multiplication. So, here basically
+the input data is multiplied with the output
+matrix from T-Net.
+Then each point is embedded by a multi-layer
+perception. Here, the numbers in the brackets
+are layer sizes. Batch normalization is used
+with ReLU. I’ll share each layer details
+in the implementation section.
+Subsequently, a feature transform is applied.
+Like the input transform, the feature transform
+is used to align points in embedding space.
+However, the feature transform is slightly
+different than the input transform. The feature
+transform does the embeddings in much higher
+dimensions – 64 in this case. This makes
+the optimization much difficult.
+That’s why a regularization term is added
+to the softmax training loss to make the optimization
+stable. Here, A is the feature alignment matrix
+predicted by the T-Net and I is the identity
+matrix.
+Then each point is again transformed in another
+embedding space which is a 1024-dimensional
+space. This has been done by a multi-layer
+perception of sizes (64, 128, 1024). After
+that max-pooling is used to aggregate all
+points in the high dimensional embedding space
+to output a global feature vector. The authors
+experimented with other symmetry operations
+like average pooling and attention based weighted
+sum and found out that max-pooling works significantly
+better. * Finally, the global vector is updated
+by a multi-layer perception to output the
+classification scores for k classes. The class
+with the highest probability is the predicted
+class for the input point cloud.
+Now let’s take a look at the PyTorch implementation
+side by side to the PointNet architecture.
+I like this particular PyTorch implementation
+by Fei Xia 22, sorry if I'm pronouncing it
+wrong. This is a very simple and easy to follow.
+If you are more of a TensorFlow person, then
+check out the GitHub repo by the authors.
+I’m going to provide both PyTorch and TensorFlow
+implementation links in the description below.
+You will find instructions on how to train
+the network here. Let’s check out the model
+script.
+This block of code is the T-Net in input transformation.
+It contains 3 convolution operations followed
+by batch normalization and relu. Then the
+max pooling is applied. Finally, there are
+3 fully connected layers. The matrix is initialized
+as an identity matrix. The output matrix has
+a dimension of 3x3.
+Next, this block of code is the T-Net in feature
+transformation. It’s the same as the previous
+block except the output is 64x64. The matrix
+is also initialized as an identity.
+PointNetfeat: Then, this class is called 'PointNet
+Feature' combines everything from the input
+layer to ‘global feature’. It starts with
+the T-Net in input transform then here is
+the matrix multiplication, the input data
+is multiplied by the output matrix of T-Net.
+This is the feature spatial transformer network.
+Then here is the matrix multiplication of
+the feature transformer. This is the ‘global
+feature’.
+PointNetCls: Finally, this PointNet Classification
+class combines everything and completes the
+architecture. So far, we have till global
+feature. This portion is the final multi-layer
+perception and output; which contains 3 fully
+connected layers, batch normalization, relu,
+and dropout layers. Finally, the log-softmax
+function is used to get the classification
+probabilities for k classes.
+This class is for object segmentation which
+we don’t need for classification.
+This is it. Feel free to comment if you have
+any questions or suggestions. If you found
+this video helpful, please do like and subscribe
+to support the channel. Thanks for watching.
+I’ll catch you in the next one.

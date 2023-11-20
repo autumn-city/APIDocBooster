@@ -1,0 +1,769 @@
+in most data science projects whether
+you're doing machine learning web
+scraping data processing or analysis
+you're going to have a bunch of
+configuration settings somewhere but
+what's the best place to store these
+settings and how do you design your code
+that your settings are easy to find and
+easy to change i'm going to give you a
+few tips in this video apply them to a
+data science example and also talk about
+really useful package to help you with
+this if you want to improve the way you
+design your software i've written a free
+guide for you that helps you with this
+it's available at ironcodes.com
+design guide it takes you through seven
+steps to consider when you create a new
+software application it's really
+practical to the point you can apply it
+directly to the code that you're working
+on so get it at ioncodes.com design
+guide i've also put the link in the
+description of this video now let's dive
+into the example if you watched some of
+my earlier videos you might recognize
+this example it's an example that uses
+torch to create a model a linear net and
+then runs a bunch of experiments on test
+data it's an image classification
+problem i recently refactored this whole
+project as part of a code roast if you
+haven't watched that yet i've put a link
+to that video in the description of this
+one what we've ended up with in the
+final version is a main file that
+contains a bunch of parameters so these
+are epoch counts batch sizes pathway we
+output logs data configuration stuff
+data directory data files etc etc so
+these are configuration settings for
+this project and they're all in the main
+file defined as constants if you look at
+the main function itself you see that
+these constants are then used to create
+for example data loaders they're being
+passed to the experiment tracking system
+they're being used in running the e-box
+and so on and so on so these settings
+they basically flow through the rest of
+the code from the top which is nice
+because then we have all these settings
+in a single place here in the main file
+in the original version of this project
+this wasn't the case at all let me open
+that so i can show you what i mean so
+here this was the original version it's
+defined differently there are a couple
+of parameters here which is a good thing
+but if you look at other files like the
+load data file that you see here you see
+that there is configuration settings
+here here's the directory here's
+references to explicit images and that
+makes it really hard to get a clear
+overview of what the configuration
+settings for a project are exactly
+because even in the main file of this
+original version you see that there are
+some parameters here but if you scroll
+down there's actually a parameter extra
+parameter in other places as well like
+here where we're defining the
+tensorboard experiment we're passing a
+log directory which is built on this
+particular route that we provide here so
+in the original version of this project
+you basically have to look through all
+of the code to find out what the
+configuration settings are and what i
+did in the updated version in that video
+is put them all together in a single
+place here in the main file that's
+better but it's still not ideal to have
+these configuration settings in your
+code directly and that's for a few
+reasons the first reason is that suppose
+you want to have colleagues use your
+script to perform various kinds of
+experiments and maybe those colleagues
+they don't know how to code in python
+well now they have to dive into python
+files and change values here which is
+going to be really hard for them another
+reason is that this still invites you as
+a programmer to define these
+configuration settings everywhere in the
+code because there is nowhere written
+here that you should only put them here
+right and often it's easier you just say
+oh you know what i just put it directly
+in this file and i don't have to worry
+about passing it to the function or
+whatever by leaving these configuration
+settings explicitly in your code file
+you're actually promoting bad practices
+for dealing with configurations and that
+ties in closely with the third reason
+which is that if you put your
+configuration settings outside of the
+code it means you can also change them
+without changing the code and not having
+to change the code when you want to
+change the configuration is valuable
+because that means that you can do other
+things that like suppose you want to run
+this experiment five times but each with
+a different bunch of configuration
+settings the way it's set up now this
+involves manual work because every time
+you need to run the experiment then you
+need to manually change the values of
+these configuration variables here and
+then run the experiment again whereas if
+the configuration settings are stored
+outside of the main code then you can
+basically write a script that runs the
+experiment five times with five
+different files and you could even
+generate different configuration
+settings on the fly using randomized
+values or whatever you would like to do
+so in general moving out configuration
+settings from your main code is really
+important and it's going to help you
+write more flexible python scripts in
+the end so that's what i'm going to do
+with this example today before i start
+modifying this code i want to talk about
+cohesion and coupling and how
+configuration parameters interact with
+those concepts if you run this code then
+this is what happens
+so you see it's training and validating
+data and it's retrieving all the data
+from the files that we defined using
+these parameters here
+so what makes dealing with configuration
+settings so hard well the first issue is
+that you're going to need them in a lot
+of different places in your code if you
+have a machine learning model you might
+need a path to the input data you might
+need to specify the files that contain
+those data if you have an experiment
+tracking system you might need a path to
+store experiment logs if you're doing
+web scraping you might want to have a
+bunch of urls that you define somewhere
+from where to get the data so all these
+things are configuration settings that
+are basically spread throughout your
+entire code base on the other hand you
+want to have a single place where you
+define them because otherwise it's
+impossible to keep track of all the
+settings that are there and that you
+might want to change in the future this
+seems to lead to an unsolvable problem
+if you store your configuration settings
+in a single place you're going to need
+to pass them around everywhere leading
+to functions with loads of arguments
+passing detailed configuration settings
+down to lower level functions leading to
+weak cohesion on the other hand if you
+define the config settings as a global
+variable somewhere that you import and
+all those different files and that's
+going to lead to a lot of coupling
+because if those config settings are not
+there then your code is also going to
+break in the example i basically stored
+all the configuration settings in the
+main file now for a very simple project
+like this that's not really that much of
+a problem but if your data science
+projects grow larger you don't want to
+have to store a bunch of configuration
+settings in your main file that's just
+going to clutter up everything so what
+are a few other solutions to dealing
+with configuration settings well the
+first one is that you could define each
+setting locally near or in the file that
+it's going to be needed in that way it's
+also clear which setting is going to be
+used where and it also provides a kind
+of structure the disadvantage is that
+then you'll end up with having settings
+all over the place in your code and
+they're going to be harder to find the
+second solution is that you use
+environment variables there's a package
+you can use for that it's called
+python.n that's really useful and the
+way that this would work is that you
+would define a bunch of environment
+variables containing all the settings
+you need and then the code the script
+basically accesses those variables and
+then uses the values that are stored in
+them the advantage of this approach over
+directly defining the settings inside
+your code file is that you can then
+change them and run the code again
+without having to change the code a
+package like python.n is really useful
+because that allows you to create dot m
+files that then contain the definitions
+of those environment variables in a
+single place which is pretty nice the
+disadvantage is that from the code it's
+not directly easy to see what
+configuration variables there actually
+are and which ones you can change and
+also there's no structure whatsoever to
+these variables so you might end up with
+huge list of unrelated variables that
+all have different kinds of values and
+as a result you might not know which
+variable is going to be used where and
+what the effect is going to be of
+changing the value of that variable a
+third solution is that instead of a dot
+n file containing environment variables
+that you use a json or a yaml file that
+contains the specification of your
+settings the nice thing about this
+approach is that you can then also
+provide some structure so for example
+you could make sub objects that then
+correspond to different layers of your
+application there's a really nice
+package called hydra and that allows you
+to do lots of things with configuration
+files you can define yaml files
+containing configurations sub objects of
+configurations you can even define
+configurations in multiple files
+override configurations pass
+configuration options as command line
+arguments when you run the script create
+batches of configurations and run your
+script multiple times and many more
+things and that's really useful if
+you're running experiments and you just
+want to run a bunch of those changing
+some values without having to change the
+code so let's take a look at the example
+and see how we can use hydra to improve
+our configuration setting management
+with the hydra package you can put all
+of these parameters into a yama file and
+that really cleans up your code a lot so
+as a starting point let's create a
+simple yama file that contains these
+parameters so the epoch count the lr and
+the batch size which is really more the
+algorithmic parameters so to say so what
+i'm going to do is in my source folder
+create here a new folder called
+conf and this is going to contain all
+our configuration settings so i'll put a
+simple yammer file in here
+called config.yml so this is going to
+contain all the settings that we want to
+have what i'm going to do is simply copy
+over these parameters here epoch on the
+lr and the batch size so let's for now
+just put that here obviously this is not
+correct yama format so we have to change
+this a little bit let's say we define a
+section here that we call params which
+is what these things are and i'm going
+to select these and indent them and by
+default in yammer files you should use
+lowercase names so let's change this to
+epoch count and we use a column to
+assign the value so this is what we get
+there we go that's a very simple set of
+parameters and what do we need to do now
+to import them in our code well that's
+actually really simple as first step
+let's import hydra
+and what you need to do let me go to the
+main function here is put a decorator on
+top of the main function to make sure
+that hydra knows that it needs to load
+the configuration before it runs this
+main function and this is what that
+looks like
+and we need to provide two things
+the path where hydra can find a
+configuration so that's the conf folder
+that i just created
+and the name of the config file
+which is config and then what i need to
+do is add an extra parameter to my main
+function let's call that config i won't
+deal with types yet i'll show you in a
+minute how that works so it happens now
+is that hydra will automatically load
+the configuration file at this location
+and put the data into this object that
+you can then use in your main function
+let's print this
+and see what we get and i'll just return
+after the print statement so we don't do
+all the other stuff if i run this then
+you see that hydra loads the
+configuration file and we now get the
+data that we put in there so if
+params.epoccounts.lr.batchsize and we
+can now access these things through the
+config object and use them in our code
+here so this is really useful let's also
+put the other configuration settings in
+that same configuration file so we have
+params now what we also have is a bunch
+of files
+that's basically the files that you find
+here
+so i'm going to add
+another group here called files
+and this is what the file data looks
+like so we have four files test data
+labels train data and train labels and
+then a final group of parameters is the
+folders where we have things so we have
+the log path and we have the data there
+so let's put those in here
+i'm just going to call this log so
+that's the runs folder and the data
+folder is this
+there we go now the thing is what hydra
+also does is it creates this folder
+containing outputs so you can see that
+we have here per date a number of
+outputs and basically this is a time
+slot so this is the last time that i ran
+the actual code that was what i just
+showed you and that's where it's going
+to put all the things that are related
+to hydra and because hydra does that it
+also means that hydra changes the
+working directory to the output
+directory so what you need to do is to
+make sure that the files the paths that
+you provide here are actually relative
+to the current working directory and let
+me do that for data oh actually these
+double quotes they're not needed in yaml
+so for data what you can do to get the
+current working directory is use this
+so this gives us the current working
+directory let's add a slash after that
+and then we're sure we load the data
+from the right place now hydra has a
+couple of other parameters as well that
+you can access in this configuration
+file using a similar structure so that's
+pretty useful you can even refer to
+other values in the configuration itself
+so this is now our basic configuration
+that contains all the data that we need
+so go back into the main file and let's
+print the configuration one more time
+just to verify that we're indeed getting
+all this information so that's where you
+see we get all of these things which is
+great and now we can start using the
+values in this configuration object and
+instead of using these constants here i
+can use the values to pass them to the
+different parts of my program that needs
+it now there's one thing that i'd like
+to do as well you know that i love using
+types because they help me write code
+more quickly and more cleanly and make
+less mistakes but configuration now
+currently doesn't have a type so it
+doesn't provide any information about
+what it contains and i'd like to change
+that unfortunately hydra integrates
+really well with data classes so you can
+actually use data classes to define what
+the structure is of this configuration
+object so i'm going to add another file
+where i'll define the structure of this
+configuration so let's call that
+config.pi and we're going to use data
+classes
+to do that
+so what do we have as part of a
+configuration well we have paths
+so let's create a data class paths
+and this is going to have the log
+and the data folder
+another class we have is
+files
+and this contains the
+train data which is a string
+train labels which is also a string
+test data
+[Music]
+and
+test label so those are the files that
+we need in this particular project and
+then finally we have glass params
+which has the epoc account
+that's an int
+we have the lr setting which is a float
+and we have the batch size which is also
+an ins these are the sub parts of our
+configuration and then finally since
+this is a group of these configuration
+settings we can define
+another data class let's call this mnist
+config because this is using the mnist
+dataset and this simply groups the
+parameters in instances of these classes
+that are just defined above
+so we have the paths which is something
+of type paths we have the files
+which is an instance of files and we
+have
+params which is an instance of
+param so that's our configuration
+definition the only thing we need to do
+now in the main file is make sure that
+config is actually of that type
+let me add this here mnist config and
+we're going to import that automatically
+and now let's see what happens when we
+run this code
+so you see that well there's an error
+here because we did not yet pass the
+right parameter values but if we move up
+we see that we still get the same object
+back so it's not yet an mnist config
+even though we provided it as a type and
+the reason that's happening is because
+hydra doesn't know we want to have
+something of this type hydra simply
+provides us with the raw data so we need
+to tell also hydra that we want config
+to be an instance of mnist config and
+not the raw data that it just loads from
+the configuration file and the way that
+hydra solved this it's a bit convoluted
+is that they have a config store and
+then you can link configuration objects
+provided by hydra with data classes that
+you want to use so in order to do that
+we need to create a config store
+let's do that here
+that's a
+config store and this is how we called
+it config store that instance and we
+need to import that
+so now we have a config store and then
+we simply need to tell it that it can
+use the mnist config data class
+so we're going to store this
+with a name let's call that mnist
+config like so and we provided a what
+they call a node and that's amnest
+config which we define as follows and
+now let's run the code again make this a
+little bit larger
+clear the screen
+let's move up and now this is going to
+be an actual instance of the mnist
+config data class so for example what i
+can do now is print config.params
+and if i run this then we're going to
+see just the parameters here
+let's move up that's where they are so
+now the next step is that instead of all
+these constants that i'm using here in
+the code i can now access them from the
+configuration so for example here
+instead of accessing this config i can
+write config.params.l
+that gives us the lr and the same thing
+for all the other configs so for example
+the batch size
+is going to become config.params
+[Music]
+dot
+patch
+size parents.patch size there we go
+these contents i'll replace in a minute
+because there's an issue with it i'll
+show you what i mean let's scroll down
+so the log path we can also change
+that's config.paths
+dot
+log and then we have the epoch count
+here
+config.params.epoccount
+and basically replace the constants
+everywhere
+dot epoch counts here as well let's see
+is there anything else no that seems to
+be it so the only thing that's remaining
+is this test data and training data
+labels now if you look at the definition
+of create data loader what it is expect
+is actually a path but the problem is we
+now moved to a configuration file which
+doesn't contain path objects because
+that's a python thing it contains
+strings and there you see that actually
+the way that i originally defined these
+variables was not very clean because we
+have the data directory here and then i
+construct these constants directly from
+this value and also turn them into a
+path so even then if you want to change
+these values there is some boilerplate
+code that's surrounding the actual value
+that you are concerned with so now that
+we use separate configuration file we
+can also clean this up so first let me
+delete these parameters because we don't
+need these anymore and what you can do
+to clean this up is to slightly change
+the create data loader function to
+simply accept strings and then create
+data loader will be responsible for
+constructing paths from that so let's
+save this file and then i'm going to the
+definition of this create data loader
+function so currently it's getting paths
+that already contain the data directory
+in front of it so what we need to do is
+add another parameter in front that
+contains the data directory so let's
+call that the root path that's going to
+be a string and then we have the
+data file which is a string and we have
+the label file which is also a string
+and now what we need to do is construct
+the data path and the label path from
+these strings and that's actually pretty
+straightforward
+i can simply define a data path here
+which is a path and that's built up from
+the root path
+and then the data file
+so that's our data path and similarly we
+can make a
+label path
+there we go there's still some type
+errors here due to numpy so i'll just
+ignore that for the moment but now
+create data loader expects three strings
+that we can simply supply from the
+config settings so i'm going back to the
+main file and of course here i need to
+change this so what i need to do is pass
+the config.paths dot which is the root
+path and then instead of these two
+constants test data and test label
+i'm going to pass the
+file names from the configuration
+and the same thing for the train loader
+so
+pass.data
+train data
+train labels
+there we go now if you want to make this
+a bit cleaner because now there are lots
+of parameters that you're passing
+through this function you could also use
+keyword arguments to clarify things
+like so
+and let's do the same thing here
+there we go and now we can remove these
+settings as well because they're not
+loaded from the configuration file
+there we go so that means we now no
+longer have any configuration settings
+here in the main file let's delete this
+import because that results in an error
+and it's no longer needed here when you
+scroll down you see that there is
+another type arrow here that's one issue
+with hydra and many other packages in
+python is that the main function here is
+empty gets no parameters but hydra fills
+it with a configuration on the fly so it
+doesn't really work very well together
+with the typing system because the
+typing system expects that we should
+provide here configuration and while we
+don't do that here because the hydra is
+going to do that so in terms of typing i
+think there are a couple of things to
+improve in how it works but overall i
+think this works really nicely and it
+gives a lot of flexibility i'll show you
+a few more things in a minute let's
+first run this code and see what happens
+now
+so you see there's an error now no such
+file directory and i think what the
+problem is that there is a double quote
+here that's not supposed to be there so
+apparently i accidentally added that
+somewhere let's see that's probably
+happening here now here that looks to be
+fine let's go back into the
+configuration file there is still a
+double quote here exactly that's always
+something to pay attention to when
+you're defining these configurations
+let's run this again and see if it works
+now
+yeah there we go so it's now training
+and validating again based on the
+settings in the configuration file so
+you see that we have 20 epochs here
+so let's verify that changing the
+configuration actually does something so
+let's say i change the epoch count to 10
+instead of 20 and then i go back into
+the main file
+we're running the code again and now you
+see epoch count is 10 and i was able to
+do this without changing a single line
+in the python file simply change the
+setting in my configuration so that's
+really cool so that means what you can
+do now is provide this collection of
+scripts and configuration settings in
+yaml file to a colleague and they can
+simply run your script by using the
+configuration if they want to change
+something to change the configuration
+then they don't have to look at your
+code here i'm using a single
+configuration file that actually hydra
+has lots of options of using files and
+folders and sub configuration files etc
+and i want to show you one thing for
+example what you can do suppose that you
+want to have different test sets and you
+want to be able to define those
+collections of test data beforehand what
+you can do then is create a sub
+configuration file for each group of
+data that you want to use so let's say i
+create here a subfolder called
+files and let me create another file
+here called mnist
+which contains the mnist dataset and
+then you could potentially use other
+data sets as well and the mnist data set
+is nothing more than basically these
+values so i'm going to copy these to the
+mnist
+file remove the indentation here let's
+save this and then what you can do in
+config.yaml is instead of directly
+defining the files here you can actually
+provide default values where you should
+load things from so i won't define them
+here i'll just add a defaults here
+defaults and that's a list
+so for files our default is going to be
+the
+mnist configuration that we just created
+and now if i run this you see this is
+still working fine and now we get the
+file data from the mnist file instead of
+directly from the config file and you
+can create any kind of combination or
+structure of configuration files that
+you want i see that there was a warning
+here
+let me go back up where it says that the
+defaults list is missing self so this is
+something that you need to do in hydra
+if you define defaults and that has
+mainly to do with the legacy issue that
+they changed the way that defaults work
+from the current version to the previous
+version so you have to indicate which
+version of defaults you'd like to use
+the main change is that they swap the
+order in which defaults override
+standards so for example if i were to
+provide a files thing still in here then
+in the previous version defaults
+wouldn't overwrite the files already in
+the config but this is actually often
+what we want so we need to add here
+self so that basically means we want
+files to be preferential over what's in
+the current file that's what it means
+and then let's delete this line and now
+when i run this again we should not get
+that error anymore so there you go now
+it's running as it should
+let me stop this
+we don't need to print these parameters
+anymore so there you go it's a really
+neat way of dealing with configuration
+settings i still think it's a little bit
+involved with the config store and
+registering types and having the main
+function here that you have to call
+without a parameter and that hydra then
+fills it in for you to me that doesn't
+feel like a great way of doing it i
+would have actually preferred a simple
+function that gets parameters and that
+just does the job for you instead of all
+these complicated things with config
+stores and decorators and etc etc though
+i do kind of get why they did it this
+way because it's also really easy if you
+have a main function and you don't want
+to worry about passing objects around
+but from a software design perspective i
+personally prefer a cleaner approach so
+overall here's my advice for how to best
+deal with configuration settings first
+define your settings in a single place
+outside of the code that can be an
+adjacent file a yaml file it doesn't
+have to be a single file it can be a
+whole collection of files but they
+should be in a single place and you load
+them and apply them in your main file my
+second advice is to structure your
+configuration settings this is going to
+help you understand which settings are
+going to be used where you can even add
+comments and things like that in yaml
+files to provide some extra information
+about what a certain parameter is
+supposed to do and finally don't
+reinvent the wheel and write a bunch of
+code to deal with configuration settings
+use a package like hydra because that's
+really going to save you a lot of time i
+hope you enjoyed this video if you did
+give this video a like consider
+subscribing to my channel if you want to
+watch more of my content the earlier
+refactoring i did of the example in this
+video was actually quite interesting if
+you want to watch that check out this
+video right here thanks for watching
+take care and see you soon

@@ -1,0 +1,1593 @@
+NICK: Hi, everyone.
+My name is Nick.
+I am a engineer on
+the TensorBoard team.
+And I'm here today to talk
+about TensorBoard and Summaries.
+So first off, just an outline
+of what I'll be talking about.
+First, I'll give an overview
+of TensorBoard, what it is
+and how it works, just
+mostly sort of as background.
+Then I'll talk for a bit
+about the tf.summary APIs.
+In particular, how they've
+evolved from TF 1.x to TF 2.0.
+And then finally,
+I'll talk a little bit
+about the summary data format,
+log directories, event files,
+some best practices and tips.
+So let's go ahead
+and get started.
+So TensorBoard--
+hopefully, most of you
+have heard of TensorBoard.
+If you haven't, it's the
+visualization toolkit
+for TensorFlow.
+That's a picture of the
+web UI on the right.
+Typically, you run this from the
+command line as the TensorBoard
+command.
+It prints out a URL.
+You view it in your browser.
+And from there on, you have
+a bunch of different controls
+and visualizations.
+And the sort of key selling
+point of TensorBoard
+is that it provides cool
+visualizations out of the box,
+without a lot of extra work.
+you basically can just
+run it on your data
+and get a bunch of
+different kinds of tools
+and different sort of
+analyses you can do.
+So let's dive into the
+parts of TensorBoard
+from the user
+perspective a little bit.
+First off, there's
+multiple dashboards.
+So we have this
+sort of tabs setup
+with dashboards across the top.
+In the screenshot, it shows
+the scalers dashboard, which
+is kind of the default one.
+But there's also dashboards
+for images, histogram, graphs,
+a whole bunch more are being
+added every month almost.
+And one thing that many of
+the dashboards have in common
+is this ability to
+sort of slice and dice
+your data by run and by tag.
+And a run, you can
+think of that as a sign
+of a run of your
+TensorFlow program,
+or your TensorFlow job.
+And a tag corresponds to
+a specific named metric,
+or a piece of summary data.
+So here, the runs,
+we have a train
+and evolve run on the lower
+left corner in the run selector.
+And then we have different tags,
+including the cross [INAUDIBLE]
+tag is the one being visualized.
+And one more thing I'll
+mention is that one thing a lot
+of TensorBoard
+emphasizes is seeing how
+your data changes over time.
+So most of the data takes
+the form of a time series.
+And in this case, with
+the scalers dashboard,
+the time series is sort of as
+a step count across the x-axis.
+So we might ask, what's
+going on behind the scenes
+to make this all come together?
+And so here is our architecture
+diagram for TensorBoard.
+We'll start over on the left
+with your TensorFlow job.
+It writes data to disk
+using the tf.summary API.
+And we'll talk both about the
+summary API and the event file
+format a little more later.
+Then the center component
+is TensorBoard itself.
+We have a background thread
+that loads event file data.
+And because the event
+file data itself
+isn't efficient for querying,
+we construct a subsample
+of the data and memory that
+we can query more efficiently.
+And then the rest so
+TensorBoard is a web server that
+has a plugin architecture.
+So each dashboard
+on the frontend--
+as a backend, it has
+a specific plugin
+backend So for example,
+the scalers dashboard talks
+to a scalers backend,
+images to an image backend.
+And this allows the backends to
+do pre-processing or otherwise
+structure the data
+in an appropriate way
+for the frontend to display.
+And then each plugin has a
+frontend dashboard component,
+which are all compiled
+together by TensorBoard
+and served as a single
+page and index.html.
+And that page communicates back
+and forth through the backends
+through standard HTTP requests.
+And then finally, hopefully,
+we have our happy user
+on the other end
+seeing their data,
+analyzing it, getting
+useful insights.
+And I'll talk a little more
+about just some details
+about the frontend.
+The front end is built on
+the Polymer web component
+framework, where you
+define custom elements.
+So the entirety of TensorBoard
+is one large custom element,
+tf-tensorboard.
+But that's just the top.
+From there on, each
+plugin front end is--
+each dashboard is its
+own frontend component.
+For example, there's
+a tf-scaler dashboard.
+And then all the way
+down to shared components
+for more basic UI elements.
+So we can think of this as
+a button, or a selector,
+or a card element, or
+a collapsible pane.
+And these components are shared
+across many of the dashboards.
+And that's one of the key
+ways in which TensorBoard
+achieves what is hopefully
+a somewhat uniform look
+and feel from
+dashboard to dashboard.
+The actual logic
+for these components
+is implemented in JavaScript.
+Some of that's
+actually TypeScript
+that we compile to JavaScript.
+Especially the more
+complicated visualizations,
+TypeScript helps build
+them up as libraries
+without having to worry
+about some of the pitfalls
+you might get writing
+them in pure JavaScript.
+And then the actual
+visualizations
+are a mix of different
+implementations.
+Many of them use
+Plottable, which
+is a wrapper library over the
+D3, the standard JavaScript
+visualization library.
+Some of them use native D3.
+And then for some of the
+more complex visualizations,
+there are libraries that do
+some of the heavy lifting.
+So the graph
+visualization, for example,
+uses a directed graph
+library to do layout.
+The projector uses a
+WebGL wrapper library
+to do the 3D visualizations.
+And the recently introduced
+What-If Tool plugin
+uses the facets library
+from [INAUDIBLE] folks.
+So we bring a whole bunch
+of different visualization
+technologies together under
+one TensorBoard umbrella
+is how you can think
+about the frontend.
+So now that we have a overview
+of TensorBoard itself,
+I'll talk about how your data
+actually gets to TensorBoard.
+So how do you unlock all
+of this functionality?
+And the spoiler announcement
+to that is the tf.summary API.
+So to summarize the
+summary API, you
+can think of it as structured
+logging for your model.
+The goal is really to make it
+easy to instrument your model
+code.
+So to allow you to
+log metrics, weights,
+details about predictions,
+input data, performance metrics,
+pretty much anything that
+you might want to instrument.
+And you can log
+these all, save them
+to disk for later analysis.
+And you won't necessarily always
+be calling the summary API
+directly.
+Some frameworks call
+the summary API for you.
+So for examples, estimator
+has the summary saver hook.
+Keras has a
+TensorBoard callback,
+which takes care of some
+of the nitty gritty.
+But underlying that is
+still the summary API.
+So most data gets to
+TensorBoard in this way.
+There are some exceptions.
+Some dashboards have
+different data flows.
+The debugger is a
+good example of this.
+The debugger dashboard
+integrates with tfdbg.
+It has a separate back
+channel that it uses
+to communicate information.
+It doesn't use the summary API.
+But many of the commonly
+used dashboards do.
+And so the summary API
+actually has sort of--
+there's several variations.
+And when talking
+about the variations,
+it's useful to think of the
+API as having two basic halves.
+On one half we have the
+instrumentation surface.
+So these logging
+these are like logging
+ops that you place
+in your model code.
+They're pretty
+familiar to people
+who have used the summary API,
+things like scaler, histogram,
+image.
+And then the other
+half of the summary API
+is about writing that
+log data to disk.
+And creating a
+specially formatted log
+file which TensorBoard can
+read and extract the data from.
+And so, just to give a
+sense of how those relate
+to the different
+versions, there's
+four variations of the summary
+API from TF 1.x to 2.0.
+And the two key dimensions
+on which they vary
+are the instrumentation
+side and the writing side.
+And we'll go into
+this in more detail.
+But first off, let's start
+with the most familiar summary
+API from TF 1.x.
+So just as a review--
+again, if you've
+used the summary API before,
+this will look familiar.
+But this is kind
+of a code sample
+of using the summary API 1.x.
+The instrumentation ops, like
+scaler, actually output summary
+protos directly.
+And then those are
+merged together
+by a merge all op that generates
+a combined proto output.
+The combined output, you can
+fetch using session dot run.
+And then, that output, you
+can write to a File Writer
+for a particular
+log directory using
+this add summary call that
+takes the summary proto itself
+and also a step.
+So this is, in a
+nutshell, the flow
+for TF 1.x summary writing.
+There's some limitations
+to this, which
+I'll describe in two parts.
+The first set of limitations
+has to do with the kinds of data
+types that we can support.
+So in TF 1.x, there's a
+fixed set of data types.
+And adding new ones
+is a little involved.
+It requires changes to
+TensorFlow in terms of you
+would need a new proto
+definition field.
+You'd need a new op definition,
+a new kernel, and a new Python
+API symbol.
+And this is a barrier
+to sensibility
+for adding new data types
+to support new TensorBoard
+plugins.
+It's led people to do
+creative workarounds.
+For example, like
+rendering a matplotlib plot
+in your training code.
+And then logging it
+as an image summary.
+And the prompt here
+is, what if we instead
+had a single op or a
+set of ops that could
+generalize across data formats?
+And this brings us to
+our first variation.
+Which is the
+TensorBoard summary API,
+where we try and make this
+extensible to new data types.
+And the TensorBoard
+API, the mechanism
+here is that we use the tensor
+itself as a generic data
+container.
+Which can correspond to--
+for example, we can represent
+a histogram, an image,
+scaler itself.
+We can represent these all in
+certain formats as tensors.
+And what this lets us do is
+use a shared tensor summary API
+with some metadata
+that we can use
+to describe the tensor
+format for our one place
+to send summary data.
+So TensorBoard.summary,
+the principle it takes
+is actually that you can
+reimplement the tf.summary ops
+and APIs as Python
+logic to call TensorFlow
+ops for pre-processing and
+then a call to tensor summary.
+And this is a win in the
+sense that you no longer need
+individual C++ kernels and proto
+fields for each individual data
+type.
+So the TensorBoard plugins
+today actually do this.
+They have for a while.
+They have their own summary
+ops defined in TensorBoard.
+And the result of this has
+been that for a new TensorBoard
+plugins, where this
+is the only option,
+there's been quite
+a bit of uptake.
+For example, the pr_curve
+plugin has a pr_curve summary.
+And that's the main
+route people use.
+But for existing
+data types, there
+isn't really much reason
+to stop using tf.summary.
+And so, for those,
+it makes sense.
+That's been what
+people have used.
+But then tf.summary, it still
+has some other limitations.
+And so that's what we're
+going to look at next.
+So the second set of
+limitations in tf.summary
+is around this requirement
+that the summary data
+flows through the graph itself.
+So merge_all uses the hidden
+graph collection essentially
+to achieve the
+effect to the user
+as though your summary ops have
+side effects of writing data.
+Kind of like a
+conventional-- the way
+you use a standard logging API.
+But because it's using
+a graph collection,
+it's not really safe for
+use inside control flow
+and functions.
+And also, with eager execution,
+it's very cumbersome to use.
+You would have to
+keep track of outputs
+by hand or in some way wait
+to send them to the writer.
+And these limitations also
+apply to TensorBoard.summary ops
+themselves.
+Because they don't really change
+anything about the writing
+structure.
+And these limitations have
+sort of led to the prompt of,
+what about if summary
+recording was an actual side
+effect of op execution?
+And so this brings us
+to tf.contrib summary,
+which has new writing
+logic that achieves this.
+And so here's a code sample
+for tf.contrib summary,
+which looks pretty different
+from the original TF summary.
+It works with eager execution.
+But the change we
+have to make is now
+we create a writer upfront
+via create_file_writer.
+It's still tied to a
+specific log directory, which
+we'll talk more about later.
+You set the writer as the
+default writer in the context.
+You enable summary recording.
+And then the individual
+instrumentation ops
+will actually write directly
+to the writer when they run.
+So this gives you standard
+usage pattern of a logging
+API that you would expect.
+And it's compatible
+with eager execution
+and also with graph execution.
+So some details to how this
+works with contrib summaries.
+The writer is backed in the
+TensorFlow runtime by a C++
+resource called
+SummaryWriterInterface.
+That essentially encapsulates
+the actual writing logic.
+Which makes it
+possible in principle
+to have different
+implementations of this.
+The default writer, as conceived
+of by the Python code that's
+executing, is just a
+handle to that resource
+stored in the context.
+And then instrumentation
+ops, like scaler and image,
+now are stateful ops.
+They have side effects.
+And they achieve this by taking
+the default writer handle
+as input along with the data
+they're supposed to write.
+And then the actual op kernel
+implements the writing using
+the C++ resource object.
+And with this model, the
+Python writer objects
+mostly manage this state.
+They don't quite completely
+align because the C++ resource
+could actually be shared
+across Python objects.
+Which is a little
+bit different still
+from the TensorFlow
+2.0 paradigm,
+where we want our Python
+state to reflect runtime state
+1 to 1.
+And this was just one
+example of a few things
+that we're changing with TF 2.0.
+And with TF 2.0, we
+had this opportunity
+to stitch some of these
+features together and make
+one unified new tf.summary API.
+And so here we are
+completing our filling
+out of the space
+of possibilities
+where we have the tf.summary
+API bringing together features
+from really all three of
+the existing APIs in 2.0.
+So TF summary and TF 2.0,
+it really represents,
+like I said, this unification
+of the three different APIs.
+The instrumentation
+ops are actually
+provided by TensorBoard.
+And they use this generic
+Tensor data format.
+That's the same format
+as SensorBoard.summary.
+Which lets them extend to
+multiple different kinds
+of data types.
+We borrowed the implementation
+of the writing logic
+from tf.contrib summary
+and some of the APIs.
+But with slightly
+adjusted semantics in some
+places, mostly just so that
+we align with the state
+management in TF 2.0.
+And then there's actually
+a not trivial amount
+of just glue and
+circular import fixes
+to get the two halves
+of both TensorBoard
+and the original
+TF summary writing
+API to talk to each other.
+And I'll go into a little
+bit more detail about that.
+So the dependency structure
+for tf.summary and TF 2.0
+is a little bit complicated.
+The actual Python module
+contains API symbols
+from both TensorBoard and
+TensorFlow fused together.
+But because the
+TensorBoard symbols also
+depend on TensorFlow,
+this creates
+this complicated
+dependency relationship.
+And the way we linearize
+this dependency relationship
+is that tf.summary in the
+original TensorFlow code
+exposes the writing APIs,
+like create_file_writer
+and the actual
+underlying writing logic.
+Then we have what I call a
+shim module in TensorFlow,
+that merges those symbols
+via wildcard import
+with the regular imports of
+the instrumentation APIs,
+like scaler and image that are
+now defined in TensorBoard.
+And this produces the
+combined namespace.
+But now it's a
+TensorBoard module.
+So then TensorFlow, in it's
+top level init__.py where
+it's assembling
+the API together,
+imports the TensorBoard module
+and sets that as the new
+tf.summary.
+And this does mean that the
+API service depends directly
+on TensorBoard.
+But TensorFlow already has a
+pip dependency on TensorBoard.
+So this isn't really a
+change in that respect.
+But the API surface is
+now being constructed
+through multiple components,
+where the summary component is
+provided by TensorBoard.
+And what that gives us
+is a single module that
+combines both sets of symbols.
+So that the delta
+for users is smaller.
+But we can have the code live in
+the appropriate places for now.
+And so these are some code
+samples for the TF 2.0 summary
+API.
+The first one shows it
+under eager execution.
+It should look fairly
+similar to contrib.
+You create the writer
+upfront, set it as default.
+You can call the
+instrumentation ops directly.
+So you no longer need to enable
+summary writing, which makes
+it a little more streamlined.
+And I should say
+that the ops, they
+write when executed in theory.
+But there's actually some
+buffering in the writer.
+So usually you want to make
+sure to flush the writer
+to ensure the data is
+actually written to disk.
+And this example shows
+an explicit flush.
+In eager, it will
+do flushing for you
+when you exit the
+as default context.
+But it's good if you
+care about making sure--
+like, for example, after every
+iteration of the loop, that you
+have data persisted to disk,
+it's good to flush the writer.
+And then this is an example with
+the at tf.function decorator.
+Again, you create
+the writer up front.
+One important thing to note
+here is that the writer,
+you have to maintain
+a reference to it
+as long as you have a
+function that uses the writer.
+And this has to do with
+the difference between when
+the function is
+traced and executed.
+It's a limitation
+that hopefully we
+can improve this a little bit.
+But for now, at least,
+that's one caveat.
+So the best way to
+handle that is you
+set the writer as default
+in the function itself.
+And then call instrumentation
+ops that you need.
+And these write,
+again, when executed,
+meaning when the function
+is actually called.
+So we can see that's happening
+down with the my_func call.
+And then you can flush
+the writer again.
+And then, here we
+have an example
+with legacy graph execution,
+since there are still
+folks who use the 2.0.
+This is a little
+bit more verbose.
+But again, you
+create the writer.
+You set it as default. You've
+constructed your graph.
+And then, in this case, you
+need to explicitly initialize
+the writer if you're
+running init op.
+We have sign of a
+compatibility shim
+that lets you run all
+of the v2 summary ops.
+So that you don't have to
+keep track of them manually.
+And then, again,
+flushing the writer.
+So this is how you would use
+it in legacy graph execution.
+So how do you get to TF 2.0?
+The contrib summary API is close
+enough to the 2.0 summary API
+that we do--
+actually, mostly, we
+auto-migrate this in the TF
+upgrade v2 migration script.
+But tf.summary in
+1.0 is sufficiently
+different on the writing
+side that we can't really
+do a safe auto-migration.
+So here is the
+three bullet version
+of how to migrate by hand.
+The first thing is that the
+writer now needs to be present,
+created, and set via as default
+before using the summary ops.
+And this is a limitation that
+it's a little bit tricky.
+We're hoping to relax
+this a little bit.
+So it's possible to
+set a writer later.
+But for now, you want to have
+the default writer already
+present.
+Otherwise, the summary ops
+basically just become no ops
+if there's no writer, since
+they have no where to write to.
+Then each op takes its
+own step argument now.
+This is because since
+there's no later step where
+you add the summary
+to the writer, that's
+where the step was
+previously provided.
+And there's also no
+global step in TF 2.0.
+So there isn't really a good
+default variable to use.
+So for now, steps are
+being passed explicitly.
+And I'll talk about
+this a little more later
+on the next slide.
+And then the function signatures
+for the instrumentation ops,
+like scaler and image,
+have change slightly.
+The most obvious thing
+being that they no longer
+return an output.
+Because they write
+via side effect.
+But also there's
+slight differences
+in the keyword arguments that
+won't affect most people.
+But it's something
+good to know about.
+And these details will all be
+in the external migration guide
+soon.
+And so the other changes--
+and this and some of the
+other stuff I was mentioning.
+One change is with
+graph writing.
+Since there's no default
+global graph in 2.0,
+there's no direct
+instrumentation op
+to write the graph.
+Instead, the approach
+here is there's
+a set of tracing style APIs
+to enable and disable tracing.
+And what those do is they record
+the graphs of executing TF
+functions.
+So functions that
+execute well, the tracing
+is enabled to the
+summary writer.
+And this better reflects
+the TF 2.0 understanding
+of graphs as something that
+are associated with functions
+as they execute.
+Then this is what
+I was alluding to.
+It's still a little bit
+tricky to use default writers
+with graph mode since
+it's not always the case
+that you know which
+writer you want to use
+as you're assembling the graph.
+So we're working on
+making that a little bit
+more user friendly.
+And setting the step for each op
+is also definitely boilerplate.
+So that's another
+area where we're
+working to make it possible
+to set the step, maybe in one
+place, or somehow in the context
+to avoid the need to pass it
+into ops individually.
+And then, the event file binary
+representation has changed.
+This only affects you.
+This doesn't affect TensorBoard
+in that TensorBoard already
+supports this format.
+But if you were parsing event
+files in any manual way,
+you might notice this change.
+And I'll talk a little
+bit more about that change
+in the next section.
+And finally, as mentioned, the
+writers now have a one to one
+mapping to the underlying
+resource and event file.
+So there's no more sharing
+of writer resources.
+OK.
+And then the last section
+will be about the summary data
+format.
+So this is log
+directories, event files,
+how your data is
+actually persisted.
+So first off, what
+is a log directory?
+The TensorBoard command expects
+a required dash dash logdir
+flag.
+In fact, your first
+introduction to TensorBoard
+may have been trying to run it.
+And then it spits
+out an error that you
+didn't pass the logdir flag.
+So the log directory
+flag is the location
+that TensorBoard expects
+to read data from.
+And this is often the
+primary output directory
+for a TensorFlow program.
+Frameworks, again, like
+Estimator and Keras
+have different knobs
+for where output goes.
+But often, people will put it
+all under one root directory.
+And that's often what people
+use is the log directory.
+But TensorBoard has this
+flexible interpretation
+where really all it cares
+about is that it's a directory
+tree containing summary data.
+And when I say directory
+tree, I really do mean a tree.
+Because the data can
+be arbitrarily deep.
+TensorBoard will
+traverse the entire tree
+looking for summary data.
+And you might think, that could
+sort of be a problem sometimes,
+especially if there's hundreds,
+thousands of event files.
+And it's true.
+Yeah, log directories
+can be pretty large.
+And so TensorBoard
+tries to take advantage
+of structure in
+the log directory
+by mapping sub
+directories of the logdir
+to this notion of
+runs, which we talked
+about a little bit
+in the early section
+about the TensorBoard UI.
+So again, these are runs.
+Like, a run of a
+program, they're
+not individual
+session.run calls.
+And when TensorBaord loads a
+run, the definition it uses
+is that it's any directory
+in the logdir that has
+at least one event file in it.
+And in this case, we mean
+only direct children.
+So the directory has to
+contain an actual event file.
+And an event file
+is just defined
+as a file that has the
+name, has the string
+tfevents in the name.
+Which is just the
+standard naming convention
+used by summary writers.
+So as an example of this,
+we have this log directory
+structure which has a
+root directory logs.
+It has two experiment
+sub directories in it.
+The first experiment
+contains an event file.
+So that makes that itself a run.
+It also contains two sub
+directories, train and eval,
+with event files.
+So those two also become runs.
+Visually, they
+look like sub runs.
+But they're all considered
+independent runs
+for TensorBoard, at least in
+the current interpretation.
+And then, in
+experiment two, that
+doesn't contain an
+event file directly.
+So it's not a run.
+But it has a train sub
+directory under it.
+So TensorBoard looks
+at this log directory
+and traverses it and
+finds four different runs.
+And this traversal step
+happens continuously.
+TensorBoard will pull a
+log directory for new data.
+And this is to facilitate
+using TensorBoard as a way
+to monitor the progress
+of a running job,
+or even potentially a job
+that hasn't started yet.
+You might start TensorBoard
+and your job at the same time.
+So this directory may
+not even exist yet.
+And we may expect
+that different runs
+will be created as it proceeds.
+So we need to continuously
+check for new directories being
+created, new data
+being appended.
+In the case where you know
+that your data is not changing,
+like you're just
+viewing old data,
+you can disable this using
+the reload interval flag.
+And you can also adjust the
+interval at which it pulls.
+So when it's traversing
+the log directory,
+it does this in two passes.
+The first pass is
+finding new runs.
+So it searches the directory
+tree for new directories
+with TF event files in them.
+This can be very expensive if
+your tree is deeply nested,
+and especially if it's
+on a remote file system.
+And especially if the
+remote file system
+is on a different continent,
+which I've seen sometimes.
+So a key here is that walking
+the whole directory tree
+can be pretty slow.
+We have some
+optimizations for this.
+So for example, on
+Google Cloud Storage,
+rather than walking each
+directory individually,
+we have this iterative
+globbing approach.
+Which we basically use to find
+all directories at a given
+depth at the same time, which
+takes advantage of the fact
+that GCS doesn't actually
+really have directories.
+They're sort of an illusion.
+And there's other file system
+optimizations like this
+that we would like
+to make as well.
+But that's just one example.
+And then the second pass, after
+it's found all the new runs,
+is that it reads new event
+file data from each run.
+And it goes through the
+runs essentially in series.
+There is a limiting
+factor in Python itself
+for paralyzing this.
+But again, something that
+we are interested in working
+on improving.
+And then, when you
+actually have the set
+of event files for
+a run, TensorBoard
+iterates over them, basically,
+in directory listing order.
+You might have noticed on the
+previous slide with the example
+logdir that the event files
+all have a fix, prefix,
+and then a time stamp.
+And so what this means
+is that the directory
+order is essentially creation
+order of the event files.
+And so, in each event file,
+we read records from it
+sequentially until we get
+to the end of the file.
+And then at that
+point, TensorBoard
+checks to see if there's
+a subsequent file already
+created.
+If so, it continues to that one.
+Otherwise, it says, OK,
+I'm done with this run.
+And then it goes
+to the next run.
+And after it finishes
+all the runs,
+it waits for the
+reload interval.
+And then it starts
+the new reload cycle.
+And this reload resumes
+the read from the same
+offset in every file per
+run that it stopped in.
+And an important thing
+to point out here
+is that TensorBoard won't
+ever revisit an earlier
+file within a run.
+So if it finishes reading a file
+and continues to a later one,
+it won't ever go back to check
+if the previous file contains
+new data.
+And this is based
+on the assumption
+that the last file is the only
+active one, the only one being
+actively written to.
+And it's important to avoid
+checking all event files, which
+can be-- sometimes
+there's thousands
+of event files in a
+single run directory.
+And so that's a mechanism for
+avoiding wasted rechecking.
+But this assumption definitely
+doesn't always hold.
+There are cases when
+a single program
+is using multiple active
+writers within a run.
+And in that case, it can seem
+like the data is being skipped.
+Because you proceed
+to a new file.
+And then data added to the
+original file no longer appears
+in TensorBoard.
+And luckily, it's
+fairly straightforward
+to work around this.
+You just restart TensorBoard.
+And it will always pick up
+all the data that existed
+at the time that it started.
+But we're working on
+a better fix for this.
+So that we can still detect
+and read when there is
+data added to files
+other than the last one.
+But this is something that
+has bitten people before.
+So just a heads up.
+And then, so the actual
+event file format,
+this is based on TFRecord,
+which is the standard TensorFlow
+format.
+It's the same as
+tf.io TFRecordWriter.
+And it's a pretty simple
+format, enough that it fits
+on the left side of this slide.
+It's basically just a bunch
+of binary strings prefixed
+by their length with
+CRCs for data integrity.
+And one particular
+thing that I'll note
+is that because there's
+no specific length
+for each string, there's no real
+way to seek ahead in the file.
+You basically have to
+read it sequentially.
+And there's also no built
+in compression of any kind.
+And TensorBoard, it's
+possible in theory
+to have the whole
+file be compressed.
+TensorBoard doesn't
+support this yet.
+But it's something that
+could help save space
+when there's a lot of redundant
+strings within the event file.
+And then each
+individual record--
+so TFRecord is the framing
+structure for the event file.
+Each individual record is
+a serialized event protocol
+buffer.
+And this simplified schema
+for the protocol buffer
+is shown on the left.
+We have a wall time
+and a step, which
+are used to construct
+the time series.
+And then we have a few
+different ways to store data.
+But the primary one is
+a summary sub-message.
+The main exception is graph
+data get stored in the GraphDef
+separately.
+And then we can look at
+the summary sub-message,
+which is itself basically a
+list of value sub-messages.
+That's where the actual
+interesting part is.
+And each one of
+these contains a tag.
+Again, from our
+overview of the UI,
+that's the name or
+idea of the summary
+as shown in TensorBoard.
+We have metadata, which is
+used to describe the more
+generic tensor formats.
+And then specific
+type fields, including
+ones for the original TF 1.x,
+specific fields for each type.
+And then the tensor field, which
+can be used with the new tensor
+style instrumentation ops to
+hold general forms of data.
+And then, in terms of
+loading the summary data
+into memory-- so I
+mentioned this briefly
+in the architecture stage.
+But TensorBoard has to load
+the summary data into memory.
+Because, like I said, there's no
+real indexing or random access
+in the event file.
+You can think of them like
+they're just like raw logs.
+And so TensorBoard
+loads it into memory
+and creates its own indexes of
+data by run, plugin, and tag.
+Which support the different
+kinds of visualization queries
+that plugins need.
+And TensorBoard also does
+downsampling in order
+to avoid running out of memory
+since the log directory may
+contain far more data
+than could reasonably
+fit in TensorBoard's RAM.
+And to do the
+downsampling, it uses
+a reservoir sampling algorithm.
+It's essentially just
+an algorithm for uniform
+sampling when you don't know
+the size of your sequence
+in advance, which is the case
+when we're consuming data
+from an active job.
+And because of this, it
+has a random aspect which
+can be surprising to users.
+Where you might not
+understand-- like,
+why is this step being
+taken and not this one.
+And there's, like,
+a gap between steps.
+This can be tuned with a
+samples per plugin flag.
+So that tunes the
+size of the reservoir.
+Basically, if you make
+the reservoir larger
+than your total number
+of steps, you'll
+always see all of your data.
+So that gives you a
+certain amount of control
+over how about sampling works.
+And just to review
+some of the section,
+there's some best
+practices for-- at least
+in the current TensorBoard,
+how to get the best performers.
+One of the basic ones is just
+to avoid having enormous log
+directories, in
+terms of the number
+of files, subdirectories,
+quantity of data.
+This doesn't actually
+mean that the overall log
+directory has to be small.
+It just means that
+TensorBoard itself
+will run better if
+you can launch it
+at a directory that just
+contains relevant data for what
+you want to examine.
+So, a hierarchical
+structure where
+you can pick sort of a
+experiment sub-directory,
+or group a few
+experiments together
+works really well here.
+I mentioned the reload interval.
+You can set it to 0
+to disable reload.
+So for unchanging data, this
+helps avoid extra overhead.
+And that's especially useful
+on a remote file system case.
+In that case, it's
+also useful if you
+can run TensorBoard
+close to your data,
+or download a subset of it that
+you need so that it doesn't all
+have to be fetched
+over the network.
+And for now, due to the way that
+superseded event files aren't
+re-read, it's best to avoid
+multiple active writers pointed
+at the same directory.
+This is something, again,
+that we're actively
+working on improving this.
+But at least for now, that
+can lead to this appearance
+that some data gets skipped.
+And then, in general, stay
+tuned for logdir performance
+improvements.
+We're hoping to make a number
+of these improvements soon.
+And that pretty much
+rounds out the content
+that I have for today.
+So I'd like to thank
+everybody for attending.
+And if you want to find
+out more about TensorBoard,
+we have a new sub site on
+tensorflow.org/tensorboard.
+You can also find us on GitHub.
+And people interested
+in contributing
+are welcome to join the
+TensorBoard special interest
+group.
+Thank you all very much.
+AUDIENCE: What are the potential
+uses for the multiple summary
+writers?
+NICK: The potential use cases
+for the multiple summary
+writers, sometimes this is just
+a matter of code structure.
+Or if you're using a library
+that itself creates a summary
+writer, it's not always
+straightforward to ensure
+that you can use
+the same writer.
+So TF 1.x had this File
+Writer cache, which was--
+the best practice then was
+to use this shared cache
+since we only had one
+writer per directory.
+And it was to work
+around this problem.
+I think it's better
+to work around it
+on the TensorBoard side and have
+some ideas for how to do that.
+So hopefully, that part
+will be out of date soon.
+Like, within a month or two.
+AUDIENCE: Are there plans to
+change the event file format?
+NICK: Yeah.
+So I think a lot of
+this depends on--
+I think that the
+event file format
+itself could be a lot better
+tailored to what TensorBoard
+actually needs.
+And some of the things I
+mentioned would just be--
+even if we had an index
+into the event file,
+that could potentially help--
+we could potentially
+paralyze reads.
+Or we could sort of scan
+ahead and do smarter sampling.
+Like, rather than
+reading all the data
+and then down sampling
+it, we could just
+pick different offsets
+and sample from there.
+We're constrained right now
+mostly by this being the legacy
+format.
+But I think it would be
+pretty interesting to explore
+new formats.
+Particularly when you have
+different data types mixed in,
+something sort of columnar
+could be kind of useful,
+where you can read
+only images if you
+need to read
+images, or otherwise
+avoid the phenomenon where--
+so, this happens sometimes
+where one particular
+event file contains
+lots and lots of large
+images or large graph defs.
+And this blocks the reading
+of a lot of small scaler data.
+And that's, obviously,
+not really--
+it doesn't really make sense.
+But again, it's a limitation
+of having the data only be
+accessible sequentially.
+AUDIENCE: Can you
+talk a little bit more
+about the graph dashboard?
+Is graph just another summary?
+Or how does--
+NICK: Yeah.
+So the graph visualization,
+which was actually
+originally created
+by Big Picture,
+It's a visualization of the
+actual TensorFlow graph.
+So like, the computation
+graph with ops and edges
+connecting them and
+sort of the data flow.
+It's pretty cool.
+It's really a good way if you
+want to visually understand
+what's going on.
+It works best when the code
+uses scoping to delineate
+different parts of the model.
+If it's just a
+giant soup of ops,
+it's a little hard to understand
+the higher order structure.
+And there's actually
+some cool work
+done for TF 2.0, which
+isn't in the presentation,
+about for Keras showing the
+Keras conceptual graph using
+Keras layers to give you a
+better view into the high level
+structure of the
+model like you'd
+expect to see in a diagram
+written by a human.
+But the graph
+dashboard can still
+be useful for understanding
+exactly what ops are happening.
+And sometimes it's useful
+for debugging cases.
+If some part of the graph
+is behaving weirdly,
+maybe you didn't realize
+that you actually
+have an edge between
+two different ops that
+was unexpected.
+AUDIENCE: Are there any
+plans to add support
+for basically that sort
+of higher order structure
+annotation?
+So I'm imagining,
+for instance, like,
+if you have [INAUDIBLE] having
+the whole model, and then
+a block, and then a sub
+block, and if there's
+like five layers of
+structural depth, that would
+be nice to be able to imitate.
+NICK: Yeah.
+I think this is an
+interesting question.
+So right now, the main tool
+you have for that structure
+is just name scoping.
+But it only really works
+if the part of the graph
+is all been defined in
+the same place anyway.
+I think it would be really nice
+to have the graph visualization
+support more strategies for
+human friendly annotation
+and organization.
+I think the recent work
+that we've done on this
+has been the Keras
+conceptual graph, which
+[? Stephan ?] did over there.
+But I think having that work for
+not just Keras layers, but more
+general model decomposition
+approaches would
+be really nice.
+AUDIENCE: Often, I find
+that the problem isn't
+that it's not capturing enough.
+It's actually that it's
+capturing too much.
+So for instance, you'll
+have a convolution.
+But then there's a bunch
+of loss and regularization.
+There winds up being a bunch of
+tensors that sort of clutter.
+And so actually, even the
+ability to filter stuff
+out of the conceptual graph.
+NICK: So there id a feature
+in the graph dashboard
+where you can remove
+nodes from the main graph.
+But I believe it has
+to be done by hand.
+It does a certain amount
+of automatic extraction
+of things that are sort of less
+important out of the graph.
+But maybe that's a place we
+could look into having either
+a smarter procedure
+for doing that,
+or a way to sort of tag
+like, hey, this section of--
+I don't actually want
+to see any of these.
+Or this should be
+factored out in some way.
+Yeah.
+Thanks.
+[APPLAUSE]

@@ -1,0 +1,654 @@
+welcome everybody
+and uh thanks for joining this session
+my name is shiman migaj
+i'm a deep learning algorithms engineer
+working at nvidia
+today i will be talking about pythorg
+performance tuning guide
+in other words i will show you a number
+of simple changes
+which can significantly accelerate
+training of your
+deep learning models this talk is a part
+of
+accelerating computer vision with mixed
+precision tutorial
+at eccv2020 presented by nvidia
+goal of this presentation is to show
+simple
+and reusable techniques which can
+accelerate training
+of deep neural networks on nvidia gpus
+in python
+framework presented techniques often can
+be implemented by changing only a few
+lines of code
+and work well in conjunction with amp
+and amp stands for automatic mixed
+precision
+ideally you should be using both amp and
+optimizations presented in this talk
+to achieve the optimal performance
+you should definitely watch the part of
+this tutorial which talks
+specifically about amp and shows
+how to take advantage of tensor cars
+available in nvidia gpus
+to get the maximum speed up in other
+sections of this tutorial
+we will show case studies with examples
+how optimizations
+shown in this guide help to accelerate
+models
+developed by nvidia research and
+one more note those are generic software
+optimizations
+optimizations are not tied to computer
+vision and
+in general can be applied also to any
+other domain
+and other types of models
+let's start with data loading and data
+augmentation
+standard pi torch data loader supports
+asynchronous data loading
+and augmentation in separate worker
+processes
+the the default settings aren't great um
+data loader constructor defaults to num
+workers equal to zero
+which means that data loading is
+synchronous and happens
+in the main process and basically blocks
+everything else
+also it defaults to not use pinned
+memory which means that
+cpu to gpu mem copies are synchronous
+it's almost always better to use pinned
+memory
+and to set number of workers to a number
+greater than zero
+this will enable a synchronous data
+processing and
+it will enable overlap between data
+loading
+and computations which are happening on
+the gpu
+let's look at a simple python chemist
+example
+to show importance of asynchronous data
+loading
+by default this example uses one worker
+and pint memory set to true this default
+config
+completes one epoch of training in 6.7
+seconds
+as you can see the number of workers can
+be tuned to obtain better performance
+with for workers and paint memory
+we get 4.1 seconds per epoch and
+also notice that with 8 workers we get a
+bit worse performance
+it finishes an epoch in 4.5 seconds
+um and the bottom line is that those
+parameters
+depend on your problem and on your
+hardware the best option is to
+execute a short benchmark and to tune
+the value of num workers
+for your particular model in particular
+hardware
+coding supports many algorithms to
+compute convolution
+for a given size often for convolutional
+neural networks
+it's very good to enable coding and
+autotuner
+this autotuner is going to run a short
+benchmark
+and it will select the algorithm with
+the best performance on a given hardware
+for a given input size
+um by default this autotuner is disabled
+uh you have to explicitly enable it
+uh by setting torch.backends that could
+be an end.benchmark
+to true autotuning loop tries to execute
+all the label algorithms
+for a few iterations therefore you will
+see a small overhead during the first
+training iteration
+for regular trainings it should be
+negligible
+typically it's much much smaller than
+the time needed to allocate
+intermediate memory buffers which
+also happens during the first training
+iteration
+here is a simple example we have
+two-dimensional convolution with
+64 3x3 filters
+applied to an input with both size 32
+and channels width and height are set to
+64.
+in the table i am showing forward
+propagation time
+and time for forward and backward
+propagation
+with and without coding and benchmark
+for
+this particular example autotuner gives
+a significant speed up for
+forward propagation without the
+benchmark
+which is the default the execution takes
+1430 microseconds
+and with benchmark it's able to select a
+fasta
+algorithm and uh qdn can perform the
+same computation
+in 840 microsec
+microseconds this gives about 1.7 x
+speed up
+as you can see in this case speedup is
+mostly in forward pass
+but the results may vary if you change
+input sizes
+or target device number of filters etc
+maybe it's obvious but you should always
+aim to increase bar
+size to max out gpu memory
+this helps to amortize cost of
+launching kernels on gpu cost of
+running optimizer and it very often
+improves gpu utilization
+what is not so obvious is that amp often
+reduces memory requirements
+which allows you to push the bar size
+even further
+sometimes you may run into issues with
+convergence
+typical solution is to tune the learning
+rate
+ad learning great warm-up learning great
+decay
+or to tune weight decay an interesting
+option is to
+try out one of the optimizers
+which were specifically designed for
+large batch training
+a few examples include lars
+which is a modification of sgd lamp
+which is essentially adam w plus lars
+nv lamp it's nvidia's modification to
+lamp algorithm
+to improve training of birth or
+novograt it's also designed for large
+batch training
+additional advantage is that it's using
+less memory than lamp or adam
+another optimization is to disable bias
+for convolutions which are followed
+directly
+by batchnor
+uh two-dimensional convolution available
+in python
+by default sets bias to true
+computation with bias enabled requires
+additional gpu kernels both in forward
+and in backward pass
+but if if and this this case convolution
+is
+followed directly by batch norm then
+this computation is unnecessary
+because essentially in the first step
+batch norm is going to subtract the mean
+which effectively cancels out the effect
+of bias
+so if you have convolutions followed by
+patch norm in your model
+then you should explicitly disable the
+bias by setting bias parameter
+to false this will accelerate the
+training
+without affecting the accuracy
+this is also applicable to 1d and 3d
+convolution
+as long as batch norm or
+any other normalization layer normalizes
+along the same dimension
+as convolutions bias
+now we will talk about uh how to zero
+out gradients
+uh between training iterations um
+typically training code bases are using
+uh model
+dot zero grads or optimizer.0grad
+to clear gradients before the next
+training iteration
+um it's simple but it has a few
+disadvantages
+uh under the hood those methods uh will
+execute man set to zero
+in a loop over all parameters in your
+model and
+this loop is going to call separate cuda
+kernels
+for every parameter which is not very
+efficient
+additionally in your backward pass the
+framework is going to use
+this plus equals operator to update the
+gradients
+this operator first performs the read to
+obtain the original values
+then does the addition and finally
+stores the weights
+back into memory uh but in this case the
+read operation is unnecessary because
+the memory was previously set to zero so
+we don't have to read that
+um a better way to clear gradients is to
+directly set the grad
+attribute of every parameter
+to none like we can see in this for loop
+it's more efficient because it doesn't
+call memset for every individual
+parameter
+and memory is zeroed out
+by a pythog allocator in a more
+efficient way
+somewhere in the back end additionally
+with this change
+the backward pass is going to update
+gradients
+directly with equals operator
+which is going to just write to memory
+and unnecessary read uh is going to be
+removed
+and this particular optimization was uh
+contributed to pythog by nvidia
+engineers
+another optimization which may sound
+obvious is to disable
+all apis intended for debugging
+when you want to run full large-scale
+training
+pythorgs provides many ways to simplify
+debugging of neural networks
+uh but this functionality often
+introduces additional operations and
+therefore
+it reduces training throughput
+users should make sure to disable those
+api calls
+after the model is already debugged and
+it's functional and ready for final
+training
+here i listed a few examples of
+debugging apis
+uh for example we have anomaly detection
+this api will show you a more detailed
+tracebox
+from backward pass and
+also this api will return errors if
+gradients become not
+numbers or infinities another example
+is a torch autograph profiler
+it's a profiling tool built in right
+into pythorg
+it can show how much time was spent in
+individual operations on cpu and on gpu
+we also have emit nvtx it's
+another useful component from profiling
+toolbox
+it can automatically generate uh
+annotated timeline
+which can be later visualized in nvp
+or inside systems and those are
+profiling tools from nvidia
+similarly we have autograd grad check
+and grad graph check and this is an api
+for comparing numerical and analytical
+gradients
+and all of those api calls are
+relatively expensive
+and can slow down your training so
+the recommended practice is to use those
+only for debugging and
+disable for final training runs
+now let's talk about multi-gpu and
+multi-node training deep learning
+models are constantly getting bigger
+therefore training on multiple gpus
+is fairly typical nowadays and
+can bring close to linear speed ups over
+a single gpu training
+pythorg has two major ways of doing
+multi-gpu
+data parallel training uh first one on
+the left
+is data parallel and the second one on
+the right is
+distributed data parallel uh if we are
+using data parallel then a single
+cpu car has to drive and schedule work
+on multiple gpus like for example for
+gpus
+on the slide also it means that a single
+python process has to drive multiple
+gpus
+this means that for example
+work needed to launch kernels on all
+gpus
+work needed to copy data between cpu and
+gpu
+and all other similar items are handled
+by a single cpu car for all gpus
+participating in the training
+usually it doesn't scale very well it
+depends on the workload but
+typically data parallel can have good
+scaling up to two
+maybe four gpus and uh
+additional downside is that data
+parallel api works only
+within a single node you cannot use this
+api to train
+a model on multiple nodes
+there is also distributed data parallel
+uh
+it's a much more efficient way it's also
+a recommendation from official python
+documentation
+in distributed data parallel uh you get
+a separate python process
+and a single cpu car for every gpu
+now a single car doesn't become the
+bottleneck for all launching kernels on
+all gpus
+because every gpu has a corresponding
+cpu car uh additional
+side benefit is that if you switch to
+distributed data
+parallel you will automatically gain
+ability to run multi-node jobs
+if you ever want to do that in the
+future
+basically the same the same distributed
+api can be used for multi
+gpu training within a single node and
+multi-node training
+with multiple machines and multiple gpus
+also distributed data parallel is
+implemented very efficiently and has
+a few very significant optimizations
+for example it can automatically bucket
+multiple tensors for a single gradient
+all reduce
+this increases efficiency
+also gradient all reduce uh
+will be automatically overlapped with
+backward computation
+uh this makes a lot of sense because
+backward is typically compute bound
+and all reduce is a memory operation so
+it's memory bound
+so it makes a lot of sense to execute
+those two in parallel
+usually it gives a very significant
+speed up
+there is a minor downside in some cases
+distributed data parallel
+is slightly more difficult to implement
+in data parallel
+because in essence this is multi-process
+programming
+so for example you have to protect
+access to shared resources
+for example only one distributed worker
+should be writing checkpoint
+uh to a given file on disk uh same
+same strip you are writing clocks uh you
+should probably
+write a separate log file for every
+distributed worker
+if we are already talking about
+multi-gpu training
+then it's good to mention that to
+maximize the efficiency
+you should load balance the workload on
+multiple gpus
+which means that you should make sure
+that the amount of work is as
+uniform as possible on all gpus
+so uh what's what happens if you don't
+do that
+uh let's look at this picture uh we have
+four gpus
+uh four processes running distributed
+data parallel training
+and gpu one has the largest amount of
+work
+it will execute forward it's this green
+box
+then it will execute backward that's the
+blue box
+and then it will start grading all
+reduce
+it's a purple box
+in this example gpu 0 had less work
+so it finished forward and backward
+earlier
+because typically standard data parallel
+training there is
+no communication between workers during
+forward and backward pass
+now it enters all videos this is this
+purple box
+and it wants to communicate and average
+gradients with other workers
+but it has to wait for gp1 which is
+still doing backward pass
+so gpu-0 and other gpus with a smaller
+amount of work
+all have to wait for gp1 to finish its
+computation
+before the communication can happen
+this means that those gpus are basically
+idle
+and the efficiency of training is not
+optimal
+to solve this problem you should make
+sure that there is an equal amount of
+work
+on all gpus which means that
+in simplest cases the batch size
+should be the same on all workers and
+for example if you are
+processing sequential data then the
+sequence length
+should be the same there are
+there are multiple techniques to achieve
+that for example you can
+bucket together sequence sequences with
+similar lengths
+or you can sort by sequence length
+this is very problem specific it depends
+on
+what your model is doing but
+the final goal is to make sure that the
+compute time on all gpus is as close as
+possible
+another option to accelerate your
+training is to use apex
+apex stands for a pythorg extension
+and it's a library developed by nvidia
+which offers optimized and reusable
+building blocks for pyth um apex is open
+source
+can be easily installed from github also
+it's already pre-installed if you are
+using
+pytorch docker containers from ngc
+this library includes several components
+which can accelerate your training
+for example it includes sync batch norm
+it's an implementation of batch norm
+which is designed to work well with
+distributed data parallel it reduces
+batch nerve statistics
+over multiple distributed workers and it
+increases the batch number span
+basically the bar size which we are
+using for batchnor
+apex also contains implementations of
+multiple fused optimizer
+it has fused adam fused lamp fused
+novograd
+fused sgd functionality is the same as
+for
+standard optimizer in towards the top
+team module
+but the implementation is much faster it
+achieves that by
+fusing optimizer into a single cuda
+kernel
+apex also contains fused layered arm
+functionality is the same as for
+torch.net.layered arm
+but the performance is better due to
+fusion
+activation checkpointing is
+another useful technique to mitigate the
+memory capacity burden
+of model training in regular training
+uh we store outputs of all operations
+which can cost a lot of memory uh we
+check
+with checkpointing we store outputs only
+for
+some operations uh then because of that
+during the backward pass
+we have to recompute the remaining
+activations which
+adds additional compute in regular
+training
+we are storing all of all activations
+and this can limit our maximum batch
+size and
+therefore it can reduce gpu and tensor
+power utilization
+uh with checkpointing we enable larger
+bar sizes
+which might lead to better gpu and
+tensorflow utilization
+it's a trade-off between extra compute
+and
+memory savings
+pythos provides a native native api for
+checkpointiq
+it's called torch utils checkpoint
+this will automatically perform
+checkpointing and recomputation
+you you have to be careful when
+selecting operations
+for checkbinding ideally you want to
+target
+operations with very small recomputation
+costs
+and a large memory footprint
+typically good candidates are activation
+functions like relu
+sigmoid and others up
+or down sampling operators and
+matrix vector operations with small
+accumulation depth
+let's talk about pythag
+typically it's talking about in the
+context of inference and
+model deployment but jit can also
+accelerate
+training currently jit can fuse
+point-wise operations into a single cuda
+kernel
+so why is it helpful um
+it's because unfused point-wise
+operations are memory bound
+uh for each unfused operation pythorg
+has to
+launch a separate cuda parallel load the
+data from memory perform the computation
+and then store results back into memory
+um so if we have a pointwise function
+which consists of many pointers
+operations
+then we do multiple loads and stores
+from memory
+which makes the entire function memory
+bound
+pi torch jeet is easy to use
+and with addition of one line of code it
+can automatically
+generate a fused cuda kernel for you
+let's look at this example on the left
+we have
+a gal activation function it consists of
+multiple operations
+we have division error function addition
+and multiplication all operations are
+point wise
+and uh running this implementation is
+going to call
+five separate kernels
+we can make a very simple modification
+and add the torch
+jit script decorator and
+the rest of the code is unchanged but
+when this function is called
+pytorch will automatically generate
+fused cuda kernel as you can see in the
+table
+a fused gel function is going to call
+only one
+cuda kernel and this brings a
+significant speed up
+in this case it's close to 4x and
+we are benchmarking it for an execution
+on a
+sample input vector with 1 million of
+elements
+okay let's summarize i hope that
+i was able to show that often you can
+accelerate training
+by a few simple changes in your code
+this presentation is followed by case
+studies
+to show speed ups for models developed
+by nvidia research
+speed ups from techniques presented in
+this talk
+here is a short summary of what we've
+talked about
+to maximize training performance you
+should use asynchronous data loading and
+augmentation
+you should enable coding auto tuner
+increase the bar size
+make sure that all debug apis are
+disabled
+uh if possible you can use optimized
+building blocks from apex
+and you can apply pythorgic to fuse
+pointwise operations
+additionally you should have efficiently
+clear gradients
+and if training on multiple gpus
+you should use distributed data parallel
+back-end
+instead of data parallel
+and also you should make sure to load
+balance workload
+across the workers so
+that's it thank you for your attention
+you

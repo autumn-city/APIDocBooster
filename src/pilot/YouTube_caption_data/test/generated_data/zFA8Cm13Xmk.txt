@@ -1,0 +1,685 @@
+hello welcome to technical founders my
+name is Carlos Lara a I'm technical
+founder and in this video we will learn
+how to perform image classification with
+PI torch PI torch is an open source
+machine learning library developed by
+Facebook's AI research group so in for
+this particular example we will learn
+how to classify images of flowers and we
+have data training data validation data
+and test data with 102 different kinds
+of flowers and here we can see some
+examples of the kinds of flowers
+different classes of flowers so I
+already wrote the code to save some time
+and I also already trained the the model
+as well to save time because even on GPU
+it takes a relatively long time and when
+you're developing on PI toward doing
+some real development with deep neural
+networks I highly recommend please
+issues a GPU because when a CPU a will
+just take forever to do even even even
+simple things so the first thing we're
+going to do is import the modules that
+we need the packages so numpy pandas
+matplotlib see warren torch pi/2 so
+these are the the packages the modules
+for for pi torch so we call them torch
+so here we're going to import an N which
+is functions for neural net used for
+neural networks we're going to import
+optin which contains functions for
+gradient descent optimizers here are
+some additional functions if we need
+them and torch vision of course and the
+data sets transforms and model Center as
+we go through it you'll see what all
+what what these are used for and it'll
+make sense as we as we go along with it
+so the first step is to load the data so
+again the first step in machine learning
+is to gather the data so we have so we
+gather the data and we're going to load
+the data and prepare it so in our in my
+local directory here I have like I said
+training validation and test images for
+all the different kinds of flowers 102
+different kinds of flowers here I'm just
+defining a string a path to go to the
+local directory so first we're going to
+the
+transforms now what is it transform is a
+transformation or a series of
+transformations that we will make on the
+images to prepare them to for our team
+for our neural network because we we
+don't want to or weak
+we can't just feed our deep neural
+network just random images in different
+size and different like we we have and
+without any kind of structure we need we
+need to standardize the pipeline the
+image detection the deep learning
+pipeline so it's consistent and we'll
+get consistent results and we can get
+consistent training and testing and so
+on so the first we're going to define
+the training transforms transformations
+for the training images so we're going
+to grab from torch vision transforms
+that compose and here for the training
+images we're going to perform some
+random rotation and some we're going to
+random resize and crop random horizontal
+flip turn into PI torch tensor and
+normalize so here and it have any given
+moment here you can pause the video and
+take a more detailed look on what's
+going on here I'll go a little bit quick
+quickly to keep this video short as
+possible but the basic idea is that we
+don't want to train a deep neural
+network on only specific format of
+images meaning not only in a certain
+orientation in a certain kind of a size
+not that so we we want the network to be
+able to generalize so for example of
+would if for example here for the for
+the flowers what if we feed we want to
+classify an image of a flower it's never
+seen before and we give it an image
+that's rotated by 90 degrees and it
+can't classify it well that's not a very
+useful neural network right it will not
+really be useful in the real world so we
+want a neural network that will be able
+to generalize and classify images so we
+want this invariance in rotations
+orientations parity like mirror images
+and so on so here we're defining those
+those transformations for the training
+images and here we also have some
+transformations for the validation and
+testing sets so again it's best practice
+obviously to separate your your day into
+training data validation data and
+testing data and you don't want to test
+your model after it's been trained on
+that same training data because it will
+be biased to towards it's also the test
+the testing data is data that it's never
+seen before which is what we want so
+we're going to use image folder from the
+data sets from from towards vision here
+this image folder function we're going
+to pass our directory for the training
+images here for the training the
+training data sets of training directory
+and we pass a transforms the W that we
+just created here so two parameters the
+directory to two the images to that data
+and the transformations and again we're
+doing the same thing for the validation
+and the testing datasets using the image
+folder function from data sets in Horton
+torch vision and the next step is to use
+a data loader function here from torch
+utils data to load our data into batches
+so we don't want to do training or
+testing or validation of our data with
+all of the data at once
+in general it might be a ton of data and
+it may not even fit into memory well
+it's just not practical to do that so
+what we're going to do to a good to load
+it in batches so and we're going to go
+through the training in though in those
+batches and then run through all through
+all those batches individually and
+that's going to speed up the
+computations and make and make the
+training a lot faster and much more
+efficient that's what will calculate the
+gradient descent by doing these these
+batches one one by one so here I set a
+batch size of 64 and I'd only give it an
+throughout this that's this example
+these things like batch size for example
+and more variables as a week as we go
+along our hyper parameters and you can
+actually tune that you can change
+remember hyper parameter tuning step in
+machine learning so something keep in
+mind that you can change a lot of these
+parameters shuffle equals true means
+that is going to shuffle randomize the
+data again so make sure that I
+generalizes that it doesn't get biased
+that we reduce potential for overfitting
+you know and all these different things
+just being safe here it's it's good
+practice in same thing we have a valid a
+loader and a test loader and to load
+their respective prepare to get the
+batches for for the individual data
+datasets so let's go to the next step so
+after we have our batches we loaded our
+data we prepared our data now we also
+want to
+load in a JSON file that is going to be
+a mapping from category label to
+category name so we have a hundred and
+two different categories of flowers like
+Magnolia and these combine and these
+other different cake flower is kind of
+these kinds of flowers and each one has
+say an integer labeled from from 1 to
+102 and we want to be able to and we
+want to have that mapping and you'll see
+it'll be very very useful later be able
+to do that we're visualizing the data
+and just it's just going to be easier to
+see that to see the data so this is a
+very nice JSON file that you can just
+import JSON JSON open it just just
+pretty standard loaded and then we're
+going to use it later now the next step
+is we're going to build and train a
+classifier so for this example we're
+going to use transfer learning transfer
+learning is grabbing a model that's been
+pre trained and then using it to plot to
+create to create a class a classifier
+and to speed up our make more efficient
+our deep learning exercises in this case
+so for example here from ant or division
+from models we have different kinds of
+models we have ResNet Aleks net in this
+case I'm using vgg sixteen and a pair
+takes a parameter pre-trained equals
+true so it's going to download as you
+can see here a deep neural network vgg
+and here you can see the architecture of
+of the neural network of the VTT neural
+network and that's our model we store in
+the model variable and basically what
+this is going to be doing for us is this
+is going to act as a feature selector so
+as a feature that this is going to
+select features from from our images
+from from doing off when it's training
+and is going to grab those features and
+then we're going to build a classifier
+that's going that's going to take in
+those those features aren't from our
+images and give us an output in the
+output will be one of those numbers and
+a hundred and two depending which one it
+thinks it is now here it comes already
+with the classifiers you can see and you
+can see the architecture for the help
+for that one so the this sequential this
+neural network output it over 25,000
+features vary
+so this this one has been trained on on
+many different kinds of of image data
+data data sets so it's very nice it's
+very good at it's been very well trained
+to pick up different features on images
+but here and for this particular
+pre-challenge pre-trained one its
+classifier outputs a thousand different
+features now for our case we only want
+one hundred and two because we're
+classifying flowers specifically for
+this example so we're not going to use
+the classifier that comes with it and we
+are going to build our own okay so we
+have our model are pre-trained again
+transfer learning and so when we're when
+we do grading descent and back
+propagation we don't want to do it here
+for our for our pre trained neural
+network because it's pre-trained we
+don't want to do that we don't have to
+and it's going to to save time and in
+resources and we don't need to do this
+so for every parameter in model dot
+parameters so we can access the
+parameters here from our model and
+parameter Dahl requires grad we're going
+to set it to false so that that way
+we're going to freeze the proof train
+model parameters to avoid doing back
+propagation through them so now we're
+going to very standard here we're going
+to create a classifier to replace this
+one and we're going to use from toward
+vision and n the sequential so simple
+sequential is just very standard to
+create a neural network so we're going
+to start for the input layer of the
+classifier we're going to have just a
+linear that's going to take in this
+twenty five thousand eighty eight
+features and it has to match the the
+input features here that come out of the
+of the trained classifier now this here
+the number of new off of neural off
+neurons on the next layer you can you
+its that's also hyper parameter that you
+can tune you can change that and so but
+in this case I use five thousand and
+then for the linear output here for the
+first layer we're going to actually
+apply array loop an activation function
+again that's going to squish our the end
+the the output space of our linear
+function here and then we're going to
+apply some some drop out there with a
+would point five percent probability so
+true so draw
+Crowder's used to prevent over-fitting
+to reduce the per third chance that
+there's some overfitting so it's going
+to randomly with 50% chance for any
+given node in the neural network is
+going to turn it off just to prevent it
+the chance that it might be training
+more on one node or so just to prevent
+those kinds of overfitting and so we're
+going to define some some dropout as
+well and then so this here we only have
+one hidden layer so we have an input
+layer here the 25,000 88 features are
+coming out and then an a hidden layer
+with 5,000 and that is going to output a
+102 features that we want instead of the
+100 that's how we're going and then for
+the output we actually want a log
+softmax softmax is like a sigmoid that
+actually squishes the app indeed the
+output space to be between 0 & 1 and
+that corresponds to a probability so we
+want they to the out this network to
+give us a probability of what it thinks
+that a given image is so for example for
+this orange Dahlia I want to we want us
+to give us a probability from 0 to 1 of
+what it thinks it is and here the reason
+and we're we're using log softmax is
+because this is easier and nicer to work
+with log log versions of our of our
+outputs and you'll see in a moment then
+how what do we do about that but
+essentially the basic idea is that we
+want our output to be between 0 and want
+to be probabilities and usually we would
+use a sigmoid function for that but
+softmax is when we have more than two
+classes more than four are so we have a
+hundred and two so soft max will be
+ideal here so that's our output in here
+we can name them so here we have an
+inductive question passing our order
+dictionary so that is our classifier the
+the architecture for our classifier and
+the model that we have our pre trained
+model here we're going to assign this
+classifier to to its classifier so model
+dog classifier and we assign the
+classifier so now we have that and here
+we're not next we're just defining a
+validation function for the validation
+pass so as we're doing gradient descent
+and back propagation and going through
+the epochs we're going to be doing some
+intermittent validation of our
+validation set just to see kind of how
+it works how
+it's how the network is improving just
+to see visually and just can't just know
+that it that the accuracy is improving
+and it's doing a better job at
+determining the correct labels for for
+the validation data set so you know you
+don't necessarily have to do this you
+can just do the the training and the
+testing data but this is best practice
+and this is how how you would actually
+do it so here feel free to pause the
+video at any given time again to see how
+the function was defined what we're
+doing but basically we're grabbing the
+this validate loader see how we remember
+how we loaded our our images here into
+into batches for the further train
+validate and test loader and here we're
+just grabbing that loader in this
+function we're going to grapple the
+loader and that is a generator so we're
+going to turn it into a nadir here and
+then for images and labels in there we
+are going to to do this so first of all
+images and labels we're going to convert
+them to CUDA what what this means is
+that since we're what this was trained
+using a GPU not a CPU CUDA is in pi
+torch this is what this is what
+corresponds to using a GPU so this is
+going to this is going to convert these
+these variables into a form that we'll
+be able to train to be to be used on the
+on the GPU so we're also going to pass
+our criterion we'll see in a moment what
+that is in in our model so again we have
+our output and so again see you you can
+pause here and then come back to the
+video to see how how this this is use
+I'm getting a little bit ahead of myself
+but the point is we're gonna have an
+output from the model from the forward
+pass passing the features so our images
+and it's going to output some
+probabilities and we want to use torch
+dot X of the output so remember it's a
+log softmax so the log if you take the
+exponential the log is going to give you
+the actual probability so that's why
+we're doing talk torch dot X of the
+output so now for our training here
+more specifically we define our
+criterion which is our loss function so
+we want to minimize our loss function
+pretty standard for training a deep
+neural network here so we want with so
+we're going to grab this and lll loss
+which actually worse works well with a
+log softmax
+then with our love values that were
+using so that's the one that we're going
+to use and there's other options of
+course that's the one that we're using
+for this video
+that's our loss function and our
+optimize our gradient descent optimizer
+here we're going to define it so we're
+going to grab opt in which we import it
+and we're going to grab Adam so we have
+stochastic gradient descent and other
+optimizers but we're going to use Adam
+because it's one of the nicest and it or
+it contains actually momentum as well
+which momentum actually makes it
+increases the chance of finding a better
+local minimum so it's just a very nice
+optimized gradient descent optimizer
+here Adam for we're going to pass two
+parameters here sort of model dot
+classifier dot parameters so we don't
+want to pass the model dot parameters
+remember those are frozen that model has
+already been pre trained but we want the
+classifiers parameters that we created
+this is what's going to be trained the
+actual classifier so we want those
+parameters and then LR is a learning
+rate
+so here again learning rates a hyper
+parameter that you can tune but here we
+set it to point zero zero one the
+learning rate for our optimizer and now
+the next step is we are going to now
+train our classifier so we define a
+function called trained classifier and
+here and the active session doesn't
+matter this is just so it doesn't
+timeout we're training on GPU when I was
+training this so we define our epics and
+this is again as you know another hyper
+parameter that you can tune here we use
+fifteen for this example and here our
+model this is very important we want to
+change it because we're running on GPU
+we want to convert it to GPU to CUDA so
+it's again it's in a way in a form that
+is going to be processed and by by GPU
+so key so here pretty standard we're
+going to run our our our our loop our
+for loop here for for each epoch you
+know you know and are in the range of
+epochs here so we're going to train our
+model so there's we have our train our
+training function and the the the train
+means ascent training mode so we it can
+be an evaluation mode but this means of
+where we want our
+to be in training mode here because
+we're more training and here feel free
+to pause the video for it for the
+details if you want to stop and see how
+how this was coded and feel free
+actually to watch my previous video
+which was gradient descent in neural
+networks and so we going to into a
+little more detail on how that works so
+is this as the same idea so for the
+images and labels in our train loader
+and in which we define earlier our
+badges where we are going to to train so
+images and labels again we convert them
+to CUDA so it's in GPU ready form and
+then we want to 0 the the gradient here
+pretty standard to make sure that every
+time we we run we run through the loop
+we zero out of the gradient so they're
+not added up so we so we recalculate
+them and here's the the the magic
+essentially the the the cool part about
+what we're training really happens so we
+have four output we say we assign it
+model dot forward so this is the forward
+pass in our network so we go to the
+right essentially we can visualize it
+going through the network feed our data
+are our features they're going to go
+through through the forward pass and
+then we're going to have an output which
+is log softmax and then we define our
+loss here which is our criterion our
+loss function and we're going to pass
+our output and the labels why because
+the the way a loss function is is really
+how you calculate the losses by
+calculating a difference between the
+answer that you got the label that you
+got and the answer that should have
+gotten so you're so you're calculating
+that the difference is in minimize and
+calculating an error based on the
+difference then minimizing that error
+and after we have our error then we we
+do back propagation so we do loss dot
+backwards so we back propagate that
+error and then we do optimizer dot step
+so we do a gradient descent step here to
+to update our our weights and biases or
+update our our model classifier
+parameters and here also every certain
+number of stabs we're going to do some
+evaluation we have to change our model
+to evaluation mode so it Abed so it's an
+evaluation and again we're and here
+we're going to turn off our gradients
+for validation to save memory and couple
+computations because we're doing
+validation and here for the validation
+loss in accuracy again this is a
+validation function that we saw and
+again you can pause the video and go
+back to C to see that function but we're
+going to be printing out the training
+the what epoch were in the training loss
+the validation loss and the validation
+accuracy and here we want to make sure
+that we're being consistent then that
+the validation accuracy is going up and
+it is as we see here and we also want to
+see that for the most part on average
+the training loss is actually decreasing
+so once we define our trained classifier
+function we just call it we train our
+classifier and this is going to take a
+while even on GPU and you can tune your
+hyper hyper parameters but as you can
+see we're going through the app box and
+we're printing out here some of these
+stats to make - to see to see what's
+going on so once once we do that we want
+to test our network so we define our
+test accuracy function here and you can
+pause the video again to see how to see
+how how this was done but again change
+our model - to evaluation mode make sure
+it's in CUDA 4 for GPU now we pass our
+test loader and pretty standard same
+thing that we did for the validation
+loader essentially and here we're going
+to now call the function test accuracy
+pass our model and our test loader has
+parameters and here for these for the
+particular set of hyper parameters that
+I chose for this for this particular
+example we get an accuracy of a little
+bit over 90% which is not bad because
+this actually doesn't take that long and
+you can you can do it in a relatively
+short period of time and already get 90%
+accuracy so pretty pretty nice and using
+again transfer learning a network that
+would that was pre trained it's pretty
+cool 90% accuracy and so here again at
+this point this is just more more stuff
+you can pause the video and take up and
+take a look but you can actually save
+the check check point so if you want to
+use your trained network your trained
+classifier later you don't have to go
+through this training process again and
+spend that time you can actually save it
+and you can save it to it to a
+to a checkpoint here's this this is a
+very simple checkpoint but you can add
+more hyper parameters and add more
+things toward - you tore your arm to our
+dictionary here you save the state of
+our model and and so on and then you do
+you can just save that checkpoint thing
+that's going to save it to a path to a
+particular local directory whatever you
+you specify then you can you can load
+the checkpoint we have a load checkpoint
+function when if you want to use it use
+it later
+and again this can be more more rigorous
+you can add a lot more stuff pull more
+parameters that you stored here more
+values but this is simple just this is
+essentially how you would do it and then
+you will just load it and store it in
+the model variable and then use it and
+then here where we would do some
+inference for inference for
+classification pretty standard in
+computer vision we would do some image
+pre-processing so here we import it pill
+from pill we imported image and here
+again you can pause the video take a
+look how this function was defined to
+process an image but it's but it's very
+standard just a way of standardizing and
+product and an image so it is going to
+take an image a path to a particular
+image it's going to process an image and
+what we want to do what that image is is
+classify it
+so once we have our train model we want
+to grab an image that it's never seen
+before or a party or a given image and
+now we want we want to test it on the
+end at image see how how it classifies
+it so I define here a function called M
+show just to show they the image here
+using that plot lib so we have our image
+for this particular image that I picked
+and then the making the prediction so I
+define a prediction function here that
+is going to take in an image path for
+the fur the image and then is going to
+take the model that you already trained
+and then the top the top 5k so it's
+going to output the top five classes
+that have more like most likely classes
+that I classified it as and there are
+sociated probabilities so here you can
+pause the video take a look how this was
+implemented but the basic idea was we we
+pass it through through our model we
+have our our output so model that
+forward image so we pass our image
+through our model
+and then again we'll hear our image up
+we have to the way we process they did
+returned in a numpy array so we convert
+it to a PI torch tensor but not just a
+tensor a flow tensor but it CUDA towards
+that CUDA flow tensor because we're
+using GPU so we have our output which is
+love softmax probabilities and then
+we're going to use exponential towards
+that X so we get the actual
+probabilities and here we have our top K
+probabilities so we can we can use
+probabilities top K and then we pass in
+our top K which that's another parameter
+that you can change here if you want to
+show more or less but we're going to
+show that in the top five so here we
+have the top five that it thinks edits
+with its probability so these would be
+the top five probabilities so it would
+be so bad
+basically it's saying that for this for
+the 15 for that particular class it it
+thinks it's essentially a hundred
+percent it's saying there's a hundred
+percent probability for that one
+essentially and for the others it says
+you can see very very close to zero ten
+to the minus nine minus 11 and so on so
+very very close to zero for the other
+ones and very very highly spiked here on
+that one
+so this this this is what what we want
+to see we want to see our image and then
+we want to see the top five the top five
+K probabilities so here just just run
+running they're called calling our
+functions passing a particular image of
+a yellow iris and as you can see it
+basically saying that a hundred percent
+probability that it's a yellow iris and
+the net the next four top probabilities
+that it classified it as they're
+basically zero so it's a highly highly
+spiked here so very not very nice image
+classifier here build with PI port using
+a pre trained neural neural network
+using transfer learning and just a very
+nice computer vision exercise to
+classify flower images so thank you for
+watching if you have any questions
+thoughts comment below and I will see
+you next time

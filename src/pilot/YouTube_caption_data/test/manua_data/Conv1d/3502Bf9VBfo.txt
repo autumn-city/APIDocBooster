@@ -1,0 +1,366 @@
+- Hi, My name
+is Narine Kokhlikyan.
+I'm a research scientist
+at Meta.
+This presentation is about model
+interpretability with Captum.
+In this talk, we will cover
+topics on model interpretability
+beyond feature attribution
+and feature importance.
+In the first part
+of the talk,
+we will focus
+on adversarial attacks
+and input perturbations,
+and in the second part
+of the talk,
+we'll dive deeper in
+to concept-based
+model interpretability
+and recap the talk
+with future directions.
+First, let's define
+what model interpretability is
+and what it means,
+interpretability beyond
+feature attribution.
+As you might remember
+from our previous talks,
+model interpretability
+is an area of AI research
+that helps us to debug
+our models and understand
+how those models arrive
+to certain decisions,
+this way we can gain
+more transparency
+about the inner workings
+of our models
+and can potentially control
+their behaviors
+in certain ways if necessary.
+During PyTorch
+Developer Day 2020,
+we talked about
+Captum Library
+and focused on
+future attribution methods
+and their evaluation
+metrics.
+We expanded
+Captum beyond attribution
+and added support
+for robustness
+and concept-based
+model interpretability
+which can be used in conjunction
+to enable deeper analyses
+with diverse
+interpretability tools.
+This form of new unifies
+a key area of Captum aside
+from multimodal
+and ease-of-use aspect of it.
+Let's look in
+to adversarial attacks,
+input perturbations,
+robustness metrics
+and how they can be applied
+to real models
+using Captum Library.
+Adversarial attacks
+help us to fool ML models
+by adding human-imperceptible
+noise to input.
+In this example,
+we used FGSM white-box attacks
+to add slide perturbation
+to the input.
+The image looks semantically
+almost the same before
+and after the perturbation
+to human eye.
+However, the model
+doesn't see that
+and misclassifies the image
+as a warthog.
+In this example, we show
+how to use FGSM algorithm
+from Captum Library.
+To use FGSM, we import it
+from captum.robust package,
+create an instance of it
+and pass our model,
+which in this case
+is a resnet model,
+and other necessary arguments
+such as lower and upper bound
+for input data.
+We then call perturb on the FGSM
+instance by passing our input,
+which is the train image
+and other parameters.
+This will return us
+a minimal perturbed
+input that was misclassified
+by the resnet model.
+We can then visualize this side
+by side with the original image.
+As we can see, perturbed image
+is semantically unchanged,
+and it will still be seen
+as a train to human eye,
+but the model prediction
+has drastically changed
+for perturbed image.
+The model classifies
+it now as a plow.
+Note that we can also use
+the perturbations
+not only to generate
+adversarial examples,
+but also counterfactuals.
+In this example, we use
+MinParamPerturbation method
+to generate
+counterfactual examples.
+More specifically,
+we would like to know
+how much did we change
+our input image of a train
+so that it gets
+misclassified as suit.
+Knowing that the index
+of suit class is 834,
+we can define set criteria
+in an auxiliary function
+that will be used from the
+algorithm in order to decide
+if the model changed
+prediction label to a suit.
+We can then pass
+that function
+to the constructor
+of MinParamPerturbation,
+along with a model,
+a tag function,
+which performs pixel dropout,
+or ablation in this case,
+and other required arguments.
+Similar to FGSM, we can then
+compute perturbed image
+by calling evaluate
+and then visualize side by side.
+Here we can see that most
+of the parts of the train
+and background
+are dropped, ablated,
+except the suit on the person
+running to catch the train.
+This shows that
+after ablating train
+context in the background
+in the image,
+the classifier starts focusing
+more on the human suit,
+on the image.
+Now, let's look how we can
+compare different
+input-perturbation techniques
+and adversarial attacks
+side by side.
+To do so, we need to import
+Captum AttackComparator,
+create an instance of it
+by passing our model
+and the list
+of comparison metrics
+such as accuracy or logit.
+As next, we define a list
+of input perturbation techniques
+such as image rotation,
+Gaussian blur,
+or any type of adversarial
+attacks such as FGSM,
+or we could choose PGD
+or other attacks
+that we are familiar with.
+We then call evaluate by passing
+our input image
+in the ground-truth label.
+Evaluate return statistics
+about the accuracy
+and the logits of the model,
+which in this case
+is visualized in a spreadsheet.
+As we can see
+from the spreadsheet,
+the random rotation and FGSM
+drop model accuracy
+from 100 percent to 19 percent
+and 0 percent accordingly,
+while Gaussian
+blur transformation
+left the model prediction
+unchanged.
+Now, let's look into
+another area of Captum Library
+called concept-based
+model interpretability.
+Concept-based model
+interpretability aims
+to explain model predictions
+in terms of abstract
+predefined concepts.
+Here we have examples
+of such concepts.
+For images, stripes and random
+images and for text,
+it could be, let's say, positive
+adjectives and neutral terms.
+We would like to understand
+how important
+are those concepts
+for model prediction.
+In this case, we have sentiment
+analysis classification model
+that has still convolutional
+layers, CONV1 and CONV2,
+and we would like to know
+whether positive adjectives
+contribute to model prediction
+when making predictions
+using movie rating data
+set as also visualized
+on the slide.
+There is a well-known method
+called Testing
+with Concept
+Activation Vectors, TCAV,
+which helps us to quantify
+a concept's sensitivity
+to model predictions
+with respect to specific layer
+in our model.
+In this case, we will
+consider convolution layer
+one and layer two.
+In order to use TCAV
+from Captum Library,
+we need to define
+the concepts first.
+In this case, we define them
+using concept class
+which requires
+user-predefined DataLoaders
+which will help us to log
+concept examples batch-wise.
+The goal of TCAV
+is to learn a hyperplane
+that separates concepts
+from each other.
+In this case, we'll learn
+a classifier
+that separates
+positive adjectives class
+from neutral terms class
+for any given layer L.
+The vector that is orthogonal
+to the separation hyperplane
+and points to where
+a specific concept class
+is called the concept
+activation vector,
+or CAV, of that concept.
+In this case, we visualize CAV
+vector for positive adjectives.
+We can then take
+any text example,
+in this case
+movie-rating review,
+as inputs and measure model
+sensitivity to our positive
+adjectives concept when
+making prediction for the input.
+To do so, we would need
+to compute the attribution
+of our input prediction with
+respect to selected layer L,
+for which we already
+computed the TCAVs.
+And then, we will compute
+a dot products
+between the attribution
+and CAV vectors.
+This gives us an important
+score of concept
+when making predictions
+on inputs for a given layer L.
+This arithmetic operation
+happens under the hood in Captum
+when we use TCAV class
+by passing the model.
+In this case, it's our
+sentiment-analysis model
+and a list of layers
+for which we would like
+to compute the TCAV score.
+When we call interpret
+on the instance of a TCAV class,
+by passing inputs
+and the list of concept,
+it computes TCAV score
+for each layer specified
+in the arguments
+of a TCAV class
+for all concepts
+in the interpret method.
+We can then visualize
+the TCAV score
+using a bar chart
+for each layer.
+In this case,
+they visualize TCAV scores
+for both convolution
+of layer one and layer
+two for both neutral and
+positive adjectives concepts.
+We can see that the importance
+of positive adjectives
+is close to one.
+And for a neutral concept,
+it's close to zero.
+This is what we expect
+because we used positive movie
+rating samples
+to make predictions.
+We plan to expand Captum beyond
+the areas that I mentioned
+and add support
+for influential instances,
+model comparison
+and similarity metrics.
+So to recap, I started talking
+about the attribution methods
+and how we expanded
+Captum beyond those methods
+adding support
+for a concept-based model
+interpretability
+and robustness metrics
+and attacks,
+and input perturbations
+that could help us
+to generate counterfactuals.
+We would like to invite you
+to try out our library
+and provide your feedback
+in forums or GitHub,
+and we are excited
+to explore new directions
+with respect
+to influential instances,
+and model comparison
+and similarity metrics.
+Thank you.

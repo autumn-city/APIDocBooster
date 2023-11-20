@@ -1,0 +1,220 @@
+Hi, my name is Vincent and I am from
+the Speech and Audio Processing Lab
+at Imperial College London.
+In this talk, I will be presenting the paper
+Speech Enhancement using Polynomial Eigenvalue Decomposition.
+This has been presented at WASPAA 2019.
+This is the outline of my talk today.
+I will first introduce polynomial matrices and
+explain how they arise in signal processing and
+the polynomial eigenvalue decomposition (PEVD)
+as a tool for processing them.
+I will then show how this can be applied to speech enhancement.
+The single-channel subspace speech enhancement algorithm
+uses an EVD to decorrelate spectrally while the
+multi-channel approach
+uses an EVD to decorrelate spatially.
+An EVD, however, can only decorrelate instantaneously
+at a single time lag.
+Other speech enhancement approaches use the
+short-time Fourier transform (STFT).
+This approach uses a 4-dimensional tensor to
+model the space, time and frequency correlations
+and the DFT to divide the broadband signals
+into multiple narrowband signals.
+However, this approach lacks phase coherence across
+different bands and ignores correlation between bands.
+Polynomial matrix can simultaneously capture the space,
+time and frequency correlations using a 3D tensor
+and PEVD was introduced as
+a technique for processing them.
+A PEVD can impose spatial decorrelation
+over a suitable range of time shifts
+without introducing any phase discontinuity.
+As such, PEVD is suitable for multi-channel
+broadband signal processing, which requires us to
+account for correlations at different temporal lags.
+Since then, PEVD has been applied to
+blind source separation, adaptive beamforming
+and source identification.
+In this talk, I will explain how PEVD
+can be used for speech enhancement.
+Consider the following signal model with
+x representing the received signals,
+h representing the channel impulse response
+which models the direct-path propagation
+from the source to the microphones,
+s is the source signal that is uncorrelated
+with v, the additive noise signals.
+Assuming stationarity, the space-time covariance matrix,
+Rxx, is computed using the received signals, x.
+More specifically, each element is the
+(cross-)correlation function between sensor pairs (i,j)
+and tau is the time shift parameter.
+Its z-transform gives us a para-Hermitian polynomial matrix.
+In this talk, we will use
+calligraphic font for tensors
+and regular font for matrix.
+The PEVD is a generalization of the
+standard EVD and has a similar form.
+Here, Lambda(z) and U(z) represents the eigenvalue
+and eigenvector polynomial matrices, respectively.
+The superscript P denotes the para-Hermitian operator that
+includes the Hermitian transpose operation
+followed by a time-reversal.
+The eigenvector polynomial matrix, U(z),
+can be interpreted as a filterbank for the input, x,
+such that the outputs, y, are strongly decorrelated.
+These are some PEVD algorithms which are used to
+generate the eigenvalue and eigenvector polynomial matrices.
+Typically, one computes the spatial covariance matrix
+using the outer product of the sensor vector, x,
+Note that there is no time lag parameter
+in this computation. So this can be seen as a
+special case of the space-time covariance matrix
+at temporal lag, tau=0.
+And so, this will be called the
+instantaneous covariance matrix.
+By considering the correlations at
+other temporal lags such as z^1, z^2,
+we obtain the space-time covariance matrix.
+Note that in this example,
+the principal plane or z^0 plane is diagonal,
+but this is not the case at the other planes.
+Then, the goal of the PEVD (algorithm) is
+to diagonalize the polynomial matrix at other lags
+to give us the eigenvalue polynomial matrix.
+The same polynomial matrix, derived from the
+space-time covariance, can be interpreted as
+a polynomial with matrix coefficients, which illustrates
+the spatial covariance at different temporal lags
+or equivalently, a matrix with polynomial elements
+which illustrates the
+(temporal) correlations between different sensor pairs.
+The same example can be represented as:
+the original space-time covariance matrix on the left
+and after applying the PEVD, we obtain the following
+diagonalized eigenvalue polynomial matrix on the right,
+with the off-diagonal elements being zeroed off.
+I will now illustrate how PEVD works with an example.
+Consider the following rectangular pulse source signal
+on the left arriving at the 3 sensors in the
+presence of some sensor noise.
+We then use the correlation between sensor pairs to
+compute the space-time covariance matrix.
+So, the on-diagonals are computed using the
+auto-correlation functions of sensors 1, 2 and 3,
+while the off-diagonals are computed using the
+cross-correlation between sensors 1 & 2, 1 & 3, 2 & 3.
+We also marked out the instantaneous covariance matrix
+as shown in red.
+If we apply an EVD on the instantaneous covariance matrix,
+we obtain the eigenvector and eigenvalue.
+Applying the eigenvector on the input signals, x,
+produces the following output signals, y, on the left.
+We can see that the outputs
+do not look like rectangular pulse signals.
+It also has the following space-time covariance matrix,
+Ryy, as shown on the right.
+Note that on the off-diagonals,
+only the zero-lag components are zero,
+which indicates that y are instantaneously decorrelated.
+This example demonstrates that an EVD
+can only diagonalize at a single time lag.
+We will now see how PEVD works in practice.
+At each iteration, the PEVD algorithm targets the
+largest off-diagonal element and attempts to
+zero it out by applying delay and unitary polynomial matrices.
+The algorithm converges when the off-diagonal elements
+at every lag is less than a pre-defined threshold, delta.
+Using the eigenvector polynomial matrix, U(z), as the
+filterbank for the input, x, produces the output, y.
+Here, we observe that the rectangular pulse signal
+can be recovered in the first channel.
+We also observe that the space-time covariance matrix
+is approximately diagonal across all temporal lags.
+The PEVD decomposes the input space-time covariance matrix
+into the signal and noise subspaces, which are orthogonal.
+For a single-source speech signal, this decomposition
+enables us to recover the denoised speech signal
+in the first channel by reweighing the subspace components.
+With that, the speech enhancement algorithm
+can be summarized as the following:
+We use the correlations between the multi-channel input signals, x,
+to compute the space-time covariance polynomial matrix.
+By applying the PEVD to Rxx,
+we obtain the eigenvalue and
+eigenvector polynomial matrices.
+The input signals, x, are then passed through the
+eigenvector filterbank, U(z), to give us y, where
+we can recover the enhanced signal in the first channel.
+We now demonstrate an example of 5 dB babble noise
+corrupting a speech signal arriving at 3 microphones
+in an anechoic environment.
+We compare our proposed PEVD algorithm
+against the log-MMSE and two versions of
+the multichannel Wiener filter (MWF).
+The first uses a relative transfer function
+(RTF) and noise estimator and this estimation
+is necessary when it is used in practice.
+The second version is what we call the Oracle-MWF
+and it uses prior knowledge of the clean speech signal
+and this establishes the upper bound performance.
+We also measure the performance using the
+SegSNR, fwSegSNR, STOI and PESQ.
+We now show spectrograms for visual comparison.
+This is the one for clean speech.
+We now listen to the clean speech signal.
+(Playing clean speech)
+And this is the one for the noisy speech signal
+and it sounds like this.
+(Playing noisy signal)
+The following is the output from log-MMSE which
+shows that noise is heavily suppressed.
+However, if we compare this with the clean speech signal,
+we can observe that some structure of speech is destroyed
+such the region around 1.4 seconds.
+Furthermore, we also observe some
+random narrowband fluctuations such as
+the one at around 5 seconds and this
+give rise to the well-known, musical noise artefacts.
+This is how the processed audio sounds like.
+(Playing log-MMSE enhanced signal)
+This is how the PEVD (processed signal) looks like.
+If we compare with the noisy speech,
+we can observe that there is some noise suppression.
+Furthermore, if we compare against the clean speech,
+we observe that the speech structure is also preserved.
+We now play the noisy signal before playing the PEVD
+Noisy signal
+(Playing noisy signal)
+Noisy signal
+(Playing PEVD processed signal)
+The results of the algorithms are summarized here.
+Across all measures, the Oracle-MWF performs the best.
+PEVD performs better than log-MMSE and MWF
+and performs competitively against the Oracle-MWF.
+Note that PEVD is a blind algorithm
+that uses only the received signals
+whereas the Oracle-MWF uses
+complete knowledge of the clean speech signal.
+Also note that the enhancement
+using log-MMSE worsens the STOI (score).
+To conclude,
+I have introduced polynomial matrices which can
+simultaneously capture the space, time and frequency
+correlations and PEVD as a tool for
+processing broadband multichannel signals.
+PEVD can impose stronger decorrelation than the EVD.
+I then proposed a speech enhancement algorithm which
+uses the PEVD and have shown that its performance
+is comparable to the Oracle MWF, and it does not
+introduce any noticeable processing artifacts.
+These are the references used in this talk.
+Thank you for your attention.
+The audio samples in this talk
+can be found using this link
+or you can scan the QR code.
+Also, please visit the webpage
+for more resources like this.
+Thank you.

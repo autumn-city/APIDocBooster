@@ -1,0 +1,88 @@
+ All right, let's now learn how we can translate familiar
+ concepts, such as dropout and batch norm to the convolutional
+ settings. So these are also called spatial dropout and
+ batch norm. And it sounds fancier than it really is,
+ because you will see it's pretty straightforward. And there's not
+ much work required to make these things work for the two
+ dimensional setting where with 2d, I mean, two dimensional
+ images. So before we talked about dropout in the multi layer
+ perceptron context, so why do we even have to invent a new
+ version of dropout? Now, why do we have to modify it in the
+ first place? So that is because I mean, you can, of course, use
+ the regular dropout you learned about before. But there's a good
+ argument by Thompson here in this paper, I linked below that
+ the problem with regular dropout is that in CNN, you usually you
+ have like images where you slide your kernels over the image. And
+ usually the adjacent pixels are likely highly correlated to each
+ other. So if you like remove half of the pixels in a given in a
+ given
+ receptive field, it doesn't really change the output too
+ much, except it's maybe like a little bit of a scaling
+ difference. You can also think of it, for instance, if you have
+ an input, I mean, we are not put masking anything in the input,
+ but just conceptually, it's, let's think about it like that.
+ You have a face image. And here, there are lots of pixels
+ corresponding to the eye. If you consider one pixel here, there
+ other pixels closely next to it, and all these pixels together
+ represent an eye. So it doesn't really change that much if we
+ mask half of these pixels. So here, the argument is to instead
+ of masking, dropping out individual positions in a feature
+ map, we are dropping out the channels. So usually in the
+ later stages of the network, these channels represent higher,
+ higher or larger concepts, as we've talked about in the last
+ last lecture, where we have a bigger picture concepts like a
+ channel represents the eye that was detected one the mouth one
+ the nose and so forth. So here, the idea is really to drop these
+ higher order features in that way, dropping entire feature
+ maps instead of individual pixels. So essentially, drop
+ out to D is drop out applied to the channels rather than the
+ pixel. So you would drop an entire channels instead of
+ pixels. And that's all there is to it. So how do we do that in
+ pytorch? It's pretty straightforward. So instead of
+ saying drop out one D, you are now saying drop out to D. And
+ that's essentially it. So here's an example showing you how that
+ looks like. So each each box here represents one channel. So
+ here I have just some random example input with three
+ channels. And you can see two of these channels are now zeroed
+ out. That's how spatial dropout works. And that's all there is
+ to it. It's not very complicated. The same with batch
+ norms, instead of using batch norm, one D, which we used
+ earlier, when we talked about multi layer perceptrons of fully
+ connected layers, for the convolution layers, we use batch
+ norm 2d shown here. So just to briefly recap, I don't want to
+ explain the batch norm again, because we have a video for
+ that. But in the regular batch norm in the 1d version, we were
+ computing things for each feature. So we were computing
+ this gamma and beta for each feature over the batch
+ dimension. So if n is my batch size here, we have an input that
+ is two dimensional, it is n times m, where let's say, m is
+ the number of features. So this is my input dimension. So we
+ had usually, let's say a table where we have different
+ features, let's call them f1, f2, and f3. So we have three
+ features here. And here, this is our batch dimension. So we were
+ computing for each feature gamma and beta. So they were all
+ different gammas and betas. Let's use yellow. So we had if we
+ had three features, we had three gammas and three betas. Now, we
+ extend this concept here to the two dimensional case where we
+ compute these four inputs that are four dimensional, right,
+ because we have now the batch size, we have the channels, we
+ have the height, and we have the width. So we compute the batch
+ norm now, over the number of inputs height and width. So in
+ that sense, we, we combine these. So we, we average,
+ essentially over these, and we have them the same. So the
+ number of gammas and beta is the one corresponding to the number
+ of channels, if we have 64 channels, we have 64 gammas and
+ 64 betas in that sense. So we are computing it over the number
+ of batches height and width here. So yeah, here is
+ essentially a summary of what I just said, just for your records,
+ if you want to look at it again. Um, yeah, and here's how we can
+ do that in pytorch. So if this is my convolution layer here, I
+ just define the number of input channels and the number of output
+ channels and then oops, and then I apply
+ batch norm to that here, the number of parameters, the number
+ of betas and gammas of batch norm is the number of output
+ channels. So we have to put a 192 here because I have 192
+ output channels, I will have 192 betas and 192 gammas. All right,
+ that is it. In the next video, I will briefly recap that there
+ are different architectures around there. And then we will
+ talk about VGG 16. And resnet.

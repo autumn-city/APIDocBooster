@@ -1,0 +1,261 @@
+hello everyone my name is tomadi martino
+i'm a first year phd student at
+sunderland in era working on topics such
+as deep learning forestry and
+multi-temporal ceremonies today i will
+present to you our work for the dsc
+track of the data fusion contest of 2021
+entitled multi-branch deep learning
+model for detection of settlements
+without electricity this worked
+this work has been developed by myself
+mike simlinomia is an independent and
+host of the mind behind maps podcast and
+elise connacho niger was a researcher
+from oneer
+with our work we tied for third place in
+this competition
+for visualization purposes of the
+context of this competition we display
+here five images of the same scene
+extracted from the supply data set
+we quickly noticed a wide variety of
+information contained within all the
+provided modalities
+in addition
+each of this sensor seems to have
+multiple acquisitions with up to nine of
+them for the irs sensor thus it seems to
+us very important to both consider the
+multi-modality and multi-temporality
+aspect of the data when manipulating the
+data set
+additionally if we expect a prediction
+image
+is displayed as a 2d classification map
+predicting whether a resolution cell of
+500 meters by 500 meters contains human
+settlements without electricity or not
+while this initial data set is presented
+as a segmentation data set we decided to
+follow another route by converting this
+initial task into classification one
+indeed the labeling resolution of 500
+meters implies that a square of 50 by 50
+pixels of every image will have the same
+and one unique class hence we decided to
+grade our original 800 by 800 pixels
+images into 256
+patches of size 50 by 50 pixels each by
+this process we obtain a little bit more
+than 15 000 sub patches but we then
+split in three folds for cross
+validation
+the initial data set is leveled with
+four different classes among which only
+one is deemed of interest and it is the
+class of human settlements without
+electricity here displayed in red from
+the decomposition of four labels into
+two binary labeling system with our own
+distribution we observe that
+the presence of the absence of
+settlements it's
+is a measure that is quite balanced
+while the presence of electricity as is
+is something quite rare and when
+converting the initial labels to the
+supply binary task we obtained what we
+display on the right this sort of one
+versus all setup where this one class is
+the class of interest and all are the
+three other classes
+well
+considering all the presented
+characteristics of the data set we
+developed this multi-branch model the
+main philosophy surrounding it
+surrounding this so-called mega model is
+just to provide to our neural network
+different degrees of apriori regarding
+the input data it's also good to know
+the difference between the vi are a
+specific processing pipeline on the
+right of the branches and the rest of
+the mega model
+a spatial resolution of a day night band
+of the iirs sensor
+is very low in some sense and so we
+decided to spatially average it and only
+process it temporarily using 1d
+convolutions
+to process this time series of 9
+acquisition
+9 acquisitions we opted for a quite
+shallow convolutional network with only
+2 blocks each consisting of a 1d
+convolution a button on 1d and a nearly
+activation function
+then the next branch is what we consider
+to be the same place it's just like a
+pre-trained efficient net b7 pre-trained
+on imagenet preceded by a channel
+dropout layer that aims to improve
+convergence despite the high number of
+input channels here 89.
+this branch here the this design
+acknowledges the it's already an 80
+between the three sensors by splitting
+the feature extraction process in
+different branches before merging them
+at the feature classification level each
+branch combines a 3d convolutional layer
+a channel dropout layer and an efficient
+net b2 pre-trained also on imagenet here
+we opted for an asymmetric 3d kernel
+with a size of one in both the height
+and width dimension and a higher size
+for the temporal dimension to extract
+pure temporal information
+then the last branch is acting as a mix
+between the last two branches here we
+extract first temporal features from
+each sensor that are separately if then
+we merge them to then extract a texture
+feature alongside the channel damage
+all these branches are then
+all these four branches have a mend
+together at the fully connected level
+before being classified in one of the
+four supplied classes
+well
+there exists an ambiguity between the
+label data and the task
+that is asked for us and so we took
+account for it
+we wanted to train our model to both
+classify and put patches into one of the
+four available classes but also
+wanted him to understand as a priority
+on the retrieval of the class of
+interest and so for that we modeled it
+using a soft f1 f1 loss
+so
+as the f1 score function that is used to
+uh
+that is used to score the performance of
+the model uh is non-differentiable we
+designed here a custom software loss
+function where we introduced the concept
+of soft precision and software call
+where we basically are working with the
+probability output of our model as a y
+hat one
+in addition to custom loss function we
+also developed a particular data
+augmentation pipeline
+we used only geometrical transformation
+in order not to disturb any data
+distribution uh two classical
+augmentations were used rotations and
+flips but two others kind of more
+unusual were also used such as cut mix
+where we cut a small patch within an
+image and replace it with a similarly
+sized patch from another image of the
+same class noisy labels was also used
+where we randomly offset the
+aforementioned
+gridding process to model potentially
+noisy and inaccurate levels
+while we use augmentation during
+training we also use it at test time we
+transform the image
+the initial image to classify into four
+new images we emerged when every
+prediction from these four images for
+each fold each augmentation by summing
+the probability value of the class of
+interest we then find a satisfying
+threshold using the best achievable
+score on the public leaderboard
+the final results all of these were all
+everything we presented led us to reach
+the following performance with the first
+place on the development phase data set
+and a tight third place on a test phase
+data set while these results are very
+satisfying for us we still wanted to
+dive more
+deeper into the usefulness of each
+sensor for the proposed task
+considering the capacities of the dna
+band to data ground illumination we
+decided to evaluate it in isolation of
+other sensors at the task of detecting
+electrification in the context of heavy
+level imbalance we consider that the
+performance that we display here
+are quite satisfying
+considering that the reference score
+that we used is a measure that takes
+into account class imbalance contrary to
+accuracy
+as we have now satisfying results
+regarding the detection of electricity
+wanted to see how well the day night
+band would perform when combined with
+every other sensor to predict then this
+time the class of interest we see in
+order of improved performance that we
+have sentient l1 and landsat 8 being
+outperformed by sentinel 2.
+our idea around that is that human
+supplements can be found to span over
+like 20 meters or so and it could be
+very challenging to distinguish
+buildings within the speckle of sentinel
+1. however we theorize that this could
+be eased with a deeper temporal stack
+so in this contest we presented
+developed a multi-branch architecture
+that acknowledges the multi-modal and
+multi-temporal structure of the data
+also design custom training and testing
+environment with a custom loss
+documentation test time augmentation and
+ensembling we studied the contribution
+of each sensor to the final prediction
+showing the capacity of the dna band to
+retrieve electrification information
+somewhat accurately also show the
+apparent superiority of sentinel 2 over
+the other two sensors when detecting the
+class of interest
+the central axis of improvement seemed
+to be based more on a reflection on the
+type of data aggregated
+and how to combine them in a physically
+meaningful way among the many ideas we
+have we believe the contribution of time
+series and radar interferometric
+products may be of primary interest
+at last we wanted to thank the
+organizers of the contest for this
+opportunity to work on such a thriving
+challenge we also wanted to congratulate
+every other participant for the
+outstanding results and to thank
+everyone for the exciting development
+phase and the spine chilling but
+exciting
+test phase
+in addition we wanted to deeply thank
+our colleagues at o'neill for the
+tremendous support during the challenge
+especially adrian shannentong aurelian
+player and gila benirei
+and we also wanted to thank you all for
+attending our presentation we are
+looking forward to answering any of your
+questions

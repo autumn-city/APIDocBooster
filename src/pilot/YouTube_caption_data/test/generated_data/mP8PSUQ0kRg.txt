@@ -1,0 +1,245 @@
+show you how to use PI torch for maximum
+likelihood estimation so let's say that
+this R this is our data so the sample so
+we read it in so the shade of it is 200
+so we have 200 data points let's say
+that the ones represent heads when we
+flip the coin and zeros represent tails
+okay and what we might like to know is
+well what's the probability of this coin
+coming up heads right so essentially
+what's the probability of one here and
+one here itself
+okay so if you took statistics you know
+how to do it so in order to compute P of
+heads
+we're heads corresponds to 1 you'll just
+compute the mean of the sample right so
+that's gonna be 0.72 so great but let's
+say that you don't know that and you
+instead want to actually do maximum
+likelihood so how would you go about
+that well first you need to figure out
+how to write the likelihood right so P
+of X I equals 1 so P of this or anything
+else being equal to 1 that's will define
+as P the probability of heads that means
+that the probability of X I equals 0 is
+1 minus B the probability of heads plus
+the probability of tails is going to be
+1 so 1 is going to be 1 1 minus P we can
+also write it as the likelihood so the
+likelihood of XIV equal to 1 given T
+right so the likelihood of X I equals 1
+for any of the excise here so this is X
+1 X 2 X 3 and so on that's gonna be P
+that's gonna be 1 minus P we can use a
+trick to write this down as an algebraic
+expression so what we'll do is we'll say
+okay so if P is equal to 1 then this
+expression should be X I and it will be
+because P times 1 times X is 1 but 0
+times anything is 0 so what you are left
+with is P in case X I is equal to 1 on
+the other hand if X I is equal to 0 then
+this part cancels out because it's 0 and
+this part is 1 minus P so this
+expression is going to be 1 if X is 1
+and 0 it's our P of X is 1 and 1 minus
+BX is 0 exactly what we need it
+so the likelihood is going to be the
+product of those terms for all the
+excise right so the probability of x
+given P so the likelihood of X is going
+to be the product over all the eyes of P
+oxide given P which is this guy now
+usually we don't want to deal with
+products because this is going to be
+extremely small because all the
+likelihood is smaller than one right so
+what we'll do is we'll take the log so
+the log of a product of this product is
+going to be the sum of the logs that's
+just how logs work and finally we take
+the minus because we want to work with a
+negative log likelihood so that's the
+expression that we end up with this is
+the expression that we want to minimize
+if we want to find the P such that the
+likelihood as high as possible because
+this is the minus log likelihood so you
+could also maximize the actual log
+likelihood so let's start working with
+torch so first we'll read and the sample
+into the variable X so we need to
+convert it into a tensor and down into a
+torch variable and we also converted to
+float so in torch you must multiply
+types that are alike right so if you
+want to multiply two numbers they have
+both to be floats so both they have to
+be doubles or both have to be ends or
+something like that and P is going to be
+a float so it'll make exit float and you
+do it using duck type like this well
+also define P so that's gonna be a
+variable and initially it's gonna be
+random right so it's gonna be in this
+instance 0.244
+but every time you run it is going to be
+different and here we say requires Grad
+so that means that we should be able to
+compute any the gradient of any function
+of p with respect to P which is
+something that we will want to do
+because the negative log likelihood is
+going to be a function of P right so
+repeatedly we'll compute the negative
+log likelihood how do we do it well
+using the trick that I described here
+what we'll do is we'll do x times P plus
+1 minus x times 1 minus P so what that
+does is it just computes it computes all
+of those likelihoods together right so x
+is a whole tensor
+you just do a vectorized version
+essentially now you take the log of
+everything now you take the sum of
+everything make sure to use torch here
+so the torch versions of sound and log
+because otherwise things would not work
+when you do and allow them backwards and
+in fact they would not work in other
+ways so this would be the negative log
+likelihood the thing that we want to
+minimize how would we minimize it we say
+and allow the backward so what that does
+is populate pitot data with the gradient
+of nll with respect to T in fact it's a
+little bit more complicated than that
+because Peter data if it's not zero
+initially then you'll just add the
+current gradient of NLL with respect to
+t not something that you want to do so
+we'll set P grad to zero every time
+after we're done updating P so we
+compute the we compute the gradient so
+let's actually do that
+so now nll is gonna be this some number
+and P dot grad dot beta it's gonna be
+minus 130 so what does it mean it means
+that if you increase P then nll will go
+down by quite a lot so you increase P by
+one unit
+I know L will go down because of the
+minus by 130 so okay that makes sense
+because P is 0.56 but when NL is
+minimized and a P should be 0.75 so P
+should go up and I know L will go down
+accordingly great and this is the update
+so we'll subtract P grab the data from
+pintor data so we'll update P data using
+this update rule and it will work right
+because this is negative we are
+subtracting it so P the data is gonna
+increase the value of P is going to
+increase after one iteration what I'm
+doing here is I'm just printing out
+what's going on so here I'm printing out
+the value of nol I could just say
+another data but it converted to numpy
+it just because it will display nicer I
+also compute P and also display P dot
+grad data so the gradient of their know
+L with respect to P finally I zero out P
+but grad so that they can start all over
+again and do another step
+so let's run this and what you see is
+yes you got two P equals to 0.75 great
+so in general you wouldn't just say 14
+range 1000 you would say well I'll run
+things until the parameter stops
+changing or until the cost stop changing
+like maybe until the log-likelihood that
+look like if it stops changing or until
+this is zero or in case there is a
+danger of overfitting you'll also see
+what the performance is on the
+validation set and then once that stops
+starts increasing because you're
+overfitting Daniel stop or at least if
+you see that the performance of the
+validation set is not improving so the
+cost on the validation set is not
+decreasing for a while you'll say oh
+stop that's called early stopping so
+okay so this is how you got the maximum
+likelihood estimate now let's say that
+you have a prior let's say that you
+think that P is actually close to 0.5
+meaning that the coin is close to fair
+but you don't know exactly how close so
+you want to trade off basically
+adjusting P so that it fits the data the
+best and making sure that P is close to
+0.5 how would you do that so that's what
+regularization in a way is all about so
+we'll do it in this example so what I'll
+do is instead of minimizing the NLL I'll
+define the cost here so the cost here is
+going to be NL L plus lambda so I
+predefined my lambda to be 1000 kind of
+large times I'll say P minus 0.5 all
+squared and now I'll say cos dot
+backwards so now instead of trying to
+make nll as well as possible I'm trying
+to make cost as small as possible
+except cost is the NLL plus this so now
+I'm trying to simultaneously I want to I
+want this to be small and I want this to
+be small and this is going to be small
+when P is equal to 0.5 and this is going
+to be small when P is equal
+- 0.72 5 so there's going to be a
+trade-off and P is gonna end up
+somewhere in between so let me try this
+so P and adopt really close to 0.5 just
+because this lambda is very large if I
+decrease it they make it like 0.1 then P
+is pretty much what it was before of
+course if I make lambda equal to 0 then
+this part has no effect at all because
+it's 0 so this is how we do
+regularization if you want to call it
+that in this case sometimes what you
+want to do is you just want the
+parameters to be as close as possible to
+0 right not to 0.5 so here it's hard to
+make a case for why you would want that
+but let's do it just the same so instead
+of instead of adding P minus 0.5 squared
+which is going to be small when P is
+equal to 0.5 you'll say P dot norm all
+squared so that's going to be basically
+P squared in this case the reason we're
+saying P dot norm is that this would
+work even if P is not just a tensor with
+one number but if it's a tensor with
+lots of numbers P dot norm would still
+compute the l2 norm here okay
+so let's try to do it so we'll increase
+lambda to let's say one point zero and
+what you see is that that was not really
+enough well now P became smaller and
+that was too large
+so here you may we make P resmoke so the
+larger lambda is the more P gets pulled
+towards zero and the more the NLL
+basically gets ignored because this term
+is so much larger okay so make sure that
+you don't do this
+so you might sometimes do this if you
+have justification for that if you have
+some kind of prior although so the prior
+would also involve figuring out what the
+lambda should be exactly okay

@@ -1,0 +1,196 @@
+ Okay, let's now talk about extending the input
+ normalization to the hidden layers using the technique
+ called batch normalization. I will just show you in this video
+ how it works. And then in the next video, I will show you how
+ we can use it in pytorch. And then I will show you or explain
+ to you why it works. Or at least we will discuss some of the
+ theories trying to explain why it works.
+ Alright, so batch normalization, or in short, batch norm goes
+ back to a paper published in 2015, called batch
+ normalization, accelerating deep network training by reducing
+ internal covariate shift. So internal covariate shift, that's
+ like, yeah, I don't know a fancy word for just saying that the
+ feature distributions shift during the course of the
+ training internally in the hidden layers, we will explain
+ or think about this more when I go to the video where I offer
+ some theories why batch normalization works well in
+ practice. So here, I'm just, I would say the short version of
+ batch normalization, what it is, it's about normalizing the
+ hidden layer inputs. So instead of just normalizing the inputs
+ to the network, we normalize also internally, the inputs to
+ each hidden layer. And this helps you with exploding and
+ vanishing gradient problems so that the gradients don't become
+ too large or too small. And overall, it can increase the
+ stability during training. So in that way, training progresses
+ more smoothly. And also the convergence rate improves. That
+ means it may be that we need fewer epochs to get the same
+ loss that we would achieve if we don't use batch norm. So you
+ usually with batch norm, the networks train faster. And how
+ you can think of it as an additional normalization layer.
+ And there are also some additional trainable parameters
+ involved. Yeah, so in the next couple of slides, I'm going to
+ walk you through the procedure of batch normalization. So just
+ for context on let's suppose we have a multi layer perceptron.
+ Okay, so let's say we focus in on this activation here in the
+ second hidden layer. So the first activation in the second
+ hidden layer. And we're actually looking at the net input of that
+ activation. So remember how we compute the activation. So it's
+ usually by applying activation function to the net input. What
+ type of activation function doesn't really matter here, it
+ could be logistic sigmoid 10h or relu should work with any type
+ of activation function. Alright, so yeah, we are focusing on this
+ hidden layer net input corresponding to the activation
+ here now. And also now suppose we have a mini batch. So we have
+ a mini batch such that the net input of a given training
+ example at layer two is written as fellows. So I have now this
+ x i here for the index of the training example in that mini
+ batch. So if I have i equals one, this would be the first
+ example in that mini batch. And just to for simplicity, I will
+ actually ignore the layer index in the next couple of slides
+ just so that the other notations are a bit simpler to read. So
+ yeah, here, that's the first step of batch norm, there are
+ two steps. So the first step is to normalize the net inputs.
+ This is essentially the same as the standardization that I
+ explained earlier for the inputs. So what's going on here
+ is we are computing the mean over a feature. So the j is the
+ feature index again. So you can actually use batch norm for any
+ type of input. So we will also see there is a two dimensional
+ version for that for convolutional networks later on.
+ But here we are just focusing on the regular one dimensional
+ version where you have a feature vector, for instance. So let's
+ say we have, yeah, the J feature. And if I go back, so if
+ you consider this activation here, what are the features, so
+ the features are all essentially all the previous layer
+ activations, right? So all these go into that activation. So all
+ of these here are the features of this activation here. So J
+ really is the index over the activations from the previous
+ layer. So we can also think of it as the feature index or
+ previous, which are the previous layers, activations. Yeah, so we
+ compute from that the mean and the variance. So that is nothing
+ that should be new to you. It's a simple, simple calculation
+ here. And then we standardize. So this is like what we had in a
+ previous video as standardization. And this is
+ essentially it's in that way, step one of batch norm is
+ similar to the input standardization. Except now, we are
+ looking at a hidden layer. So instead of looking, instead of
+ looking at standardizing x, we are now standardizing these A's
+ from the previous layer. So after step one comes step two,
+ so one more thing to say about step one. So in practice, we
+ modify this standardization slightly, such that we don't
+ bump into, yeah, division zero issues if the variance is zero,
+ if there's no variance. So for numerical stability, we add a
+ small value epsilon here. So here we have the variance plus
+ this little epsilon, and then we take the square root instead of
+ instead of dividing by the standard deviation directly,
+ that's just like a small computational trick to prevent
+ division by zero errors. Now step two. So step two is the
+ pre activation scaling. What do I mean by pre activation? So
+ this is the value that is computed before the activation
+ is computed, it will become more clear in the next slides where
+ I have step one and step two connected to each other. So this
+ is essentially what we have done in the previous slide. So if I
+ go back, this is the end of step one. And then from step one, we
+ go here to step two, where we apply a scaling. So there's a
+ gamma J, and a beta J. And both of these are learnable parameters
+ that are also learned using backpropagation. So similar to
+ the weights in the network, these are also updated via
+ backpropagation. So what do these do? I mean, essentially,
+ there is a scaling parameter here. And there's a shift
+ parameter, right? So technically, it can learn to undo
+ what we just did in step one, right? So it essentially can
+ undo it. So if gamma, I, J, sorry, if that happens to be
+ equal to, let's say this term, and beta J happens to be equal
+ to this one, I mean, these are learnable, so it may happen. So
+ the network can actually learn to undo step one, the scaling or
+ standardization, whether it does that or not. It's Yeah, it
+ really depends. But I'm just saying here, the possibility
+ exists, that it can undo this. But in that way, what's
+ happening here is it's something that is a little bit more
+ flexible than just regular standardization. So here, step
+ one would be a regular standardization of the hidden
+ layer activations. And step two is a little bit more, I would
+ say flexible. So technically, this whole step one and step two
+ thing can just simplify to regular standardization, if this
+ is given, or it could be something different. And in
+ practice, it happens that this set up the step one and step two
+ set up works better than just step one alone, it just happens.
+ So and yeah, one theory or could be it's just my theory that I'm
+ coming up with. But one simple explanation could be, for
+ example, it might perform better because yeah, we just have
+ additional learnable parameters. It's essentially as if we have
+ more, yeah, more parameters in the network. So the network has
+ a higher capacity, maybe. But yeah, we will look at some other
+ theories in a future video.
+ Alright, um, yeah, so as I said, so this controls the mean, and
+ this controls the spread of scale. So from this one, and
+ this one, basically. And like I also already said, technically,
+ batch normally, I could learn to perform standardization with zero
+ minute unit variance. If, um, yeah, if these are the same, and
+ these are the same.
+ So here is step one and step two connected and summarized. So
+ yeah, I'm not showing you the numerically stable version, but
+ you probably know, I mean, you can also do it doesn't really
+ matter. It's just for keeping things simple. So here's the
+ whole procedure of how it would look like here, I'm applying it
+ to both this layer and this layer. So the colors should
+ match here. So let's say x is our input, then we first compute
+ the net input. So if we are here, we are computing the net
+ input. And then this would be step one where we standardize
+ the net input. Then what we do is we compute this pre activation
+ scaling. So this is a scaling. And then we compute the
+ activation. So the activation in this case would be computed by
+ sigma or let me write this down properly, a one, one would be
+ sigma, a prime one, one, right. And then once we have that, we
+ go to the next input. So this is the next net input. Then again,
+ we do step one. So here we can step one. And then we do step
+ two. And then we compute again, activation should be a one here,
+ sigma, a one, two, prime. So yeah, this is essentially it.
+ And yeah, this is how batch norm works. Um, do I have anything
+ more? Yeah, one more thing to consider is that this one also
+ makes the bias redundant, right? So I'm not showing the bias unit
+ here. And this network, but technically, you would have a
+ bias unit, b one here, here, b two, here, b three, that gets
+ added to the net input. Right? So that is something that you are
+ familiar with. And the if you think about how the bias works,
+ right? So if I have a simple case here, the net input, it's
+ on, it's right in like, W, just for simplified case. So let's
+ say I'm computing the net input for the second layer, this would
+ be weights from the first layer, multiplied by the activation
+ from the first layer here, layer one, layer one, and then plus
+ the bias. So I'm only considering your simple case
+ omitting the index. Otherwise, I would have another index. But
+ yeah, you know what I mean. So I would have the bias added to it,
+ right? But this kind of becomes redundant, because essentially,
+ the bias could be already included in this beta or the
+ beta would essentially, if you leave out this bias here, the
+ beta would essentially take the role of that bias if we compute
+ batch norm. So in that sense, you can skip the bias when you
+ define the layers, I will show you that in the code example,
+ how we can do that. I mean, it doesn't really matter. But
+ whether we do it or not, it should work both ways in
+ practice. But it's just, I would say a little cleaner to not use
+ a bias because it's redundant. I will show you in the next video
+ in the code example, how that looks like. So you can actually
+ apply an argument, say bias equals false. Yeah, and also
+ note that now when we use batch norm, batch norm has learnable
+ parameters. So if we use batch norm in a given layer, it has we
+ have an additional two vectors that have the same dimension as
+ the bias vector, right. So if we have, we use batch norm here in
+ this layer, we will have two, four dimensional vectors, like
+ this bias vector here would also be four dimensional, right,
+ because there's one bias for each in layer activation.
+ Alright, so I think this is all I have about batch norm. This is
+ how batch norm works. In my slides, I actually had also
+ short or not short, it was actually like 10 slides or so
+ how we do backpropagation with batch norm, but I promised you
+ not to torture you with these nitty gritty details and math
+ mathematical details, because that's not super important
+ because we use auto grad and practice anyway. And I think
+ it's in this course also, more important to understand the
+ bigger picture concepts. And then if you're interested, you
+ can study those things later on. So yeah, and also if we would
+ start like going through these slides, it would take another
+ half an hour. I would rather complete this lecture today so
+ that next lecture, we can talk about optimizers and move on to
+ convolution networks. I hope you don't mind. So in that way, next
+ video, I will show you batch norm in pytorch.

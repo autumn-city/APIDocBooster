@@ -1,0 +1,464 @@
+Hi this is Jeff Heaton, welcome to
+Applications of Deep Neural Networks,
+with Washington University. In this video
+we're going to look at how to actually
+implement a GAN in Keras. We'll do the
+usual face generator and recognizer
+combination and see how realistic
+looking of faces that we can generate
+with a GAN. For the latest on my AI
+course and projects click subscribe and
+the bell next to it to be notified of
+every new video. So, you typically think
+of faces as what you are generating with
+GANs and that's exactly where we're
+going to start. We can use GANs to
+generate faces like these, that are very
+high resolution. To train this sort of
+GAN requires a pretty advanced GPU setup,
+and a lot of compute time. We're gonna
+try to keep this constrained to what we
+can do in Google CoLab, so to do that
+we're going to not generate this high
+resolution of faces. I'll show you in a
+later video how you can run this on your
+local computer and generate these
+downloading weights for your neural
+network actually from Nvidia, that way
+you don't need the major compute power
+to actually generate those weights, so
+we'll see how you can generate this high
+of resolution but not how you can train
+to this high resolution. Because that
+takes a considerable amount of compute
+power. I'll probably do a follow-on video
+outside of this course talking about how
+you could actually train this higher
+resolution, if you're willing to get
+something like a Titan 5 or a Amazon AWS
+instance that you're that you're paying
+for. That would give you this extrema of
+compute power. So let's see how we can
+create some faces in Keras. We're using
+a variant of GANs called a DC-GAN that
+is using a convolution neural network to
+actually help to generate these. I give
+you some information here that I gleaned
+from various sources to put together the
+code that we're going to look at that
+it's actually able to generate these
+faces and to train for them. We'll see
+this really kind of in code as I go
+through this. I give you some links here,
+this one is really good, "Keep Calm and
+Train a GAN, Pitfalls and Tips for
+Training GANs." GANs can really be
+particular about the hyper parameter so
+it could be somewhat tricky training one
+of these. There's a lot of papers that I
+have links to here that give you
+guidance and advice on doing this. I'm
+also trying to keep this into what you
+can do relatively quickly probably a
+couple of hours of training on a google
+CoLab style GPU. So you'll want to make
+sure that in your run time... change run
+time type... you'll want to make sure that
+you have a GPU enabled for this. Or
+things will go really slowly. These are
+the faces that I generated with this
+algorithm that I'm going to give you
+here, this Python code. Some of these look
+like something out of perhaps a horror
+film.
+All of them look somewhat surreal. I
+wouldn't say that I really have one
+photorealistic face in this entire batch
+here. These faces that you have here each
+of them is from a specific seed value, so
+a set of 100 random numbers generated
+each of these. Now let's take a look as
+this trains. You can see the video that's
+flowing here. It is... it's going through
+about 10,000 epochs and these faces are
+gradually becoming more and more
+realistic. Each square on this training
+video has exactly the same seed value so
+you're seeing how these seed values stay
+the same but the face is generated from
+each of the seeds is evolving as it
+trains and gets better and better and
+better. So let's see how we can run this.
+Go ahead and run this block, now I'm
+going to assume that you're doing this
+from Google CoLab. So let me go ahead
+and run this. I'm going to need to block
+out part of this because I have to enter
+credentials to actually access my Google.
+Okay, now my drive is mounted. You're
+gonna need training data. So these are
+the two locations that I suggest to go
+get your training data from and you're
+going to need to point the data path
+down here at the location that you've
+downloaded those to. They need to go
+into your Google Drive, now this is gonna
+be a couple of gigabytes put up into
+your Google Drive, so be aware of that.
+We're also choosing the resolution that
+we want to generate these to, that is
+specified down here, so the resolution
+2 is for 64; 3 for 96
+and so on. If you go above about 128
+528 you're gonna be beyond what G-Drive
+and Google CoLab can really do for you.
+So we're going to generate these just at
+the value that I have here, and what you
+need to do is, download each of those,
+those can be a very big zip file, so you
+unzip them and then you're going to put
+them into this location on your Google
+Drive. We'll take a look at what mine
+looks like. Ok, this is my Google Drive,
+I don't use this for a lot other than
+this particular class, so you'll see what
+I have here. I use a directory called
+projects. This is where I put the various
+things that I am working on. Underneath
+faces you will see here that I have face/images, so this is what you'll have to
+manually create. You'll create a projects
+and a faces, or wherever you want to put
+this, just adjust the path in your
+notebook. If you go into face_images, this
+is gigantic
+I've got this basically full of all
+these training images of faces that I
+got from those two zip files that you
+would download. You've got to literally
+just drag and drop these and this will
+take a while to actually upload all of
+those and then this output directory
+will look at this as it's actually
+running, but as it trains it creates
+these files. So train one you can see in
+the beginning it's it's not very good at
+generating faces but as it goes through,
+and you can look at these times from the
+last time that I ran it, that gives you
+an idea of how long it takes to run
+these. As you get more advanced the faces
+start to look better. Some of these even
+look quite a bit better, like this one and
+this one. Then the final set that I was
+showing you earlier, so this was a
+different run, that I that I did this of.
+So, you to have that the output directory. You
+need to create that and then this
+training data here that you see. It takes
+a while to go through all of those and
+turn them into a Numpy tensor of the
+right dimensions so I cache these. These
+are Numpy binary files, we'll see how
+that's created in the code, and we simply
+load these and believe me that's a lot
+quicker for subsequent runs of this
+because if you're gonna be changing your
+hyper parameters and trying to tune for
+better looking faces you don't want to
+be re parsing through all of those many
+JPEGs and PNG's and other files that
+make up the training data. Okay, you may
+want to change some of these I am saving
+every 100 times through the seed is 100
+you could play with that that will
+affect what the faces look like you can
+do smaller seeds larger seeds. This is
+where the the data path is that you're
+getting your training and output from.
+Batch size is 32 and I'm training for
+10,000. We're gonna go ahead and run this
+section now we're gonna build these
+paths piece we're going to download all
+of those images from G-Drive into Google
+CoLab and build our training set. So
+remember how I had the training data of
+the generated size, those Numpy files.
+Here I am basically setting this up so
+that I am going to have that path. If I
+have not already generated the training
+data, then I'm going to have to actually
+download it and this part will take a
+while if you're processing it. Otherwise,
+I'm going to load the previous training
+Pickle. It's actually not a Pickle, I need
+to update that, it's actually an Numpy file.
+I tried pickles, but they were somewhat big
+and giving me issues. On the newest
+version of Pickle deals with that pretty
+well, but older versions of Pickle do not
+deal well with large files and by large
+I mean in the gigabytes. So here we're
+loading the previous Pickle. That does
+not take long, it's already loaded. We're
+gonna build the generator and the
+discriminator. Both of these are simply...
+We're using all the same neural network
+commands that we've dealt with before.
+Now this is you'll notice that we're
+wrapping this all up in a Model, before
+we used Sequence and we use Sequence
+here but before we use nothing but Sequence.
+Sequence is great for most of the
+neural networks that you're going to
+create, but
+we had to use something beyond
+Sequence for ResNets because we had
+previous connections that went back for
+recurrent neural networks some of them
+will need to use the model which is the
+functional API in Keras. So this
+basically sets up the Sequence, just
+like we did before, but this allows us to
+tie the input, out to the generated image.
+So we're creating the generated image
+that is going to come from that input seed
+the reason that we've got to use the
+model... all of this we could have done
+just with sinc once alone but we're
+going to actually share parts of this
+model and we'll see that in a moment the
+discriminator is pretty similar to it's
+using a lot of the same things that
+we've done before we are adding in BatchNormalization that prevents the grade...
+the vanishing gradient problem from really getting you it's it can be
+good to add to some of these neural
+networks on the final layers we're also
+using a leaky RELU, which also deals
+well with.. with training and the
+gradients. These are additional hyper
+parameters that you can put in. We'll
+talk more about leaky RELU, BatchNormalization and some of these
+additional hyper parameter tuning in the
+next module when we talk about hyper
+parameter tuning and again we're going
+to output to a sigmoid function because
+this neural network the discriminator
+takes in an image and outputs a true or
+false saying is it real is it not real a
+probability of it being real. The
+generator takes in a vector which is the
+seed and outputs an image so that's the
+power of neural networks they can input
+and output just about anything rather
+than inputting a vector and outputting
+either a number as in regression or a
+true/false as in classification like a
+lot of models are only capable of doing.
+Then we're gonna save the images this is
+generating those grids of images that we
+were looking at. Basically every 100
+epochs we're going to actually save a
+grid just so that we can watch this
+thing as it's going. I go ahead and run
+that that's very quick because it's just
+defining those functions. Here is where
+we're going to use the capabilities of
+those neural networks that we've built
+previously and we're going to see why we
+need to use the functional API, the model,
+so that we can share pieces from two
+different.. two completely different
+neural networks the discriminator and
+the generator. We're going to use ADAM
+training, these values I mostly got from
+the papers for learning rate and for
+momentum, going to build the
+discriminator and compile it we're using
+binary cross entropy, because this is
+generating a prediction we're gonna
+measure it based on its accuracy. We're
+going to create a tensor that can hold
+that random input based on the seed size.
+Now we've already compiled the
+discriminator, so the discriminator is
+completely trainable, as pointed to by
+this discriminator. We're going to... this
+is a somewhat advanced feature.. but we're
+going to set the discriminator so that
+it's not trainable.
+It doesn't affect this discriminator,
+it's just kind of confusing, because it has
+already been compiled and we're gonna
+get a warning about this, but it's okay,
+because this is... we're doing what we want
+to do, this is the way that most GANs
+are implemented in Keras we're going to
+create the combined model. That combined
+model is how we're going to train the
+generator, we can train the discriminator
+on its own. With this combined model
+because we're really training the
+generator we don't want the
+discriminator weights to be adjusted.
+Because, remember these are adversarial, if we
+didn't set this we would be in a really
+bad situation because the generator
+would get its weights adjusted so that
+it's better and better at fooling the
+discriminator but then it would also
+adjust the weights to the discriminator
+to make it better at being fooled, so
+we've got to train those two separately.
+This prevents any sort of crossover. Its
+adversarial, we want these to work
+against each other. We don't want to
+adjust the weights from one to benefit
+the other. Then we actually train this.
+So we're going to create the Y-real and the
+Y-fake. I'm going to go ahead and run
+this while I explain it just so that it
+gets started. So we're gonna create two y
+vectors one for real which is all ones
+one for fake which is all zeros. I'm
+going to create the fixed seed so this
+is what we're going to generate those
+grids of faces based on, that I showed
+you. That way we can see the same faces
+evolve as this gets better and better
+trained. Now I am going to take a random
+sample according to the batch size and
+we're going to create the X-real so the
+X-real
+is taken directly from the training data.
+These are random faces that we chose
+that are in fact real and then we're
+going to generate some fake images we're
+going to create a seed this is a new
+seed each time not like the fixed seed
+this is the one that we're using on each
+epoch so that we better and better and
+better train it, and then we're going to
+basically predict. This is generating
+some fake faces, at this point based on
+whatever that seed was. Then we're going
+to train the discriminator. We've got
+some fake faces we've got some real
+faces, let's...let's train it on both of
+those we're gonna call discriminator
+train on batch for the X-real and the
+Y-real, so it's going to train first on the
+real faces, then it's going to train on
+the fake faces. The paper suggests that
+you get better results for training
+these separately. Normally you have a
+training batch and it's going to have a
+mix of real and and fake, there's some
+research that shows that separating
+these can get you some better some
+better results, we're going to calculate
+a metric on the discriminator the 0.5 is
+just because we've got two accuracies
+going on here and we need to combining
+them together and dividing by two or
+taking an average of the averages. Then
+we are going to train the combined. Now
+this is a little bit trickier. We're
+using the combined, so this is where the
+discriminator got trained. Now we're
+going to train the the generator. So to
+train the generator what we're going to
+do is we link these together, like we saw
+when we created the combined model so
+the combined model is based on the
+generator linked directly up to the
+discriminator. So since it's a linkage
+between these two neural networks, 
+you know for like train cars the input
+is going to be what the generator wants
+for input and that is basically a seed,
+and then the output is going to be what
+the discriminator actually gives us the
+discriminator is going to get its input
+from what that generator is generating.
+So you don't have to create that
+intermediate one it's they're just being
+linked so you're inputting seeds and
+you're getting output the prediction of
+if those.. if those.. seeds
+looked like actual images according to
+the discriminator. So what happens here
+is the X is going to be the seeds and
+the Y is going to be the Y-real. So all
+one's. Why are we training on a bunch of
+fake images and all ones for the real?
+Because think about it. We are now it's
+adversarial we're trying to train the
+generator, if the generator is doing
+really, really well,
+it gave the discriminator a bunch of
+fake images... discriminator said yeah
+they're all real. That is the ideal case
+for the generator that's why we don't
+want the discriminators weights to get
+adjusted while we're training it, because
+it would it would break the
+discriminator to try to make it less
+hard on the generator. This is the
+generator training and this is the
+discriminator training. They cannot
+overlap, that's what's really powerful
+about the GAN, we don't have to sit
+there and label a bunch of faces real,
+fake, whatever when we talked a little
+bit about how AlphaZero worked we're a
+deep neural network was able to master
+chess in under a day. That's where this
+power comes in we don't have to label
+this data. The data are simply dealing
+with two things that are acting adversarial
+to each other and training. Now
+this continues to run it's going to go
+for however many epochs we have every
+time it's time for an update to the
+human watching this thing, it'll generate
+a new image that has that grid of faces
+that we're looking at, then finally at
+the end we saved the generator because
+we want to keep the generator we get
+this nice generator that can generate
+faces, we want to keep that. Discriminator?
+We don't need so much care about here
+it's running you can see the accuracies
+of both of these. Now it's important to
+understand that the accuracies are not
+going to just get better, better, better,
+better because the bar keeps getting
+raised. The discriminator is getting
+better and better at discriminating. The
+generator is getting better and better
+at generating. You're not going to see
+one of these just progress better and
+better and better it's like two teams
+playing against each other. The scores
+are gonna stay fairly similar areas both
+of them are getting better and better.
+This is just the number of times that
+the
+discriminator was right. The number of times that
+the generator fooled the discriminator.
+So that's that's how this runs this is
+going to continue going. This takes
+maybe an hour, maybe two to actually run
+through all 10,000 of those epochs that
+I gave you, and the end result is
+something like this. I showed you the
+clip earlier as we progressed to this.
+Thank you for watching this video, in the
+next video we're going to see how we can
+use a pre-built face generator to
+generate very photorealistic faces. We're
+going to use StyleGAN. This content
+change is often so subscribe to the
+channel to stay up to date on this
+course and other topics and artificial
+intelligence.
